@@ -1,0 +1,358 @@
+scalar JobRemoveOption
+
+enum JobState {
+  completed
+  failed
+  delayed
+  active
+  waiting
+  paused
+}
+
+interface JobRepeatOptions {
+  """Timezone"""
+  tz: String
+  """End date when the repeat job should start repeating (only with cron)."""
+  endDate: DateTime
+  """Number of times the job should repeat at max."""
+  limit: Int
+
+  """The start value for the repeat iteration count"""
+  count: Int
+  prevMillis: Int
+  jobId: String
+}
+
+type JobRepeatOptionsCron implements JobRepeatOptions {
+  """Cron string"""
+  cron: String
+  """Timezone"""
+  tz: String
+  """Start date when the repeat job should start repeating (only with cron)."""
+  startDate: DateTime
+  """End date when the repeat job should start repeating (only with cron)."""
+  endDate: DateTime
+  """Number of times the job should repeat at max."""
+  limit: Int
+  """The start value for the repeat iteration count"""
+  count: Int
+  prevMillis: Int
+  jobId: String
+}
+
+type JobRepeatOptionsEvery implements JobRepeatOptions {
+  """Timezone"""
+  tz: String
+  """End date when the repeat job should start repeating (only with cron)."""
+  endDate: DateTime
+  """Number of times the job should repeat at max."""
+  limit: Int
+  """ Repeat every millis (cron setting cannot be used together with this setting.)"""
+  every: Int
+  """The start value for the repeat iteration count"""
+  count: Int
+  prevMillis: Int
+  jobId: String
+}
+
+#type JobBackoffConfig {
+#  type: String!
+#  delay: Int
+#}
+#
+#union JobBackoffOptions = JobBackoffConfig | Int
+
+type JobOptions {
+  """Default: current time"""
+  timestamp: DateTime
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that
+  using priorities has a slight impact on performance, so do not use it if not required.
+  """
+  priority: Int
+  """
+  An amount of miliseconds to wait until this job can be processed.
+  Note that for accurate delays, worker and producers should have their
+  clocks synchronized.
+  """
+  delay: Int
+  """The total number of attempts to try the job until it completes."""
+  attempts: Int
+  """Job repeat options."""
+  repeat: JobRepeatOptions
+  """ Backoff setting for automatic retries if the job fails """
+  backoff: Int
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
+  lifo: Boolean
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
+  timeout: Int
+  """
+  Override the job ID - by default, the job ID is a unique
+  integer, but you can use this setting to override it.
+  If you use this option, it is up to you to ensure the
+  jobId is unique. If you attempt to add a job with an id that
+  already exists, it will not be added.
+  """
+  jobId: String
+  """
+  If true, removes the job when it successfully completes
+  A number specify the max amount of jobs to keep.
+  Default behavior is to keep the job in the completed set.
+  """
+  removeOnComplete: JobRemoveOption
+  """
+  If true, removes the job when it fails after all attempts.
+  A number specify the max amount of jobs to keep.
+  Default behavior is to keep the job in the failed set.
+  """
+  removeOnFail: JobRemoveOption
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
+  stackTraceLimit: Int
+}
+
+""" Options for job creation """
+input JobOptionsInput {
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that
+  using priorities has a slight impact on performance, so do not use it if not required.
+  """
+  priority: Int
+  """
+  An amount of miliseconds to wait until this job can be processed.
+  Note that for accurate delays, worker and producers should have their
+  clocks synchronized.
+  """
+  delay: Int
+  """The total number of attempts to try the job until it completes."""
+  attempts: Int
+  backoff: Int  # todo: verify this
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
+  lifo: Boolean
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
+  timeout: Int
+  jobId: String
+  """
+  If true, removes the job when it successfully completes
+  """
+  removeOnComplete: Boolean
+  """
+  If true, removes the job when it fails after all attempts.
+  """
+  removeOnFail: Boolean = false
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
+  stackTraceLimit: Int
+}
+
+input JobOptionsRepeatInput {
+  tz: String
+  endDate: DateTime
+  limit: Int
+}
+
+input JobOptionsRepeatCronInput {
+  tz: String
+  endDate: DateTime
+  limit: Int
+  cron: String!
+  startDate: DateTime
+}
+
+input JobOptionsRepeatEveryInput {
+  tz: String
+  endDate: DateTime
+  limit: Int
+  every: Int!
+}
+
+input JobOptionsCronInput {
+  priority: Int
+  delay: Int
+  attempts: Int
+  backoff: Int
+  lifo: Boolean
+  timeout: Int
+  jobId: String
+  removeOnComplete: Boolean
+  removeOnFail: Boolean
+  stackTraceLimit: Int
+  repeat: JobOptionsRepeatCronInput!
+}
+
+input JobOptionsEveryInput {
+  priority: Int
+  delay: Int
+  attempts: Int
+  backoff: Int
+  lifo: Boolean
+  timeout: Int
+  jobId: String
+  removeOnComplete: Boolean
+  removeOnFail: Boolean
+  stackTraceLimit: Int
+  repeat: JobOptionsRepeatEveryInput!
+}
+
+type AddJobPayload {
+  job: Job
+  status: ActionStatus!
+}
+
+type UpdateJobPayload {
+  job: Job
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type AddBulkJobsPayload {
+  jobs: [Job]
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type JobAddCronPayload {
+  job: Job
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+input JobAddBulkInput {
+  name: String!
+  data: JSON!
+  options: JobOptionsInput
+}
+
+type JobLogs {
+  count: Int
+  items: [String!]
+}
+
+
+type Job {
+  id: ID!
+  queueId: ID!
+  name: String
+  state: JobState
+  opts: JobOptions
+  data: JSON
+  delay: Int
+  progress: JobProgress
+  attemptsMade: Int
+  finishedOn: DateTime
+  processedOn: DateTime
+  timestamp: DateTime!
+  failedReason: String
+  stacktrace: [String!]
+  returnvalue: JSON
+  logs(start: Int = 0, end: Int = -1): JobLogs!
+}
+
+type JobResultList {
+  hasNextPage: Boolean!
+  cursor: String
+  jobs: [Job!]
+}
+
+
+extend type Query {
+  job(queueId: ID!, id: ID!): Job
+}
+
+type DeleteBulkJobsPayload {
+  jobIds: [String!]!
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type AddJobLogPayload {
+  id: ID!
+  count: Int!
+}
+
+extend type Mutation {
+  addJob(
+    queueId: ID!,
+    jobName: String!
+    data: JSON!
+    options: JobOptionsInput
+  ): AddJobPayload
+  addBulkJobs(queueId: ID!, jobs: [JobOptionsInput]): AddBulkJobsPayload
+  addRepeatableCronJob(
+    queueId: ID!,
+    jobName: String!
+    data: JSON!
+    options: JobOptionsCronInput
+  ): AddJobPayload
+  addRepeatableEveryJob(
+    queueId: ID!,
+    jobName: String!
+    data: JSON!
+    options: JobOptionsEveryInput
+  ): AddJobPayload
+  promoteJob(queueId: ID!, jobId: String!): ActionStatus
+  retryJob(queueId: ID!, jobId: String!): ActionStatus
+  deleteJob(queueId: ID!, jobId: String!): ActionStatus
+  updateJob(queueId: ID!, jobId: String!, data: JSONObject): UpdateJobPayload
+  deleteBulkJobs(queueId: ID!, jobIds: [String!]!): DeleteBulkJobsPayload
+  moveJobToDelayed(queueId: ID!, jobId: String!): ActionStatus
+  moveJobToCompleted(queueId: ID!, jobId: String!): ActionStatus
+  addJobLog(
+    queueId: ID!,
+    jobId: ID!
+    row: String!
+  ): AddJobLogPayload
+}
+
+type JobCreatedMessage {
+  job: Job!
+}
+
+type JobUpdatedMessage {
+  job: Job!
+}
+
+type JobDeletedMessage {
+  jobId: ID!
+  queueId: ID!
+}
+
+type JobPromotedMessage {
+  job: Job!
+}
+
+"""Subscription message for added job log"""
+type JobLogAddedMessage {
+  """the job id"""
+  id: ID!
+  """the added log item"""
+  row: String
+  """the number of log items after the addition"""
+  count: Int
+}
+
+extend type Subscription {
+  jobCreated(queueId: ID!): JobCreatedMessage
+  jobUpdated(queueId: ID!, jobId: ID!): JobUpdatedMessage
+  jobDeleted(queueId: ID!, jobId: ID!): JobDeletedMessage
+  jobPromoted(queueId: ID!, jobId: ID!): JobPromotedMessage
+  jobLogAdded(queueId: ID!, jobId: ID!): JobLogAddedMessage
+}

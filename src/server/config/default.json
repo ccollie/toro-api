@@ -1,0 +1,96 @@
+{
+  "percentiles": [25, 50, 75, 90, 95, 99, 99.5],
+  "snapshotInterval": 10000,
+  "aggregateInterval": 60000,
+  "flushInterval": 1000,
+  "defaultSlidingWindow": {
+    "duration": "2 mins",
+    "windowSize": "1 sec"
+  },
+  "lockTTL": 15000,
+  "statsPrefix": "toro",
+  "url": "http://localhost:4000",
+  "brand": "Toro",
+  "title": "Toro Sample Dashboard",
+  "server": {
+    "host": "http://localhost",
+    "port": 4000
+  },
+  "sockets": {
+    "isBatched": true,
+    "batchInterval": 150
+  },
+  "queueUrlTemplate": "{{server.host}}:{{server.port}}/queues",
+  "retention": "1 month",
+  "hosts": [
+    {
+      "name": "AWS-Server-2",
+      "host": "127.0.0.1",
+      "port": 6379,
+      "prefix": "bull",
+      "notifiers": ["console", "mail"],
+      "queues": [
+        {
+          "name": "bb_queue",
+          "prefix": "bbq",
+          "jobTypes": []
+        },
+        {
+          "name": "suzy_queue"
+        },
+        {
+          "name": "widgets"
+        },
+        {
+          "name": "tacos"
+        },
+        {
+          "name": "backup"
+        }
+      ]
+    }
+  ],
+  "notifiers": [
+    {
+      "id": "console",
+      "type": "console"
+    },
+    {
+      "id": "default_hook",
+      "type": "webhook",
+      "disable": true,
+      "urls": ["127.0.0.1:4000/hook?event={{event}}"]
+    },
+    {
+      "type": "mail",
+      "id": "secondary_mail",
+      "disable": false,
+      "defaults": {
+        "from": "Toro Notifier <my@sender.com>",
+        "to": "recipient@example.com",
+        "bcc": ["mycc@mail.com"]
+      },
+      "transport": {
+        "jsonTransport": true
+      }
+    },
+    {
+      "id": "mail_main",
+      "type": "mail",
+      "disable": true,
+      "defaults": {
+        "from": "my@sender.com",
+        "bcc": ["mycc@mail.com"]
+      },
+      "transport": {
+        "host": "smtp.ethereal.email",
+        "port": 587,
+        "secure": false,
+        "auth": {
+          "user": "{{MAIL_NOTIFICATION_USER}}",
+          "pass": "{{MAIL_NOTIFICATION_PASSWORD}}"
+        }
+      }
+    }
+  ]
+}

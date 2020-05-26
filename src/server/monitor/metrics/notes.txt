@@ -1,0 +1,23 @@
+
+Metrics types
+  Latency
+  Wait
+  Error Rate
+  Job Rate
+  Error Percentage
+  Job Counts
+    completed
+    active
+    delayed
+    failed
+    consecutive failures
+    waiting
+
+Aggregates
+    mean
+    min
+    max
+    zscore
+    p75
+    p99
+    p99_5

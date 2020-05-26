@@ -1,0 +1,183 @@
+#import StatsWindow from "stats.graphql"
+
+"""
+Specifies a minimum number of requests before a rule is triggered
+"""
+type RuleVolumeThreshold {
+    """the request threshold"""
+    value: Int!
+
+    """optional sliding window in which to evaluate the threshold"""
+    window: StatsWindow
+}
+
+"""
+Input type to specify a minimum number of requests before a rule is triggered
+"""
+input RuleVolumeThresholdInput {
+    """the request threshold"""
+    value: Int!
+
+    """optional sliding window in which to evaluate the threshold"""
+    window: StatsWindowInput
+}
+
+
+type RuleAlertOptions {
+    """
+    a timeout after startup (in ms) during which no alerts are raised, irrespective of
+    the truthiness of the rule condition.
+    """
+    warmup: Int
+
+    """
+    minimum of requests before an alert can be triggered
+    """
+    volumeThreshold: RuleVolumeThreshold
+
+    """
+    Duration (ms) after which to raise alerts or notifications in case the condition is met.
+    This is useful for events which are normally transient by may periodically persist longer
+    than usual, or for not sending notifications out too quickly.
+    """
+    delay: Int
+
+    """
+    The number of alerts to receive per event trigger in case the condition is met.
+    This is useful for events which are normally transient by may periodically persist longer
+    than usual, or for not sending notifications out too quickly.
+    """
+    repeatsPerTrigger: Int
+
+    """
+    Raise an alert after an event trigger when the situation returns to normal
+    """
+    alertOnReset: Boolean
+}
+
+type Rule {
+    id: ID!
+
+    """A name for the rule"""
+    name: String!
+
+    """description of the Rule"""
+    description: String
+
+    """Rule creation timestamp"""
+    createdAt: DateTime!
+
+    """Rule modification timestamp"""
+    updatedAt: DateTime
+
+    """the mongo-like condition which should trigger an alert"""
+    condition: JSONObject!
+
+    """optional data passed on to alerts"""
+    payload: JSONObject
+
+    """channels for alert notifications."""
+    notifiers: [String!]
+
+    """true if the Rule is active, false if not."""
+    active: Boolean
+
+    """true if the Rule should persist alerts on the backend."""
+    persist: Boolean
+
+    """Optional sliding window for conditions involving aggregates"""
+    window: StatsWindow
+
+    """options for Rule alerts"""
+    options: RuleAlertOptions
+
+    """Alerts generated from this rule"""
+    alerts (start: Int = 0, end: Int, asc: Boolean = true): [RuleAlert!] #todo: specify count ?
+
+    """The total number of alerts for this rule"""
+    alertCount: Int!
+}
+
+type RuleAlert {
+    id: ID!
+
+    """The event that raised this alert"""
+    event: String
+
+    """Timestamp of when this alert was raised"""
+    start: DateTime
+
+    """Timestamp of when this alert was reset"""
+    end: DateTime
+
+    """State that triggered alert"""
+    state: JSONObject
+
+    """Optional rule specific data. Corresponds to Rule.payload"""
+    payload: JSONObject
+}
+
+input RuleAlertOptionsInput {
+    """
+    a timeout after startup (in ms) during which no alerts are raised, irrespective of
+    the truthiness of the rule condition.
+    """
+    warmup: Int
+
+    """
+    minimum of requests before an alert can be triggered
+    """
+    volumeThreshold: RuleVolumeThresholdInput
+
+    """
+    Duration (ms) after which to raise alerts or notifications in case the condition is met.
+    This is useful for events which are normally transient by may periodically persist longer
+    than usual, or for not sending notifications out too quickly.
+    """
+    delay: Int
+
+    """
+    The number of alerts to receive per event trigger in case the condition is met.
+    This is useful for events which are normally transient by may periodically persist longer
+    than usual, or for not sending notifications out too quickly.
+    """
+    repeatsPerTrigger: Int
+
+    """
+    Raise an alert after an event trigger when the situation returns to normal
+    """
+    alertOnReset: Boolean
+}
+
+input CreateRuleInput {
+    """A name for the rule"""
+    name: String!
+
+    """description of the Rule"""
+    description: String
+
+    """the mongo-like condition which should trigger an alert"""
+    condition: JSONObject!
+
+    """optional data passed on to alerts"""
+    payload: JSONObject
+
+    """channels for alert notifications."""
+    notifiers: [String!]
+
+    """true if the Rule is active, false if not."""
+    active: Boolean = true
+
+    """true if the Rule should persist alerts on the backend."""
+    persist: Boolean = true
+
+    """Optional sliding window for conditions involving aggregates"""
+    window: StatsWindowInput
+
+    """options for Rule alerts"""
+    options: RuleAlertOptionsInput
+}
+
+extend type Query {
+    rule(queueId: ID!, ruleId: ID!): Rule
+}

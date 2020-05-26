@@ -1,0 +1,304 @@
+import IORedis from 'ioredis';
+import url, { Url } from 'url';
+import { isObject, chunk, isNil, isString } from 'lodash';
+import { isValidDate } from '../lib/datetime';
+import { isNumber } from '../lib/utils';
+import { ConnectionOptions } from 'config';
+import { RedisMetrics } from '@src/types';
+import { loadScripts } from '../commands';
+import logger from '../lib/logger';
+import { Queue } from 'bullmq';
+
+export interface RedisStreamItem {
+  id: string | number | Date;
+  data: any;
+}
+
+export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
+  let client;
+  if (isNil(redisOpts)) {
+    client = new IORedis();
+  } else if (isString(redisOpts)) {
+    client = new IORedis(redisOpts as string);
+  } else {
+    client = new IORedis(redisOpts as IORedis.RedisOptions);
+  }
+
+  loadScripts(client).catch((err) => console.log(err));
+  return client;
+}
+
+export async function disconnect(client: IORedis.Redis): Promise<void> {
+  if (client.status !== 'end') {
+    let _resolve, _reject;
+
+    const disconnecting = new Promise((resolve, reject) => {
+      client.once('end', resolve);
+      client.once('error', reject);
+      _resolve = resolve;
+      _reject = reject;
+    });
+
+    client.disconnect();
+
+    try {
+      await disconnecting;
+    } finally {
+      client.removeListener('end', _resolve);
+      client.removeListener('error', _reject);
+    }
+  }
+}
+
+/** Iterate redis keys by pattern  */
+export function scanKeys(
+  client: IORedis.Redis,
+  options: any = {},
+  batchFn: (keys: string[]) => any,
+): Promise<void> {
+  options.count = options.count || 200;
+  return new Promise((resolve, reject) => {
+    const stream = client.scanStream(options);
+
+    const close = () => {
+      stream.emit('close');
+    };
+
+    stream.on('data', async (keys: string[]) => {
+      stream.pause();
+      if (keys.length === 0) {
+        stream.resume();
+        return;
+      }
+      try {
+        const res = await batchFn(keys);
+        if (res === false) {
+          close();
+          resolve();
+        } else {
+          stream.resume();
+        }
+      } catch (err) {
+        err.pattern = options.match || '*';
+        close();
+        return reject(err);
+      }
+    });
+
+    stream.on('end', () => resolve());
+    stream.on('error', (err) => {
+      reject(err);
+      console.log('error', err);
+    });
+  });
+}
+
+export async function deleteByPattern(
+  client: IORedis.Redis,
+  pattern: string,
+): Promise<number> {
+  let totalCount = 0;
+  let count = 0;
+  let pipeline = client.pipeline();
+  let shouldFlush = false;
+
+  await scanKeys(client, { match: pattern }, async (keys) => {
+    totalCount += keys.length;
+
+    const chunked = chunk(keys, 50);
+    count += chunked.length;
+
+    chunked.forEach((items: string[]) => {
+      shouldFlush = true;
+      pipeline.del(...items);
+    });
+
+    if (count >= 50) {
+      shouldFlush = false;
+      await pipeline.exec();
+      pipeline = client.pipeline();
+    }
+  });
+
+  if (shouldFlush) {
+    await pipeline.exec();
+  }
+
+  return totalCount;
+}
+
+export async function discoverQueues(
+  client: IORedis.Redis,
+  prefix: string,
+): Promise<string[]> {
+  const keyPattern = new RegExp(
+    `^${prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`,
+  );
+
+  const options = {
+    match: `${prefix}:*:*`,
+    count: 1000,
+  };
+  const dedupe = Object.create(null);
+  const result = [];
+
+  logger.info('running queue discovery', { pattern: keyPattern.source });
+
+  await scanKeys(client, options, (keys) => {
+    keys.forEach((key) => {
+      const match = keyPattern.exec(key);
+      if (match && match[1]) {
+        const [prefix, name] = key.split(':');
+        const uniq = `${prefix}-${name}`;
+        if (!dedupe[uniq]) {
+          dedupe[uniq] = 1;
+          logger.info(`found queue "${prefix}:${name}"`);
+          result.push(name);
+        }
+      }
+    });
+  });
+
+  return result;
+}
+
+export async function deleteAllQueueData(queue: Queue): Promise<number> {
+  const prefix = queue.opts.prefix;
+  const pattern = `${prefix}:${queue.name}:*`;
+  const client = await queue.client;
+  // @ts-ignore
+  return deleteByPattern(client, pattern);
+}
+
+export function parseRedisURI(urlString: string): Record<string, any> {
+  const redisOpts = Object.create(null) as Record<string, any>;
+  try {
+    const redisUrl: Url = url.parse(urlString);
+    redisOpts.port = redisUrl.port || 6379;
+    redisOpts.host = redisUrl.hostname;
+    redisOpts.db = redisUrl.pathname ? redisUrl.pathname.split('/')[1] : 0;
+    if (redisUrl.auth) {
+      redisOpts.password = redisUrl.auth.split(':')[1];
+    }
+  } catch (e) {
+    throw new Error(e.message);
+  }
+  return redisOpts;
+}
+
+// https://github.com/luin/ioredis/issues/747
+
+export function parseObjectResponse(reply: any[], customParser = null): object {
+  if (!Array.isArray(reply)) {
+    return reply;
+  }
+  const data = Object.create(null);
+  for (let i = 0; i < reply.length; i += 2) {
+    if (customParser) {
+      data[reply[i]] = customParser(reply[i], reply[i + 1]);
+      continue;
+    }
+    data[reply[i]] = reply[i + 1];
+  }
+  return data;
+}
+
+export function parseMessageResponse(reply: any[]): RedisStreamItem[] {
+  if (!Array.isArray(reply)) {
+    return [];
+  }
+  return reply.map((message) => {
+    return {
+      id: message[0],
+      data: parseObjectResponse(message[1]),
+    };
+  });
+}
+
+export function parseXinfoResponse(reply) {
+  return parseObjectResponse(reply, (key, value) => {
+    if (Buffer.isBuffer(key)) {
+      key = key.toString();
+    }
+    switch (key) {
+      case 'first-entry':
+      case 'last-entry':
+        if (!Array.isArray(value)) {
+          return value;
+        }
+        return {
+          id: value[0],
+          data: parseObjectResponse(value[1]),
+        };
+      default:
+        return value;
+    }
+  });
+}
+
+export function toKeyValueList(hash: any): any[] {
+  if (typeof hash === 'object') {
+    return Object.entries(hash).reduce((res, [key, value]) => {
+      if (isValidDate(value)) {
+        value = (value as Date).getTime();
+      } else if (isObject(value)) {
+        value = JSON.stringify(value);
+      }
+      return res.concat(key, value);
+    }, []);
+  } else {
+    return ['value', hash];
+  }
+}
+
+type MetricName = keyof RedisMetrics;
+const metrics: MetricName[] = [
+  'redis_version',
+  'uptime_in_seconds',
+  'uptime_in_days',
+  'connected_clients',
+  'blocked_clients',
+  'total_system_memory',
+  'used_memory',
+  'used_memory_peak',
+  'used_cpu_sys',
+  'maxmemory',
+  'number_of_cached_scripts',
+  'instantaneous_ops_per_sec',
+  'mem_fragmentation_ratio',
+  'connected_clients',
+  'blocked_clients',
+  'role',
+];
+
+export async function getRedisInfo(
+  client: IORedis.Redis,
+): Promise<RedisMetrics> {
+  const res = await client.info();
+  const redisInfo = Object.create(null);
+
+  const lines = res.toString().split('\r\n');
+
+  lines.forEach((line) => {
+    const parts = line.split(':');
+    if (parts[1]) {
+      redisInfo[parts[0]] = parts[1];
+    }
+  });
+
+  redisInfo.versions = [];
+  if (redisInfo.redis_version) {
+    redisInfo.redis_version.split('.').forEach((num) => {
+      redisInfo.versions.push(+num);
+    });
+  }
+
+  return metrics.reduce((acc, metric) => {
+    if (redisInfo[metric]) {
+      const value = redisInfo[metric];
+      acc[metric] = isNumber(value) ? parseFloat(value) : value;
+    }
+
+    return acc;
+  }, {} as Record<MetricName, any>);
+}

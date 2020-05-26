@@ -1,0 +1,248 @@
+#import Job from "job.graphql"
+#import RepeatableJob from "repeatableJob.graphql"
+
+input QueueLocatorInput {
+  hostName: String
+  queueName: String
+}
+
+type JobCounts {
+  completed: Int
+  failed: Int
+  delayed: Int
+  active: Int
+  waiting: Int
+  paused: Int
+}
+
+type QueueWorker {
+  id: ID!
+  name: String
+  "address of the client"
+  addr: String
+  "port of the client"
+  port: Int
+  "total duration of the connection in seconds"
+  age: Int
+  "Date the connection started"
+  started: Int
+  "idle time of the connection in seconds"
+  idle: Int
+  "current database ID"
+  db: Int!
+  qbuf: Int
+  sub: Int
+  omem: Int
+  role: String
+}
+
+input QueueStatsInput {
+  jobName: String
+  unit: Granularity
+  start: DateTime
+  end: DateTime
+}
+
+type Queue {
+  id: String!
+  name: String
+  prefix: String
+  isPaused: Boolean
+  jobCounts: JobCounts
+  jobs(
+    offset: Int = 0
+    limit: Int = 10
+    state: JobState = completed
+    asc: Boolean = true
+  ): [Job!]!
+  repeatableJobs(
+    offset: Int = 0
+    limit: Int = 10
+    asc: Boolean = true
+  ): [RepeatableJob!]!
+  repeatableCount: Int!
+  workers(limit: Int = 10): [QueueWorker!]!
+  latency(input: QueueStatsInput):[StatsSnapshot!]!
+  waitTimes(input: QueueStatsInput):[StatsSnapshot!]!
+  rules: [Rule!]!
+}
+
+type PauseQueuePayload {
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type ResumeQueuePayload {
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type CleanQueuePayload {
+  jobIds:[ID!]
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type DrainQueuePayload {
+  jobIds:[ID!]
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type DeleteQueuePayload {
+  deletedKeys: Int!
+  success: Boolean
+  statusCode: Int
+  error: String,
+  message: String
+}
+
+type Mutation {
+  """
+  Pause the queue.
+
+  A paused queue will not process new getJobs until resumed, but current getJobs being processed will continue until
+  they are finalized.
+  """
+  pauseQueue(id: String!): PauseQueuePayload
+
+  """
+  Resume a queue after being paused.
+  """
+  resumeQueue(id: String!): ResumeQueuePayload
+
+  """Drains the queue, i.e., removes all jobs that are waiting or delayed, but not active, completed or failed."""
+  drainQueue(
+    """The queue id"""
+    id: String!,
+    """Should delayed jobs be drained as well"""
+    delayed: Boolean = false
+  ): DrainQueuePayload
+
+  """
+  Remove all getJobs created outside of a grace period in milliseconds.
+  You can clean the getJobs with the following states: completed, wait (typo for waiting),
+  active, delayed, and failed.
+  """
+  cleanQueue(
+    "queue Id"
+    id: String!
+    "Grace period. Jobs older this this will be removed"
+    grace: Duration!
+    "limit Maximum amount of getJobs to clean per call. If not provided will clean all matching getJobs."
+    limit: Int = 0
+    "Status of the getJobs to clean"
+    type: JobState = completed
+  ): CleanQueuePayload
+
+  deleteQueue(queueId: ID!): DeleteQueuePayload
+}
+
+
+type Query {
+  """
+  Get a queue by id
+  """
+  queue(id: ID!): Queue
+  """
+  Find a queue by host and name
+  """
+  findQueue(hostName: String!, queueName: String!): Queue
+}
+
+"""Returns the rate of job executions (completed or failed jobs) over a given period"""
+type JobRateChangedMessage {
+  """the updated job rate"""
+  rate: Float!
+}
+
+"""Returns the rate of job failures over a given period"""
+type JobErrorRateChangedMessage {
+  """the updated error rate"""
+  rate: Float!
+}
+
+type QueuePausedMessage {
+  queueId: ID!
+  result: Boolean
+}
+
+type QueueResumedMessage {
+  queueId: ID!
+  result: Boolean
+}
+
+"""Returns the updated state of a queue"""
+type QueueStateChangedMessage {
+  """Updated state"""
+  state: String!
+}
+
+"""Returns the current count of workers for a queue"""
+type WorkersCountChangedMessage {
+  """Updated worker count"""
+  count: Int!
+}
+
+"""Returns the list of added and removed workers related to a queue"""
+type WorkersChangedMessage {
+  """A list of new workers"""
+  added: [QueueWorker!]!
+  """The list of removed workers"""
+  removed: [QueueWorker!]!
+}
+
+"""Filter for in-flight job updates"""
+input QueueJobChangesFilter {
+  """Job name filter. A message will be returned if the job name is in this list"""
+  name: [String!]
+  """Job state filter. A message will be returned if the job state is in this list"""
+  state: [JobState!]
+  """
+  Attempts filter. The record will be returned if the job attempts are greater than
+  or equal to this number
+  """
+  attemptsMade: Int
+}
+
+type QueueJobUpdateMessage {
+  """The job id"""
+  id: String!
+  """The current status of the job"""
+  state: String!
+  timestamp: DateTime
+  """The current progress of the job"""
+  progress: JobProgress
+  """The timestamp of the job completion"""
+  finishedOn: DateTime
+  """The timestamp of the start of job execution"""
+  processedOn: DateTime
+  """Execution latency in ms. Only valid for state === 'failed' || state === 'completed'"""
+  latency: Int
+  """Job wait time in ms. Only valid for state === 'failed' || state === 'completed'"""
+  waitTime: Int
+}
+
+type Subscription {
+  jobCountsChanged(queueId: ID!): JobCounts
+  jobRateChanged(queueId: ID!): JobRateChangedMessage
+  jobErrorRateChanged(queueId: ID!): JobErrorRateChangedMessage
+  """Emits a message when the status of a queue changes"""
+  queueStateChanged(queueId: ID!): QueueStateChangedMessage
+  """Returns messages when the status of in-flight jobs change"""
+  queueJobUpdates(queueId: ID!, filter: QueueJobChangesFilter): QueueJobUpdateMessage #maybe change name to inflightJobUpdated
+  latencyStatsUpdated(queueId: ID!, jobName: String): StatsSnapshot
+  waitTimeStatsUpdated(queueId: ID!, jobName: String): StatsSnapshot
+  """Subscribes to a change in the list of workers associated with a queue"""
+  workersChanged(queueId: ID!): WorkersChangedMessage
+  """Subscribes to a change in the count of workers associated with a queue"""
+  workersCountChanged(queueId: ID!): WorkersCountChangedMessage
+}

@@ -1,0 +1,23 @@
+<mjml>
+  <mj-head>
+    <mj-title>{{ brand }} Notification</mj-title>
+    <mj-attributes>
+      <mj-text align="center" color="#555" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#eee">
+    {{> header }}
+
+    <mj-section background-color="#fff">
+      <mj-column>
+        <mj-text align="center">
+          <h3>{{ eventTitle }}</h3>
+          <h4>{{ eventDescription }}</h4>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    {{objTable data}} {{> footer }}
+  </mj-body>
+</mjml>

@@ -1,0 +1,71 @@
+{
+  "percentiles": [25, 50, 75, 90, 95, 99, 99.5],
+  "url": "http://localhost:4000",
+  "title": "El-Toro Sample Dashboard",
+  "snapshotInterval": 20000,
+  "aggregateInterval": 60000,
+  "flushInterval": 1000,
+  "defaultSlidingWindow": {
+    "duration": "2 mins",
+    "period": "1 sec"
+  },
+  "server": {
+    "host": "http://localhost",
+    "port": 4000
+  },
+  "hosts": [
+    {
+      "name": "develop",
+      "connection": {
+        "host": "127.0.0.1",
+        "port": 6379
+      },
+      "prefix": "bull",
+      "notifiers": ["console", "mail"],
+      "queues": [
+        {
+          "name": "bb_queue",
+          "prefix": "bbq"
+        },
+        {
+          "name": "suzy_queue"
+        },
+        {
+          "name": "widgets"
+        },
+        {
+          "name": "tacos"
+        },
+        {
+          "name": "backup"
+        }
+      ]
+    }
+  ],
+  "notifiers": [
+    {
+      "id": "console",
+      "type": "console"
+    },
+    {
+      "id": "hook1",
+      "type": "webhook",
+      "urls": ["{{server.host}}:{{server.port}}/webhooks/notification"],
+      "retry": 3,
+      "httpSuccessCodes": [200]
+    },
+    {
+      "id": "mail",
+      "type": "mail",
+      "disable": false,
+      "transport": {
+        "jsonTransport": true
+      },
+      "messageDefaults": {
+        "to": "flames@example.com",
+        "from": "my@sender.com",
+        "bcc": ["mycc@mail.com"]
+      }
+    }
+  ]
+}
