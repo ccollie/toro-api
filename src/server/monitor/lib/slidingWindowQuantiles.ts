@@ -83,7 +83,7 @@ export class SlidingWindowQuantile extends EventEmitter {
     SlidingWindowQuantile._clearSketch(popped);
   }
 
-  update(newVal: number) {
+  update(newVal: number): number {
     this.slidingWindow.current.add(newVal);
     this.accumulator.add(newVal);
     return this.accumulator;

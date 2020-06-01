@@ -1,5 +1,6 @@
 import boom from '@hapi/boom';
 import { getStatsKey } from '../../../../monitor/keys';
+import { StatsGranularity } from 'stats';
 
 const VALID_GRANULARITIES = [
   'minute',
@@ -12,7 +13,12 @@ const VALID_GRANULARITIES = [
   'wk',
 ];
 
-function getKey(req, res, tag: string, granularity: string = null): string {
+function getKey(
+  req,
+  res,
+  tag: string,
+  granularity: StatsGranularity = undefined,
+): string {
   const { host, jobType } = req.params;
   const queue = res.locals.queue;
   if (granularity) {
@@ -29,13 +35,13 @@ export function getStatsClient(req, res) {
   return queueManager && queueManager.statsClient;
 }
 
-export function getStreamId(req, res) {
+export function getStreamId(req, res): string {
   const { metric, type } = req.params;
 
   function getBaseStreamId(): string {
     const tag = metric;
     const granularity = req.query.granularity;
-    return getKey(req, tag, granularity);
+    return getKey(req, res, tag, granularity);
   }
 
   let streamId;

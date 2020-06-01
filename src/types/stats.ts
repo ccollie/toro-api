@@ -19,7 +19,7 @@ export type StatsQueryOptions = StatsRangeOptions & {
 };
 
 export interface StatsWindow {
-  /** the total length of the window */
+  /** the total length of the window (ms) */
   duration: number;
   /** the sub-divisions (sampling interval) */
   period: number;

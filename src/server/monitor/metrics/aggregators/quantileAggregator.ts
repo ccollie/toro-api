@@ -2,7 +2,7 @@ import Joi from '@hapi/joi';
 import { SlidingWindowQuantile, SlidingWindowOptions } from '../../lib';
 import { SlidingWindowAggregator } from './aggregator';
 
-import baseSchema from './slidingWindowBaseSchema';
+import baseSchema from '../slidingWindowBaseSchema';
 import { ObjectSchema } from '@hapi/joi';
 
 const schema = baseSchema.keys({
@@ -66,7 +66,7 @@ export class QuantileAggregator extends SlidingWindowAggregator {
     return this._data.period;
   }
 
-  update(value) {
+  update(value): number {
     return this._data.update(value);
   }
 

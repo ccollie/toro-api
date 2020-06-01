@@ -2,7 +2,7 @@
 import { HostConfig, QueueConfig } from 'index';
 import config from './index';
 import Joi from '@hapi/joi';
-import { isString, isObject, isNumber } from 'lodash';
+import { isString } from 'lodash';
 import { parseRedisURI } from '../redis/utils';
 import fnv from 'fnv-plus';
 
@@ -53,21 +53,10 @@ export const hostConfigSchema = Joi.object().keys({
 // Generate host and queue ids
 
 function generateHostId(config: HostConfig): string {
-  const connection = config.connection;
-  let db, host, port;
-  if (isString(connection)) {
-    const parsed = parseRedisURI(connection);
-    db = parsed.db;
-    host = parsed.host;
-    port = parsed.port;
-  } else if (isObject(connection)) {
-    db = connection.db;
-    host = connection.host;
-    port = connection.port;
-  }
-  db = isNumber(db) ? db : 0;
-  port = isNumber(port) ? port : 6379;
-  host = host || 'localhost';
+  const conn = isString(config.connection)
+    ? parseRedisURI(config.connection)
+    : config.connection;
+  const { db = 0, host = 'localhost', port = 6379 } = (conn as any) || {};
   const toHash = `${host}:${port}:${db}`;
   return fnv.hash(toHash).hex();
 }

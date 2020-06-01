@@ -11,14 +11,13 @@ export function queueStateChanged(): GraphQLFieldResolver<any, any> {
     return `QUEUE_STATE_CHANGED:${queueId}`;
   }
 
-  function onSubscribe(_, args, context): void {
-    const { queueId } = args;
+  function onSubscribe(_, { queueId }, context): void {
     const { channelName, pubsub, supervisor } = context;
     const queueManager = supervisor.getQueueById(queueId);
     const { queue, queueListener } = queueManager;
 
     function handler(event): Promise<void> {
-      return pubsub.publish(channelName, { event, queueId });
+      return pubsub.publish(channelName, { state: event });
     }
 
     QUEUE_BASED_EVENTS.forEach((eventName) => {

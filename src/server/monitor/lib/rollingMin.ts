@@ -82,7 +82,7 @@ class RollingMin {
     return waitFullRange ? null : result;
   }
 
-  clear() {
+  clear(): void {
     this.list.clear();
     this.index = 0;
   }

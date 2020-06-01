@@ -1,13 +1,22 @@
 import { SlidingWindowStats } from './slidingWindowStats';
 import { SlidingWindowOptions } from './slidingWindow';
+import Emittery from 'emittery';
 
 /*eslint max-len: ["error", { "ignoreUrls": true }]*/
 
 export interface StreamingZScoreOptions {
   threshold?: number;
   influence?: number;
-  lag: number;
+  lag?: number;
 }
+
+export type SignalChangedEvent = {
+  value: number;
+  zscore: number;
+  signal: number;
+};
+
+export type SignalChangedHandler = (eventData: SignalChangedEvent) => void;
 
 const defaultStreamingZScoreOptions: StreamingZScoreOptions = {
   /** the z-score at which the algorithm signals */
@@ -26,13 +35,14 @@ const defaultStreamingZScoreOptions: StreamingZScoreOptions = {
  * {@link https://stackoverflow.com/questions/22583391/peak-signal-detection-in-realtime-timeseries-data/22640362#22640362 }
  * */
 export class StreamingZScore {
-  private _lastValue?: number;
-  signal: number;
-  private _stats: any;
-  private _zscore: number;
+  private lastValue?: number;
+  public signal: number;
+  private readonly _stats: SlidingWindowStats;
+  private zscore: number;
   public readonly influence: number;
   public readonly threshold: number;
   public readonly lag: number;
+  private readonly emitter: Emittery = new Emittery();
 
   /***
    * Construct a StreamingZScore
@@ -58,24 +68,24 @@ export class StreamingZScore {
     );
     this.threshold = threshold;
     this.influence = influence;
-    this.lag = lag || 10;
-    this._lastValue = undefined;
-    this._zscore = undefined;
+    this.lag = lag;
+    this.lastValue = undefined;
+    this.zscore = undefined;
     this.signal = 0;
     this._stats = new SlidingWindowStats(window.duration, window.period);
     // todo: we need to update on tick
   }
 
-  destroy() {
+  destroy(): void {
     this._stats.destroy();
   }
 
-  clear() {
+  clear(): void {
     this._stats.clear();
   }
 
   get value(): number {
-    return this._zscore;
+    return this.zscore;
   }
 
   get count(): number {
@@ -94,32 +104,47 @@ export class StreamingZScore {
     return this._stats.onTick(handler);
   }
 
+  onSignalChange(handler: SignalChangedHandler): Emittery.UnsubscribeFn {
+    return this.emitter.on('signal', handler);
+  }
+
   /**
    * Calculate the smoothed zscore
    * */
   update(value: number): number {
     const stats = this._stats;
-    this._lastValue = value;
+    const oldSignal = this.signal;
     this.signal = 0;
+
+    this.lastValue = value;
     if (stats.count < this.lag) {
       stats.update(value);
     } else {
       const mean = stats.mean;
       const stdDev = stats.populationStdev;
       const delta = value - mean;
-      this._zscore = stdDev === 0 ? delta / stdDev : 0;
+      this.zscore = stdDev === 0 ? 0 : delta / stdDev;
+
+      let nextValue = value;
       if (Math.abs(delta) > this.threshold * stdDev) {
-        const nextValue =
-          value * this.influence + (1.0 - this.influence) * this._lastValue;
-        stats.update(nextValue);
+        nextValue =
+          value * this.influence + (1.0 - this.influence) * this.lastValue;
         this.signal = value > mean ? 1 : -1;
-      } else {
-        stats.update(value);
       }
 
-      this._lastValue = value;
+      stats.update(nextValue);
+      this.lastValue = value;
+
+      if (this.signal !== oldSignal) {
+        const event: SignalChangedEvent = {
+          value,
+          zscore: this.zscore,
+          signal: this.signal,
+        };
+        this.emitter.emit('signal', event).catch((err) => console.error(err));
+      }
     }
 
-    return this._zscore;
+    return this.zscore;
   }
 }

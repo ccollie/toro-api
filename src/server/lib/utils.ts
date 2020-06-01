@@ -34,6 +34,7 @@ export const parseBool = (val: any): boolean => {
   return ['true', '1', 't'].includes(val.toLowerCase());
 };
 
+// TODO:
 export const BULL_STATES = [
   'waiting',
   'active',
@@ -69,7 +70,7 @@ export function titleCase(str = ''): string {
   return elems.join(' ');
 }
 
-export const firstChar = (str) => (str && str.length ? str[0] : '');
+export const firstChar = (str): string => (str && str.length ? str[0] : '');
 
 /**
  * Add commas to numbers
@@ -123,7 +124,7 @@ export function diff(obj1, obj2, { trackRemoved = true } = {}) {
    * @param  {*}      item2 The second item
    * @param  {String} key   The key in our object
    */
-  function compare(item1, item2, key) {
+  function compare(item1, item2, key): void {
     // Get the object type
     const type1 = typeof item1;
     const type2 = typeof item2;

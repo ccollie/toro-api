@@ -28,7 +28,7 @@ export class StatsBasedAggregator extends SlidingWindowAggregator {
     return this.stats.period;
   }
 
-  update(value: number) {
+  update(value: number): number {
     this.stats.update(value);
     return this.value;
   }

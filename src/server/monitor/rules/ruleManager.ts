@@ -62,7 +62,7 @@ export class RuleManager {
 
   async addRule(rule: RuleConfigOptions): Promise<Rule> {
     if (!isObject(rule)) {
-      throw boom.badRequest('addRile: Rule must be an object');
+      throw boom.badRequest('addRule: Rule must be an object');
     }
     let id = rule.id;
     if (!id) {

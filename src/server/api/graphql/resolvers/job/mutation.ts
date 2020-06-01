@@ -55,7 +55,7 @@ function createMutationHandler(cmd) {
 }
 
 // used by all
-async function addJob(_, { queueId, jobName, data, options }, ctx) {
+async function addJob(_, { input: { queueId, jobName, data, options } }, ctx) {
   const queue = await getQueueById(ctx, queueId);
   const job = await queue.add(jobName, data, options);
   return {

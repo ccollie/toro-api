@@ -39,7 +39,7 @@ export class MaxAggregator extends SlidingWindowAggregator {
     return this.max.period;
   }
 
-  update(value: number) {
+  update(value: number): number {
     return this.max.update(value);
   }
 

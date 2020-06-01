@@ -5,12 +5,8 @@ export class LatencyMetric extends BaseMetric {
   constructor(queueListener: QueueListener) {
     super();
     this.onDestroy(
-      queueListener.on('job.finished', (data) => this.update(data)),
+      queueListener.on('job.finished', ({ latency }) => this.update(latency)),
     );
-  }
-
-  baseUpdate(value) {
-    return value.latency;
   }
 
   static get key(): string {

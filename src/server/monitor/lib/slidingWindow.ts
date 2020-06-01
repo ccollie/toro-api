@@ -23,7 +23,7 @@ export class SlidingWindow<T> extends EventEmitter {
   private _windowStart: number;
   private readonly _start: number;
   public readonly period: number;
-  private _timer: any;
+  private readonly _timer: any;
 
   constructor(options: SlidingWindowOptions, defaultValue?: T | (() => T)) {
     super();
@@ -50,7 +50,9 @@ export class SlidingWindow<T> extends EventEmitter {
   }
 
   destroy(): void {
-    this._timer.clear();
+    if (this._timer) {
+      this._timer.clear();
+    }
   }
 
   get capacity(): number {

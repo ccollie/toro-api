@@ -12,12 +12,12 @@ class Bucket {
     this.value = DEFAULT_VALUE;
   }
 
-  add(value) {
+  add(value: number): number {
     this.value = Math.max(this.value, value);
     return this.value;
   }
 
-  clear() {
+  clear(): void {
     this.value = DEFAULT_VALUE;
   }
 }
@@ -36,7 +36,7 @@ export class SlidingWindowMaximum extends EventEmitter {
     this.slidingWindow.on('tick', (data) => this.onTick(data));
   }
 
-  destroy() {
+  destroy(): void {
     this.slidingWindow.destroy();
   }
 
@@ -48,7 +48,7 @@ export class SlidingWindowMaximum extends EventEmitter {
     return this.slidingWindow.period;
   }
 
-  get currentValue() {
+  get currentValue(): number {
     return this.currentWindow.value;
   }
 
@@ -56,7 +56,7 @@ export class SlidingWindowMaximum extends EventEmitter {
     return this.slidingWindow.current;
   }
 
-  static get DEFAULT_VALUE() {
+  static get DEFAULT_VALUE(): number {
     return DEFAULT_VALUE;
   }
 
@@ -82,7 +82,7 @@ export class SlidingWindowMaximum extends EventEmitter {
     }
   }
 
-  update(newVal) {
+  update(newVal: number): number {
     const now = systemClock.now();
     const old = this.value;
 

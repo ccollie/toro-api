@@ -24,7 +24,7 @@ export class MinAggregator extends SlidingWindowAggregator {
   }
 
   static get description(): string {
-    return 'Minimum';
+    return 'Returns the minimum value within a sliding window';
   }
 
   get value(): number {
@@ -39,7 +39,7 @@ export class MinAggregator extends SlidingWindowAggregator {
     return this.min.period;
   }
 
-  update(value) {
+  update(value): number {
     return this.min.update(value);
   }
 

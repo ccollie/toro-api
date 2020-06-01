@@ -1,18 +1,20 @@
 import { parseDuration } from '../../../../lib/datetime';
-import { getQueueById } from '../helpers';
-import { Queue } from 'bullmq';
+import { getQueueById, getQueueManager } from '../helpers';
+import { QueueDeleteOptions } from '../../../../monitor';
 
 // TODO: use queueBus to publish messages for subscription support
 export const Mutation = {
   async pauseQueue(_, { id }, context): Promise<any> {
-    const queue = getQueueById(context, id);
-    await queue.resume();
-    return {};
+    const manager = getQueueManager(context, id);
+    await manager.pause();
+    const isPaused = await manager.isPaused();
+    return { isPaused };
   },
   async resumeQueue(_, { id }, context): Promise<any> {
-    const queue = getQueueById(context, id);
-    await queue.pause();
-    return {};
+    const manager = getQueueManager(context, id);
+    await manager.resume();
+    const isPaused = await manager.isPaused();
+    return { isPaused };
   },
   async drainQueue(_, { id, delayed }, context): Promise<any> {
     const queue = getQueueById(context, id);
@@ -28,8 +30,11 @@ export const Mutation = {
       jobIds,
     };
   },
-  async deleteQueue(_, { id }, { supervisor }) {
-    const deletedKeys = await supervisor.deleteQueue(id);
+  async deleteQueue(_, { id, options }, { supervisor }) {
+    const deletedKeys = await supervisor.deleteQueue(
+      id,
+      options as QueueDeleteOptions,
+    );
     return { deletedKeys };
   },
 };

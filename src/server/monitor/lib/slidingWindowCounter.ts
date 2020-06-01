@@ -81,7 +81,7 @@ export class SlidingWindowCounter extends EventEmitter {
     this._windows.forEach((bucket) => bucket.clear());
   }
 
-  onTick(handler) {
+  onTick(handler): void {
     this._windows.on('tick', handler);
   }
 

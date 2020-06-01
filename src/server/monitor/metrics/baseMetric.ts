@@ -50,13 +50,13 @@ export class BaseMetric extends Emittery {
   }
 
   // Override in descendents
-  baseUpdate(value: number): number {
+  protected baseValue(value: number): number {
     return value;
   }
 
   // Public api used elsewhere
-  update(value): number {
-    this._value = this.baseUpdate(value);
+  update(value: number): number {
+    this._value = this.baseValue(value);
     if (this._value !== this._prev) {
       this._prev = this._value;
       this.emit('update', this._value).catch((err) => console.log(err));

@@ -27,6 +27,7 @@ class IteratorMetadata {
     if (this.onDestroy) {
       try {
         await this.onDestroy();
+        this.onDestroy = null;
       } catch (e) {
         console.log(e);
       }

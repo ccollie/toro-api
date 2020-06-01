@@ -3,7 +3,7 @@ import OnlineNormalEstimator from './onlineNormalEstimator';
 import { SlidingWindow } from './slidingWindow';
 import { getSlidingWindowDefaults } from './utils';
 
-function calcBuckets(duration?: number, period?: number) {
+function calcBuckets(duration?: number, period?: number): number {
   if (!duration || !period) {
     const defaults = getSlidingWindowDefaults();
     duration = duration || defaults.duration;
@@ -11,6 +11,14 @@ function calcBuckets(duration?: number, period?: number) {
   }
   return Math.max(Math.ceil(duration / period) * 10, 1000); // ??
 }
+
+export type SummaryStatsField =
+  | 'count'
+  | 'mean'
+  | 'populationVariance'
+  | 'sampleVariance'
+  | 'populationStdDev'
+  | 'sampleStdDev';
 
 export class SlidingWindowStats {
   private readonly _windows: SlidingWindow<Deque>;
@@ -40,12 +48,12 @@ export class SlidingWindowStats {
     return this._estimator.count;
   }
 
-  update(newValue: number) {
+  update(newValue: number): void {
     this._currentWindow.push(newValue);
     this._estimator.add(newValue);
   }
 
-  rotate({ popped, current }): void {
+  private rotate({ popped, current }): void {
     if (popped !== undefined) {
       for (let i = 0; i < popped.length; i++) {
         const value = popped.get(i);
@@ -86,14 +94,14 @@ export class SlidingWindowStats {
     return Math.sqrt(this.sampleVariance);
   }
 
-  summary() {
+  summary(): Record<SummaryStatsField, number> {
     return {
       count: this._estimator.numSamples,
       mean: this.mean,
       populationVariance: this.populationVariance,
       sampleVariance: this.sampleVariance,
-      populationStdev: this.populationStdev,
-      sampleStdev: this.sampleStdev,
+      populationStdDev: this.populationStdev,
+      sampleStdDev: this.sampleStdev,
     };
   }
 

@@ -57,6 +57,10 @@ export const model = {
     const manager = supervisor.getQueueManager(queue);
     return manager.getRepeatableCount();
   },
+  async jobNames(queue: Queue, args, { supervisor }): Promise<string[]> {
+    const manager = supervisor.getQueueManager(queue);
+    return manager.getJobTypes();
+  },
   rules(queue: Queue, args, { supervisor }): Rule[] {
     const manager = supervisor.getQueueManager(queue);
     return manager.rules;

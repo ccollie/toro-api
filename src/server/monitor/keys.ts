@@ -1,6 +1,7 @@
 import config from '../config';
 import { firstChar } from '../lib/utils';
 import { Queue } from 'bullmq';
+import { StatsGranularity } from '../../types';
 
 const statsPrefix = config.getValue('statsPrefix', 'toro');
 
@@ -10,6 +11,14 @@ export function getHostKey(host: string, tag: string = null): string {
 
 export function getLockKey(host: string): string {
   return getHostKey(host, 'lock');
+}
+
+function getGranularitySuffix(granularity: StatsGranularity): string {
+  if (!granularity) return null;
+  if (granularity === StatsGranularity.Month) {
+    return 'mt';
+  }
+  return firstChar(granularity).toLowerCase();
 }
 
 export function getKey(
@@ -32,11 +41,12 @@ export function getStatsKey(
   queue: Queue,
   jobType: string,
   tag: string,
-  granularity: string = null,
+  granularity?: StatsGranularity,
 ): string {
   let key = getKey(host, queue, jobType, `stats:${tag}`);
-  const suffix = firstChar(granularity);
+  const suffix = getGranularitySuffix(granularity);
   if (suffix) {
+    // todo:
     key = `${key}:1${suffix}`;
   }
   return key;

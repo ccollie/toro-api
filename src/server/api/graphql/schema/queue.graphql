@@ -37,9 +37,14 @@ type QueueWorker {
 }
 
 input QueueStatsInput {
+  """
+  Job name to query for. If not set, the results will be for the queue as a whole
+  """
   jobName: String
   unit: Granularity
+  """The beginning of the range to query"""
   start: DateTime
+  """The end of the range to query"""
   end: DateTime
 }
 
@@ -61,6 +66,7 @@ type Queue {
     asc: Boolean = true
   ): [RepeatableJob!]!
   repeatableCount: Int!
+  jobNames: [String!]!
   workers(limit: Int = 10): [QueueWorker!]!
   latency(input: QueueStatsInput):[StatsSnapshot!]!
   waitTimes(input: QueueStatsInput):[StatsSnapshot!]!
@@ -68,6 +74,7 @@ type Queue {
 }
 
 type PauseQueuePayload {
+  isPaused: Boolean
   success: Boolean
   statusCode: Int
   error: String,
@@ -75,6 +82,7 @@ type PauseQueuePayload {
 }
 
 type ResumeQueuePayload {
+  isPaused: Boolean
   success: Boolean
   statusCode: Int
   error: String,
@@ -97,6 +105,11 @@ type DrainQueuePayload {
   message: String
 }
 
+input DeleteQueueOptions {
+  checkExists: Boolean = false
+  checkActivity: Boolean = true
+}
+
 type DeleteQueuePayload {
   deletedKeys: Int!
   success: Boolean
@@ -109,8 +122,8 @@ type Mutation {
   """
   Pause the queue.
 
-  A paused queue will not process new getJobs until resumed, but current getJobs being processed will continue until
-  they are finalized.
+  A paused queue will not process new jobs until resumed, but current jobs being processed
+  will continue until they are finalized.
   """
   pauseQueue(id: String!): PauseQueuePayload
 
@@ -143,7 +156,7 @@ type Mutation {
     type: JobState = completed
   ): CleanQueuePayload
 
-  deleteQueue(queueId: ID!): DeleteQueuePayload
+  deleteQueue(queueId: ID!, options: DeleteQueueOptions): DeleteQueuePayload
 }
 
 
@@ -171,12 +184,10 @@ type JobErrorRateChangedMessage {
 }
 
 type QueuePausedMessage {
-  queueId: ID!
   result: Boolean
 }
 
 type QueueResumedMessage {
-  queueId: ID!
   result: Boolean
 }
 
@@ -213,7 +224,8 @@ input QueueJobChangesFilter {
   attemptsMade: Int
 }
 
-type QueueJobUpdateMessage {
+"""Provides information on `in-flight` jobs i.e. jobs being processed"""
+type InflightJobUpdatedMessage {
   """The job id"""
   id: String!
   """The current status of the job"""
@@ -231,6 +243,45 @@ type QueueJobUpdateMessage {
   waitTime: Int
 }
 
+"""Peak detection status"""
+enum PeakSignalEnum {
+  """A value was detected above the threshold"""
+  HIGH
+  """A value was detected below the threshold"""
+  LOW
+  """No peak was detected"""
+  NONE
+}
+
+input PeakSubscriptionInput {
+  """
+  Job name to detect peaks for. If omitted, detection is done for all jobs on the queue
+  """
+  jobName: String
+  """Sliding window over which to operate"""
+  window: StatsWindowInput
+  """the z-score at which the algorithm signals a peak"""
+  threshold: Float = 3.5
+  """
+  the influence of new signals on the mean and standard deviation.
+  Between 0 and 1, where 1 is normal influence, 0.5 is half
+  """
+  influence: Float = 0.25
+  """the lag of the moving window"""
+  lag: Int = 0
+}
+
+"""Peak detection message"""
+type PeakMessage {
+  """Peak detection status"""
+  signal: PeakSignalEnum
+  """the value that triggered the signal"""
+  value: Float
+  """The smoothed z-score"""
+  zscore: Float
+}
+
+
 type Subscription {
   jobCountsChanged(queueId: ID!): JobCounts
   jobRateChanged(queueId: ID!): JobRateChangedMessage
@@ -238,11 +289,17 @@ type Subscription {
   """Emits a message when the status of a queue changes"""
   queueStateChanged(queueId: ID!): QueueStateChangedMessage
   """Returns messages when the status of in-flight jobs change"""
-  queueJobUpdates(queueId: ID!, filter: QueueJobChangesFilter): QueueJobUpdateMessage #maybe change name to inflightJobUpdated
+  inflightJobUpdated(queueId: ID!, filter: QueueJobChangesFilter): InflightJobUpdatedMessage
+  """Emit a message when a new latency snapshot of the queue is taken"""
   latencyStatsUpdated(queueId: ID!, jobName: String): StatsSnapshot
+  """Emits a message when a new wait-time snapshot of the queue is taken"""
   waitTimeStatsUpdated(queueId: ID!, jobName: String): StatsSnapshot
   """Subscribes to a change in the list of workers associated with a queue"""
   workersChanged(queueId: ID!): WorkersChangedMessage
   """Subscribes to a change in the count of workers associated with a queue"""
   workersCountChanged(queueId: ID!): WorkersCountChangedMessage
+  """Subscribe for latency peak detection using smoothed z-scores"""
+  latencyPeak(input: PeakSubscriptionInput): PeakMessage
+  """Subscribe for wait-time peak detection using smoothed z-scores"""
+  waitTimePeak(input: PeakSubscriptionInput): PeakMessage
 }

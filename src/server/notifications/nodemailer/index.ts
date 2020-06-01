@@ -83,17 +83,6 @@ function createTransporter(options: MailNotifierConfig) {
 }
 
 /*
- * Handle errors during email transport
- */
-function emailError(err, info) {
-  if (err) {
-    return console.log(err);
-  }
-
-  console.log(info);
-}
-
-/*
  * Any event from monitor can have a template associated with it. If there's
  * one in templates/body/, an email will be sent to notify support teams!
  */
@@ -136,7 +125,11 @@ function init(
   }
 
   function handleEvent(eventName: string) {
-    return function (context: NotificationContext, queue: Queue, data) {
+    return function (
+      context: NotificationContext,
+      queue: Queue,
+      data,
+    ): Promise<any> {
       let msg = getMessageFromTemplate(eventName, context, queue, data);
       if (!msg) {
         msg = getMessage(context, eventName, queue, data);

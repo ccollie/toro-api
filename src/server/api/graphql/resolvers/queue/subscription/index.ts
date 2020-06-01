@@ -5,6 +5,8 @@ import { latencyStatsUpdated } from './latencyStatsUpdated';
 import { waitTimeStatsUpdated } from './waitTimeStatsUpdated';
 import { queueStateChanged } from './queueStateChanged';
 import { workersCountChanged } from './workersCountChanged';
+import { inflightJobUpdated } from './inflightJobUpdated';
+import { latencyPeak, waitTimePeak } from './peakChanged';
 
 export const Subscription = {
   jobCountsChanged: {
@@ -27,5 +29,14 @@ export const Subscription = {
   },
   workersCountChanged: {
     subscribe: workersCountChanged(),
+  },
+  inflightJobUpdated: {
+    subscribe: inflightJobUpdated(),
+  },
+  latencyPeak: {
+    subscribe: latencyPeak(),
+  },
+  waitTimePeak: {
+    subscribe: waitTimePeak(),
   },
 };

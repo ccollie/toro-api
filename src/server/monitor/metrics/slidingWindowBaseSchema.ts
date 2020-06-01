@@ -3,5 +3,5 @@ import { durationSchema } from '../validation/joi';
 
 export default Joi.object().keys({
   duration: durationSchema,
-  period: Joi.number().integer().positive().default(750), // todo: get default from config
+  period: Joi.number().integer().positive().optional(), // todo: get default from config
 });

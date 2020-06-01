@@ -13,6 +13,7 @@ import { BaseMetric } from './baseMetric';
 import { QueueListener } from '../queues';
 import { ObjectSchema } from '@hapi/joi';
 import { Constructor } from 'index';
+export * from './peakDetector';
 
 const metrics = [
   ConsecutiveFailuresMetric,

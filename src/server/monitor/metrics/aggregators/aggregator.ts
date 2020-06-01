@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
 import { EventEmitter } from 'events';
-import slidingWindowSchema from './slidingWindowBaseSchema';
+import slidingWindowSchema from '../slidingWindowBaseSchema';
 import { ObjectSchema } from '@hapi/joi';
 
 export class BaseAggregator extends EventEmitter {
@@ -8,11 +8,11 @@ export class BaseAggregator extends EventEmitter {
     super();
   }
 
-  destroy() {
+  destroy(): void {
     // do not delete
   }
 
-  static get key() {
+  static get key(): string {
     return 'base_aggregator';
   }
 
@@ -29,7 +29,7 @@ export class BaseAggregator extends EventEmitter {
   }
 
   // to override
-  update(value) {
+  update(value): number {
     return value;
   }
 }
@@ -59,7 +59,7 @@ export class NullAggregator extends EventEmitter {
   }
 
   // to override
-  update(value) {
+  update(value): number {
     this._value = value;
     return value;
   }
@@ -82,7 +82,7 @@ export class SlidingWindowAggregator extends BaseAggregator {
     return 500;
   }
 
-  onTick(handler) {
+  onTick(handler): void {
     throw boom.notImplemented('onTick not implemented');
   }
 

@@ -35,12 +35,12 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
   let fn: FilterPredicate;
 
   if (names && names.length > 0) {
-    fn = (rec) => names.includes(rec.name);
+    fn = (rec): boolean => names.includes(rec.name);
     filters.push(fn);
   }
 
   if (states && states.length > 0) {
-    fn = (rec) => states.includes(rec.state);
+    fn = (rec): boolean => states.includes(rec.state);
     filters.push(fn);
   }
 
@@ -60,7 +60,7 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
   return null;
 }
 
-export function queueJobChanges(): GraphQLFieldResolver<any, any> {
+export function inflightJobUpdated(): GraphQLFieldResolver<any, any> {
   const cache = new LRUCache({
     max: 2000,
     maxAge: ms('1 hour'),
@@ -122,6 +122,7 @@ export function queueJobChanges(): GraphQLFieldResolver<any, any> {
       if (isFinishedStatus(eventName)) {
         cache.del(job.id);
       }
+      // todo: how to handle delete ?
     };
 
     JOB_STATES.forEach((eventName) => {

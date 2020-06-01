@@ -147,7 +147,7 @@ export default class OnlineNormalEstimator {
     this.reset();
   }
 
-  reset() {
+  reset(): void {
     this._count = 0;
     this._mean = 0.0;
     this.mS = 0.0;
@@ -159,11 +159,11 @@ export default class OnlineNormalEstimator {
    *
    * @param {number} x Value to add.
    */
-  add(x: number) {
+  add(x: number): void {
     ++this._count;
-    const nextM = this._mean + (x - this._mean) / this._count;
-    this.mS += (x - this._mean) * (x - nextM);
-    this._mean = nextM;
+    const nextMean = this._mean + (x - this._mean) / this._count;
+    this.mS += (x - this._mean) * (x - nextMean);
+    this._mean = nextMean;
   }
 
   /**
@@ -174,7 +174,7 @@ export default class OnlineNormalEstimator {
    * @throws RangeError If the current number of samples
    * is 0.
    */
-  remove(x: number) {
+  remove(x: number): void {
     if (this._count === 0) {
       const msg = 'Cannot remove after 0 samples.';
       throw new RangeError(msg);
@@ -191,7 +191,7 @@ export default class OnlineNormalEstimator {
     --this._count;
   }
 
-  replace(oldValue: number, newValue: number) {
+  replace(oldValue: number, newValue: number): void {
     if (this._count === 0 || oldValue === undefined) {
       return this.add(newValue);
     }
@@ -206,7 +206,7 @@ export default class OnlineNormalEstimator {
     this.mS += (newValue - prevM) * (newValue - this._mean);
   }
 
-  mergeFrom(that: OnlineNormalEstimator) {
+  mergeFrom(that: OnlineNormalEstimator): void {
     const m = this._mean;
     // from http://www.johndcook.com/blog/skewness_kurtosis/
     const both = this._count + that._count;

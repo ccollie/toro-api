@@ -30,6 +30,11 @@ const hosts = new Map<string, HostManager>();
 const queueManagerMap = new WeakMap<Queue, QueueManager>();
 let notifications: NotificationManager;
 
+export type QueueDeleteOptions = {
+  checkExists: boolean;
+  checkActivity?: boolean;
+};
+
 /**
  * A single class which manages all hosts and queues registered
  * with the system
@@ -121,7 +126,14 @@ export class Supervisor {
     return manager && manager.queue;
   }
 
-  async deleteQueue(queue: Queue | string) {
+  async deleteQueue(
+    queue: Queue | string,
+    options?: QueueDeleteOptions,
+  ): Promise<number> {
+    const opts = Object.assign(
+      { checkExists: false, checkActivity: true },
+      options || {},
+    );
     const manager = this.getQueueManager(queue);
     if (!manager) {
       let fragment;
@@ -131,6 +143,37 @@ export class Supervisor {
         fragment = `name "${queue.name}"`;
       }
       throw boom.notFound(`no queue found with ${fragment}`);
+    } else if (opts.checkExists) {
+      const metaKey = manager.queue.keys.meta;
+      const client = await manager.queue.client;
+      const queueExists = await client.exists(metaKey);
+
+      if (!queueExists) {
+        throw boom.notFound(`Queue "${manager.queue.name}" not found in db`);
+      }
+    }
+    if (opts.checkActivity) {
+      const [actives, workers] = await Promise.all([
+        manager.queue.getActiveCount(),
+        manager.queue.getWorkers(),
+      ]);
+
+      const msgParts: string[] = [`Queue "${manager.queue.name}" has `];
+
+      if (actives > 0) {
+        msgParts.push(`${actives} active jobs`);
+      }
+
+      if (workers.length > 0) {
+        if (msgParts.length > 1) {
+          msgParts.push(' and ');
+        }
+        msgParts.push(`${workers.length} workers`);
+      }
+
+      if (msgParts.length > 1) {
+        throw boom.badRequest(msgParts.join(''));
+      }
     }
     const hostManager = this.getHost(manager.host);
     hostManager.removeQueue(manager.queue);
@@ -163,7 +206,9 @@ export class Supervisor {
   }
 
   get hosts(): HostManager[] {
-    return Array.from(hosts.values());
+    return Array.from(hosts.values()).sort((a, b) => {
+      return a.name === b.name ? 0 : a.name > b.name ? 1 : -1;
+    });
   }
 
   waitUntilReady(): Promise<void> {

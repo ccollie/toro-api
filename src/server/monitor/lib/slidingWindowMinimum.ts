@@ -20,7 +20,7 @@ export class SlidingWindowMinimum extends EventEmitter {
     this.slidingWindow.onTick((data) => this.onTick(data));
   }
 
-  destroy() {
+  destroy(): void {
     this.slidingWindow.destroy();
   }
 
@@ -32,11 +32,11 @@ export class SlidingWindowMinimum extends EventEmitter {
     return this.slidingWindow.period;
   }
 
-  static get DEFAULT_VALUE() {
+  static get DEFAULT_VALUE(): number {
     return DEFAULT_VALUE;
   }
 
-  onTick({ popped }) {
+  onTick({ popped }): void {
     if (popped) {
       // If the min recorded value is leaving the sliding window,
       // we need to calculate the min of the remaining slices
@@ -53,7 +53,7 @@ export class SlidingWindowMinimum extends EventEmitter {
     this.slidingWindow.current = DEFAULT_VALUE;
   }
 
-  update(newVal: number) {
+  update(newVal: number): number {
     const now = systemClock.now();
     const old = this.value;
 

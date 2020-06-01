@@ -86,8 +86,8 @@ export function $nor(
     Array.isArray(value),
     'Invalid expression. $nor expects value to be an Array',
   );
-  const f = $or(context, '$or', value);
-  return (obj, ctx): boolean => !f(obj, ctx);
+  const fn = $or(context, '$or', value);
+  return (obj, ctx): boolean => !fn(obj, ctx);
 }
 
 /**

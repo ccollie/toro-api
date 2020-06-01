@@ -129,6 +129,7 @@ export class QueueBus {
   }
 
   private _formatData(data = {}): any {
+    // TODO: also need to add queueId
     return { [SENDER_ID_KEY]: this._senderId, ...data };
   }
 
@@ -144,6 +145,7 @@ export class QueueBus {
   private _onBusMessage(data): Promise<void> {
     if (data) {
       const { event, ...rest } = data;
+      // TODO: also check for queueId
       if (data[SENDER_ID_KEY] !== this._senderId) {
         return this._localEmit(event, rest);
       }

@@ -1,6 +1,6 @@
 import { CleanOptions, QueueService } from '../services/queues';
 import { JobData, JobService } from '../services/jobs';
-import { EventHandlerMap, JobId } from '../services/types';
+import { JobId } from '../services/types';
 import { WorkerService } from '../services/workers';
 import { MetricsService, MetricType } from '../services/metrics';
 import {
@@ -19,15 +19,6 @@ class JobsClient {
 
   get host(): string {
     return this.queue.host;
-  }
-
-  /**
-   * Subscribe to receive job updates
-   * @param {string | number} jobId
-   * @param {EventHandlerMap?} handlers
-   */
-  subscribe(jobId: JobId, handlers?: EventHandlerMap) {
-    return this.service.subscribe(this.host, this.queue.name, jobId, handlers);
   }
 
   /**

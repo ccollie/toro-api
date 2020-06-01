@@ -39,7 +39,7 @@ export class SumAggregator extends SlidingWindowAggregator {
     return this.sum.period;
   }
 
-  update(value) {
+  update(value: number): number {
     return this.sum.update(value);
   }
 

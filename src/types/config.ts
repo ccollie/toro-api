@@ -1,7 +1,7 @@
 import { RedisOptions } from 'ioredis';
 
 export interface QueueConfig {
-  /** Unique, system generated id based on host/port/db */
+  /** Unique, system generated id based on host/port/db/queue name */
   id?: string;
   /** Queue name */
   name: string;

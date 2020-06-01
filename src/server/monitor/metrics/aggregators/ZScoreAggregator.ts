@@ -5,13 +5,13 @@ import {
   StreamingZScoreOptions,
   SlidingWindowOptions,
 } from '../../lib';
-import baseSchema from './slidingWindowBaseSchema';
+import baseSchema from '../slidingWindowBaseSchema';
 import { ObjectSchema } from '@hapi/joi';
 
 const schema = baseSchema.keys({
   threshold: Joi.number().description('std deviations').positive().default(3.5),
   influence: Joi.number().positive().default(0.5),
-  lag: Joi.number().integer().positive().default(10),
+  lag: Joi.number().integer().positive().default(0),
 });
 
 /**
@@ -68,11 +68,11 @@ export class ZScoreAggregator extends SlidingWindowAggregator {
     return this.zscore.period;
   }
 
-  update(value) {
+  update(value: number): number {
     return this.zscore.update(value);
   }
 
-  onTick(handler) {
+  onTick(handler): void {
     this.zscore.onTick(handler);
     // return () => this._windows.off('tick', handler);
   }

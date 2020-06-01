@@ -1,10 +1,20 @@
+import ms from 'ms';
 import { Queue } from 'bullmq';
-import { StatsClient } from './statsClient';
+import { StatsClient, StatsMetricType, StatsWriteOptions } from './statsClient';
 import cron from 'node-cron';
 import { random } from 'lodash';
 import PQueue from 'p-queue';
-import { QueueConfig } from '@src/types';
+import { QueueConfig, StatisticalSnapshot, StatsGranularity } from '@src/types';
 import { systemClock } from '../../lib/clock';
+import {
+  parseTimestamp,
+  roundDate,
+  roundDown,
+  roundToNearest,
+  roundUp,
+} from '../../lib/datetime';
+import { aggregateHistograms, getPrevUnit } from './utils';
+import { addMilliseconds, isBefore } from 'date-fns';
 
 const CONFIG = {
   units: ['minutes', 'hours', 'days', 'weeks'],
@@ -87,24 +97,151 @@ export class StatsAggregator {
       : [];
   }
 
-  async rollup(unit: string) {
-    const types = ['latency', 'wait'];
+  private getKey(
+    jobType: string,
+    metric: string,
+    granularity: StatsGranularity,
+  ): string {
+    return this.statsClient.getKey(jobType, metric, granularity);
+  }
+
+  private async getUpdateMetadata(
+    jobType: string,
+    type: StatsMetricType,
+    unit: StatsGranularity,
+    prevUnit: StatsGranularity,
+  ): Promise<Record<string, any>> {
+    const srcKey = this.getKey(jobType, type, prevUnit);
+    const destKey = this.getKey(jobType, type, unit);
+
+    const [srcSpan, destSpan] = await Promise.all([
+      this.statsClient.getSpan(jobType, type, prevUnit),
+      this.statsClient.getSpan(jobType, type, unit),
+    ]);
+
+    const interval = ms(`1 ${unit}`);
+
+    if (srcSpan) {
+      srcSpan.start = parseTimestamp(srcSpan.start);
+      srcSpan.end = parseTimestamp(srcSpan.end);
+    }
+
+    if (destSpan) {
+      destSpan.start = parseTimestamp(destSpan.start);
+      destSpan.end = parseTimestamp(destSpan.end);
+    }
+    const srcLastWrite = srcSpan && srcSpan.end;
+    const destLastWrite = destSpan && destSpan.end;
+
+    const shouldUpdate =
+      srcLastWrite &&
+      (!destLastWrite || srcLastWrite - destLastWrite >= interval);
+
+    return {
+      srcKey,
+      srcLastWrite,
+      destKey,
+      destLastWrite,
+      interval,
+      srcSpan,
+      destSpan,
+      shouldUpdate,
+    };
+  }
+
+  private async rollupInternal(
+    jobType: string,
+    type: StatsMetricType,
+    unit: StatsGranularity,
+  ): Promise<boolean> {
+    const prevUnit = getPrevUnit(unit);
+    const {
+      srcKey,
+      destKey,
+      destLastWrite,
+      interval,
+      shouldUpdate,
+      srcSpan,
+    } = await this.getUpdateMetadata(jobType, type, unit, prevUnit);
+
+    if (!shouldUpdate) {
+      return false;
+    }
+
+    let count = 0;
+
+    const update = async (start): Promise<boolean> => {
+      const ts = roundUp(start, interval); // subtract 1 ms ???
+      const end = addMilliseconds(ts, -1);
+      const data = await this.statsClient.getRange<StatisticalSnapshot>(
+        srcKey,
+        start,
+        end,
+      );
+
+      if (!data.length) {
+        return false;
+      }
+
+      console.log(
+        `Aggregating ${data.length} records (${start} - ${end}) to destination ${destKey}`,
+      );
+
+      const snapshot = aggregateHistograms(data);
+      snapshot.startTime = parseTimestamp(roundToNearest(start, interval));
+      snapshot.endTime = parseTimestamp(ts);
+
+      const options: StatsWriteOptions = {
+        jobType,
+        type,
+        ts,
+        unit,
+      };
+
+      this.statsClient.writeSnapshot(snapshot, options);
+      count += data.length;
+
+      return true;
+    };
+
+    let start;
+
+    if (destLastWrite) {
+      start = addMilliseconds(destLastWrite, 1);
+    } else {
+      start = roundDown(addMilliseconds(srcSpan.start, -1), interval);
+    }
+
+    const end = roundDate(srcSpan.end, interval);
+    while (isBefore(start, end)) {
+      // todo: check higher level, fill in gaps if necessary
+      await update(start);
+      start = addMilliseconds(start, interval);
+    }
+
+    console.log(`${count} written to ${destKey}`);
+
+    return true;
+  }
+
+  private async rollup(unit: StatsGranularity): Promise<void> {
+    const types: StatsMetricType[] = ['latency', 'wait'];
 
     const actions = types.map((type) => {
-      return () => this.statsClient.rollup(null, type, unit);
+      return () => this.rollupInternal(null, type, unit);
     });
 
     this.getJobTypes().forEach((jobType) => {
       types.forEach((type) => {
-        actions.push(() => this.statsClient.rollup(jobType, type, unit));
+        actions.push(() => this.rollupInternal(jobType, type, unit));
       });
     });
 
     // todo: also aggregate at the host level
-    return this.workQueue.addAll(actions);
+    await this.workQueue.addAll(actions);
   }
 
-  run(unit: string): void {
+  run(unit: StatsGranularity): void {
     if (this._done) return;
     if (this.hasLock) {
       // add a fudge factor to ensure we encompass the end of

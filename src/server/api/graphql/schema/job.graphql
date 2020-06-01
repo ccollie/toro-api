@@ -156,7 +156,9 @@ input JobOptionsInput {
 }
 
 input JobOptionsRepeatInput {
+  """Timezone"""
   tz: String
+  """Timestamp for the end date of the repeating series"""
   endDate: DateTime
   limit: Int
 }
@@ -177,30 +179,81 @@ input JobOptionsRepeatEveryInput {
 }
 
 input JobOptionsCronInput {
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that
+  using priorities has a slight impact on performance, so do not use it if not required.
+  """
   priority: Int
+  """
+  An amount of miliseconds to wait until this job can be processed.
+  Note that for accurate delays, worker and producers should have their
+  clocks synchronized.
+  """
   delay: Int
+  """The total number of attempts to try the job until it completes."""
   attempts: Int
   backoff: Int
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
   lifo: Boolean
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
   timeout: Int
   jobId: String
+  """
+  If true, removes the job when it successfully completes
+  """
   removeOnComplete: Boolean
+  """
+  If true, removes the job when it fails after all attempts.
+  """
   removeOnFail: Boolean
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
   stackTraceLimit: Int
   repeat: JobOptionsRepeatCronInput!
 }
 
 input JobOptionsEveryInput {
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that
+  using priorities has a slight impact on performance, so do not use it if not required.
+  """
   priority: Int
+  """
+  An amount of miliseconds to wait until this job can be processed.
+  Note that for accurate delays, worker and producers should have their
+  clocks synchronized.
+  """
   delay: Int
+  """The total number of attempts to try the job until it completes."""
   attempts: Int
   backoff: Int
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
   lifo: Boolean
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
   timeout: Int
   jobId: String
+  """
+  If true, removes the job when it successfully completes
+  """
   removeOnComplete: Boolean
+  """
+  If true, removes the job when it fails after all attempts.
+  """
   removeOnFail: Boolean
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
   stackTraceLimit: Int
+  """Repeat options"""
   repeat: JobOptionsRepeatEveryInput!
 }
 
@@ -251,10 +304,13 @@ type Job {
   name: String
   state: JobState
   opts: JobOptions
+  """User defined job data"""
   data: JSON
   delay: Int
   progress: JobProgress
+  """The total number of attempts made to this point."""
   attemptsMade: Int
+  """The timestamp of when the job was finished (completed or failed)"""
   finishedOn: DateTime
   processedOn: DateTime
   timestamp: DateTime!
@@ -263,13 +319,6 @@ type Job {
   returnvalue: JSON
   logs(start: Int = 0, end: Int = -1): JobLogs!
 }
-
-type JobResultList {
-  hasNextPage: Boolean!
-  cursor: String
-  jobs: [Job!]
-}
-
 
 extend type Query {
   job(queueId: ID!, id: ID!): Job
@@ -283,18 +332,20 @@ type DeleteBulkJobsPayload {
   message: String
 }
 
+input AddJobInput {
+  queueId: ID!,
+  jobName: String!
+  data: JSON!
+  options: JobOptionsInput
+}
+
 type AddJobLogPayload {
   id: ID!
   count: Int!
 }
 
 extend type Mutation {
-  addJob(
-    queueId: ID!,
-    jobName: String!
-    data: JSON!
-    options: JobOptionsInput
-  ): AddJobPayload
+  addJob(input: AddJobInput): AddJobPayload
   addBulkJobs(queueId: ID!, jobs: [JobOptionsInput]): AddBulkJobsPayload
   addRepeatableCronJob(
     queueId: ID!,
@@ -344,7 +395,7 @@ type JobLogAddedMessage {
   """the job id"""
   id: ID!
   """the added log item"""
-  row: String
+  row: String!
   """the number of log items after the addition"""
   count: Int
 }

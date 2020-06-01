@@ -155,6 +155,7 @@ export class HostManager {
     const queueConfigs = [...config.queues];
     if (config.autoDiscoverQueues) {
       const queues = await this.discoverQueues();
+      // TODO: use queue prefix if bullOpts.prefix not set
       queues.forEach((name) => {
         const cfg: QueueConfig = {
           name,
@@ -214,7 +215,13 @@ export class HostManager {
   }
 
   getQueues(): Queue[] {
-    return this.queueManagers.map((mgr) => mgr.queue);
+    return this.queueManagers
+      .map((mgr) => mgr.queue)
+      .sort((a, b) => {
+        const nameA = a.name;
+        const nameB = b.name;
+        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+      });
   }
 
   async waitUntilReady(): Promise<void> {

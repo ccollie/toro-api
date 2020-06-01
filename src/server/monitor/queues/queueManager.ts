@@ -13,7 +13,13 @@ import { getJobTypes } from '../../models/queues';
 import { subscribeToJob } from '../lib/keyspace-utils';
 import { systemClock } from '../../lib/clock';
 import { getStatsKey } from '../keys';
-import { QueueConfig, QueueWorker, RepeatableJob, RuleAlert } from '@src/types';
+import {
+  QueueConfig,
+  QueueWorker,
+  RepeatableJob,
+  RuleAlert,
+  StatsGranularity,
+} from '@src/types';
 import { isEmpty } from 'lodash';
 import { JobStatus } from 'jobs';
 import cronstrue from 'cronstrue/i18n';
@@ -60,13 +66,13 @@ export class QueueManager {
     this.streamAggregator = context.streamAggregator;
     this.rules = [];
     this.queueListener = this.createQueueListener();
+    this.bus = new QueueBus(this.streamAggregator, queue, this.host);
     this.statsClient = new StatsClient(
       this.host,
       queue,
-      config,
+      this.bus,
       context.writer,
     );
-    this.bus = new QueueBus(this.streamAggregator, queue, this.host);
     this.ruleManager = new RuleManager(this.host, queue, this.bus);
     this[JANITOR] = new QueueSweeper(this, config);
     this[STATS_LISTENER] = new StatsListener(
@@ -481,11 +487,27 @@ export class QueueManager {
     return this.subscribeToStream(key, offset, handler);
   }
 
-  async subscribeLatency(jobType: string, handler): Promise<() => void> {
-    return this.subscribeToQueue(jobType, 'latency', '$', handler);
+  async subscribeLatency(
+    jobType: string,
+    granularity: StatsGranularity,
+    handler,
+  ): Promise<Function> {
+    const listener = (data: any) => {
+      if (data) {
+        const good =
+          (!data.jobType || data.jobType === jobType) &&
+          (!data.granularity || data.granularity === granularity);
+        if (good) return handler(data);
+      }
+    };
+    return this.bus.on('stats.added', listener);
   }
 
-  async subscribeWaitTime(jobType: string, handler) {
+  async subscribeWaitTime(
+    jobType: string,
+    granularity: StatsGranularity,
+    handler,
+  ) {
     return this.subscribeToQueue(jobType, 'wait', '$', handler);
   }
 

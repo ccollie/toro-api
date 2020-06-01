@@ -51,7 +51,7 @@ const emptyStatisticalSnapshot: StatisticalSnapshot = {
   endTime: undefined,
 };
 
-export function getPrevUnit(unit: string): string {
+export function getPrevUnit(unit: StatsGranularity): StatsGranularity {
   return CONFIG.prevUnit[unit];
 }
 

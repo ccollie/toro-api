@@ -8,9 +8,9 @@ import { ObjectSchema } from '@hapi/joi';
 export interface CounterBasedMetricOpts {
   window: StatsWindow;
   eventName?: string;
+  jobNames?: string[];
 }
 
-// TODO: For all these disallow aggregates ?
 export class CounterBasedMetric extends BaseMetric {
   private readonly counter: SlidingWindowCounter;
 
@@ -35,12 +35,12 @@ export class CounterBasedMetric extends BaseMetric {
     return schema;
   }
 
-  destroy() {
+  destroy(): void {
     this.counter.destroy();
     super.destroy();
   }
 
-  baseUpdate(value: number) {
+  baseValue(value: number): number {
     return this.counter.set('count', value);
   }
 

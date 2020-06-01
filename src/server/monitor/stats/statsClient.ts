@@ -1,27 +1,14 @@
-import ms from 'ms';
 import pAll from 'p-all';
 import { Queue } from 'bullmq';
 import { WriteCache } from '../../redis';
-import {
-  roundDown,
-  roundUp,
-  parseTimestamp,
-  roundToNearest,
-  roundDate,
-} from '../../lib/datetime';
+import { roundDown, roundUp, parseTimestamp } from '../../lib/datetime';
 import { AbstractHistogram } from 'hdr-histogram-js';
-import {
-  aggregateHistograms,
-  getSnapshot,
-  stringEncode,
-  getPrevUnit,
-} from './utils';
-import { addMilliseconds, isAfter, isBefore } from 'date-fns';
+import { getSnapshot, stringEncode } from './utils';
+import { addMilliseconds, isAfter } from 'date-fns';
 import { Timespan } from 'timespan';
-import { QueueListener } from '../queues';
+import { QueueBus, QueueListener } from '../queues';
 import { StatsListener } from './statsListener';
 import { getStatsKey, getQueueBusKey, getQueueMetaKey } from '../keys';
-import { QueueConfig } from 'config';
 import {
   StatisticalSnapshot,
   StatisticalSnapshotOptions,
@@ -35,25 +22,29 @@ const STATS_LISTENER = Symbol('stats listener');
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
+export type StatsMetricType = 'latency' | 'wait';
+
+export type StatsWriteOptions = {
+  jobType: string;
+  ts: number | Date;
+  type: StatsMetricType;
+  unit?: StatsGranularity;
+};
+
 /**
  * A helper class responsible for managing collected queue stats in redis
  */
 export class StatsClient {
   readonly queue: Queue;
+  private readonly bus: QueueBus;
   private readonly writer: WriteCache;
   private readonly host: string;
-  private readonly queueConfig: QueueConfig;
 
-  constructor(
-    host: string,
-    queue: Queue,
-    config: QueueConfig,
-    writer: WriteCache,
-  ) {
+  constructor(host: string, queue: Queue, bus: QueueBus, writer: WriteCache) {
     this.queue = queue;
     this.writer = writer;
     this.host = host;
-    this.queueConfig = config;
+    this.bus = bus;
     const listener = (this[QUEUE_LISTENER] = new QueueListener(host, queue));
     this[STATS_LISTENER] = new StatsListener(listener, this);
   }
@@ -77,7 +68,12 @@ export class StatsClient {
     return getQueueBusKey(this.queue);
   }
 
-  cleanup(jobType: string, type: string, unit: string, retention: number) {
+  cleanup(
+    jobType: string,
+    type: StatsMetricType,
+    unit: StatsGranularity,
+    retention: number,
+  ) {
     const srcKey = this.getKey(jobType, type, unit);
     const multi = this.writer.multi;
 
@@ -125,12 +121,12 @@ export class StatsClient {
     return this.getRange<StatisticalSnapshot>(key, start, end);
   }
 
-  async getSpan(jobType: string, tag: string, unit: string) {
+  async getSpan(jobType: string, tag: string, unit: StatsGranularity) {
     const key = this.getKey(jobType, tag, unit);
     return this.call('span', key);
   }
 
-  async getLast(jobType: string, tag: string, unit: string) {
+  async getLast(jobType: string, tag: string, unit: StatsGranularity) {
     const key = this.getKey(jobType, tag, unit);
     return this.call('last', key);
   }
@@ -192,65 +188,6 @@ export class StatsClient {
     }
   }
 
-  async rollup(jobType: string, type: string, unit: string): Promise<boolean> {
-    const prevUnit = getPrevUnit(unit);
-    const {
-      srcKey,
-      destKey,
-      destLastWrite,
-      interval,
-      shouldUpdate,
-      srcSpan,
-    } = await this.getUpdateMetadata(jobType, type, unit, prevUnit);
-
-    if (!shouldUpdate) {
-      return false;
-    }
-
-    let count = 0;
-
-    const update = async (start): Promise<boolean> => {
-      const ts = roundUp(start, interval); // subtract 1 ms ???
-      const end = addMilliseconds(ts, -1);
-      const data = await this.getRange<StatisticalSnapshot>(srcKey, start, end);
-
-      if (!data.length) {
-        return false;
-      }
-
-      console.log(
-        `Aggregating ${data.length} records (${start} - ${end}) to destination ${destKey}`,
-      );
-
-      const snapshot = aggregateHistograms(data);
-      snapshot.startTime = parseTimestamp(roundToNearest(start, interval));
-      snapshot.endTime = parseTimestamp(ts);
-      await this.writeStatsInternal(destKey, ts, snapshot);
-      count += data.length;
-
-      return true;
-    };
-
-    let start;
-
-    if (destLastWrite) {
-      start = addMilliseconds(destLastWrite, 1);
-    } else {
-      start = roundDown(addMilliseconds(srcSpan.start, -1), interval);
-    }
-
-    const end = roundDate(srcSpan.end, interval);
-    while (isBefore(start, end)) {
-      // todo: check higher level, fill in gaps if necessary
-      await update(start);
-      start = addMilliseconds(start, interval);
-    }
-
-    console.log(`${count} written to ${destKey}`);
-
-    return true;
-  }
-
   updateCounts(data, jobType: string): void {
     // todo: store all this in a single hash
     // global queue counter
@@ -277,20 +214,43 @@ export class StatsClient {
     }
   }
 
-  private writeStatsInternal(key: string, ts, stats: StatisticalSnapshot) {
+  writeSnapshot(stats: StatisticalSnapshot, options: StatsWriteOptions): void {
+    if (!this.hasLock) return;
+
     const multi = this.writer.multi;
-    ts = parseTimestamp(ts);
-    return this._callStats(multi, 'add', key, ts, JSON.stringify(stats));
+    const { type, jobType, unit, ts = systemClock.now() } = options;
+    const _ts = parseTimestamp(ts);
+    const key = this.getKey(jobType, type, unit);
+
+    const value = JSON.stringify(stats);
+    const eventName = `stats.${type}.updated`;
+    const eventData = {
+      jobType,
+      ts: _ts,
+      unit,
+      data: value,
+    };
+    multi.zadd(key, _ts.toString(), value);
+    this.bus.pipelineEmit(multi, eventName, eventData);
   }
 
-  async setCatchupCursor(jobType: string, type: string, unit: string, value) {
+  async setCatchupCursor(
+    jobType: string,
+    type: StatsMetricType,
+    unit: StatsGranularity,
+    value,
+  ) {
     const key = getCursorKey(jobType, type, unit);
     const update = {};
     update[key] = value;
     return this.setMeta(update);
   }
 
-  async getCatchUpCursor(jobType: string, type: string, unit?: string) {
+  async getCatchUpCursor(
+    jobType: string,
+    type: StatsMetricType,
+    unit?: StatsGranularity,
+  ) {
     const key = getCursorKey(jobType, type, unit);
     let meta = await this.getMeta();
     meta = meta || {};
@@ -306,7 +266,7 @@ export class StatsClient {
       await this.setCatchupCursor(null, type, null, end);
     };
 
-    const processMetric = async (type): Promise<void> => {
+    const processMetric = async (type: StatsMetricType): Promise<void> => {
       const cursor = await this.getCatchUpCursor(null, type);
 
       const start = roundDown(cursor, interval);
@@ -345,7 +305,7 @@ export class StatsClient {
   /**
    * Process raw job stats in a given (prior) range. This is mostly for processing
    * previous job entries when the server (us) is down for greater than the sampling
-   * interval. This allows us to preserve prior after restart
+   * interval. This allows us to preserve prior stats after restart
    * @param {number} start
    * @param {number} end
    * @param interval
@@ -373,9 +333,9 @@ export class StatsClient {
     const queueListener = this[QUEUE_LISTENER] as QueueListener;
     const statsListener = this[STATS_LISTENER] as StatsListener;
 
-    function finish(): void {
+    async function finish(): Promise<void> {
       if (unlisten) unlisten();
-      queueListener.unlisten();
+      await queueListener.unlisten();
       clearTimer();
       isCancelled = true;
     }
@@ -392,8 +352,7 @@ export class StatsClient {
         const { ts } = data;
 
         if (isAfter(ts, end) || isCancelled) {
-          finish();
-          resolve();
+          finish().finally(resolve);
           return;
         }
 
@@ -420,50 +379,6 @@ export class StatsClient {
     };
   }
 
-  private async getUpdateMetadata(
-    jobType: string,
-    type: string,
-    unit: string,
-    prevUnit: string,
-  ) {
-    const srcKey = this.getKey(jobType, type, prevUnit);
-    const destKey = this.getKey(jobType, type, unit);
-
-    const [srcSpan, destSpan] = await Promise.all([
-      this.getSpan(jobType, type, prevUnit),
-      this.getSpan(jobType, type, unit),
-    ]);
-
-    const interval = ms(`1 ${unit}`);
-
-    if (srcSpan) {
-      srcSpan.start = parseTimestamp(srcSpan.start);
-      srcSpan.end = parseTimestamp(srcSpan.end);
-    }
-
-    if (destSpan) {
-      destSpan.start = parseTimestamp(destSpan.start);
-      destSpan.end = parseTimestamp(destSpan.end);
-    }
-    const srcLastWrite = srcSpan && srcSpan.end;
-    const destLastWrite = destSpan && destSpan.end;
-
-    const shouldUpdate =
-      srcLastWrite &&
-      (!destLastWrite || srcLastWrite - destLastWrite >= interval);
-
-    return {
-      srcKey,
-      srcLastWrite,
-      destKey,
-      destLastWrite,
-      interval,
-      srcSpan,
-      destSpan,
-      shouldUpdate,
-    };
-  }
-
   /**
    * @private
    * @param hist
@@ -476,7 +391,7 @@ export class StatsClient {
   private _writeHistogram(
     hist: AbstractHistogram,
     jobType: string = null,
-    tag: string,
+    tag: StatsMetricType,
     counts,
     opts: StatisticalSnapshotOptions,
   ): void {
@@ -488,8 +403,13 @@ export class StatsClient {
 
       intervalSnapshot.data = stringEncode(hist);
 
-      const key = this.getKey(jobType, tag);
-      this.writeStatsInternal(key, opts.endTime, intervalSnapshot);
+      const options: StatsWriteOptions = {
+        jobType,
+        type: tag,
+        ts: opts.endTime,
+      };
+
+      this.writeSnapshot(intervalSnapshot, options);
 
       // todo: add completed and failed to queue, queue + jobtype, host
       this.updateCounts(intervalSnapshot, jobType);
@@ -514,16 +434,20 @@ export class StatsClient {
     return (client as any).stats(key, this.busKey, method, ...args);
   }
 
-  call(method: string, key: string, ...args): Promise<any> {
+  private call(method: string, key: string, ...args): Promise<any> {
     return this._callStats(this.client, method, key, ...args);
   }
 
-  getKey(jobType: string, tag: string, unit = null): string {
+  getKey(jobType: string, tag: string, unit?: StatsGranularity): string {
     return getStatsKey(null, this.queue, jobType, tag, unit);
   }
 }
 
-function getCursorKey(jobType: string, type: string, unit: string): string {
+function getCursorKey(
+  jobType: string,
+  type: string,
+  unit: StatsGranularity = null,
+): string {
   jobType = jobType || '__QUEUE__';
   const key = [jobType, type, unit].filter((value) => !!value).join('-');
   return `cursor:${key}`;

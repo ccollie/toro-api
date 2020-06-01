@@ -19,8 +19,3 @@ Object.keys(expressionOperators).forEach((key) => {
 OPERATORS[OP_GROUP] = {};
 OPERATORS[OP_PROJECTION] = projectionOperators;
 OPERATORS[OP_QUERY] = queryOperators;
-
-export const SYSTEM_OPERATORS = [
-  [OP_EXPRESSION, expressionOperators],
-  [OP_QUERY, queryOperators],
-];

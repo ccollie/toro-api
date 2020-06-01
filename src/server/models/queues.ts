@@ -146,8 +146,10 @@ export async function queueIsPaused(queue: Queue): Promise<boolean> {
   return !!(paused && parseInt(paused));
 }
 
-export async function discoverJobTypes(queue: Queue): Promise<string[]> {
-  const expiration = ms('5 min'); // todo: make a config value
+export async function discoverJobNames(
+  queue: Queue,
+  expiration: number,
+): Promise<string[]> {
   const client = await queue.client;
   const destKey = queue.toKey('jobTypes');
 
@@ -173,12 +175,14 @@ export async function discoverJobTypes(queue: Queue): Promise<string[]> {
 export async function getJobTypes(
   hostName: string,
   queue: Queue,
+  expiration?: number,
 ): Promise<string[]> {
   const config = getQueueConfig(hostName, queue.name);
   if (config && config.jobTypes && config.jobTypes.length) {
     return config.jobTypes;
   } else {
-    return discoverJobTypes(queue);
+    expiration = expiration || ms('5 sec');
+    return discoverJobNames(queue, expiration);
   }
 }
 
