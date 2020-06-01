@@ -32,7 +32,7 @@ export function debounce(
   }
 
   function onTimeout(): void {
-    const elapsed = systemClock.now() - timestamp;
+    const elapsed = systemClock.getTime() - timestamp;
 
     if (elapsed < wait && elapsed > 0) {
       timer = setTimeout(onTimeout, wait - elapsed);
@@ -48,7 +48,7 @@ export function debounce(
   return function debounced(...args): any {
     context = this;
     args.push([...args]);
-    timestamp = systemClock.now();
+    timestamp = systemClock.getTime();
     const callNow =
       (opts.immediate && !timer) ||
       (opts.maxItems && args.length >= opts.maxItems);

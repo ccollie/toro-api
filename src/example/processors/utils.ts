@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import PD from 'probability-distributions';
+import { random } from 'unirand';
 import { format, startOfDay, differenceInSeconds } from 'date-fns';
 
 export function getRandomString(length: number): string {
@@ -42,7 +42,7 @@ export function getRandDistArray(n: number, total: number): number[] {
 
 const DATE_FORMAT = 'yyyy-MM-dd';
 
-export function getTimestampString(date = undefined) {
+export function getTimestampString(date = undefined): string {
   date = date || new Date();
   const dayStart = startOfDay(date);
   const secs = differenceInSeconds(date, dayStart);
@@ -82,5 +82,5 @@ export function formatBytes(num: number): string {
 }
 
 export function rand(min: number, max: number): number {
-  return Math.floor(PD.prng() * (max - min + 1)) + min;
+  return Math.floor(random() * (max - min + 1)) + min;
 }

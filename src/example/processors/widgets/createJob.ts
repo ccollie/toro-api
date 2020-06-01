@@ -20,5 +20,3 @@ export function createJob(queue: Queue, orderNumber: string): Promise<Job> {
     opts,
   );
 }
-
-module.exports = createJob;

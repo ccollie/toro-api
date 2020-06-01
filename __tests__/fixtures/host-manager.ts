@@ -1,0 +1,22 @@
+import { HostConfig } from '../../src/types';
+import { DEFAULT_CLIENT_OPTIONS } from '../server/utils';
+import { getUniqueId } from '../../src/server/lib';
+import { HostManager } from '../../src/server/hosts';
+
+function createConfig(defaults?: Partial<HostConfig>): HostConfig {
+  return {
+    allowDynamicQueues: false,
+    autoDiscoverQueues: false,
+    connection: DEFAULT_CLIENT_OPTIONS,
+    queues: [],
+    channels: [],
+    id: getUniqueId(),
+    name: 'host-' + getUniqueId(),
+    ...(defaults || {})
+  };
+}
+
+export function createHostManager(config?: Partial<HostConfig>): HostManager {
+  const hostConfig = createConfig(config);
+  return new HostManager(hostConfig);
+}

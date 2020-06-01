@@ -20,7 +20,7 @@ async function run() {
   await supervisor.waitUntilReady();
 
   const queues = supervisor.hosts.reduce((res, host) => {
-    res.push(host.getQueues());
+    res.push(...host.getQueues());
     return res;
   }, []);
 

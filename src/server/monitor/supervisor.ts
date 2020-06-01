@@ -3,17 +3,15 @@ import pMap from 'p-map';
 import boom from '@hapi/boom';
 import prexit from 'prexit';
 import { isString, isNil } from 'lodash';
-import { HostManager } from './hostManager';
 import { Queue } from 'bullmq';
-import { QueueManager, QueueListener } from './queues';
-import { NotificationManager } from '../notifications';
-import { getKeyRegex } from './keys';
-import { formatSnapshot } from './stats/utils';
-import { registerDeserializer } from '../redis/streams';
-import { packageInfo } from '../packageInfo';
+import { QueueManager, QueueListener } from '../queues';
+import { getKeyRegex, logger } from '../lib';
+import { formatSnapshot } from '../stats/utils';
+import { registerDeserializer } from '../redis';
 import config from '../config';
-import { getHosts } from '../config/host-config';
-import { AppInfo } from 'app-info';
+import { getHosts, HostManager } from '../hosts';
+import { AppInfo } from '../../types';
+import { registerHelpers } from '../lib/hbs';
 
 // setup stream deserializers
 function initStreams(): void {
@@ -28,7 +26,11 @@ let _isInit = false;
 
 const hosts = new Map<string, HostManager>();
 const queueManagerMap = new WeakMap<Queue, QueueManager>();
-let notifications: NotificationManager;
+
+export type QueueDeleteOptions = {
+  checkExists: boolean;
+  checkActivity?: boolean;
+};
 
 /**
  * A single class which manages all hosts and queues registered
@@ -38,16 +40,20 @@ export class Supervisor {
   private static instance: Supervisor;
 
   private queueManagersById: Map<string, QueueManager>;
+  private hostManagerByQueue: Map<string, HostManager> = new Map<
+    string,
+    HostManager
+  >();
+
   private initialized: Promise<void> = null;
 
   constructor() {
     this.initialized = this.init().catch((err) => {
-      console.log(err);
+      logger.warn(err);
     });
   }
 
   async destroy(): Promise<void> {
-    await notifications.destroy();
     const dtors = Array.from(hosts.values()).map((x) => () => x.destroy());
     await pSettle(dtors);
     _isInit = false;
@@ -65,12 +71,9 @@ export class Supervisor {
 
   private async init(): Promise<void> {
     const hostConfigs = getHosts();
-    const appInfo = Supervisor.getAppInfo();
 
-    notifications = new NotificationManager(appInfo, hostConfigs);
-
-    hostConfigs.forEach((host, index) => {
-      const manager = new HostManager(host, notifications);
+    hostConfigs.forEach((host) => {
+      const manager = new HostManager(host);
       hosts.set(host.name, manager);
     });
 
@@ -85,7 +88,7 @@ export class Supervisor {
     _isInit = true;
   }
 
-  getQueueListener(queue: Queue): QueueListener {
+  getQueueListener(queue: Queue | string): QueueListener {
     const manager = this.getQueueManager(queue);
     return manager && manager.queueListener;
   }
@@ -94,26 +97,48 @@ export class Supervisor {
     return hostName && hosts.get(hostName);
   }
 
-  getQueue(hostName: string, name: string): Queue {
+  getHostById(id: string): HostManager {
+    const values = Array.from(hosts.values());
+    return values.find((host) => host.id === id);
+  }
+
+  getQueue(hostName: string, prefix: string, name: string): Queue {
     const host = this.getHost(hostName);
-    return host && host.getQueue(name);
+    return host && host.getQueue(prefix, name);
   }
 
   getQueueManager(queue: Queue | string): QueueManager {
+    const addToCache = (manager: QueueManager): void => {
+      this.queueManagersById.set(manager.id, manager);
+      queueManagerMap.set(manager.queue, manager);
+    };
+
     if (isNil(queue)) return null;
     if (!this.queueManagersById) {
       this.queueManagersById = new Map<string, QueueManager>();
       this.hosts.forEach((host) => {
-        host.queueManagers.forEach((manager) => {
-          this.queueManagersById.set(manager.id, manager);
-          queueManagerMap.set(manager.queue, manager);
-        });
+        host.queueManagers.forEach(addToCache);
       });
     }
     if (isString(queue)) {
       return this.queueManagersById.get(queue as string);
     }
-    return queueManagerMap.get(queue);
+
+    let result = queueManagerMap.get(queue);
+    if (!result) {
+      // Hacky. Fix later
+      // this happens if we add a queue after the cache is constructed
+      const hosts = this.hosts;
+      for (let i = 0; i < hosts.length; i++) {
+        const host = hosts[i];
+        result = host.queueManagers.find((manager) => manager.queue === queue);
+        if (result) {
+          addToCache(result);
+          break;
+        }
+      }
+    }
+    return result;
   }
 
   getQueueById(id: string): Queue {
@@ -121,7 +146,79 @@ export class Supervisor {
     return manager && manager.queue;
   }
 
-  async deleteQueue(queue: Queue | string) {
+  getQueueHostManager(queueOrId: Queue | string): HostManager {
+    let result: HostManager;
+    let id: string;
+    let mgr: QueueManager;
+
+    if (isString(queueOrId)) {
+      result = this.hostManagerByQueue.get(queueOrId);
+      id = queueOrId;
+    } else {
+      mgr = this.getQueueManager(queueOrId);
+      if (!mgr) return null; // should not happen !
+      id = mgr.id;
+      result = this.hostManagerByQueue.get(id);
+    }
+    if (!result) {
+      const host = this.hosts.find((host) => {
+        return !!host.getQueueById(id);
+      });
+      if (host) {
+        this.hostManagerByQueue.set(id, host);
+        result = host;
+      }
+    }
+    return result;
+  }
+
+  async ensureQueueExists(queueOrId: Queue | string): Promise<void> {
+    let queue: Queue;
+
+    if (isString(queueOrId)) {
+      queue = this.getQueueById(queueOrId);
+      if (!queue) {
+        throw boom.notFound(`Queue with id#"${queueOrId}" not found`);
+      }
+    } else {
+      queue = queueOrId as Queue;
+    }
+
+    const metaKey = queue.keys.meta;
+    const client = await queue.client;
+    const queueExists = await client.exists(metaKey);
+
+    if (!queueExists) {
+      throw boom.notFound(`Queue "${queue.name}" not found in db`);
+    }
+  }
+
+  async removeQueue(queue: Queue | string): Promise<boolean> {
+    if (!queue) {
+      return false;
+    }
+    const manager = this.getQueueManager(queue);
+    if (manager) {
+      const hostManager = manager.hostManager;
+      if (hostManager) {
+        await hostManager.removeQueue(manager.queue);
+      }
+      this.queueManagersById.delete(manager.id);
+      queueManagerMap.delete(manager.queue);
+      return true;
+    }
+    return false;
+  }
+
+  async deleteQueue(
+    queue: Queue | string,
+    options?: QueueDeleteOptions,
+  ): Promise<number> {
+    const opts = Object.assign(
+      { checkExists: false, checkActivity: true },
+      options || {},
+    );
+
     const manager = this.getQueueManager(queue);
     if (!manager) {
       let fragment;
@@ -132,44 +229,60 @@ export class Supervisor {
       }
       throw boom.notFound(`no queue found with ${fragment}`);
     }
-    const hostManager = this.getHost(manager.host);
-    hostManager.removeQueue(manager.queue);
+    queue = manager.queue as Queue;
 
-    // TODO: send notification as well as subscription event
+    if (opts.checkExists) {
+      await this.ensureQueueExists(queue);
+    }
+
+    if (opts.checkActivity) {
+      const [actives, workers] = await Promise.all([
+        queue.getActiveCount(),
+        queue.getWorkers(),
+      ]);
+
+      const msgParts: string[] = [`Queue "${queue.name}" has `];
+
+      if (actives > 0) {
+        msgParts.push(`${actives} active jobs`);
+      }
+
+      if (workers.length > 0) {
+        if (msgParts.length > 1) {
+          msgParts.push(' and ');
+        }
+        msgParts.push(`${workers.length} workers`);
+      }
+
+      if (msgParts.length > 1) {
+        throw boom.badRequest(msgParts.join(''));
+      }
+    }
+
+    await this.removeQueue(queue);
+
+    // TODO: sendMail notification as well as subscription event
     const count = await manager.removeAllQueueData();
-    queueManagerMap.delete(manager.queue);
     await manager.destroy();
     return count;
   }
 
   static getAppInfo(): AppInfo {
-    const server = config.getValue('server');
-    const env = config.get('env');
-    const title = config.getValue('title', 'el toro');
-    const brand = config.getValue('brand') || 'GuanimaTech';
-    const url = server.host + (server.port ? `:${server.port}` : '');
-    return {
-      title,
-      brand,
-      env,
-      url,
-      version: packageInfo.version,
-      author: packageInfo.author,
-    };
-  }
-
-  get notifications(): NotificationManager {
-    return notifications;
+    return config.get('appInfo');
   }
 
   get hosts(): HostManager[] {
-    return Array.from(hosts.values());
+    return Array.from(hosts.values()).sort((a, b) => {
+      return a.name === b.name ? 0 : a.name > b.name ? 1 : -1;
+    });
   }
 
   waitUntilReady(): Promise<void> {
     return this.initialized;
   }
 }
+
+registerHelpers();
 
 initStreams();
 // todo: do in app

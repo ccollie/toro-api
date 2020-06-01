@@ -5,7 +5,7 @@
   "flushInterval": 1000,
   "defaultSlidingWindow": {
     "duration": "2 mins",
-    "windowSize": "1 sec"
+    "period": "1 sec"
   },
   "lockTTL": 15000,
   "statsPrefix": "toro",
@@ -16,11 +16,20 @@
     "host": "http://localhost",
     "port": 4000
   },
-  "sockets": {
-    "isBatched": true,
-    "batchInterval": 150
+  "mail":  {
+    "message": {
+      "from": "Toro Notifier <my@sender.com>",
+      "to": "recipient@example.com",
+      "bcc": ["mycc@mail.com"]
+    },
+    "transport": {
+      "jsonTransport": true
+    }
   },
-  "queueUrlTemplate": "{{server.host}}:{{server.port}}/queues",
+  "uriTemplates": {
+    "queue": "{{server.host}}:{{server.port}}/queues/{{queue.id}}",
+    "host": "{{server.host}}:{{server.port}}/hosts/{{host.id}}"
+  },
   "retention": "1 month",
   "hosts": [
     {
@@ -28,7 +37,6 @@
       "host": "127.0.0.1",
       "port": 6379,
       "prefix": "bull",
-      "notifiers": ["console", "mail"],
       "queues": [
         {
           "name": "bb_queue",
@@ -47,50 +55,22 @@
         {
           "name": "backup"
         }
-      ]
-    }
-  ],
-  "notifiers": [
-    {
-      "id": "console",
-      "type": "console"
-    },
-    {
-      "id": "default_hook",
-      "type": "webhook",
-      "disable": true,
-      "urls": ["127.0.0.1:4000/hook?event={{event}}"]
-    },
-    {
-      "type": "mail",
-      "id": "secondary_mail",
-      "disable": false,
-      "defaults": {
-        "from": "Toro Notifier <my@sender.com>",
-        "to": "recipient@example.com",
-        "bcc": ["mycc@mail.com"]
-      },
-      "transport": {
-        "jsonTransport": true
-      }
-    },
-    {
-      "id": "mail_main",
-      "type": "mail",
-      "disable": true,
-      "defaults": {
-        "from": "my@sender.com",
-        "bcc": ["mycc@mail.com"]
-      },
-      "transport": {
-        "host": "smtp.ethereal.email",
-        "port": 587,
-        "secure": false,
-        "auth": {
-          "user": "{{MAIL_NOTIFICATION_USER}}",
-          "pass": "{{MAIL_NOTIFICATION_PASSWORD}}"
+      ],
+      "channels": [
+        {
+          "id": "default_hook",
+          "type": "webhook",
+          "name": "Example Webhook",
+          "enabled": false,
+          "url": "127.0.0.1:4000/hook?event={{event}}"
+        },
+        {
+          "type": "mail",
+          "id": "secondary_mail",
+          "name": "Secondary Email",
+          "recipients": "recipient@example.com"
         }
-      }
+      ]
     }
   ]
 }

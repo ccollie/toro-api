@@ -1,12 +1,12 @@
 --[[
       Discover job names
       Input:
-        KEYS[1]   completed key,
-        KEYS[2]   failed key
-        KEYS[3]   delayed key
-        KEYS[4]   active key
-        KEYS[5]   waiting key
-        KEYS[6]   paused key
+        KEYS[1]   COMPLETED key,
+        KEYS[2]   FAILED key
+        KEYS[3]   DELAYED key
+        KEYS[4]   ACTIVE key
+        KEYS[5]   WAITING key
+        KEYS[6]   PAUSED key
         KEYS[7]   scratch key
         KEYS[8]   destination key
 
@@ -59,7 +59,7 @@ end
 if #result > 0 then
     redis.call("sadd", scratchKey, unpack(result))
 
-    local allNames = redis.call("sort", scratchKey, "BY", "nosort", "GET", keyPrefix .. "*->name")
+    local allNames = redis.call("sort", scratchKey, "BY", "nosort", "GET", keyPrefix .. "*->names")
 
     --- in some circumstances, we get non strings in the answer
     result = {}
@@ -70,7 +70,7 @@ if #result > 0 then
     end
     allNames = result
 
-    if #allNames then
+    if #allNames > 0 then
         redis.call("sadd", destination, unpack(allNames))
     end
 

@@ -1,5 +1,4 @@
-import sample from 'lodash/sample';
-import PD from 'probability-distributions';
+import { sample, random } from 'unirand';
 
 const VERBS = [
   'synergize',
@@ -83,9 +82,14 @@ const NOUNS = [
   'protocol',
 ];
 
-export const chooseNoun = (): string => sample(NOUNS);
-export const chooseAdjective = (): string => sample(ADJECTIVES);
-export const chooseVerb = (): string => sample(VERBS);
+function chooseOne(arr: string[]): string {
+  const val = sample(arr, 1);
+  return val[0];
+}
+
+export const chooseNoun = (): string => chooseOne(NOUNS);
+export const chooseAdjective = (): string => chooseOne(ADJECTIVES);
+export const chooseVerb = (): string => chooseOne(VERBS);
 
 export function chooseGerund(): string {
   let verb = chooseVerb();
@@ -97,7 +101,7 @@ export function chooseGerund(): string {
 
 export const chooseProductName = (): string => {
   let description = chooseAdjective();
-  if (Math.random() > 0.2) {
+  if (random() > 0.2) {
     description += ' ' + chooseAdjective();
   }
   const noun = chooseNoun();
@@ -105,13 +109,13 @@ export const chooseProductName = (): string => {
 };
 
 export const chooseProductNames = (count: number): string[] => {
-  const adjectives = PD.sample(ADJECTIVES, count, false);
-  const nouns = PD.sample(NOUNS, count, false);
+  const adjectives = sample(ADJECTIVES, count, { shuffle: true });
+  const nouns = sample(NOUNS, count, { shuffle: true });
 
   const result = [];
   for (let i = 0; i < count; i++) {
     let description = adjectives[i];
-    if (PD.prng() > 0.2) {
+    if (random() > 0.2) {
       description += ' ' + chooseAdjective();
     }
     const noun = nouns[i];

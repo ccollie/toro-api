@@ -3,21 +3,20 @@ import serveStatic from 'serve-static';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import compression from 'compression';
-import routes from './api/rest';
 import config from './config';
 import path from 'path';
-import { errorHandler } from './api/rest/middleware';
 import http from 'http';
-import context from './api/common/context';
-import { Supervisor } from '../server/monitor';
+import { Supervisor } from './monitor';
 
-import { createServer as createApolloServer } from './api/graphql';
+import { createServer as createApolloServer } from './graphql';
+import ms from 'ms';
 
 const app = express();
 
-const port = config.getValue('port', 4000);
+const port = config.get('port') || 4000;
 const env = config.get('env') || 'dev';
 const isProd = env === 'production';
+const isDevelopment = env === 'dev' || env === 'development';
 
 // TODO: get from config ?
 const OriginWhitelist = [
@@ -33,14 +32,14 @@ app.use(
     // based on the `shouldCompress` function above
     filter: (req, res) => {
       if (req.headers['x-no-compression']) {
-        // don't compress responses if this request header is present
+        // don't compress responses if this client header is present
         return false;
       }
 
       // fallback to standard compression
       return compression.filter(req, res);
     },
-    // threshold is the byte threshold for the response body size
+    // deviations is the byte deviations for the response body size
     // before compression is considered, the default is 1kb
     threshold: 0,
   }),
@@ -51,13 +50,16 @@ app.use(cookieParser());
 
 const supervisor = Supervisor.getInstance();
 
-app.locals.context = context;
-app.locals.supervisor = supervisor;
-
 const middleware = {
   app,
   cors: {
-    origin: function (origin, callback) {
+    origin: function (
+      origin: string,
+      callback: (err: Error | null, pass?: boolean) => void,
+    ) {
+      if (isDevelopment) {
+        return callback(null, true);
+      }
       if (OriginWhitelist.indexOf(origin) >= 0 || !origin) {
         callback(null, true);
       } else {
@@ -77,14 +79,12 @@ const middleware = {
       }),
 };
 
-const server = createApolloServer(middleware, context);
+const server = createApolloServer(middleware);
 
-app.use('/api', routes);
 const publicPath = path.resolve(__dirname, '../dist');
 const staticConf = { maxAge: '1hr', etag: true };
 
 app.use(serveStatic(publicPath, staticConf));
-app.use(errorHandler);
 
 app.use((req, res) => {
   res.sendStatus(404);
@@ -93,13 +93,25 @@ app.use((req, res) => {
 const httpServer = http.createServer(app);
 server.installSubscriptionHandlers(httpServer);
 
+const start = Date.now();
 supervisor
   .waitUntilReady()
   .then(() => {
     console.log('Queue monitor started. Starting server');
     httpServer.listen(port, () => {
-      app.locals.appStart = new Date();
-      console.log(`App running on port ${port}!`);
+      const duration = ms(Date.now() - start);
+      const addressInfo: any = httpServer.address();
+      const port: number = 'port' in addressInfo ? addressInfo.port : null;
+      const address: string =
+        'address' in addressInfo
+          ? addressInfo.address === '::'
+          ? 'http://localhost:'
+          : addressInfo.address
+          : '';
+
+      console.log(`Server startup after ${duration}!`);
+      console.log(`🚀 Server ready at ${address}:${port}${server.graphqlPath}`)
+      console.log(`🚀 Subscriptions available at ${server.subscriptionsPath}`)
     });
   })
   .catch((err) => {

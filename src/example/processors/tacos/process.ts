@@ -16,9 +16,7 @@ export const process = async (job: Job): Promise<any> => {
   const { protein, salsa, orderNumber } = data;
   const cookTime = Math.floor(latencies.next().value);
 
-  const logMsg = `queue: ${
-    queue.name
-  } #${orderNumber}: ${protein}, ${salsa} cooking for ${(
+  const logMsg = `queue: ${queue} #${orderNumber}: ${protein}, ${salsa} cooking for ${(
     cookTime / 1000
   ).toFixed(2)}s`;
   console.log(logMsg);
@@ -39,7 +37,7 @@ export const process = async (job: Job): Promise<any> => {
     };
 
     const wake = (): void => {
-      console.log(`${queue.name} #${orderNumber}: ${protein}, ${salsa} served`);
+      console.log(`${queue} #${orderNumber}: ${protein}, ${salsa} served`);
       return resolve();
     };
 

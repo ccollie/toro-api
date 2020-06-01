@@ -3,13 +3,68 @@
 
 import { isDate } from 'lodash';
 
-export interface SystemClock {
-  set(val);
+export interface Clock {
+  //set(val);
   clear();
-  now(): number;
+  getTime(): number;
 }
 
-export function create(currentTimeFn = undefined): SystemClock {
+function normalize(val: any): number {
+  const type = typeof val;
+  let value;
+  if (type === 'string') {
+    val = val.split(val, '-')[0];
+    value = parseInt(val);
+  } else if (isDate(val)) {
+    value = val.getTime();
+  } else {
+    value = val;
+  }
+  return value;
+}
+
+export class ManualClock implements Clock {
+  private _value: number = Date.now();
+
+  constructor(initValue?: number) {
+    this._value = arguments.length > 0 ? initValue : Date.now();
+  }
+
+  clear(): void {
+    this._value = 0;
+  }
+
+  getTime(): number {
+    return this._value;
+  }
+
+  set(val: number | Date): this {
+    if (typeof val !== 'number') {
+      val = val.getTime();
+    }
+    this._value = val;
+    return this;
+  }
+
+  advanceBy(delta: number): this {
+    return this.set(this._value + delta);
+  }
+}
+
+export function createAlignedClock(clock: Clock, interval: number): Clock {
+  function getTime(): number {
+    const value = clock.getTime();
+    return value - (value % interval);
+  }
+
+  return {
+    // set,
+    clear: clock.clear,
+    getTime,
+  };
+}
+
+export function create(currentTimeFn = undefined): Clock {
   currentTimeFn = currentTimeFn || (() => Date.now());
 
   let value = null;
@@ -23,27 +78,19 @@ export function create(currentTimeFn = undefined): SystemClock {
   }
 
   function set(val) {
-    const type = typeof val;
-    if (type === 'string') {
-      val = val.split(val, '-')[0];
-      value = parseInt(val);
-    } else if (isDate(val)) {
-      value = val.getTime();
-    } else {
-      value = val;
-    }
+    value = normalize(val);
   }
 
   function clear() {
     value = null;
   }
 
-  const now = () => clockFn();
+  const getTime = () => clockFn();
 
   return {
-    set,
+    // set,
     clear,
-    now,
+    getTime,
   };
 }
 

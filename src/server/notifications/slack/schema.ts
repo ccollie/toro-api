@@ -1,5 +1,5 @@
 import baseSchema from '../schemas/baseSchema';
-import Joi from '@hapi/joi';
+import Joi from 'joi';
 
 export default baseSchema
   .append({
@@ -7,8 +7,7 @@ export default baseSchema
       'Slack authentication token bearing required scopes',
     ),
     webhook: Joi.string().uri().description('uri of incoming webhook'),
-    channel: Joi.string().required(),
-    username: Joi.string().required(),
+    channel: Joi.string().optional(),
   })
   .or('token', 'webhook')
   .label('slack');

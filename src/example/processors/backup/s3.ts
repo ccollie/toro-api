@@ -11,7 +11,7 @@ const FILENAMES = [
   'kute-kats.txt',
   'secret-codez.php',
   'master-passwords.txt',
-  'request-logs.log',
+  'client-logs.log',
   'latency-stats.mst',
   'client-stack-trace',
   'transaction-uploads.txt',

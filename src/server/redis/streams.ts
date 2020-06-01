@@ -1,4 +1,4 @@
-import { getIterator as getDateRangeIterator } from '../lib/datetime';
+import boom from '@hapi/boom';
 import {
   toKeyValueList,
   parseMessageResponse,
@@ -7,33 +7,48 @@ import {
 } from './utils';
 import { toDate } from 'date-fns';
 import { isString, isDate } from 'lodash';
-import { isNumber } from '../lib/utils';
+import { isNumber } from '../lib';
+import IORedis from 'ioredis';
 
 const deserializerMap = new Map();
 const deserializerCache = new Map();
 
 const ID_REGEX = /[\d]+-[\d]+/;
 
-export function convertTsForStream(timestamp): any {
-  if (typeof timestamp === 'string') {
-    if (['+', '-', '*'].includes(timestamp)) return timestamp;
+export function convertTsForStream(timestamp: number | string | Date): string {
+  const type = typeof timestamp;
+  if (type === 'string') {
+    const str = timestamp as string;
+    if (['+', '-', '*'].includes(str)) return str;
 
-    if (timestamp.match(ID_REGEX)) {
-      return timestamp;
+    if (str.match(ID_REGEX)) {
+      return str;
     }
+    throw boom.badRequest('Invalid stream timestamp "' + str + '"');
+  } else if (type === 'number') {
+    const ts = toDate(timestamp as number);
+    return ts.getTime() + '';
+  } else {
+    const ts = toDate(timestamp as Date);
+    return ts.getTime() + '';
   }
-
-  timestamp = toDate(timestamp);
-
-  return timestamp.getTime();
 }
 
-export function add(multi, key: string, timestamp, value) {
+export function add(
+  multi: IORedis.Pipeline,
+  key: string,
+  timestamp,
+  value,
+): IORedis.Pipeline {
   const args = toKeyValueList(value);
   return multi.xadd(key, convertTsForStream(timestamp), ...args);
 }
 
-export function bulkAdd(multi, key: string, ...args): void {
+export function bulkAdd(
+  multi: IORedis.Pipeline,
+  key: string,
+  ...args: any[]
+): void {
   let values;
   for (let i = 0; i < args.length; i += 2) {
     args[i] = convertTsForStream(args[i]);
@@ -47,7 +62,7 @@ export function bulkAdd(multi, key: string, ...args): void {
   }
 }
 
-export function getDeserializer(key) {
+export function getDeserializer(key: string) {
   const fn = deserializerCache.get(key);
   if (!fn) {
     for (const [regex, cb] of deserializerMap) {
@@ -61,7 +76,7 @@ export function getDeserializer(key) {
 }
 
 export async function getStreamRange(
-  client,
+  client: IORedis.Redis,
   key: string,
   start,
   end,
@@ -90,28 +105,10 @@ export async function getStreamRange(
   return response;
 }
 
-/**
- * @param {Object} client
- * @param {String} key
- * @param {Date|Number} start start of range
- * @param {Date|Number} end end of range
- * @param {Number} interval = interval in milliseconds. Default to 10 seconds
- * @param {Boolean} align align dates to interval
- */
-export async function* getStreamIterator(
-  client,
-  key: string,
-  start,
-  end,
-  interval = 10000,
-  align = false,
-) {
-  for (const r of getDateRangeIterator(start, end, interval, align)) {
-    yield getStreamRange(client, key, r.start, r.end);
-  }
-}
-
-export async function getInfo(client, stream: string) {
+export async function getInfo(
+  client: IORedis.Redis,
+  stream: string,
+): Promise<RedisStreamItem> {
   try {
     const reply = await client.xinfo('STREAM', stream);
     return parseXinfoResponse(reply);
@@ -123,7 +120,10 @@ export async function getInfo(client, stream: string) {
   }
 }
 
-export async function getLast(client, key: string) {
+export async function getLast(
+  client: IORedis.Redis,
+  key: string,
+): Promise<RedisStreamItem> {
   const info = await getInfo(client, key);
   let result = info && info['last-entry'];
   if (result) {
@@ -138,7 +138,7 @@ export async function getLast(client, key: string) {
   return result;
 }
 
-export async function getSpan(client, key: string) {
+export async function getSpan(client: IORedis.Redis, key: string) {
   const info = await getInfo(client, key);
 
   function getTs(key: string): string {
@@ -151,15 +151,10 @@ export async function getSpan(client, key: string) {
   };
 }
 
-export async function getLastTimestamp(client, key: string): Promise<string> {
-  const { end } = await getSpan(client, key);
-  return end;
-}
-
-export function parseStreamId(ts: any): string {
+export function parseStreamId(ts: unknown): string {
   const type = typeof ts;
   if (type === 'string') {
-    const parts = ts.split('-');
+    const parts = (ts as string).split('-');
     const id = parts[0];
     const seq = parts[1] || 0;
     if (isNumber(id) && isNumber(seq)) {
@@ -179,30 +174,6 @@ export function timestampFromStreamId(id: string): Date {
   const [timestamp] = id.split('-');
   return new Date(parseInt(timestamp));
 }
-
-export function incrementStreamId(id: any): string {
-  const type = typeof id;
-  if (type === 'string') {
-    const parts = id.split('-');
-    const _id = parts[0];
-    let seq = parseInt(parts[1] || 0);
-    if (isNaN(seq)) {
-      seq = 1;
-    } else {
-      seq++;
-    }
-    return `${_id}-${seq}`;
-  } else if (type === 'number') {
-    ++id;
-    return `${id}`;
-  } else if (isDate(id)) {
-    id = id.getTime() + '-1';
-  }
-  if (!id) return '0-1';
-
-  return id;
-}
-
 export function registerDeserializer(key: string | RegExp, fn): void {
   if (isString(key)) {
     deserializerCache.set(key, fn);

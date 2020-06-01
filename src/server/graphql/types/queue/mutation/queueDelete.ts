@@ -1,0 +1,70 @@
+import { FieldConfig, HostTC } from '../../index';
+import { schemaComposer } from 'graphql-compose';
+import { getQueueHost } from '../../../helpers';
+import { QUEUE_DELETED_PREFIX } from '../../../helpers';
+
+export const queueDelete: FieldConfig = {
+  type: schemaComposer.createObjectTC({
+    name: 'QueueDeletePayload',
+    fields: {
+      queueId: {
+        type: 'ID!',
+        description: 'The id of the deleted queue',
+      },
+      queueName: {
+        type: 'String!',
+        description: 'The name of the deleted queue',
+      },
+      host: {
+        type: HostTC.NonNull,
+        description: 'The queue host',
+      },
+      deletedKeys: {
+        type: 'Int!',
+        description: 'The number of keys deleted',
+      },
+    },
+  }),
+  args: {
+    id: 'ID!',
+    options: schemaComposer.createInputTC({
+      name: 'QueueDeleteOptions',
+      fields: {
+        checkExistence: {
+          type: 'Boolean',
+          defaultValue: true,
+        },
+        checkActivity: {
+          type: 'Boolean',
+          defaultValue: true,
+        },
+      },
+    })
+  },
+  resolve: async (
+    _,
+    { id, options: { checkExistence, checkActivity } },
+    { supervisor, publish },
+  ) => {
+    const host = getQueueHost(id);
+    const queue = supervisor.getQueueById(id);
+    const deletedKeys = await supervisor.deleteQueue(queue, {
+      checkExists: checkExistence,
+      checkActivity,
+    });
+
+    const queueId = id;
+    const queueName = queue.name;
+    const payload = {
+      queueId,
+      queueName,
+      host,
+      deletedKeys,
+    };
+
+    const eventName = `${QUEUE_DELETED_PREFIX}${host.id}`;
+    publish(eventName, { queueId, queueName, hostId: host.id, deletedKeys });
+
+    return payload;
+  },
+};
