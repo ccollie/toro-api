@@ -68,7 +68,6 @@ export class HostManager {
       prefix: opts.prefix || 'bull',
     };
     this.connectionOpts = opts.connection;
-    this.createClient = this.createClient.bind(this);
     const client = this.createClient();
     this.defaultRedisClient = client;
 
@@ -123,8 +122,10 @@ export class HostManager {
     type: 'client' | 'subscriber' | 'bclient' = 'client',
     redisOpts?: ConnectionOptions,
   ): IORedis.Redis {
-    if (type === 'client' && this.defaultRedisClient) {
-      return this.defaultRedisClient;
+    if (this.defaultRedisClient) {
+      return type === 'client'
+        ? this.defaultRedisClient
+        : this.defaultRedisClient.duplicate();
     }
     return createClient(redisOpts);
   }
@@ -132,7 +133,11 @@ export class HostManager {
   private addQueue(context: HostContext, config: QueueConfig): QueueManager {
     logger.info(`host ${this.name}: added queue`, config.name);
     const prefix = config.prefix || this.bullOpts.prefix || 'bull';
-    const opts = { ...this.bullOpts, prefix, createClient: this.createClient };
+    const opts = {
+      ...this.bullOpts,
+      prefix,
+      connection: this.defaultRedisClient,
+    };
     const queue = new Queue(config.name, opts);
     const manager = new QueueManager(context, queue, config);
     this.queueManagers.push(manager);

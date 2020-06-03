@@ -42,6 +42,18 @@ export interface JobEventData extends Partial<AppJob> {
   [k: string]: any;
 }
 
+export interface JobFinishedEventData {
+  job: Partial<AppJob>;
+  ts: number;
+  latency: number;
+  wait: number;
+  success: boolean;
+}
+
+interface JobFinishedEventHandler {
+  (event: JobFinishedEventData): void;
+}
+
 interface JobEventHandler {
   (job: JobEventData, data?: any, ts?: number): Promise<any>;
 }

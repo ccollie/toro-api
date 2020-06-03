@@ -254,6 +254,7 @@ export function toKeyValueList(hash: any): any[] {
 type MetricName = keyof RedisMetrics;
 const metrics: MetricName[] = [
   'redis_version',
+  'tcp_port',
   'uptime_in_seconds',
   'uptime_in_days',
   'connected_clients',

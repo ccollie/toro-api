@@ -3,6 +3,7 @@ import Joi from '@hapi/joi';
 import windowSchema from './slidingWindowBaseSchema';
 import { SignalChangedHandler, StreamingZScore } from '../lib';
 import { QueueListener } from '../queues';
+import { createJobNameFilter } from '../lib/utils';
 
 export type PeakDetectorOptions = {
   window?: StatsWindow;
@@ -31,15 +32,12 @@ export class PeakDetector {
   ) {
     const window = options.window;
     this.implementation = new StreamingZScore(window, options);
+    const filter = createJobNameFilter(options.jobName);
     this.unsubscribe = queueListener.on('job.finished', (data: any) => {
-      const value = data[field];
-      if (options.jobName) {
-        const jobName = data?.job?.jobName;
-        if (options.jobName !== jobName) {
-          return;
-        }
+      if (options.jobName && filter(data.job?.name)) {
+        const value = data[field];
+        this.implementation.update(value);
       }
-      this.implementation.update(value);
     });
   }
 

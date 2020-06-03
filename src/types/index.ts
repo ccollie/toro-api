@@ -13,3 +13,8 @@ export * from './timespan';
 export interface Constructor<T> {
   new (...args: any[]): T;
 }
+
+// Generic predicate
+export interface Predicate<T = any> {
+  (...args: T[]): boolean;
+}

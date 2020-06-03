@@ -1,17 +1,11 @@
-import {
-  CounterBasedMetric,
-  CounterBasedMetricOpts,
-} from './counterBasedMetric';
+import { CounterBasedMetric } from './counterBasedMetric';
 import { QueueListener } from '../queues';
+import { MetricOptions } from './baseMetric';
 
 export class ConsecutiveFailuresMetric extends CounterBasedMetric {
-  constructor(queueListener: QueueListener, options: CounterBasedMetricOpts) {
-    super(queueListener, {
-      ...options,
-      eventName: 'job.failed',
-    });
-
-    this.onDestroy(queueListener.on('job.completed', () => this.reset()));
+  constructor(queueListener: QueueListener, options: MetricOptions) {
+    super(queueListener, 'job.failed', options);
+    this.subscribe('job.completed', () => this.reset());
   }
 
   static get key(): string {

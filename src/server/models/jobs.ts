@@ -1,8 +1,6 @@
 import boom from '@hapi/boom';
 import nanoid from 'nanoid';
 import { Job, JobsOptions, Queue } from 'bullmq';
-import { safeParse, isNumber } from '../lib/utils';
-import { AppJob } from 'jobs';
 
 // https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
 export const JobFields = [
@@ -108,47 +106,4 @@ export async function retryJob(queue: Queue, id: string): Promise<void> {
 
 export async function promoteJob(queue: Queue, id: string): Promise<void> {
   return processJobCommand('promote', queue, id);
-}
-
-/**
- * Generate a JSON package to send to the
- * user
- * @param job the job
- * @param state optional state
- */
-export function formatJob(job, state: string = undefined): AppJob {
-  if (!job) return job;
-  if (job.toJSON) {
-    job = job.toJSON();
-  }
-  if (arguments.length > 1) {
-    job.state = state;
-  }
-  if (job.data !== undefined) {
-    job.data = safeParse(job.data) || Object.create(null);
-  } else {
-    job.data = {};
-  }
-  if (job.opts !== undefined) {
-    job.opts = safeParse(job.opts) || Object.create(null);
-  } else {
-    job.opts = {}; // set to default ?
-  }
-  if (job.hasOwnProperty('stacktrace')) {
-    job.stacktrace = safeParse(job.stacktrace) || [];
-  }
-  if (job.hasOwnProperty('progress') && !isNumber(job.progress)) {
-    job.progress = safeParse(job.progress);
-  }
-  job.returnvalue = safeParse(job.returnvalue);
-  if (job.finishedOn) {
-    job.duration = job.finishedOn - job.processedOn;
-  }
-  if (job.opts) job.delay = job.opts.delay;
-  if (job.state === 'delayed') {
-    if (isNumber(job.delay)) {
-      job.nextRun = job.timestamp + job.delay;
-    }
-  }
-  return job;
 }

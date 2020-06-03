@@ -2,7 +2,7 @@
 import { advanceBy, clear } from 'jest-date-mock';
 import pMap from 'p-map';
 import { toArray, random } from 'lodash';
-import { JobRateMetric } from '@src/server/monitor/metrics';
+import { JobRateMetric, MetricOptions } from '@src/server/monitor/metrics';
 import { QueueListener } from '@src/server/monitor/queues';
 import { createQueueListener } from '../rules/utils';
 
@@ -10,6 +10,13 @@ const EVENT_NAME = 'job.finished';
 
 describe('JobRateMetric', () => {
   let queueListener: QueueListener;
+  const defaultWindow = {
+    duration: 10000,
+    period: 100,
+  };
+  const defaultOptions: MetricOptions = {
+    window: defaultWindow,
+  };
 
   beforeEach(() => {
     queueListener = createQueueListener();
@@ -28,12 +35,12 @@ describe('JobRateMetric', () => {
 
   describe('constructor', () => {
     test('can create with default options', () => {
-      const subject = new JobRateMetric(queueListener);
+      const subject = new JobRateMetric(queueListener, defaultOptions);
       expect(subject).not.toBeUndefined();
     });
 
     test(`subscribes to the "${EVENT_NAME}" event`, () => {
-      const subject = new JobRateMetric(queueListener);
+      const subject = new JobRateMetric(queueListener, defaultOptions);
       const listeners = queueListener.listenerCount(EVENT_NAME);
       expect(listeners).toBe(1);
     });
@@ -42,7 +49,7 @@ describe('JobRateMetric', () => {
   describe('Updating', () => {
     test('properly updates simple values', async () => {
       const data = [true, true, false, false];
-      const subject = new JobRateMetric(queueListener);
+      const subject = new JobRateMetric(queueListener, defaultOptions);
       await pMap(data, (latency) => {
         return queueListener.emit(EVENT_NAME, {
           ts: Date.now(),
@@ -55,7 +62,7 @@ describe('JobRateMetric', () => {
 
   describe('Triggering', () => {
     test('updates when a job is finished', async () => {
-      const subject = new JobRateMetric(queueListener);
+      const subject = new JobRateMetric(queueListener, defaultOptions);
       await queueListener.emit(EVENT_NAME, {
         ts: Date.now(),
         latency: 100,
@@ -64,7 +71,7 @@ describe('JobRateMetric', () => {
     });
 
     test('triggers an "update" event when a job is finished', async () => {
-      const subject = new JobRateMetric(queueListener);
+      const subject = new JobRateMetric(queueListener, defaultOptions);
       let eventTriggered = false;
       subject.onUpdate(() => (eventTriggered = true));
       await queueListener.emit(EVENT_NAME, {
@@ -80,8 +87,10 @@ describe('JobRateMetric', () => {
 
     beforeEach(() => {
       b = new JobRateMetric(queueListener, {
-        duration: 5000,
-        period: 500,
+        window: {
+          duration: 5000,
+          period: 500,
+        },
       });
     });
 
@@ -109,8 +118,10 @@ describe('JobRateMetric', () => {
 
     const createMetric = () =>
       (b = new JobRateMetric(queueListener, {
-        duration: 5000,
-        period: 500,
+        window: {
+          duration: 5000,
+          period: 500,
+        },
       }));
 
     beforeEach(() => {

@@ -2,6 +2,6 @@ import { MetricType } from '../../../../common/imports';
 import { GraphQLFieldResolver } from 'graphql';
 import { createMetricResolver } from './metrics';
 
-export function jobRateChanged(): GraphQLFieldResolver<any, any> {
-  return createMetricResolver(MetricType.JobRate);
+export function consecutiveErrorCountChanged(): GraphQLFieldResolver<any, any> {
+  return createMetricResolver(MetricType.ConsecutiveFailures);
 }

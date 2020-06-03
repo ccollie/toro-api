@@ -34,7 +34,7 @@ export class SlidingWindowQuantile extends EventEmitter {
    * @param {DDSketch} other
    * @private
    */
-  _subtractSketch(sketch: DDSketch, other: DDSketch) {
+  private _subtractSketch(sketch: DDSketch, other: DDSketch): void {
     if (other && sketch) {
       if (sketch.alpha !== other.alpha) {
         throw new Error(
@@ -60,7 +60,7 @@ export class SlidingWindowQuantile extends EventEmitter {
     }
   }
 
-  destroy() {
+  destroy(): void {
     this.slidingWindow.destroy();
   }
 
@@ -77,7 +77,7 @@ export class SlidingWindowQuantile extends EventEmitter {
     return this.slidingWindow.period;
   }
 
-  onTick({ popped }) {
+  onTick({ popped }): void {
     // when we slide, remove old elements
     this._subtractSketch(this.accumulator, popped);
     SlidingWindowQuantile._clearSketch(popped);

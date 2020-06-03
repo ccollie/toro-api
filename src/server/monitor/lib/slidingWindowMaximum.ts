@@ -52,7 +52,7 @@ export class SlidingWindowMaximum extends EventEmitter {
     return this.currentWindow.value;
   }
 
-  get currentWindow() {
+  get currentWindow(): Bucket {
     return this.slidingWindow.current;
   }
 
@@ -60,7 +60,7 @@ export class SlidingWindowMaximum extends EventEmitter {
     return DEFAULT_VALUE;
   }
 
-  onTick(data) {
+  onTick(data): void {
     const { popped, current } = data;
     if (popped) {
       const val = popped.value;
@@ -105,5 +105,3 @@ export class SlidingWindowMaximum extends EventEmitter {
     return this.value;
   }
 }
-
-module.exports = SlidingWindowMaximum;

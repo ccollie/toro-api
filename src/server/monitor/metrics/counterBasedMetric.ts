@@ -1,34 +1,24 @@
-import { BaseMetric } from './baseMetric';
+import { BaseMetric, MetricOptions } from './baseMetric';
 import { QueueListener } from '../queues';
-import { StatsWindow } from 'stats';
-import { SlidingWindowCounter } from '../lib/slidingWindowCounter';
+import { CounterInterface, createCounter } from '../lib/counter';
 import schema from './slidingWindowBaseSchema';
 import { ObjectSchema } from '@hapi/joi';
 
-export interface CounterBasedMetricOpts {
-  window: StatsWindow;
-  eventName?: string;
-  jobNames?: string[];
-}
-
 export class CounterBasedMetric extends BaseMetric {
-  private readonly counter: SlidingWindowCounter;
+  private readonly counter: CounterInterface;
 
-  constructor(queueListener: QueueListener, options: CounterBasedMetricOpts) {
-    super();
-    const { window, eventName } = options;
-    this.counter = new SlidingWindowCounter({
-      duration: window.duration,
-      period: window.period,
+  constructor(
+    queueListener: QueueListener,
+    eventName: string,
+    options: MetricOptions,
+  ) {
+    super(queueListener, options);
+    this.counter = createCounter(options.window);
+    this._value = 0;
+    this.subscribe(eventName, () => {
+      const value = this.counter.incr('val', 1);
+      this.update(value);
     });
-
-    if (typeof eventName === 'string') {
-      this.onDestroy(
-        queueListener.on(eventName, () => {
-          this.update(this.value + 1);
-        }),
-      );
-    }
   }
 
   static get schema(): ObjectSchema {
@@ -40,11 +30,8 @@ export class CounterBasedMetric extends BaseMetric {
     super.destroy();
   }
 
-  baseValue(value: number): number {
-    return this.counter.set('count', value);
-  }
-
   reset(): void {
-    this.update(-1 * this.value);
+    this.counter.reset();
+    this.update(0);
   }
 }

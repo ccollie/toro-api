@@ -47,10 +47,54 @@ class Bucket {
   }
 }
 
+export interface CounterInterface {
+  destroy(): void;
+  reset(): void;
+  get(key: string): number;
+  incr(key: string, delta?: number): number;
+  set(key: string, value: number): number;
+}
+
+/**
+ * A counter for data from a stream.
+ */
+export class MultiCounter implements CounterInterface {
+  private readonly _accumulator: Bucket;
+
+  constructor() {
+    this._accumulator = new Bucket();
+  }
+
+  destroy(): void {
+    // this._windows.destroy();
+  }
+
+  reset(): void {
+    this._accumulator._reset();
+  }
+
+  get(key: string): number {
+    return this._accumulator.get(key);
+  }
+
+  incr(key: string, delta = 1): number {
+    return this._accumulator.incr(key, delta);
+  }
+
+  set(key: string, value: number): number {
+    return this._accumulator.set(key, value);
+  }
+
+  get current(): Bucket {
+    return this._accumulator;
+  }
+}
+
 /**
  * A sliding window counter for data from a stream.
  */
-export class SlidingWindowCounter extends EventEmitter {
+export class SlidingWindowCounter extends EventEmitter
+  implements CounterInterface {
   private readonly _windows: SlidingWindow<Bucket>;
   private _currentWindow: Bucket;
   private _accumulator: Bucket;
@@ -126,4 +170,11 @@ export class SlidingWindowCounter extends EventEmitter {
   get timeSpan(): number {
     return this._windows.timeSpan;
   }
+}
+
+export function createCounter(options?: SlidingWindowOptions) {
+  if (options) {
+    return new SlidingWindowCounter(options);
+  }
+  return new MultiCounter();
 }

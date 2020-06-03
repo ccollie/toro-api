@@ -174,13 +174,17 @@ type Query {
 """Returns the rate of job executions (completed or failed jobs) over a given period"""
 type JobRateChangedMessage {
   """the updated job rate"""
-  rate: Float!
+  value: Float!
 }
 
 """Returns the rate of job failures over a given period"""
 type JobErrorRateChangedMessage {
   """the updated error rate"""
-  rate: Float!
+  value: Float!
+}
+
+type ConsecutiveFailuresChangedMessage {
+  value: Int!
 }
 
 type QueuePausedMessage {
@@ -253,6 +257,18 @@ enum PeakSignalEnum {
   NONE
 }
 
+
+input MetricsInput {
+  """The queue id"""
+  queueId: ID!
+  """Sliding window over which to operate"""
+  window: StatsWindowInput
+  """
+  Job names to detect peaks for. If omitted, detection is done for all jobs types on the queue
+  """
+  jobNames: [String!]
+}
+
 input PeakSubscriptionInput {
   """
   Job name to detect peaks for. If omitted, detection is done for all jobs on the queue
@@ -281,11 +297,17 @@ type PeakMessage {
   zscore: Float
 }
 
+input JobRateChangedInput {
+  queueId: ID!
+  window: StatsWindowInput
+  jobNames: [String!]
+}
 
 type Subscription {
   jobCountsChanged(queueId: ID!): JobCounts
-  jobRateChanged(queueId: ID!): JobRateChangedMessage
-  jobErrorRateChanged(queueId: ID!): JobErrorRateChangedMessage
+  jobRateChanged(input: MetricsInput!): JobRateChangedMessage
+  consecutiveErrorCountChanged(input: MetricsInput!): ConsecutiveFailuresChangedMessage
+  jobErrorRateChanged(input: MetricsInput!): JobErrorRateChangedMessage
   """Emits a message when the status of a queue changes"""
   queueStateChanged(queueId: ID!): QueueStateChangedMessage
   """Returns messages when the status of in-flight jobs change"""

@@ -1,5 +1,4 @@
 import boom from '@hapi/boom';
-import { CounterBasedMetricOpts } from './counterBasedMetric';
 import { ConsecutiveFailuresMetric } from './consecutiveFailuresMetric';
 import { CompletedCountMetric } from './completedCountMetric';
 import { FailureCountMetric } from './failureCountMetric';
@@ -9,9 +8,8 @@ import { ErrorPercentageMetric } from './errorPercentageMetric';
 import { JobRateMetric } from './jobRateMetric';
 import { WaitTimeMetric } from './waitTimeMetric';
 import { LatencyMetric } from './latencyMetric';
-import { BaseMetric } from './baseMetric';
+import { BaseMetric, MetricOptions } from './baseMetric';
 import { QueueListener } from '../queues';
-import { ObjectSchema } from '@hapi/joi';
 import { Constructor } from 'index';
 export * from './peakDetector';
 
@@ -29,6 +27,18 @@ const metrics = [
 
 type MetricConstructor = Constructor<BaseMetric>;
 
+export enum MetricType {
+  ConsecutiveFailures = 'ConsecutiveFailuresMetric',
+  CompletedCount = 'CompletedCountMetric',
+  FailureCount = 'FailureCountMetric',
+  FinishedCount = 'FinishedCountMetric',
+  ErrorRate = 'ErrorRateMetric',
+  ErrorPercentage = 'ErrorPercentageMetric',
+  JobRate = 'JobRateMetric',
+  Latency = 'LatencyMetric',
+  WaitTime = 'WaitTimeMetric',
+}
+
 const metricsMap = metrics.reduce((res, clazz) => {
   res.set(clazz.key, clazz);
   res.set(clazz.constructor.name, clazz);
@@ -37,28 +47,20 @@ const metricsMap = metrics.reduce((res, clazz) => {
 
 export function create(
   queueListener: QueueListener,
-  type: string,
+  type: MetricType,
   options: any,
 ): BaseMetric {
   const ctor = metricsMap.get(type);
   if (!ctor) {
     throw boom.badRequest(`Invalid metric type "${type}"`);
   }
-  const schema = (ctor as any).schema as ObjectSchema;
-  const args = [queueListener];
-  if (schema) {
-    const { error, value } = schema.validate(options);
-    if (error) {
-      throw error;
-    }
-    args.push(value);
-  }
-
+  const args = [queueListener, options];
   return new ctor(...args);
 }
 
-export function getByKey(type: string): MetricConstructor {
-  return metricsMap.get(type);
+export function getByKey(type: string): BaseMetric {
+  const res = metricsMap.get(type);
+  return res ? ((res as unknown) as BaseMetric) : null;
 }
 
 export function getTypes() {
@@ -67,7 +69,7 @@ export function getTypes() {
 
 export {
   BaseMetric,
-  CounterBasedMetricOpts,
+  MetricOptions,
   ConsecutiveFailuresMetric,
   FailureCountMetric,
   CompletedCountMetric,

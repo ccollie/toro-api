@@ -1,6 +1,8 @@
 import { random } from 'lodash';
-import { CompletedCountMetric } from '@src/server/monitor/metrics';
-import { CounterBasedMetricOpts } from '@src/server/monitor/metrics/counterBasedMetric';
+import {
+  CompletedCountMetric,
+  MetricOptions,
+} from '@src/server/monitor/metrics';
 import { createQueueListener } from '../../factories';
 
 describe('CompletedCountMetric', () => {
@@ -9,7 +11,7 @@ describe('CompletedCountMetric', () => {
     duration: 10000,
     period: 100,
   };
-  const defaultOptions: CounterBasedMetricOpts = {
+  const defaultOptions: MetricOptions = {
     window: defaultWindow,
   };
 

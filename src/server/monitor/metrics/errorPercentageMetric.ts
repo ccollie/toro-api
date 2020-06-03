@@ -1,11 +1,10 @@
 import { RateMetric } from './rateMetric';
 import { QueueListener } from '../queues';
+import { MetricOptions } from './baseMetric';
 
 export class ErrorPercentageMetric extends RateMetric {
-  constructor(queueListener: QueueListener, options) {
-    super(queueListener, options);
-    const update = () => this.update(this.counter.errorPercentage);
-    this.counter.on('update', update);
+  constructor(queueListener: QueueListener, options: MetricOptions) {
+    super(queueListener, () => this.errorPercentage, options);
   }
 
   static get key(): string {

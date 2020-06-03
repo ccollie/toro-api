@@ -1,20 +1,10 @@
 import { RateMetric } from './rateMetric';
 import { QueueListener } from '../queues';
-import { SlidingWindowOptions } from '../lib/slidingWindow';
+import { MetricOptions } from './baseMetric';
 
 export class JobRateMetric extends RateMetric {
-  constructor(queueListener: QueueListener, options?: SlidingWindowOptions) {
-    super(queueListener, options);
-    const update = () => this.update(this.counter.jobRate);
-    this.counter.on('update', update);
-  }
-
-  get successes(): number {
-    return this.counter.successes;
-  }
-
-  get failures(): number {
-    return this.counter.failures;
+  constructor(queueListener: QueueListener, options: MetricOptions) {
+    super(queueListener, () => this.jobRate, options);
   }
 
   static get key(): string {

@@ -9,10 +9,7 @@ type RedisInfo {
   blocked_clients: Int!
   total_system_memory: Int!
   used_memory: Int!
-  used_memory_human: Int!
-  used_memory_rss: Int!
   used_memory_peak: Int!
-  used_memory_peak_human: Int!
   used_memory_lua: Int!
   used_cpu_sys: Int!
   maxmemory: Int!
@@ -20,7 +17,6 @@ type RedisInfo {
   instantaneous_ops_per_sec: Int!
   mem_fragmentation_ratio: Int
   role: String
-  connected_slaves: String
 }
 
 type QueueHost {
@@ -42,7 +38,7 @@ type QueueHost {
   """
   queues: [Queue!]
   """
-  Redis information the given host
+  Redis information for the given host
   """
   redis: RedisInfo!
 }

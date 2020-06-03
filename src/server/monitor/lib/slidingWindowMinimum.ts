@@ -28,7 +28,7 @@ export class SlidingWindowMinimum extends EventEmitter {
     return this.slidingWindow.duration;
   }
 
-  get period() {
+  get period(): number {
     return this.slidingWindow.period;
   }
 

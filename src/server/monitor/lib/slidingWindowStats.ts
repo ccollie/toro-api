@@ -23,7 +23,7 @@ export type SummaryStatsField =
 export class SlidingWindowStats {
   private readonly _windows: SlidingWindow<Deque>;
   private readonly _estimator: OnlineNormalEstimator;
-  private _currentWindow: any;
+  private _currentWindow: Deque;
 
   constructor(duration: number, period?: number) {
     const buckets = calcBuckets(duration, period); // ??

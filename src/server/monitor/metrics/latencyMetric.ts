@@ -1,12 +1,10 @@
-import { BaseMetric } from './baseMetric';
+import { BaseMetric, MetricOptions } from './baseMetric';
 import { QueueListener } from '../queues';
 
 export class LatencyMetric extends BaseMetric {
-  constructor(queueListener: QueueListener) {
-    super();
-    this.onDestroy(
-      queueListener.on('job.finished', ({ latency }) => this.update(latency)),
-    );
+  constructor(queueListener: QueueListener, options: MetricOptions) {
+    super(queueListener, options);
+    this.subscribe('job.finished', ({ latency }) => this.update(latency));
   }
 
   static get key(): string {

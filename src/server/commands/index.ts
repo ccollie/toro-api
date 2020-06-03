@@ -4,6 +4,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import { promisify } from 'util';
 import pMap from 'p-map';
+import IORedis from 'ioredis';
 
 // TODO node >= 10 could be used require('fs').promises()
 const readFileAsync = promisify(fs.readFile);
@@ -24,7 +25,7 @@ function calcSha1(str: string): string {
   return createHash('sha1').update(str, 'utf8').digest('hex');
 }
 
-async function loadFile(file): Promise<string> {
+async function loadFile(file: string): Promise<string> {
   const fullPath = path.resolve(__dirname, file);
   const lua = await readFileAsync(fullPath);
   return lua.toString();
@@ -45,7 +46,9 @@ async function loadFiles() {
   });
 }
 
-export async function loadScripts(client) {
+export async function loadScripts(
+  client: IORedis.Redis,
+): Promise<IORedis.Redis> {
   // make sure we only do this once per client
   if (!initClients.has(client)) {
     initClients.add(client);

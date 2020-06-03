@@ -1,6 +1,7 @@
 import { parseDuration } from '../../lib/datetime';
 import config from '../../config';
-import { StatsWindow } from '@src/types';
+import { Predicate, StatsWindow } from '@src/types';
+import { isString } from 'lodash';
 
 const DEFAULT_DURATION = 2 * 60 * 1000;
 const DEFAULT_PERIOD = 750;
@@ -33,4 +34,15 @@ export function nearestPowerOf2(n) {
 export function calculateWindowSize(duration): number {
   const len = Math.ceil(Math.log(duration) / Math.log(2));
   return Math.max((duration / len) | 0, 500);
+}
+
+export function createJobNameFilter(
+  jobNames?: string | string[],
+): Predicate<string> {
+  if (!jobNames) {
+    return () => true;
+  } else if (isString(jobNames)) {
+    return (name: string) => name === jobNames;
+  }
+  return (name: string) => !!name && jobNames.includes(name);
 }

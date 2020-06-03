@@ -1,19 +1,32 @@
 import round from 'lodash/round';
 import Emittery from 'emittery';
-import { SlidingWindowCounter } from './slidingWindowCounter';
+import {
+  createCounter,
+  CounterInterface,
+  SlidingWindowCounter,
+} from './counter';
 import { QueueListener } from '../queues';
 import { SlidingWindowOptions } from '../lib/slidingWindow';
+import { systemClock } from '../../lib/clock';
 
 const ONE_SECOND = 1000;
 
-export class SlidingJobCounter extends Emittery {
-  private _counter: SlidingWindowCounter;
+export class JobCounterOptions {
+  window: SlidingWindowOptions;
+  jobNames?: string[];
+}
+
+export class JobCounter extends Emittery {
+  private readonly _counter: CounterInterface;
+  private readonly _start = systemClock.now();
   private readonly _unlisten: Function;
+  private readonly _isSliding: boolean;
 
   constructor(queueListener: QueueListener, options?: SlidingWindowOptions) {
     super();
-    this._counter = new SlidingWindowCounter(options);
-    this._unlisten = queueListener.on('job.finished', ({ failed }) => {
+    this._counter = createCounter(options);
+    this._isSliding = this._counter instanceof SlidingWindowCounter;
+    this._unlisten = queueListener.on('job.finished', ({ failed, job }) => {
       const field = failed ? 'failure' : 'success';
       this._counter.incr(field);
       return this.emit('update', {
@@ -33,10 +46,6 @@ export class SlidingJobCounter extends Emittery {
     this._counter.reset();
   }
 
-  onTick(handler): void {
-    this._counter.onTick(handler);
-  }
-
   get completed(): number {
     return this.successes + this.failures;
   }
@@ -50,7 +59,7 @@ export class SlidingJobCounter extends Emittery {
   }
 
   get errorRate(): number {
-    const deltaSecs = this._counter.timeSpan / ONE_SECOND;
+    const deltaSecs = this.timeSpan / ONE_SECOND;
     return deltaSecs === 0 ? 0 : round(this.failures / deltaSecs, 1);
   }
 
@@ -59,7 +68,14 @@ export class SlidingJobCounter extends Emittery {
   }
 
   get jobRate(): number {
-    const deltaSecs = this._counter.timeSpan / ONE_SECOND;
+    const deltaSecs = this.timeSpan / ONE_SECOND;
     return deltaSecs === 0 ? 0 : round(this.completed / deltaSecs, 1);
+  }
+
+  get timeSpan(): number {
+    if (this._isSliding) {
+      return (this._counter as SlidingWindowCounter).timeSpan;
+    }
+    return systemClock.now() - this._start;
   }
 }

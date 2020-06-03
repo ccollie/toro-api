@@ -1,19 +1,17 @@
 import { QueueListener } from '../queues';
 import { CounterBasedMetric } from './counterBasedMetric';
+import { MetricOptions } from '@src/server/monitor/metrics/baseMetric';
 
 export class FinishedCountMetric extends CounterBasedMetric {
-  constructor(queueListener: QueueListener, options) {
-    super(queueListener, {
-      ...(options || {}),
-      eventName: 'job.finished',
-    });
+  constructor(queueListener: QueueListener, options: MetricOptions) {
+    super(queueListener, 'job.finished', options);
   }
 
   static get key(): string {
-    return 'jobs_completed';
+    return 'jobs_finished';
   }
 
   static get description(): string {
-    return 'completed getJobs';
+    return 'completed jobs (failed or completed)';
   }
 }

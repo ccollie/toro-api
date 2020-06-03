@@ -3,7 +3,7 @@ import boom from '@hapi/boom';
 import nanoid from 'nanoid';
 import Emittery from 'emittery';
 import { clone, isObject, isString, isNil } from 'lodash';
-import { SlidingJobCounter } from '../lib';
+import { JobCounter } from '../lib';
 import { parseDuration, parseTimestamp } from '../../lib/datetime';
 import { systemClock } from '../../lib/clock';
 import { isNumber } from '../../lib/utils';
@@ -279,7 +279,7 @@ export class Rule extends Emittery {
     if (value) {
       if (window) {
         const { duration, period } = window;
-        this[COUNTER] = new SlidingJobCounter(this.queueListener, {
+        this[COUNTER] = new JobCounter(this.queueListener, {
           duration,
           period,
         });

@@ -1,5 +1,4 @@
-import { ConsecutiveFailuresMetric } from '@src/server/monitor/metrics';
-import { CounterBasedMetricOpts } from '@src/server/monitor/metrics/counterBasedMetric';
+import { ConsecutiveFailuresMetric, MetricOptions } from '@src/server/monitor/metrics';
 import { createQueueListener } from '../../factories';
 
 describe('ConsecutiveFailuresMetric', () => {
@@ -8,7 +7,7 @@ describe('ConsecutiveFailuresMetric', () => {
     duration: 10000,
     period: 100,
   };
-  const defaultOptions: CounterBasedMetricOpts = {
+  const defaultOptions: MetricOptions = {
     window: defaultWindow,
   };
 

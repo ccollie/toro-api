@@ -1,12 +1,10 @@
-import { BaseMetric } from './baseMetric';
+import { BaseMetric, MetricOptions } from './baseMetric';
 import { QueueListener } from '../queues';
 
 export class WaitTimeMetric extends BaseMetric {
-  constructor(queueListener: QueueListener) {
-    super();
-    this.onDestroy(
-      queueListener.on('job.finished', ({ wait }) => this.update(wait)),
-    );
+  constructor(queueListener: QueueListener, options: MetricOptions) {
+    super(queueListener, options);
+    this.subscribe('job.finished', ({ wait }) => this.update(wait));
   }
 
   static get key(): string {

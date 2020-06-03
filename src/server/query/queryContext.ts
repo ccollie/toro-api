@@ -4,7 +4,7 @@ import { JobFields } from '../models/jobs';
 import { resolve } from './utils';
 import { QueueListener } from '../monitor/queues';
 import * as metrics from '../monitor/metrics';
-import { BaseMetric } from '../monitor/metrics';
+import { BaseMetric, MetricType } from '../monitor/metrics';
 
 const defaultSlidingWindow = config.getValue('defaultSlidingWindow');
 
@@ -85,11 +85,11 @@ export class QueryContext extends EventEmitter {
     if (this.isValidJobField(name)) {
       this.fields.add(name);
     } else {
-      this.addMetric(name);
+      this.addMetric(name as MetricType);
     }
   }
 
-  addMetric(name: string): BaseMetric {
+  addMetric(name: MetricType): BaseMetric {
     let metric = this.metrics.get(name);
     if (!metric) {
       metric = metrics.create(this.queueListener, name, this.windowOptions);
@@ -115,7 +115,7 @@ export class QueryContext extends EventEmitter {
         this.addField(field);
         handler = (obj) => resolve(obj, field);
       } else if (this.isValidMetric(field)) {
-        const metric = this.addMetric(field);
+        const metric = this.addMetric(field as MetricType);
         handler = () => metric.value;
       } else {
         // todo: this should probably raise an error
