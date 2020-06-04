@@ -259,7 +259,7 @@ input JobOptionsEveryInput {
 
 type AddJobPayload {
   job: Job
-  status: ActionStatus!
+  status: ActionStatus
 }
 
 type UpdateJobPayload {
@@ -355,17 +355,17 @@ extend type Mutation {
   ): AddJobPayload
   addRepeatableEveryJob(
     queueId: ID!,
-    jobName: String!
+    jobName: ID!
     data: JSON!
     options: JobOptionsEveryInput
   ): AddJobPayload
-  promoteJob(queueId: ID!, jobId: String!): ActionStatus
-  retryJob(queueId: ID!, jobId: String!): ActionStatus
-  deleteJob(queueId: ID!, jobId: String!): ActionStatus
-  updateJob(queueId: ID!, jobId: String!, data: JSONObject): UpdateJobPayload
-  deleteBulkJobs(queueId: ID!, jobIds: [String!]!): DeleteBulkJobsPayload
-  moveJobToDelayed(queueId: ID!, jobId: String!): ActionStatus
-  moveJobToCompleted(queueId: ID!, jobId: String!): ActionStatus
+  promoteJob(queueId: ID!, jobId: ID!): ActionStatus
+  retryJob(queueId: ID!, jobId: ID!): ActionStatus
+  deleteJob(queueId: ID!, jobId: ID!): ActionStatus
+  updateJob(queueId: ID!, jobId: ID!, data: JSONObject): UpdateJobPayload
+  deleteBulkJobs(queueId: ID!, jobIds: [ID!]!): DeleteBulkJobsPayload
+  moveJobToDelayed(queueId: ID!, jobId: ID!): ActionStatus
+  moveJobToCompleted(queueId: ID!, jobId: ID!): ActionStatus
   addJobLog(
     queueId: ID!,
     jobId: ID!

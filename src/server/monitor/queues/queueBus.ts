@@ -16,7 +16,7 @@ export interface BusEventHandler {
 }
 
 /**
- * An event bus for our queues
+ * An event bus for a single queue
  * @property {RedisStreamAggregator} aggregator
  */
 export class QueueBus {
@@ -85,8 +85,10 @@ export class QueueBus {
 
       const wrapper = (data = {}) => {
         const eventData = {
-          host,
-          queue,
+          __meta: {
+            host,
+            queue,
+          },
           ...data,
         };
         return handler(eventData);
@@ -129,7 +131,6 @@ export class QueueBus {
   }
 
   private _formatData(data = {}): any {
-    // TODO: also need to add queueId
     return { [SENDER_ID_KEY]: this._senderId, ...data };
   }
 
@@ -144,9 +145,10 @@ export class QueueBus {
    */
   private _onBusMessage(data): Promise<void> {
     if (data) {
-      const { event, ...rest } = data;
-      // TODO: also check for queueId
-      if (data[SENDER_ID_KEY] !== this._senderId) {
+      const { __sid, event, ...rest } = data;
+      // if __sid is set, it means it was already emitted locally
+      // make sure we weren't the ones doing it
+      if (__sid !== this._senderId) {
         return this._localEmit(event, rest);
       }
     }

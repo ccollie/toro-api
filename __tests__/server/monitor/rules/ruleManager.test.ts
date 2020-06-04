@@ -1,5 +1,5 @@
 import { RuleConfigOptions } from '@src/types';
-import { removeAllQueueData } from '@src/server/models/queues';
+import { deleteAllQueueData } from '../../../../src/server/redis';
 import { Rule, RuleManager } from '@src/server/monitor/rules';
 import { QueueBus } from '@src/server/monitor/queues';
 import { LockManager } from '@src/server/monitor/lib/lockManager';
@@ -51,7 +51,7 @@ describe('RuleManager', () => {
     lockMgr.destroy();
     aggregator.destroy();
     queueListener.destroy();
-    await removeAllQueueData(client, queueName);
+    await deleteAllQueueData(queue);
     await queue.close();
   });
 

@@ -168,7 +168,7 @@ export class RuleManager {
     if (exists) {
       if (wasActive !== isActive) {
         const eventName = 'rule.' + (isActive ? 'activated' : 'deactivated');
-        await this._busEmit(eventName, {
+        await this.bus.emit(eventName, {
           rid: id,
         });
 
@@ -250,6 +250,7 @@ export class RuleManager {
     const ruleId = getRuleId(rule);
     const alert = serializeAlert(data);
     data.event = eventName;
+    data.ruleId = ruleId;
     const id = await this._callLuaRuleMethod(
       ruleId,
       'alerts.add',
@@ -259,7 +260,6 @@ export class RuleManager {
     if (id !== null) {
       return {
         id,
-        ruleId,
         event: data.event,
         start: data.start,
         end: data.end,
@@ -427,6 +427,51 @@ export class RuleManager {
     return result;
   }
 
+  async onAlertEvent(
+    eventName,
+    ruleId: string | null,
+    handler,
+  ): Promise<Function> {
+    const fn = (alert: RuleAlert) => {
+      if (!ruleId || ruleId === alert.ruleId) {
+        return handler(alert);
+      }
+    };
+
+    return this.bus.on(eventName, fn);
+  }
+
+  async onAlertTriggered(ruleId: string | null, handler): Promise<Function> {
+    return this.onAlertEvent('alert.triggered', ruleId, handler);
+  }
+
+  async onAlertReset(ruleId: string | null, handler): Promise<Function> {
+    return this.onAlertEvent('alert.reset', ruleId, handler);
+  }
+
+  async subscribeToAlerts(ruleId: string, handler): Promise<() => void> {
+    let cleanups = [];
+
+    const registerHandler = async (eventName: string): Promise<void> => {
+      const fn = (alert: RuleAlert) => {
+        if (!ruleId || ruleId === alert.ruleId) {
+          return handler(eventName, alert);
+        }
+      };
+
+      cleanups.push(await this.bus.on(`alert.${eventName}`, fn));
+    };
+
+    await Promise.all([registerHandler('triggered'), registerHandler('reset')]);
+
+    function unsub(): void {
+      cleanups.forEach((fn) => fn());
+      cleanups = [];
+    }
+
+    return unsub;
+  }
+
   /**
    * Internal method to call lua rules library.
    * @private
@@ -449,20 +494,6 @@ export class RuleManager {
       method,
       ...args,
     );
-  }
-
-  /**
-   * @param event
-   * @param data
-   * @private
-   */
-  private _busEmit(event: string, data = {}): Promise<void> {
-    const eventData = {
-      h: this.host,
-      q: this.queue.name,
-      ...data,
-    };
-    return this.bus.emit(event, eventData);
   }
 }
 
@@ -546,6 +577,7 @@ function deserializeAlert(data: any): RuleAlert {
 
   return {
     id: data['id'],
+    ruleId: data['ruleId'],
     event: data['event'],
     start: parseTimestamp(data['start']),
     end: parseTimestamp(data['end']),

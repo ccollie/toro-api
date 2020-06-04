@@ -1,6 +1,12 @@
 -------------------------------------------------------------------------------
 -- Forward declarations to make everything happy
 -------------------------------------------------------------------------------
+assert(#KEYS == 4, 'Expected 4 keys')
+local ruleKey = KEYS[1]
+local indexKey = KEYS[2]
+local alertsKey = KEYS[3]
+local busKey = KEYS[4]
+
 
 local Toro = {
 }
@@ -203,7 +209,9 @@ function ToroRule:remove()
     self.alerts.removeAll()
     local res = redis.call("DEL", self.id)
     redis.call('ZREM', self.indexKey, self.id)
-    --- todo: emit("rule.deleted", "id", self.id )
+    if (res == 1) then
+        self.emit("rule.deleted", "id", self.id)
+    end
     return res
 end
 
@@ -281,11 +289,7 @@ function dispatch(cmd, rule)
     return command(unpack(ARGV))
 end
 
-assert(#KEYS == 4, 'Expected 4 keys')
-local ruleKey = KEYS[1]
-local indexKey = KEYS[2]
-local alertsKey = KEYS[3]
-local busKey = KEYS[4]
+
 local ruleId = assert(table.remove(ARGV, 1), 'Rule id not provided')
 local cmd = assert(table.remove(ARGV, 1), 'Must provide a command')
 

@@ -8,14 +8,14 @@ import { endOf, startOf } from '../../../../lib/datetime';
 
 function getPrevUnit(granularity: StatsGranularity): string {
   switch (granularity) {
-    case StatsGranularity.Day:
-      return 'week';
-    case StatsGranularity.Hour:
-      return 'day';
     case StatsGranularity.Minute:
-      return 'hour';
+      return StatsGranularity.Hour;
+    case StatsGranularity.Hour:
+      return StatsGranularity.Day;
+    case StatsGranularity.Day:
+      return StatsGranularity.Week;
     case StatsGranularity.Week:
-      return 'month';
+      return StatsGranularity.Month;
   }
   return 'year';
 }

@@ -1,6 +1,7 @@
 'use strict';
 import { Rule } from '../../../common/imports';
-import { Queue } from 'bullmq';
+import { Mutation } from './mutation';
+import { Subscription } from './subscription';
 
 export const ruleResolver = {
   Query: {
@@ -25,4 +26,6 @@ export const ruleResolver = {
       return ruleManager.getRuleAlertCount(parent);
     },
   },
+  Mutation,
+  Subscription,
 };

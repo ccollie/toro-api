@@ -510,44 +510,4 @@ export class QueueManager {
   ) {
     return this.subscribeToQueue(jobType, 'wait', '$', handler);
   }
-
-  async subscribeAlert(name: string, handler): Promise<() => void> {
-    if (typeof name === 'function') {
-      handler = name;
-      name = null;
-    } else {
-      const rule = this.getRule(name);
-      if (!rule) {
-        throw boom.notFound(
-          `No rule named "${name}" found for queue "${this.queue.name}"`,
-        );
-      }
-    }
-
-    let cleanups = [];
-
-    const registerHandler = async (eventName: string): Promise<void> => {
-      const fn = (data) => {
-        const alertName = data.name;
-        if (!name || alertName === name) {
-          return handler(eventName, data);
-        }
-      };
-
-      cleanups.push(await this.bus.on(`alert.${eventName}`, fn));
-    };
-
-    await Promise.all([
-      registerHandler('added'),
-      registerHandler('updated'),
-      registerHandler('cleanup'),
-    ]);
-
-    function unsub(): void {
-      cleanups.forEach((fn) => fn());
-      cleanups = [];
-    }
-
-    return unsub;
-  }
 }

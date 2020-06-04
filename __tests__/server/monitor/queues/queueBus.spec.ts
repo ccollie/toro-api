@@ -1,9 +1,9 @@
-import { removeAllQueueData } from '@src/server/models/queues';
 import { QueueBus } from '@src/server/monitor/queues/queueBus';
 import { RedisStreamAggregator } from '@src/server/redis/streamAggregator';
 import { randomString, delay, createClient } from '../../utils';
 import nanoid from 'nanoid';
 import { Queue } from 'bullmq';
+import { deleteAllQueueData } from '../../../../src/server/redis';
 
 describe('QueueBus', () => {
   // jest.setTimeout(5000);
@@ -26,7 +26,7 @@ describe('QueueBus', () => {
   afterEach(async function () {
     bus.destroy();
     await aggregator.destroy();
-    await removeAllQueueData(client, queueName);
+    await deleteAllQueueData(queue);
     await queue.close();
   });
 

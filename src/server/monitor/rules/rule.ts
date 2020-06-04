@@ -11,7 +11,12 @@ import { getSlidingWindowDefaults } from '../lib/utils';
 import { Query, QueryContext } from '../../query';
 import { QueueListener } from '../queues';
 import { ruleConfigSchema } from './rule-config';
-import { RuleAlertOptions, RuleConfigOptions, StatsWindow } from '@src/types';
+import {
+  RuleAlert,
+  RuleAlertOptions,
+  RuleConfigOptions,
+  StatsWindow,
+} from '@src/types';
 import { createDebug } from '../../lib/debug';
 
 const debug = createDebug('rules');
@@ -92,7 +97,7 @@ export class Rule extends Emittery {
   private query: Query;
   private _started = false;
   private queueListener: QueueListener;
-  public readonly window: StatsWindow;
+  public readonly window?: StatsWindow;
 
   /**
    * Constructs a {@link Rule}. A Rule sets conditions for actions and rules based
@@ -178,26 +183,26 @@ export class Rule extends Emittery {
   /**
    * @type {Boolean}
    */
-  get isBelowVolumeThreshold(): boolean {
+  private get isBelowVolumeThreshold(): boolean {
     // todo: if we're past the threshold, we can dispose of
     // the counter
     return this.volume < this.volumeThreshold;
   }
 
   /**
-   * @type {Number} the number of getJobs processed to this point.
+   * @type {Number} the number of jobs processed to this point.
    */
   get volume(): number {
     const counter = this[COUNTER];
-    return counter ? counter.completed : 0;
+    return counter?.completed || 0;
   }
 
   /**
    * Gets the volume threshold for this rule
-   * @type {Boolean}
+   * @type {Number}
    */
-  get volumeThreshold() {
-    return this[VOLUME_THRESHOLD];
+  get volumeThreshold(): number {
+    return this[VOLUME_THRESHOLD] || 0;
   }
 
   /**
@@ -277,15 +282,7 @@ export class Rule extends Emittery {
 
     this[VOLUME_THRESHOLD] = value;
     if (value) {
-      if (window) {
-        const { duration, period } = window;
-        this[COUNTER] = new JobCounter(this.queueListener, {
-          duration,
-          period,
-        });
-      } else {
-        // todo: use a simple counter
-      }
+      this[COUNTER] = new JobCounter(this.queueListener, window);
     }
   }
 
@@ -387,28 +384,20 @@ export class Rule extends Emittery {
     return success ? this.trigger(obj) : this.reset(obj);
   }
 
-  trigger(state = {}): Promise<void> {
-    const emit = async (): Promise<void> => {
-      this.alertStart = systemClock.now();
+  private createAlert(state = {}): RuleAlert {
+    const { name, description, payload, alertStart: start } = this;
 
-      const { name, description, payload, alertStart: start } = this;
-      /**
-       * Emitted when an error alert is tripped
-       * @event Rule#failure
-       */
-      const alert = {
-        name,
-        description,
-        start,
-        state,
-        payload,
-      };
-
-      await this.emit('alert.triggered', alert);
-
-      this[ALERT_COUNT] = (this[ALERT_COUNT] || 0) + 1;
+    return {
+      ruleId: this.id,
+      name,
+      description,
+      start,
+      state,
+      payload,
     };
+  }
 
+  async trigger(state = {}): Promise<void> {
     if (this[STATE] !== TRIGGERED) {
       this[STATE] = TRIGGERED;
       this[ALERT_COUNT] = 0;
@@ -417,7 +406,13 @@ export class Rule extends Emittery {
 
     const emitLimit = this.options.repeatsPerTrigger;
     if (!this.isInAlertDelay && (!emitLimit || this.alertCount < emitLimit)) {
-      return emit();
+      this.alertStart = systemClock.now();
+
+      const alert = this.createAlert(state);
+
+      await this.emit('alert.triggered', alert);
+
+      this[ALERT_COUNT] = (this[ALERT_COUNT] || 0) + 1;
     }
   }
 
@@ -434,28 +429,21 @@ export class Rule extends Emittery {
       this[ALERT_COUNT] = 0;
       _clearTimeout(this, ALERT_TIMEOUT);
 
-      this.alertStart = null;
-
       if (!!this.options.alertOnReset) {
-        const alert = {
-          name: this.name,
-          description: this.description,
-          start: this.alertStart,
-          end: systemClock.now(),
-          state,
-          payload: this.payload, // todo: support interpolation
-        };
-
+        const alert = this.createAlert(state);
+        alert.end = systemClock.now();
         return this.emit('alert.reset', alert);
       }
+
+      this.alertStart = null;
     }
   }
 
   /**
-   * Determines whether we should evaluate the condition
+   * Determines whether we should skip the condition
    * @type {Boolean}
    */
-  skipCheck(): boolean {
+  private skipCheck(): boolean {
     return this.isWarmingUp || this.isBelowVolumeThreshold;
   }
 }

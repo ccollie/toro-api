@@ -4,7 +4,11 @@ import { JobFields } from '../models/jobs';
 import { resolve } from './utils';
 import { QueueListener } from '../monitor/queues';
 import * as metrics from '../monitor/metrics';
-import { BaseMetric, MetricType } from '../monitor/metrics';
+import {
+  BaseMetric,
+  MetricType,
+  create as createMetric,
+} from '../monitor/metrics';
 
 const defaultSlidingWindow = config.getValue('defaultSlidingWindow');
 
@@ -14,20 +18,15 @@ interface FieldValueResolver {
 
 export class QueryContext extends EventEmitter {
   private readonly queueListener: QueueListener;
-  public readonly fields: Set<string>;
-  private readonly fieldHandlers: Map<string, FieldValueResolver>;
-  private readonly metrics: Map<string, any>;
+  public readonly fields = new Set<string>();
+  private readonly fieldHandlers = new Map<string, FieldValueResolver>();
+  private readonly metrics = new Map<string, BaseMetric>();
   private readonly cleanups: any[];
   private aggregators: any[];
   private readonly windowOptions: any;
 
   constructor(queueListener: QueueListener, options) {
     super();
-    this.metrics = new Map<string, BaseMetric>();
-    this.fields = new Set<string>();
-    this.fieldHandlers = new Map<string, FieldValueResolver>();
-    this.aggregators = [];
-    this.cleanups = [];
     this.queueListener = queueListener;
     this.windowOptions = {
       ...defaultSlidingWindow,
@@ -92,7 +91,7 @@ export class QueryContext extends EventEmitter {
   addMetric(name: MetricType): BaseMetric {
     let metric = this.metrics.get(name);
     if (!metric) {
-      metric = metrics.create(this.queueListener, name, this.windowOptions);
+      metric = createMetric(this.queueListener, name, this.windowOptions);
       this.metrics.set(name, metric);
       this.registerCleanup(() => metric.destroy());
       // todo: subscribe to update method

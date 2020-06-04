@@ -68,7 +68,7 @@ export class HostManager {
       prefix: opts.prefix || 'bull',
     };
     this.connectionOpts = opts.connection;
-    const client = this.createClient();
+    const client = this.createClient(this.connectionOpts);
     this.defaultRedisClient = client;
 
     this.streamAggregator = new RedisStreamAggregator({
@@ -118,14 +118,9 @@ export class HostManager {
     return getRedisInfo(this.defaultRedisClient);
   }
 
-  private createClient(
-    type: 'client' | 'subscriber' | 'bclient' = 'client',
-    redisOpts?: ConnectionOptions,
-  ): IORedis.Redis {
-    if (this.defaultRedisClient) {
-      return type === 'client'
-        ? this.defaultRedisClient
-        : this.defaultRedisClient.duplicate();
+  private createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
+    if (this.defaultRedisClient && !redisOpts) {
+      return this.defaultRedisClient.duplicate();
     }
     return createClient(redisOpts);
   }

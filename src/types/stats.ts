@@ -1,6 +1,6 @@
 export enum StatsGranularity {
   Minute = 'minute',
-  Hour = '',
+  Hour = 'hour',
   Day = 'day',
   Week = 'week',
   Month = 'month',

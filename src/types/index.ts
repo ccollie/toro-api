@@ -18,3 +18,5 @@ export interface Constructor<T> {
 export interface Predicate<T = any> {
   (...args: T[]): boolean;
 }
+
+export type Maybe<T> = T | null;

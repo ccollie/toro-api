@@ -71,9 +71,11 @@ export interface RuleConfigOptions {
  * @property {Object} [payload] optional alert data
  */
 export interface RuleAlert {
+  /** the id of the queue to which the triggered alert belongs */
+  queueId?: string;
   /** the id of the rule which triggered this alert */
   ruleId?: string;
-  /** the alert event id */
+  /** the alert event (triggered or reset) */
   event?: string;
   /** timestamp of when this alert was raised */
   start: number;

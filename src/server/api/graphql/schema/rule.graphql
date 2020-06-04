@@ -98,14 +98,18 @@ type Rule {
     alertCount: Int!
 }
 
+"""An event recording the occurrence of an rule trigger or reset"""
 type RuleAlert {
     id: ID!
+
+    """The id of the rule the alert relates to"""
+    ruleId: ID!
 
     """The event that raised this alert"""
     event: String
 
     """Timestamp of when this alert was raised"""
-    start: DateTime
+    start: DateTime!
 
     """Timestamp of when this alert was reset"""
     end: DateTime
@@ -150,6 +154,9 @@ input RuleAlertOptionsInput {
 }
 
 input CreateRuleInput {
+    """The id of the queue"""
+    queueId: ID!
+
     """A name for the rule"""
     name: String!
 
@@ -178,6 +185,29 @@ input CreateRuleInput {
     options: RuleAlertOptionsInput
 }
 
+type CreateRulePayload {
+    rule: Rule
+    status: ActionStatus
+}
+
 extend type Query {
     rule(queueId: ID!, ruleId: ID!): Rule
+}
+
+extend type Mutation {
+    createRule(input: CreateRuleInput!): CreateRulePayload
+    deleteRule(queueId: ID!, ruleId: ID!): ActionStatus
+}
+
+extend type Subscription {
+   """
+   Returns alerts when an rule's conditions are met. If no ruleId
+   is specified, all alerts for the given queueId are returned.
+   """
+   ruleAlertTriggered(queueId: ID!, ruleId: ID): RuleAlert
+    """
+    Returns events when an rules conditions are no longer valid given the queue state.
+    If no ruleId is specified, all reset events for the given queueId are returned.
+    """
+    ruleAlertReset(queueId: ID!, ruleId: ID): RuleAlert
 }

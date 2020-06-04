@@ -34,7 +34,7 @@ export function parseExpression(
   function parseArray(): EvalFunc {
     const compiled = expr.map((item) => parseExpression(context, item));
 
-    return (obj, ctx) => {
+    return (obj, ctx): any[] => {
       return compiled.map((handler) => handler(obj, ctx));
     };
   }

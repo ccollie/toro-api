@@ -18,11 +18,11 @@ export function getQueueById(context, id: string): Queue {
   return getSupervisor(context).getQueueById(id);
 }
 
-export function getQueueManager(context, id): QueueManager {
+export function getQueueManager(context, id: string): QueueManager {
   return getSupervisor(context).getQueueManager(id);
 }
 
-export function getQueueHost(context, queueId): HostManager {
+export function getQueueHost(context, queueId: string): HostManager {
   const supervisor = getSupervisor(context);
   const manager = supervisor.getQueueManager(queueId);
   return supervisor.getHost(manager && manager.host);
