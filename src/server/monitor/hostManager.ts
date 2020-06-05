@@ -200,6 +200,7 @@ export class HostManager {
     let idx;
 
     if (!queue) return null;
+    const name = typeof queue === 'string' ? queue : queue.name;
     if (isString(queue)) {
       idx = this.queueManagers.findIndex((x) => x.queue.name === name);
     } else {
