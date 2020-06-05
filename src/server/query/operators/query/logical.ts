@@ -25,7 +25,7 @@ export function $or(
   );
 
   const queries = [];
-  each(value, (expr) => queries.push(compileQuery(expr, context)));
+  each(value, (expr) => queries.push(compileQuery(context, expr)));
 
   return (obj, ctx): boolean => {
     for (let i = 0; i < queries.length; i++) {
@@ -57,7 +57,7 @@ export function $and(
   );
 
   const queries = [];
-  each(value, (expr) => queries.push(compileQuery(expr, context)));
+  each(value, (expr) => queries.push(compileQuery(context, expr)));
 
   return (obj, ctx): boolean => {
     for (let i = 0; i < queries.length; i++) {

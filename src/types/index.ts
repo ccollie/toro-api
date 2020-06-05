@@ -3,6 +3,7 @@ export * from './config';
 export * from './jobs';
 export * from './mail';
 export * from './notifications';
+export * from './queue';
 export * from './queue-worker';
 export * from './repeatable-job';
 export * from './redis-metrics';

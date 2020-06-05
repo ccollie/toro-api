@@ -24,7 +24,7 @@ export const evalExpression = (expr: any, obj: any, context): any => {
 
 export const evalQuery = (expr: any, obj: any = {}, context): boolean => {
   context = context || createContext();
-  const fn = compileQuery(context, expr);
+  const fn = compileQuery(expr, context);
   return fn(obj);
 };
 

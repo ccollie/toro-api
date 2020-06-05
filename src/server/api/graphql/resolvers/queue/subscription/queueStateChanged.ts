@@ -1,8 +1,8 @@
-import { QUEUE_BASED_EVENTS } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
+import { QueueEventsEnum } from '@src/types';
 
-// ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
+const EventNames = Object.values(QueueEventsEnum);
 
 export function queueStateChanged(): GraphQLFieldResolver<any, any> {
   const cleanups = [];
@@ -20,7 +20,7 @@ export function queueStateChanged(): GraphQLFieldResolver<any, any> {
       return pubsub.publish(channelName, { state: event });
     }
 
-    QUEUE_BASED_EVENTS.forEach((eventName) => {
+    EventNames.forEach((eventName) => {
       cleanups.push(queueListener.on(eventName, () => handler(eventName)));
     });
 

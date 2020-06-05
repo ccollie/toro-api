@@ -1,17 +1,17 @@
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { isEmpty, isDate, isNumber } from 'lodash';
-import { isFinishedStatus, JOB_STATES, diff } from '../../../../../lib';
+import { isFinishedStatus, diff } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../helpers';
-import { JobStatus } from '../../../../common/imports';
+import { JobStatusEnum } from '@src/types';
 
-// ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
+const JOB_STATES = Object.values(JobStatusEnum);
 
 type QueueJobChangesFilter = {
   name?: string[];
-  state?: JobStatus[];
+  state?: JobStatusEnum[];
   attemptsMade?: number;
 };
 
@@ -127,11 +127,18 @@ export function inflightJobUpdated(): GraphQLFieldResolver<any, any> {
 
     JOB_STATES.forEach((eventName) => {
       const cb = (data) => {
-        handler(eventName, data);
+        return handler(eventName, data);
       };
       const actualEventName = `job.${eventName}`;
       cleanups.push(listener.on(actualEventName, cb));
     });
+
+    // handle removed
+    cleanups.push(
+      listener.on('job.removed', (data) => {
+        return handler('removed', data);
+      }),
+    );
 
     resultFilter = createFilter(filter);
   }

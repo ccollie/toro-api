@@ -1,11 +1,13 @@
 import ms from 'ms';
 import { throttle, isEmpty } from 'lodash';
 import { diff } from '../../../../../lib';
-import { JOB_STATES, QUEUE_BASED_EVENTS } from '../../../../../lib/consts';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
+import { JobStatusEnum, QueueEventsEnum } from '@src/types';
 
 const DEFAULT_COUNT_INTERVAL = ms('1.5 s');
+const JOB_STATES = Object.values(JobStatusEnum);
+const EVENT_NAMES = Object.values(QueueEventsEnum);
 
 // ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
 
@@ -46,7 +48,7 @@ export function jobCountsChanged(): GraphQLFieldResolver<any, any> {
     const queueListener = queueManager.queueListener;
     const queue = queueManager.queue;
 
-    QUEUE_BASED_EVENTS.forEach((eventName) => {
+    EVENT_NAMES.forEach((eventName) => {
       cleanups.push(queueListener.on(eventName, countHandler));
     });
 
@@ -57,6 +59,9 @@ export function jobCountsChanged(): GraphQLFieldResolver<any, any> {
     JOB_STATES.forEach((eventName) => {
       cleanups.push(queueListener.on(eventName, countHandler));
     });
+
+    // handle removed event as well
+    cleanups.push(queueListener.on('removed', countHandler));
   }
 
   async function onUnsubscribe(): Promise<void> {

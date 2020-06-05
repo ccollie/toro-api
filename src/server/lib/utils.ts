@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { get, isFunction, isNil, isObject } from 'lodash';
+import { JobStatusEnum } from '@src/types';
 
 export function hash(data, algorithm = 'sha1'): string {
   return crypto.createHash(algorithm).update(data).digest('hex');
@@ -35,15 +36,9 @@ export const parseBool = (val: any): boolean => {
 };
 
 // TODO:
-export const BULL_STATES = [
-  'waiting',
-  'active',
-  'completed',
-  'failed',
-  'delayed',
-];
+export const BULL_STATES = Object.values(JobStatusEnum);
 
-export const isFinishedState = (state: string) =>
+export const isFinishedStatus = (state: string) =>
   ['completed', 'failed', 'removed'].includes(state);
 
 export const isValidState = (state) => BULL_STATES.includes(state);
@@ -71,17 +66,6 @@ export function titleCase(str = ''): string {
 }
 
 export const firstChar = (str): string => (str && str.length ? str[0] : '');
-
-/**
- * Add commas to numbers
- *
- * @param {Number} `num`
- * @return {string}
- * @api public
- */
-export const addCommas = (num) => {
-  return num.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
-};
 
 /*!
  * Find the differences between two objects and push to a new object

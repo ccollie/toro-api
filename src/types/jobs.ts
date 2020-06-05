@@ -1,39 +1,20 @@
 import { JobsOptions, Job } from 'bullmq';
 
-export const JOB_STATUSES = {
-  active: 'active',
-  waiting: 'waiting',
-  completed: 'completed',
-  failed: 'failed',
-  delayed: 'delayed',
-  paused: 'paused',
-};
+export enum JobStatusEnum {
+  active = 'active',
+  waiting = 'waiting',
+  completed = 'completed',
+  failed = 'failed',
+  delayed = 'delayed',
+  paused = 'paused',
+  UNKNOWN = 'unknown',
+}
 
-export type JobStatus = keyof typeof JOB_STATUSES;
+export type JobStatus = keyof typeof JobStatusEnum;
 
 export type JobCountStates = 'completed' | 'waiting' | 'active' | 'failed';
 
 export type JobCounts = Record<JobCountStates, number>;
-
-// https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
-export type JobField =
-  | 'id'
-  | 'name'
-  | 'data'
-  | 'opts'
-  | 'progress'
-  | 'attemptsMade'
-  | 'finishedOn'
-  | 'processedOn'
-  | 'timestamp'
-  | 'failedReason'
-  | 'stacktrace'
-  | 'returnvalue'
-  // computed
-  | 'delay'
-  | 'state'
-  | 'duration'
-  | 'nextRun';
 
 export interface AppJob {
   id: string | number | undefined;

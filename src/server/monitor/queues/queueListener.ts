@@ -6,15 +6,15 @@ import Emittery from 'emittery';
 import * as IORedis from 'ioredis';
 import { QueueConfig } from 'config';
 import logger from '../../lib/logger';
-import { isFinishedState } from '../../lib/utils';
+import { isFinishedStatus } from '../../lib/utils';
 import { parseTimestamp } from '../../lib/datetime';
 import { systemClock } from '../../lib/clock';
 import { timestampFromStreamId, parseStreamId } from '../../redis/streams';
 import { AppJob } from 'jobs';
 
-const MAKE_HANDLER = Symbol('make handler');
+const MAKE_HANDLER = Symbol('make job event handler');
 
-const JOB_STATES = [
+const QUEUE_EVENTS = [
   'completed',
   'waiting',
   'active',
@@ -87,7 +87,7 @@ export class QueueListener extends Emittery {
     });
 
     this._handlerMap = {};
-    JOB_STATES.forEach((state) => {
+    QUEUE_EVENTS.forEach((state) => {
       this._handlerMap[state] = this[MAKE_HANDLER](state);
     });
 
@@ -110,7 +110,7 @@ export class QueueListener extends Emittery {
 
   [MAKE_HANDLER](eventName: string) {
     const handlerName = `handle${capitalize(eventName)}`;
-    const isFinished = isFinishedState(eventName);
+    const isFinished = isFinishedStatus(eventName);
     const fn = this[handlerName].bind(this);
     const cache = this.cache;
     const name = this.queue.name;

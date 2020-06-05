@@ -32,7 +32,7 @@ export function $elemMatch(
   }
 
   const resolver = context.getFieldResolver(selector);
-  const predicate = compileQuery(criteria, context);
+  const predicate = compileQuery(context, criteria);
 
   return (obj): boolean => {
     // value of field must be fully resolved.

@@ -144,7 +144,7 @@ describe('Query projection operators', () => {
 
   function checkModified(a, b): void {
     if (!isEqual(a, b)) {
-      throw new Error('Original value modifier');
+      throw new Error('Original value modified');
     }
   }
 
