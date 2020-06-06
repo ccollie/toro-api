@@ -2,19 +2,25 @@
 // https://github.com/chrvadala/sliding-window-max
 // Modified to use Deque to minimize runtime memory allocations
 import Deque from 'double-ended-queue';
-const DEFAULT_COMPARATOR = (a, b) => b - a;
+
+const DEFAULT_COMPARATOR = (a, b) => {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+};
 
 export interface RollingMaxOptions {
   comparator?: (a, b) => number;
   waitFullRange?: boolean;
 }
 
-export class RollingMax {
+export class RollingMax<T = number> {
   private index: number;
-  private list: Deque;
-  private windowSize: number;
+  private readonly list: Deque;
+  private readonly windowSize: number;
   private readonly waitFullRange: boolean;
-  private readonly lowerThan: (a, b) => boolean;
+  private readonly lowerThan: (a: T, b: T) => boolean;
+  private _value: T = null;
+
   /**
    * Given a stream of data, this algorithm returns (for every added value) the current max value.
    * It uses a strategy that:
@@ -24,8 +30,7 @@ export class RollingMax {
    * @param {Object} options options
    * @param {Function} options.comparator Override the custom comparator function
    * @param {Boolean} options.waitFullRange If false the functions returns the
-   * max value also if the window
-   * size hasn't been reached yet
+   * max value also if the window size hasn't been reached yet
    */
   constructor(
     windowSize: number,
@@ -47,11 +52,15 @@ export class RollingMax {
     this.lowerThan = (a, b) => comparator(a, b) > 0;
   }
 
+  get value(): T {
+    return this._value;
+  }
+
   get count(): number {
     return this.list.length;
   }
 
-  add(value) {
+  add(value: T): T {
     const list = this.list;
     const i = this.index;
     const windowSize = this.windowSize;
@@ -83,11 +92,13 @@ export class RollingMax {
       return result;
     }
 
-    return this.waitFullRange ? null : result;
+    this._value = this.waitFullRange ? null : result;
+    return this._value;
   }
 
   clear(): void {
     this.list.clear();
     this.index = 0;
+    this._value = null;
   }
 }

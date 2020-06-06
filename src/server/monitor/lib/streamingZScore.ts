@@ -92,18 +92,6 @@ export class StreamingZScore {
     return this._stats.count;
   }
 
-  get duration(): number {
-    return this._stats.duration;
-  }
-
-  get period(): number {
-    return this._stats.period;
-  }
-
-  onTick(handler) {
-    return this._stats.onTick(handler);
-  }
-
   onSignalChange(handler: SignalChangedHandler): Emittery.UnsubscribeFn {
     return this.emitter.on('signal', handler);
   }

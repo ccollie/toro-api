@@ -7,10 +7,12 @@ import { createJobNameFilter } from '../lib/utils';
 import { Predicate } from '@src/types';
 import Joi from '@hapi/joi';
 import { durationSchema } from '../validation/joi';
+import { BaseAggregator, NullAggregator } from './aggregators';
 
 export interface MetricOptions {
   window: SlidingWindowOptions;
   jobNames?: string[];
+  aggregator?: BaseAggregator;
 }
 
 const slidingWindowSchema = Joi.object().keys({
@@ -30,6 +32,7 @@ export class BaseMetric {
   private readonly queueListener: QueueListener;
   private readonly emitter: Emittery = new Emittery();
   private readonly _filter: Predicate<string>;
+  protected readonly aggregator: BaseAggregator;
   protected readonly options: MetricOptions;
   private _cleanupHandlers: any[];
   private _prev: number;
@@ -42,6 +45,7 @@ export class BaseMetric {
     this.options = this.validateOptions(options);
     this.queueListener = queueListener;
     this._filter = createJobNameFilter(options.jobNames);
+    this.aggregator = options.aggregator || new NullAggregator();
   }
 
   protected validateOptions(options: MetricOptions): MetricOptions {
@@ -88,7 +92,7 @@ export class BaseMetric {
     return this._value;
   }
 
-  onUpdate(listener) {
+  onUpdate(listener: (eventData?: unknown) => void): Emittery.UnsubscribeFn {
     return this.emitter.on('update', listener);
   }
 
@@ -111,8 +115,9 @@ export class BaseMetric {
   }
 
   // Override in descendents
+  // TODO: this name makes no sense
   protected baseValue(value: number): number {
-    return value;
+    return this.aggregator.update(value);
   }
 
   // Public api used elsewhere
@@ -124,18 +129,4 @@ export class BaseMetric {
     }
     return this._value;
   }
-}
-
-export interface MetricConstructor<T extends BaseMetric> {
-  create(...args): T;
-}
-
-const metricCreatorMap = new Map();
-
-export function registerMetric<T extends BaseMetric>(
-  type: T,
-  ctor: MetricConstructor<T>,
-): void {
-  const name = type.constructor.name;
-  metricCreatorMap.set(name, ctor);
 }

@@ -1,6 +1,6 @@
 import Joi from '@hapi/joi';
-import { SlidingWindowQuantile, SlidingWindowOptions } from '../../lib';
-import { SlidingWindowAggregator } from './aggregator';
+import { QuantileEstimator, SlidingWindowOptions } from '../../lib';
+import { BaseAggregator } from './aggregator';
 
 import baseSchema from '../slidingWindowBaseSchema';
 import { ObjectSchema } from '@hapi/joi';
@@ -21,9 +21,11 @@ const schema = baseSchema.keys({
     .max(1.0),
 });
 
-export class QuantileAggregator extends SlidingWindowAggregator {
-  private readonly _data: SlidingWindowQuantile;
+export class QuantileAggregator extends BaseAggregator {
+  private readonly _data: QuantileEstimator;
   private readonly _q: number;
+  private _value: number;
+
   /**
    * Construct a QuantileAggregator
    * @param {SlidingWindowOptions} window rolling statistical window for the stats functions
@@ -34,7 +36,11 @@ export class QuantileAggregator extends SlidingWindowAggregator {
   constructor(window: SlidingWindowOptions, quantile: number, alpha = 0.005) {
     super();
     this._q = quantile || 0.95;
-    this._data = new SlidingWindowQuantile(window, alpha);
+    this._data = new QuantileEstimator(window, alpha);
+  }
+
+  get quantile(): number {
+    return this._q;
   }
 
   destroy(): void {
@@ -55,22 +61,12 @@ export class QuantileAggregator extends SlidingWindowAggregator {
   }
 
   get value(): number {
-    return this._data.quantile(this._q);
-  }
-
-  get duration(): number {
-    return this._data.duration;
-  }
-
-  get period(): number {
-    return this._data.period;
+    return this._value;
   }
 
   update(value): number {
-    return this._data.update(value);
-  }
-
-  onTick(handler) {
-    return this._data.onTick(handler);
+    this._data.update(value);
+    this._value = this._data.quantile(this._q);
+    return this._value;
   }
 }

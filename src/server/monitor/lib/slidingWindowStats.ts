@@ -32,7 +32,7 @@ export class SlidingWindowStats {
       () => new Deque(buckets),
     );
     this._estimator = new OnlineNormalEstimator();
-    this.onTick((data) => this.rotate(data));
+    this._windows.onTick((data) => this.rotate(data));
     this._currentWindow = this._windows.current;
   }
 
@@ -63,14 +63,6 @@ export class SlidingWindowStats {
     }
     this._currentWindow = current;
     this._currentWindow.clear();
-  }
-
-  get duration(): number {
-    return this._windows.duration;
-  }
-
-  get period(): number {
-    return this._windows.period;
   }
 
   get mean(): number {
@@ -109,9 +101,5 @@ export class SlidingWindowStats {
     if (this.count === 0) {
       throw new TypeError('Mean is undefined');
     }
-  }
-
-  onTick(handler) {
-    return this._windows.onTick(handler);
   }
 }

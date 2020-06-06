@@ -1,7 +1,7 @@
 import { SlidingWindowStats, SlidingWindowOptions } from '../../lib';
-import { SlidingWindowAggregator } from './aggregator';
+import { BaseAggregator } from './aggregator';
 
-export class StatsBasedAggregator extends SlidingWindowAggregator {
+export class StatsBasedAggregator extends BaseAggregator {
   protected readonly stats: SlidingWindowStats;
   /**
    * Construct a StatsBasedAggregator
@@ -20,20 +20,8 @@ export class StatsBasedAggregator extends SlidingWindowAggregator {
     super.destroy();
   }
 
-  get duration(): number {
-    return this.stats.duration;
-  }
-
-  get period(): number {
-    return this.stats.period;
-  }
-
   update(value: number): number {
     this.stats.update(value);
     return this.value;
-  }
-
-  onTick(handler) {
-    return this.stats.onTick(handler);
   }
 }

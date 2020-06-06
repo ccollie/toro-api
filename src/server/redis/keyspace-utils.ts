@@ -1,4 +1,4 @@
-import { KeyspaceNotifier } from '../../redis';
+import { KeyspaceNotifier } from './index';
 
 export async function subscribeToJob(
   notifier: KeyspaceNotifier,

@@ -3,7 +3,7 @@ import { throttle, isEmpty } from 'lodash';
 import { diff } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
-import { JobStatusEnum, QueueEventsEnum } from '@src/types';
+import { JobStatusEnum, QueueEventsEnum } from '../../../../common/imports';
 
 const DEFAULT_COUNT_INTERVAL = ms('1.5 s');
 const JOB_STATES = Object.values(JobStatusEnum);

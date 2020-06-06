@@ -10,7 +10,7 @@ import { QueueListener } from './queueListener';
 import { QueueBus } from './queueBus';
 import { HostContext } from '../hostManager';
 import { getJobTypes } from '../../models/queues';
-import { subscribeToJob } from '../lib/keyspace-utils';
+import { subscribeToJob } from '../../redis/keyspace-utils';
 import { systemClock } from '../../lib/clock';
 import { getStatsKey } from '../keys';
 import {

@@ -1,5 +1,5 @@
 import Joi from '@hapi/joi';
-import { SlidingWindowAggregator } from './aggregator';
+import { BaseAggregator } from './aggregator';
 import {
   StreamingZScore,
   StreamingZScoreOptions,
@@ -17,7 +17,7 @@ const schema = baseSchema.keys({
 /**
  * A ZScoreAggregator does streaming ZScore smoothing
  */
-export class ZScoreAggregator extends SlidingWindowAggregator {
+export class ZScoreAggregator extends BaseAggregator {
   private readonly zscore: StreamingZScore;
   /***
    * Construct a ZScoreAggregator
@@ -60,20 +60,7 @@ export class ZScoreAggregator extends SlidingWindowAggregator {
     return this.zscore.signal;
   }
 
-  get duration(): number {
-    return this.zscore.duration;
-  }
-
-  get period(): number {
-    return this.zscore.period;
-  }
-
   update(value: number): number {
     return this.zscore.update(value);
-  }
-
-  onTick(handler): void {
-    this.zscore.onTick(handler);
-    // return () => this._windows.off('tick', handler);
   }
 }

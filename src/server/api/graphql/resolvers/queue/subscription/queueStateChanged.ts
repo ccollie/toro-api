@@ -1,6 +1,6 @@
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
-import { QueueEventsEnum } from '@src/types';
+import { QueueEventsEnum } from '../../../../common/imports';
 
 const EventNames = Object.values(QueueEventsEnum);
 

@@ -1,21 +1,30 @@
 // Original code:
 // https://github.com/chrvadala/sliding-window-max
 // Modified to use Deque to minimize runtime memory allocations
+// eslint-disable-next-line max-len
+// see also https://people.cs.uct.ac.za/~ksmith/articles/sliding_window_minimum.html#sliding-window-minimum-algorithm
 import Deque from 'double-ended-queue';
 const DEFAULT_COMPARATOR = (a, b) => {
-  return a === b ? 0 : a > b ? -1 : 1;
+  return a === b ? 0 : a > b ? 1 : -1;
 };
 
-export class RollingMin<T = number> {
+enum Extrema {
+  MIN,
+  MAX,
+}
+
+export class RollingExtrema<T = number> {
   private index: number;
   private readonly list: Deque;
   private readonly windowSize: number;
   private readonly waitFullRange: boolean;
-  private readonly higherThan: (a: T, b: T) => boolean;
+  private readonly compare: (a: T, b: T) => boolean;
   private _value: T = null;
+  private readonly _extrema: Extrema;
 
   /**
-   * Given a stream of data, this algorithm returns (for every added value) the current min value.
+   * Given a stream of data, this algorithm returns (for every added value) the current
+   * min/max value.
    * It uses a strategy that:
    *    Stores at most a number of values defined by the window size
    *    Avoids to scan all the values to calculate the max value
@@ -30,6 +39,7 @@ export class RollingMin<T = number> {
     options = {
       comparator: DEFAULT_COMPARATOR,
       waitFullRange: true,
+      extrema: Extrema,
     },
   ) {
     this.index = 0;
@@ -42,7 +52,10 @@ export class RollingMin<T = number> {
     const comparator = options.comparator
       ? options.comparator
       : DEFAULT_COMPARATOR;
-    this.higherThan = (a, b) => comparator(a, b) < 0;
+    this.compare =
+      this._extrema === Extrema.MAX
+        ? (a, b) => comparator(a, b) > 0
+        : (a, b) => comparator(a, b) < 0;
   }
 
   get count(): number {
@@ -56,26 +69,22 @@ export class RollingMin<T = number> {
   add(value: T): T {
     const list = this.list;
     const i = this.index;
-    const windowSize = this.windowSize;
-    const higherThan = this.higherThan;
     const waitFullRange = this.waitFullRange;
 
-    // Remove anything that is less than the current value
-    // so this.list maintains values greater than the current value
-    while (!list.isEmpty() && higherThan(list.peekBack().value, value)) {
+    // Remove anything that is less (or greater based on _extrema) than the current value
+    while (!list.isEmpty() && this.compare(list.peekBack().value, value)) {
       list.pop();
-    }
-
-    // In case that all elements in the this.list are all greater than the
-    // current one (descending order)
-    // Shift out the
-    if (!list.isEmpty() && list.get(0).i < i - windowSize + 1) {
-      list.shift();
     }
 
     list.push({ i, value });
 
-    // For each sliding window movement, we record the highest value in that sliding window
+    // In case all elements in this.list are all less than the
+    // current one (descending order)
+    if (!list.isEmpty() && list.peekFront().i <= i - this.windowSize) {
+      list.shift();
+    }
+
+    // For each sliding window movement, we record the highest/lowest value in that sliding window
     // i >= windowSize - 1 to ensure that we don't prematurely record values before we get
     // to the full range of the first sliding window
     // e.g. [1  3  -1] -3  5  3  6  7       3
@@ -83,7 +92,7 @@ export class RollingMin<T = number> {
     this.index++;
 
     const result = list.peekFront().value;
-    if (i >= windowSize - 1) {
+    if (i >= this.windowSize - 1) {
       return result;
     }
 

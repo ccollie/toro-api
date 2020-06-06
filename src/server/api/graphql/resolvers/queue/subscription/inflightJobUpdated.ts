@@ -5,7 +5,8 @@ import { isFinishedStatus, diff } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../helpers';
-import { JobStatusEnum } from '@src/types';
+import { JobStatusEnum } from '../../../../common/imports';
+import { createJobNameFilter } from '../../../../../monitor/lib/utils';
 
 const JOB_STATES = Object.values(JobStatusEnum);
 
@@ -35,7 +36,7 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
   let fn: FilterPredicate;
 
   if (names && names.length > 0) {
-    fn = (rec): boolean => names.includes(rec.name);
+    fn = createJobNameFilter(names);
     filters.push(fn);
   }
 

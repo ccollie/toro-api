@@ -1,28 +1,30 @@
 'use strict';
 import { SlidingWindow, SlidingWindowOptions } from './slidingWindow';
 import { DDSketch } from 'sketches-js';
-import { EventEmitter } from 'events';
 
-export class SlidingWindowQuantile extends EventEmitter {
+const DefaultMaxBins = 1024;
+
+export class QuantileEstimator {
   private readonly alpha: number;
   private readonly accumulator: DDSketch;
   private readonly slidingWindow: SlidingWindow<DDSketch>;
 
   constructor(options?: SlidingWindowOptions, alpha = 0.005) {
-    super();
-
     this.alpha = alpha; // defaults to a with precision of 1/2 of a percent
-    this.slidingWindow = new SlidingWindow(options, () => this._createSketch());
-
     this.accumulator = this._createSketch();
-    this.slidingWindow.onTick((data) => this.onTick(data));
+    if (options) {
+      this.slidingWindow = new SlidingWindow(options, () =>
+        this._createSketch(),
+      );
+      this.slidingWindow.onTick((data) => this.onTick(data));
+    }
   }
 
   private _createSketch(): DDSketch {
-    return new DDSketch({ alpha: this.alpha });
+    return new DDSketch({ alpha: this.alpha, maxNumBins: DefaultMaxBins });
   }
 
-  private static _clearSketch(sketch): void {
+  private _clearSketch(sketch: DDSketch): void {
     sketch.bins = {};
     sketch.n = 0;
     sketch.numBins = 0;
@@ -61,32 +63,22 @@ export class SlidingWindowQuantile extends EventEmitter {
   }
 
   destroy(): void {
-    this.slidingWindow.destroy();
+    if (this.slidingWindow) {
+      this.slidingWindow.destroy();
+    }
   }
 
-  get value(): number {
-    return this.accumulator;
-  }
-
-  /** Return the length of the sliding window */
-  get duration(): number {
-    return this.slidingWindow.duration;
-  }
-
-  get period(): number {
-    return this.slidingWindow.period;
-  }
-
-  onTick({ popped }): void {
+  private onTick({ popped }): void {
     // when we slide, remove old elements
     this._subtractSketch(this.accumulator, popped);
-    SlidingWindowQuantile._clearSketch(popped);
+    this._clearSketch(popped);
   }
 
-  update(newVal: number): number {
-    this.slidingWindow.current.add(newVal);
+  update(newVal: number): void {
+    if (this.slidingWindow) {
+      this.slidingWindow.current.add(newVal);
+    }
     this.accumulator.add(newVal);
-    return this.accumulator;
   }
 
   quantile(q: number): number {

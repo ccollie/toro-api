@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { get, isFunction, isNil, isObject } from 'lodash';
-import { JobStatusEnum } from '@src/types';
+import { JobStatusEnum } from '../../types';
 
 export function hash(data, algorithm = 'sha1'): string {
   return crypto.createHash(algorithm).update(data).digest('hex');

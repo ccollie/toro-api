@@ -11,6 +11,7 @@ import { StandardDeviationAggregator } from './standardDeviationAggregator';
 import { VarianceAggregator } from './varianceAggregator';
 
 const classMap: Record<string, any> = {
+  none: NullAggregator,
   min: MinAggregator,
   max: MaxAggregator,
   mean: MeanAggregator,
@@ -21,6 +22,8 @@ const classMap: Record<string, any> = {
   zscore: ZScoreAggregator,
   default: NullAggregator,
 };
+
+export type AggregatorType = keyof typeof classMap;
 
 export function createAggregator(type = 'default', options): BaseAggregator {
   const ctor = classMap[type];
@@ -40,6 +43,7 @@ export function createAggregator(type = 'default', options): BaseAggregator {
 
 export {
   BaseAggregator,
+  NullAggregator,
   MinAggregator,
   MaxAggregator,
   SumAggregator,
