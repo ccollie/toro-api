@@ -1,4 +1,4 @@
-import { FailureCountMetric, MetricOptions } from '@src/server/monitor/metrics';
+import { FailureCountMetric, MetricOptions } from '@src/server/metrics';
 import { createQueueListener } from '../../factories';
 
 describe('FailureCountMetric', () => {

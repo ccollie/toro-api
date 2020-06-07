@@ -2,7 +2,7 @@ import { NotifierConfig } from '@src/types';
 
 import baseSchema from '../schemas/baseSchema';
 import Joi from '@hapi/joi';
-import { durationSchema } from '../../monitor/validation/joi';
+import { durationSchema } from '../../validation/joi';
 
 type ResponseType = 'json' | 'text';
 

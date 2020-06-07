@@ -6,7 +6,7 @@ import config from '../config';
 import * as streams from './streams';
 import { isNumber, diff } from '../lib/utils';
 import { systemClock } from '../lib/clock';
-import { LockManager } from '../monitor/lib';
+import { LockManager } from './lockManager';
 import { isValidDate } from '../lib/datetime';
 import { parseObjectResponse } from './utils';
 

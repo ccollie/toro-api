@@ -1,4 +1,4 @@
-import { ConsecutiveFailuresMetric, MetricOptions } from '@src/server/monitor/metrics';
+import { ConsecutiveFailuresMetric, MetricOptions } from '@src/server/metrics';
 import { createQueueListener } from '../../factories';
 
 describe('ConsecutiveFailuresMetric', () => {

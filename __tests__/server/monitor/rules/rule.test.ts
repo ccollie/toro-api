@@ -7,9 +7,9 @@ import {
   randomString,
 } from './utils';
 import { systemClock } from '@src/server/lib/clock';
-import { Rule } from '@src/server/monitor/rules';
+import { Rule } from '@src/server/rules';
 import { delay } from '../../utils';
-import { QueueListener } from '@src/server/monitor/queues';
+import { QueueListener } from '@src/server/queues';
 
 describe('Rule', () => {
   let queueListener: QueueListener;
@@ -173,6 +173,10 @@ describe('Rule', () => {
       await postJob(rule, { latency: 1500 });
 
       expect(failSpy).toHaveBeenCalledTimes(1);
+    });
+
+    describe('notification', () => {
+
     });
   });
 

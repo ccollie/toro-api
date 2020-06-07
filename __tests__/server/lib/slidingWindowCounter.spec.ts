@@ -1,5 +1,5 @@
 import { advanceBy, clear } from 'jest-date-mock';
-import { SlidingWindowCounter } from '../../../src/server/monitor/lib';
+import { SlidingWindowCounter } from '../../../src/server/metrics/lib';
 
 describe('SlidingWindowCounter', () => {
   describe('Constructor', () => {

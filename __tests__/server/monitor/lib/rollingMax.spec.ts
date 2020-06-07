@@ -3,7 +3,7 @@
 import {
   RollingMax,
   RollingMaxOptions,
-} from '../../../../src/server/monitor/lib';
+} from '../../../../src/server/metrics/lib';
 
 function _calculateExpectedResultUtils(slidingWindow, dataset): any[] {
   const res = [];

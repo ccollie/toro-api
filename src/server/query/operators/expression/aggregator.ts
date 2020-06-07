@@ -5,7 +5,7 @@ import { isNumber } from 'lodash';
 import {
   createAggregator as create,
   BaseAggregator,
-} from '../../../monitor/metrics/aggregators';
+} from '../../../metrics/aggregators';
 
 function createAggregator(context, type, options = {}): BaseAggregator {
   const aggOptions = {

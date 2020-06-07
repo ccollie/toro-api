@@ -2,7 +2,7 @@ import { random } from 'lodash';
 import {
   CompletedCountMetric,
   MetricOptions,
-} from '@src/server/monitor/metrics';
+} from '@src/server/metrics';
 import { createQueueListener } from '../../factories';
 
 describe('CompletedCountMetric', () => {

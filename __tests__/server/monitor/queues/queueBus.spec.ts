@@ -1,4 +1,4 @@
-import { QueueBus } from '@src/server/monitor/queues/queueBus';
+import { QueueBus } from '@src/server/queues/queueBus';
 import { RedisStreamAggregator } from '@src/server/redis/streamAggregator';
 import { randomString, delay, createClient } from '../../utils';
 import nanoid from 'nanoid';

@@ -1,7 +1,7 @@
 import { get } from 'lodash';
 import { Supervisor, QueueWorker } from '../../../common/imports';
 import { Queue } from 'bullmq';
-import { Rule } from '../../../../monitor/rules';
+import { Rule } from '../../../../rules';
 import { StatisticalSnapshot } from 'stats';
 import { getStats } from './getStats';
 

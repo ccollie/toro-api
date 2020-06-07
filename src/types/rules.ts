@@ -18,16 +18,17 @@ export interface RuleAlertOptions {
   volumeThreshold?: RuleVolumeThreshold;
   /**
    * Duration (ms) after which to raise alerts or notifications in case the condition is met.
-   * This is useful for events which are normally transient by may periodically persist longer
-   * than usual, or for not sending notifications out too quickly.
+   * This is useful for events which are normally transient and resolve quickly but may periodically
+   * persist longer than usual, or for not sending notifications out too quickly.
    */
   delay: number;
   /**
-   * the number of alerts to receive per event trigger in case the condition is met.
-   * This is useful for events which are normally transient by may periodically persist longer
-   * than usual, or for not sending notifications out too quickly.
+   * the max number of alerts to receive per event trigger in case the condition is met.
    */
   repeatsPerTrigger: number;
+
+  /* If specified, the minimum time between alerts for the same incident */
+  alertThrottle: number;
 
   /** raise an alert after an event trigger when the situation returns to normal */
   alertOnReset: boolean;

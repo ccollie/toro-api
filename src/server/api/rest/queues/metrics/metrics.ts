@@ -1,6 +1,6 @@
 import { asyncHandler as wrap } from '../../middleware';
 import { parseRangeQuery } from './parse-range-query';
-import { formatSnapshot } from '../../../../monitor/stats/utils';
+import { formatSnapshot } from '../../../../stats/utils';
 import { isEmpty, pick } from 'lodash';
 import {
   calculateRelativeRange,

@@ -6,8 +6,8 @@ import {
   LatencyPeakDetector,
   WaitTimePeakDetector,
 } from '../../../../../monitor';
-import { SignalChangedEvent } from '../../../../../monitor/lib';
-import windowSchema from '../../../../../monitor/metrics/slidingWindowBaseSchema';
+import { SignalChangedEvent } from '../../../../../metrics/lib';
+import windowSchema from '../../../../../metrics/slidingWindowBaseSchema';
 import { StatsWindow } from 'stats';
 import { getQueueListener } from '../../helpers';
 

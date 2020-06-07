@@ -53,6 +53,11 @@ type RuleAlertOptions {
     Raise an alert after an event trigger when the situation returns to normal
     """
     alertOnReset: Boolean
+
+    """
+    If specified, the minimum time between alerts for the same incident
+    """
+    alertThrottle: Int
 }
 
 type Rule {
@@ -126,7 +131,7 @@ input RuleAlertOptionsInput {
     a timeout after startup (in ms) during which no alerts are raised, irrespective of
     the truthiness of the rule condition.
     """
-    warmup: Int
+    warmup: Duration
 
     """
     minimum of requests before an alert can be triggered
@@ -138,7 +143,7 @@ input RuleAlertOptionsInput {
     This is useful for events which are normally transient by may periodically persist longer
     than usual, or for not sending notifications out too quickly.
     """
-    delay: Int
+    delay: Duration
 
     """
     The number of alerts to receive per event trigger in case the condition is met.
@@ -151,6 +156,11 @@ input RuleAlertOptionsInput {
     Raise an alert after an event trigger when the situation returns to normal
     """
     alertOnReset: Boolean
+
+    """
+    If specified, the minimum time between alerts for the same incident
+    """
+    alertThrottle: Duration
 }
 
 input CreateRuleInput {

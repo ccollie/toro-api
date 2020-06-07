@@ -1,7 +1,7 @@
 /* global test, expect */
 import { advanceBy, advanceTo, clear } from 'jest-date-mock';
 import { random } from 'lodash';
-import { SlidingWindow } from '../../../../src/server/monitor/lib';
+import { SlidingWindow } from '../../../../src/server/metrics/lib';
 
 const defaultWindowOpts = {
   duration: 30000,

@@ -22,7 +22,7 @@ export function asyncHandler(handler): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
     let sent = arity < 3;
 
-    function handleBoom(err: Error) {
+    function handleBoom(err: Error): boolean {
       if (err && err instanceof Error && Boom.isBoom(err)) {
         res
           .status((err as Boom).output.statusCode)

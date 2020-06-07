@@ -2,8 +2,8 @@
 import { advanceBy, clear } from 'jest-date-mock';
 import pMap from 'p-map';
 import { toArray, random } from 'lodash';
-import { JobRateMetric, MetricOptions } from '@src/server/monitor/metrics';
-import { QueueListener } from '@src/server/monitor/queues';
+import { JobRateMetric, MetricOptions } from '@src/server/metrics';
+import { QueueListener } from '@src/server/queues';
 import { createQueueListener } from '../rules/utils';
 
 const EVENT_NAME = 'job.finished';

@@ -1,5 +1,4 @@
 import { getAll } from './getAll';
-import { getHostQueues } from './getHostQueues';
 import { getQueue } from './getQueue';
 import { pauseQueue } from './pauseQueue';
 import { resumeQueue } from './resumeQueue';
@@ -21,26 +20,25 @@ const router = require('express').Router({ mergeParams: true });
 
 router.get('/', getAll);
 
-router.get('/:host', getHostQueues);
-router.use('/:host/:queue', populateQueue);
+router.use('/:queue', populateQueue);
 
-router.get('/:host/:queue', getQueue);
-router.post('/:host/:queue/pause', pauseQueue);
-router.post('/:host/:queue/resume', resumeQueue);
-router.get('/:host/:queue/job-types', getJobTypes);
-router.get('/:host/:queue/workers', getWorkers);
-router.get('/:host/:queue/worker-count', getWorkerCount);
-router.get('/:host/:queue/counts', getJobCounts);
+router.get('/:queue', getQueue);
+router.post('/:queue/pause', pauseQueue);
+router.post('/:queue/resume', resumeQueue);
+router.get('/:queue/job-types', getJobTypes);
+router.get('/:queue/workers', getWorkers);
+router.get('/:queue/worker-count', getWorkerCount);
+router.get('/:queue/counts', getJobCounts);
 
 // TODO: Drain
 
-router.post('/:host/:queue/clean', cleanQueue);
-router.post('/:host/:queue/retry-all', retryFailedJobs);
+router.post('/:queue/clean', cleanQueue);
+router.post('/:queue/retry-all', retryFailedJobs);
 
-router.use('/:host/:queue/metrics', metricsRoutes);
-router.use('/:host/:queue/rules', ruleRoutes);
-router.use('/:host/:queue/getJobs', jobRoutes);
-router.use('/:host/:queue/bulk-getJobs', bulkJobRoutes);
-router.use('/:host/:queue/scheduled-getJobs', scheduledJobRoutes);
+router.use('/:queue/metrics', metricsRoutes);
+router.use('/:queue/rules', ruleRoutes);
+router.use('/:queue/getJobs', jobRoutes);
+router.use('/:queue/bulk-getJobs', bulkJobRoutes);
+router.use('/:queue/scheduled-getJobs', scheduledJobRoutes);
 
 export default router;

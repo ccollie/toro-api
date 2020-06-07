@@ -1,13 +1,11 @@
 import { RuleConfigOptions } from '@src/types';
-import { deleteAllQueueData } from '../../../../src/server/redis';
-import { Rule, RuleManager } from '@src/server/monitor/rules';
-import { QueueBus } from '@src/server/monitor/queues';
-import { LockManager } from '@src/server/monitor/lib/lockManager';
-import { RedisStreamAggregator } from '@src/server/redis/streamAggregator';
+import { Rule, RuleManager } from '@src/server/rules';
+import { QueueBus } from '@src/server/queues';
+import { LockManager, RedisStreamAggregator, deleteAllQueueData } from '../../../../src/server/redis';
 import { randomId, randomString, delay, createClient } from '../../utils';
 import nanoid from 'nanoid';
 import { Queue } from 'bullmq';
-import { defaultRuleAlertOptions } from '@src/server/monitor/rules/rule-config';
+import { defaultRuleAlertOptions } from '@src/server/rules/rule-config';
 
 describe('RuleManager', () => {
   // jest.setTimeout(5000);

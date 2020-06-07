@@ -2,13 +2,13 @@ import { EventEmitter } from 'events';
 import config from '../config';
 import { JobFields } from '../models/jobs';
 import { resolve } from './utils';
-import { QueueListener } from '../monitor/queues';
-import * as metrics from '../monitor/metrics';
+import { QueueListener } from '../queues';
+import * as metrics from '../metrics';
 import {
   BaseMetric,
   MetricType,
   create as createMetric,
-} from '../monitor/metrics';
+} from '../metrics';
 
 const defaultSlidingWindow = config.getValue('defaultSlidingWindow');
 

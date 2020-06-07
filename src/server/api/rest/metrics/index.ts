@@ -1,6 +1,6 @@
 'use strict';
 const router = require('express').Router({ mergeParams: true });
-import { getTypes } from '../../../monitor/metrics';
+import { getTypes } from '../../../metrics';
 import { asyncHandler as wrap } from '../middleware';
 
 const getAll = async (req, res) => {

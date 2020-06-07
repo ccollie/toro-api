@@ -1,7 +1,7 @@
 /* global test, expect */
 import ms from 'ms';
 import { advanceBy, clear } from 'jest-date-mock';
-import { SlidingWindow } from '../../../src/server/monitor/lib';
+import { SlidingWindow } from '../../../src/server/metrics/lib';
 
 const defaultWindowOpts = {
   duration: 2 * 60 * 1000,

@@ -1,6 +1,6 @@
 /* global test, expect */
 import pMap from 'p-map';
-import { LatencyMetric, MetricOptions } from '@src/server/monitor/metrics';
+import { LatencyMetric, MetricOptions } from '@src/server/metrics';
 import { createQueueListener } from '../../factories';
 
 const EVENT_NAME = 'job.finished';

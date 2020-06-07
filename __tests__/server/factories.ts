@@ -1,5 +1,5 @@
 import { QueryContext } from '@src/server/query';
-import { QueueListener } from '@src/server/monitor/queues';
+import { QueueListener } from '@src/server/queues';
 import { Queue } from 'bullmq';
 import { randomString } from './utils';
 

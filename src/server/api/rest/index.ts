@@ -9,7 +9,7 @@ import queueRoutes from './queues';
 
 let isInit = false;
 
-function init(req: Request, res: Response, next: NextFunction) {
+function init(req: Request, res: Response, next: NextFunction): void {
   if (isInit) {
     return next();
   }

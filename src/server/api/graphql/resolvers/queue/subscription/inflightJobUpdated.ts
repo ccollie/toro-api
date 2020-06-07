@@ -6,7 +6,7 @@ import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../helpers';
 import { JobStatusEnum } from '../../../../common/imports';
-import { createJobNameFilter } from '../../../../../monitor/lib/utils';
+import { createJobNameFilter } from '../../../../../metrics/lib/utils';
 
 const JOB_STATES = Object.values(JobStatusEnum);
 
@@ -50,6 +50,9 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
     filters.push(fn);
   }
   if (filters.length > 0) {
+    if (filters.length === 1) {
+      return filters[0];
+    }
     return (rec) => {
       for (let i = 0; i < filters.length; i++) {
         if (!fn(rec)) return false;
