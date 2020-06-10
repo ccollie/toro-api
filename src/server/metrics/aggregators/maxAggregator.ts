@@ -31,7 +31,7 @@ export class MaxAggregator extends BaseAggregator {
    * Construct a MaxAggregator
    * @param {Object} options options
    * @param {Number} options.duration rolling statistical window for the stats functions
-   * @param {Number} options.period period for rolling window
+   * @param {Number} options.interval interval for rolling window
    */
   constructor(options: SlidingWindowOptions) {
     super();
@@ -99,7 +99,7 @@ export class MaxAggregator extends BaseAggregator {
 
     // if we have a new value < current max, check if its more than duration from
     // the last time it was set. Consider the following: we're recording latencies
-    // over a period of high activity followed by a period of low behaviour. We have
+    // over a interval of high activity followed by a interval of low behaviour. We have
     // to flush the previous maximum
     if (newVal < old) {
       if (now - this._lastSet > this.slidingWindow.duration) {

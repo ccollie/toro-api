@@ -1,3 +1,4 @@
+import { camelCase } from 'lodash';
 import { getSlidingWindowDefaults } from '../metrics/lib/utils';
 import Joi from '@hapi/joi';
 import ms from 'ms';
@@ -56,5 +57,39 @@ const windowDefaults = getSlidingWindowDefaults();
 
 export const slidingWindowSchema = Joi.object().keys({
   duration: durationSchema.default(windowDefaults.duration),
-  period: Joi.number().integer().positive().default(windowDefaults.period),
+  interval: durationSchema,
 });
+
+/*
+  From dog-joi-normalize
+  Copyright (c) 2019 Jose Nuñez Ahumada
+
+ const { error } = joi.validate(req.body, schema(joi), {
+        abortEarly: false,
+        allowUnknown: true,
+    });
+
+    if (error) {
+        return res.status(422).json({ error: normalizeJoiErrors(error.details) });
+    }
+
+ */
+export const normalizeJoiErrors = (errors: any[]) => {
+  const errorsObject = {};
+  errors.map((error) => {
+    let { path, type } = error;
+    type = camelCase(type.split(' ').join('_').replace('.', ' '));
+
+    if (Array.isArray(path)) {
+      path = path.join('_');
+    }
+
+    if (!errorsObject.hasOwnProperty(path)) {
+      errorsObject[path] = {
+        type,
+        path,
+      };
+    }
+  });
+  return errorsObject;
+};

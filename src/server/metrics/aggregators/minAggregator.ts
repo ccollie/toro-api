@@ -64,8 +64,8 @@ export class MinAggregator extends BaseAggregator {
 
     // if we have a new value > current minimum, check if its
     // more than duration from the last time it was set.
-    // Consider the following: we're recording latencies over a period of low activity followed
-    // by a period of spiky behaviour. We have to flush the previous minimum
+    // Consider the following: we're recording latencies over a interval of low activity followed
+    // by a interval of spiky behaviour. We have to flush the previous minimum
     if (newVal > old) {
       if (now - this._lastSet > this.slidingWindow.duration) {
         this.slidingWindow.current = DEFAULT_VALUE;

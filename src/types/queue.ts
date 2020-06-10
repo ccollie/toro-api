@@ -13,5 +13,6 @@ export enum QueueEventsEnum {
 export interface AppQueue {
   id: string;
   name: string;
+  prefix: string;
   counts: Record<JobStatus, number>;
 }

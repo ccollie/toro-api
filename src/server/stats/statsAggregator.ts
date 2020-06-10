@@ -1,10 +1,15 @@
 import ms from 'ms';
 import { Queue } from 'bullmq';
-import { StatsClient, StatsMetricType, StatsWriteOptions } from './statsClient';
+import { StatsClient, StatsWriteOptions } from './statsClient';
 import cron from 'node-cron';
 import { random } from 'lodash';
 import PQueue from 'p-queue';
-import { QueueConfig, StatisticalSnapshot, StatsGranularity } from 'index';
+import {
+  QueueConfig,
+  StatisticalSnapshot,
+  StatsGranularity,
+  StatsMetricType,
+} from '../../types';
 import { systemClock } from '../lib/clock';
 import {
   parseTimestamp,
@@ -99,7 +104,7 @@ export class StatsAggregator {
 
   private getKey(
     jobType: string,
-    metric: string,
+    metric: StatsMetricType,
     granularity: StatsGranularity,
   ): string {
     return this.statsClient.getKey(jobType, metric, granularity);
@@ -121,15 +126,6 @@ export class StatsAggregator {
 
     const interval = ms(`1 ${unit}`);
 
-    if (srcSpan) {
-      srcSpan.start = parseTimestamp(srcSpan.start);
-      srcSpan.end = parseTimestamp(srcSpan.end);
-    }
-
-    if (destSpan) {
-      destSpan.start = parseTimestamp(destSpan.start);
-      destSpan.end = parseTimestamp(destSpan.end);
-    }
     const srcLastWrite = srcSpan && srcSpan.end;
     const destLastWrite = destSpan && destSpan.end;
 

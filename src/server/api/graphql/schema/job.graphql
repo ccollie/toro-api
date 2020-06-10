@@ -259,31 +259,17 @@ input JobOptionsEveryInput {
 
 type AddJobPayload {
   job: Job
-  status: ActionStatus
-}
-
-type UpdateJobPayload {
-  job: Job
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
+  queue: Queue
 }
 
 type AddBulkJobsPayload {
   jobs: [Job]
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
+  queue: Queue
 }
 
 type JobAddCronPayload {
   job: Job
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
+  queue: Queue
 }
 
 input JobAddBulkInput {
@@ -294,7 +280,7 @@ input JobAddBulkInput {
 
 type JobLogs {
   count: Int
-  items: [String!]
+  items: [String]
 }
 
 
@@ -315,7 +301,7 @@ type Job {
   processedOn: DateTime
   timestamp: DateTime!
   failedReason: String
-  stacktrace: [String!]
+  stacktrace: [String]
   returnvalue: JSON
   logs(start: Int = 0, end: Int = -1): JobLogs!
 }
@@ -324,12 +310,25 @@ extend type Query {
   job(queueId: ID!, id: ID!): Job
 }
 
-type DeleteBulkJobsPayload {
-  jobIds: [String!]!
+type BulkStatusItem {
+  id: ID!
   success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
+  reason: String
+}
+
+type DeleteBulkJobsPayload {
+  status: [BulkStatusItem!]!
+  queue: Queue
+}
+
+type RetryBulkJobsPayload {
+  status: [BulkStatusItem!]!
+  queue: Queue
+}
+
+type PromoteBulkJobsPayload {
+  status: [BulkStatusItem!]!
+  queue: Queue
 }
 
 input AddJobInput {
@@ -342,6 +341,27 @@ input AddJobInput {
 type AddJobLogPayload {
   id: ID!
   count: Int!
+  job: Job
+}
+
+type RetryJobPayload {
+  job: Job
+  queue: Queue
+}
+
+type PromoteJobPayload {
+  job: Job
+  queue: Queue
+}
+
+type UpdateJobPayload {
+  job: Job
+  queue: Queue
+}
+
+type DeleteJobPayload {
+  id: ID!
+  queue: Queue
 }
 
 extend type Mutation {
@@ -355,17 +375,19 @@ extend type Mutation {
   ): AddJobPayload
   addRepeatableEveryJob(
     queueId: ID!,
-    jobName: ID!
+    jobName: String!
     data: JSON!
     options: JobOptionsEveryInput
   ): AddJobPayload
-  promoteJob(queueId: ID!, jobId: ID!): ActionStatus
-  retryJob(queueId: ID!, jobId: ID!): ActionStatus
-  deleteJob(queueId: ID!, jobId: ID!): ActionStatus
+  promoteJob(queueId: ID!, jobId: ID!): PromoteJobPayload
+  retryJob(queueId: ID!, jobId: ID!): RetryJobPayload
+  deleteJob(queueId: ID!, jobId: ID!): DeleteQueuePayload
   updateJob(queueId: ID!, jobId: ID!, data: JSONObject): UpdateJobPayload
   deleteBulkJobs(queueId: ID!, jobIds: [ID!]!): DeleteBulkJobsPayload
-  moveJobToDelayed(queueId: ID!, jobId: ID!): ActionStatus
-  moveJobToCompleted(queueId: ID!, jobId: ID!): ActionStatus
+  retryBulkJobs(queueId: ID!, jobIds: [ID!]!): RetryBulkJobsPayload
+  promoteBulkJobs(queueId: ID!, jobIds: [ID!]!): PromoteBulkJobsPayload
+  moveJobToDelayed(queueId: ID!, jobId: ID!): Job
+  moveJobToCompleted(queueId: ID!, jobId: ID!): Job
   addJobLog(
     queueId: ID!,
     jobId: ID!
@@ -378,12 +400,14 @@ type JobCreatedMessage {
 }
 
 type JobUpdatedMessage {
-  job: Job!
+  """Event name indication what changed"""
+  event: String!
+  """Job delta"""
+  delta: JSONObject
 }
 
 type JobDeletedMessage {
   jobId: ID!
-  queueId: ID!
 }
 
 type JobPromotedMessage {
@@ -392,10 +416,8 @@ type JobPromotedMessage {
 
 """Subscription message for added job log"""
 type JobLogAddedMessage {
-  """the job id"""
-  id: ID!
-  """the added log item"""
-  row: String!
+  """the added log items"""
+  rows: [String!]!
   """the number of log items after the addition"""
   count: Int
 }
@@ -406,4 +428,5 @@ extend type Subscription {
   jobDeleted(queueId: ID!, jobId: ID!): JobDeletedMessage
   jobPromoted(queueId: ID!, jobId: ID!): JobPromotedMessage
   jobLogAdded(queueId: ID!, jobId: ID!): JobLogAddedMessage
+  # todo: onJobFinished ( failed or completed )
 }

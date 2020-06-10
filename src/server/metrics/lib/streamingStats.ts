@@ -3,13 +3,13 @@ import OnlineNormalEstimator from './onlineNormalEstimator';
 import { SlidingWindow, SlidingWindowOptions } from './slidingWindow';
 import { getSlidingWindowDefaults } from './utils';
 
-function calcBuckets(duration?: number, period?: number): number {
-  if (!duration || !period) {
+function calcBuckets(duration?: number, interval?: number): number {
+  if (!duration || !interval) {
     const defaults = getSlidingWindowDefaults();
     duration = duration || defaults.duration;
-    period = period || defaults.period;
+    interval = interval || defaults.interval;
   }
-  return Math.max(Math.ceil(duration / period) * 10, 1000); // ??
+  return Math.max(Math.ceil(duration / interval) * 10, 1000); // ??
 }
 
 export type SummaryStatsField =
@@ -27,8 +27,8 @@ export class StreamingStats {
 
   constructor(window?: SlidingWindowOptions) {
     if (window) {
-      const { period, duration } = window;
-      const buckets = calcBuckets(duration, period); // ??
+      const { interval, duration } = window;
+      const buckets = calcBuckets(duration, interval); // ??
       this._windows = new SlidingWindow(window, () => new Deque(buckets));
       this._windows.onTick((data) => this.rotate(data));
       this._currentWindow = this._windows.current;

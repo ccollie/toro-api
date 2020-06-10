@@ -7,8 +7,10 @@ export enum JobStatusEnum {
   failed = 'failed',
   delayed = 'delayed',
   paused = 'paused',
-  UNKNOWN = 'unknown',
+  stalled = 'stalled'
 }
+
+export type JobFinishedState = JobStatusEnum.completed | JobStatusEnum.failed;
 
 export type JobStatus = keyof typeof JobStatusEnum;
 

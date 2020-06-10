@@ -2,14 +2,14 @@ import { random } from 'lodash';
 import {
   FinishedCountMetric,
   MetricOptions,
-} from '@src/server/metrics';
-import { createQueueListener } from '../../factories';
+} from '../../../src/server/metrics';
+import { createQueueListener } from '../factories';
 
 describe('FinishedCountMetric', () => {
   let queueListener;
   const defaultWindow = {
     duration: 10000,
-    period: 100,
+    interval: 100,
   };
   const defaultOptions: MetricOptions = {
     window: defaultWindow,

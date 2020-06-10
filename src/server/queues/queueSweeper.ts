@@ -32,7 +32,7 @@ function getRetention(): number {
 
 // todo: rules and event bus
 
-/** Handles period cleanup duties for a queue */
+/** Handles interval cleanup duties for a queue */
 export class QueueSweeper {
   private _done: boolean;
   private readonly retention: number;

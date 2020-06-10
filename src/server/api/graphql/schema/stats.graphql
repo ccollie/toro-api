@@ -2,14 +2,14 @@ type StatsWindow {
   """the total length of the window"""
   duration: Int
   """the sub-divisions (sampling interval)"""
-  period: Int
+  interval: Int
 }
 
 input StatsWindowInput {
   """the total length of the window"""
   duration: Int
   """the sub-divisions (sampling interval)"""
-  period: Int
+  interval: Int
 }
 
 enum Granularity {
@@ -96,22 +96,39 @@ enum JobTimingType {
 input StatsQueryInput {
   queueId: ID!
   jobName: String,
-  metric: JobTimingType
   granularity: Granularity
-  dateRange: DateRangeInput
+  rangeStart: DateTime
+  rangeEnd: DateTime
 }
 
-type StatsSnapshotList {
-  count: Int!
-  feed(limit: Int = 10, nextCursor: String = null): StatsSnapshot
+input StatsSpanQueryInput {
+  queueId: ID!
+  jobName: String,
+  granularity: Granularity
 }
 
-type StatsSnapshotFeed {
-  cursor: String
-  feed: [StatsSnapshot!]
+input StatsUpdateFilter {
+  queueId: ID!
+  jobName: String,
+  granularity: Granularity
 }
 
 extend type Query {
-  latencies(input: StatsQueryInput): StatsSnapshotList
-  waitTime(input: StatsQueryInput!): StatsSnapshotList
+  """
+  For the given query, return the date range of stored latency data
+  """
+  latencyStatsSpan(input: StatsSpanQueryInput!): DateRange
+  """
+  For the given query, return the date range of stored wait time data
+  """
+  waitTimeStatsSpan(input: StatsSpanQueryInput!): DateRange
+  latencies(input: StatsQueryInput!): [StatsSnapshot!]!
+  waitTimes(input: StatsQueryInput!): [StatsSnapshot!]!
+}
+
+extend type Subscription {
+  """Emit a message when a new latency snapshot of the queue is taken"""
+  latencyStatsUpdated(filter: StatsUpdateFilter): StatsSnapshot
+  """Emits a message when a new wait-time snapshot of the queue is taken"""
+  waitTimeStatsUpdated(filter: StatsUpdateFilter): StatsSnapshot
 }

@@ -6,10 +6,10 @@ import {
   randomId,
   randomString,
 } from './utils';
-import { systemClock } from '@src/server/lib/clock';
-import { Rule } from '@src/server/rules';
-import { delay } from '../../utils';
-import { QueueListener } from '@src/server/queues';
+import { systemClock } from '../../../src/server/lib/clock';
+import { Rule } from '../../../src/server/rules';
+import { delay } from '../utils';
+import { QueueListener } from '../../../src/server/queues';
 
 describe('Rule', () => {
   let queueListener: QueueListener;
@@ -84,7 +84,7 @@ describe('Rule', () => {
         jest.setTimeout(10000); // change timeout to 10 seconds
       });
 
-      test('it should respect the warmup period', async () => {
+      test('it should respect the warmup interval', async () => {
         const timeout = 100;
 
         jest.useFakeTimers();

@@ -48,18 +48,21 @@ input QueueStatsInput {
   end: DateTime
 }
 
+input QueueJobsInput {
+  offset: Int = 0
+  limit: Int = 10
+  status: JobState = completed
+  order: SortOrderEnum = ASC
+}
+
 type Queue {
   id: String!
   name: String
+  host: String
   prefix: String
   isPaused: Boolean
   jobCounts: JobCounts
-  jobs(
-    offset: Int = 0
-    limit: Int = 10
-    state: JobState = completed
-    asc: Boolean = true
-  ): [Job!]!
+  jobs(input: QueueJobsInput): [Job!]!
   repeatableJobs(
     offset: Int = 0
     limit: Int = 10
@@ -75,34 +78,18 @@ type Queue {
 
 type PauseQueuePayload {
   isPaused: Boolean
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
 }
 
 type ResumeQueuePayload {
   isPaused: Boolean
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
 }
 
 type CleanQueuePayload {
   jobIds:[ID!]
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
 }
 
 type DrainQueuePayload {
-  jobIds:[ID!]
   success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
 }
 
 input DeleteQueueOptions {
@@ -112,10 +99,17 @@ input DeleteQueueOptions {
 
 type DeleteQueuePayload {
   deletedKeys: Int!
-  success: Boolean
-  statusCode: Int
-  error: String,
-  message: String
+}
+
+input CleanQueueFilter {
+  "queue Id"
+  id: String!
+  "Grace interval. Jobs older this this will be removed"
+  grace: Duration!
+  "limit Maximum amount of getJobs to clean per call. If not provided will clean all matching getJobs."
+  limit: Int = 0
+  "Status of the jobs to clean"
+  status: JobState = completed
 }
 
 type Mutation {
@@ -125,38 +119,29 @@ type Mutation {
   A paused queue will not process new jobs until resumed, but current jobs being processed
   will continue until they are finalized.
   """
-  pauseQueue(id: String!): PauseQueuePayload
+  pauseQueue(id: ID!): PauseQueuePayload
 
   """
   Resume a queue after being paused.
   """
-  resumeQueue(id: String!): ResumeQueuePayload
+  resumeQueue(id: ID!): ResumeQueuePayload
 
   """Drains the queue, i.e., removes all jobs that are waiting or delayed, but not active, completed or failed."""
   drainQueue(
     """The queue id"""
-    id: String!,
+    id: ID!,
     """Should delayed jobs be drained as well"""
     delayed: Boolean = false
   ): DrainQueuePayload
 
   """
-  Remove all getJobs created outside of a grace period in milliseconds.
+  Remove all getJobs created outside of a grace interval in milliseconds.
   You can clean the getJobs with the following states: completed, wait (typo for waiting),
   active, delayed, and failed.
   """
-  cleanQueue(
-    "queue Id"
-    id: String!
-    "Grace period. Jobs older this this will be removed"
-    grace: Duration!
-    "limit Maximum amount of getJobs to clean per call. If not provided will clean all matching getJobs."
-    limit: Int = 0
-    "Status of the getJobs to clean"
-    type: JobState = completed
-  ): CleanQueuePayload
+  cleanQueue(filter: CleanQueueFilter): CleanQueuePayload
 
-  deleteQueue(queueId: ID!, options: DeleteQueueOptions): DeleteQueuePayload
+  deleteQueue(id: ID!, options: DeleteQueueOptions): DeleteQueuePayload
 }
 
 
@@ -171,13 +156,13 @@ type Query {
   findQueue(hostName: String!, queueName: String!): Queue
 }
 
-"""Returns the rate of job executions (completed or failed jobs) over a given period"""
+"""Returns the rate of job executions (completed or failed jobs) over a given interval"""
 type JobRateChangedMessage {
   """the updated job rate"""
   value: Float!
 }
 
-"""Returns the rate of job failures over a given period"""
+"""Returns the rate of job failures over a given interval"""
 type JobErrorRateChangedMessage {
   """the updated error rate"""
   value: Float!
@@ -217,6 +202,8 @@ type WorkersChangedMessage {
 
 """Filter for in-flight job updates"""
 input QueueJobChangesFilter {
+  """The queue to monitor"""
+  queueId: ID!
   """Job name filter. A message will be returned if the job name is in this list"""
   name: [String!]
   """Job state filter. A message will be returned if the job state is in this list"""
@@ -310,12 +297,8 @@ type Subscription {
   jobErrorRateChanged(input: MetricsInput!): JobErrorRateChangedMessage
   """Emits a message when the status of a queue changes"""
   queueStateChanged(queueId: ID!): QueueStateChangedMessage
-  """Returns messages when the status of in-flight jobs change"""
-  inflightJobUpdated(queueId: ID!, filter: QueueJobChangesFilter): InflightJobUpdatedMessage
-  """Emit a message when a new latency snapshot of the queue is taken"""
-  latencyStatsUpdated(queueId: ID!, jobName: String): StatsSnapshot
-  """Emits a message when a new wait-time snapshot of the queue is taken"""
-  waitTimeStatsUpdated(queueId: ID!, jobName: String): StatsSnapshot
+  """Returns messages when the status of in-flight (currently processing) jobs change"""
+  inflightJobUpdated(input: QueueJobChangesFilter): InflightJobUpdatedMessage
   """Subscribes to a change in the list of workers associated with a queue"""
   workersChanged(queueId: ID!): WorkersChangedMessage
   """Subscribes to a change in the count of workers associated with a queue"""

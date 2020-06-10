@@ -18,7 +18,6 @@ import {
   QueueWorker,
   RepeatableJob,
   RuleAlert,
-  StatsGranularity,
 } from 'index';
 import { isEmpty } from 'lodash';
 import { JobStatus } from 'jobs';
@@ -50,7 +49,7 @@ export class QueueManager {
   public readonly queue: Queue;
   private readonly streamAggregator: RedisStreamAggregator;
   readonly queueListener: QueueListener;
-  private readonly statsClient: StatsClient;
+  readonly statsClient: StatsClient;
   readonly bus: QueueBus;
   private readonly config: QueueConfig;
   rules: Rule[];
@@ -426,9 +425,9 @@ export class QueueManager {
     const jobKey = this.queue.toKey(jobId);
     // unfortunately, a job's state is not stored on the job itself, but is
     // derived in the implementation from which of the queue lists it exists
-    // in at the moment. Instead of having to query redis, we add a listener to
-    // this listener and filter out based on id. This means that we should
-    // probably limit the number of getJobs we watch
+    // in at the moment. Instead of having to query redis, we add a job listener
+    // and filter out based on id. This means that we should probably limit
+    // the number of getJobs we watch in the interest of efficiency
 
     let unsubCalled = false;
     let state = null;
@@ -485,29 +484,5 @@ export class QueueManager {
   ): Promise<() => void> {
     const key = getStatsKey(this.host, this.queue, jobType, tag);
     return this.subscribeToStream(key, offset, handler);
-  }
-
-  async subscribeLatency(
-    jobType: string,
-    granularity: StatsGranularity,
-    handler,
-  ): Promise<Function> {
-    const listener = (data: any) => {
-      if (data) {
-        const good =
-          (!data.jobType || data.jobType === jobType) &&
-          (!data.granularity || data.granularity === granularity);
-        if (good) return handler(data);
-      }
-    };
-    return this.bus.on('stats.added', listener);
-  }
-
-  async subscribeWaitTime(
-    jobType: string,
-    granularity: StatsGranularity,
-    handler,
-  ) {
-    return this.subscribeToQueue(jobType, 'wait', '$', handler);
   }
 }

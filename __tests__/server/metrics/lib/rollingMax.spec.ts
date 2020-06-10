@@ -142,7 +142,7 @@ describe('RollingMax', () => {
       for (let i = 0; i < dataset.length; i++) {
         const cur = dataset[i];
         const res = expectedResults[i];
-        const max = slidingWindowMax.add(cur);
+        const max = slidingWindowMax.add(cur as number);
         expect(max).toEqual(res);
       }
     },

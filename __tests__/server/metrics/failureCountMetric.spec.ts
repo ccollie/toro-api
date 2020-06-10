@@ -1,11 +1,11 @@
-import { FailureCountMetric, MetricOptions } from '@src/server/metrics';
-import { createQueueListener } from '../../factories';
+import { FailureCountMetric, MetricOptions } from '../../../src/server/metrics';
+import { createQueueListener } from '../factories';
 
 describe('FailureCountMetric', () => {
   let queueListener;
   const defaultWindow = {
     duration: 10000,
-    period: 100,
+    interval: 100,
   };
   const defaultOptions: MetricOptions = {
     window: defaultWindow,

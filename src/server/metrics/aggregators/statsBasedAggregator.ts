@@ -7,7 +7,7 @@ export class StatsBasedAggregator extends BaseAggregator {
    * Construct a StatsBasedAggregator
    * @param {Object} options options
    * @param {Number} options.duration rolling statistical window for the stats functions
-   * @param {Number} options.period period for rolling window
+   * @param {Number} options.interval interval for rolling window
    */
   constructor(options: SlidingWindowOptions) {
     super();

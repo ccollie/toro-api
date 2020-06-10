@@ -1,6 +1,6 @@
-import { Query } from '@src/server/query';
-import { $project } from '@src/server/query/pipeline/project';
-import { assert } from '@src/server/query/utils';
+import { Query } from '../../../../src/server/query';
+import { $project } from '../../../../src/server/query/pipeline/project';
+import { assert } from '../../../../src/server/query/utils';
 import { get, isEqual } from 'lodash';
 import {
   find,

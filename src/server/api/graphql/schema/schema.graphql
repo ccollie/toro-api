@@ -5,13 +5,20 @@ scalar JobProgress
 scalar RemoveJobOption
 scalar DateTime
 
+type DateRange {
+  start: DateTime
+  end: DateTime
+}
+
 input DateRangeInput {
   start: DateTime
   end: DateTime
 }
 
 enum SortOrderEnum {
+  """Sort Ascending"""
   ASC
+  """Sort Descending"""
   DESC
 }
 

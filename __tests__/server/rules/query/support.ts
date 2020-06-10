@@ -1,10 +1,10 @@
-import { compileQuery, parseExpression } from '../../../../../src/server/query';
-import { createContext } from '../../../factories';
+import { compileQuery, parseExpression } from '../../../../src/server/query';
+import { createContext } from '../../factories';
 export { createContext };
 
 import fs from 'fs';
-import { Query } from '@src/server/query';
-import { $project } from '@src/server/query/pipeline/project';
+import { Query } from '../../../../src/server/query';
+import { $project } from '../../../../src/server/query/pipeline/project';
 
 export const personData = JSON.parse(
   fs.readFileSync(__dirname + '/data/person.json').toString(),

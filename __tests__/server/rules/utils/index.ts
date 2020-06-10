@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import nanoid from 'nanoid';
-export * from '../../../factories';
+export * from '../../factories';
 
 
 export function randomString(length = 10): string {

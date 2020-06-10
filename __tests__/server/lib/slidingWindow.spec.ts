@@ -5,7 +5,7 @@ import { SlidingWindow } from '../../../src/server/metrics/lib';
 
 const defaultWindowOpts = {
   duration: 2 * 60 * 1000,
-  period: 10 * 1000,
+  interval: 10 * 1000,
 };
 
 describe('SlidingWindow', () => {
@@ -13,25 +13,25 @@ describe('SlidingWindow', () => {
     test('It should create a SlidingWindow', () => {
       const subject = new SlidingWindow(defaultWindowOpts);
       expect(subject.duration).not.toBeUndefined();
-      expect(subject.period).not.toBeUndefined();
+      expect(subject.interval).not.toBeUndefined();
       subject.destroy();
     });
 
     test('It should properly construct according to options', () => {
       const subject = new SlidingWindow({
         duration: 10000,
-        period: 1000,
+        interval: 1000,
       });
       expect(subject.duration).toBe(10000);
-      expect(subject.period).toBe(1000);
-      expect(subject.length).toBe(Math.ceil(subject.duration / subject.period));
+      expect(subject.interval).toBe(1000);
+      expect(subject.length).toBe(Math.ceil(subject.duration / subject.interval));
     });
 
     test('It fills window slices with default values', () => {
       const subject = new SlidingWindow(
         {
           duration: 10000,
-          period: 100,
+          interval: 100,
         },
         99,
       );

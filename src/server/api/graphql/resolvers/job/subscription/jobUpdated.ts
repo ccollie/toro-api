@@ -7,7 +7,7 @@ import { isEmpty } from 'lodash';
 export function jobUpdated(): GraphQLFieldResolver<any, any> {
   let unsub;
 
-  const DELAY = 150; // todo: read from config
+  const DELAY = 250; // todo: read from config
 
   async function cleanup(): Promise<void> {
     if (unsub) {

@@ -1,15 +1,15 @@
 import { advanceBy, clear } from 'jest-date-mock';
-import { SlidingWindowCounter } from '../../../src/server/metrics/lib';
+import { SlidingWindowCounter } from '../../../../src/server/metrics/lib';
 
 describe('SlidingWindowCounter', () => {
   describe('Constructor', () => {
     test('It should properly construct according to options', () => {
       const counter = new SlidingWindowCounter({
         duration: 10000,
-        period: 1000,
+        interval: 1000,
       });
       expect(counter.duration).toBe(10000);
-      expect(counter.period).toBe(1000);
+      expect(counter.interval).toBe(1000);
     });
   });
 
@@ -17,7 +17,7 @@ describe('SlidingWindowCounter', () => {
     test('it can add', () => {
       const counter = new SlidingWindowCounter({
         duration: 10000,
-        period: 1000,
+        interval: 1000,
       });
 
       counter.incr('success', 1);
@@ -35,7 +35,7 @@ describe('SlidingWindowCounter', () => {
     jest.useFakeTimers();
 
     beforeEach(() => {
-      b = new SlidingWindowCounter({ duration: 5000, period: 1000 });
+      b = new SlidingWindowCounter({ duration: 5000, interval: 1000 });
     });
 
     afterEach(() => {

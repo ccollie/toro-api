@@ -2,6 +2,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { typeDefs } from './schema';
 import { resolvers } from './resolvers';
 import { pubsub } from './subscription/subscriptionManager';
+import { formatGraphqlError } from './errors';
 import config from '../../config';
 
 export function createServer(middleware, context = {}): ApolloServer {
@@ -15,6 +16,7 @@ export function createServer(middleware, context = {}): ApolloServer {
     context: () => {
       return { pubsub, env, ...context };
     },
+    formatError: formatGraphqlError,
   });
   server.applyMiddleware(middleware);
   return server;

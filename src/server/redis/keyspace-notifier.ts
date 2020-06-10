@@ -13,13 +13,18 @@ const ChannelRegex = /__(keyspace|keyevent)@([0-9]+)__:([^\s]+)/i;
 
 const isValidType = (type): boolean => ['keyevent', 'keyspace'].includes(type);
 
+export enum KeyspaceNotificationType {
+  KEYSPACE = 'keyspace',
+  KEYEVENT = 'keyevent',
+}
+
 // __<keyspace||keyevent>@<db idx>__:<some key>
 function getChannel(type: string, db = 0, key = '*'): string {
   return `__${type}@${db}__:${key}`;
 }
 
 export interface KeyspaceNotification {
-  type: string;
+  type: KeyspaceNotificationType;
   key: string;
   event: string;
   pattern: string;
@@ -103,7 +108,11 @@ export class KeyspaceNotifier {
    * @param {KeyspaceNotificationFunc} cb function to call on a keyspace notification
    * @returns {Promise<Function>} an unsubscribe function
    */
-  async subscribe(type: string, key: string, cb: KeyspaceNotificationFunc) {
+  async subscribe(
+    type: KeyspaceNotificationType,
+    key: string,
+    cb: KeyspaceNotificationFunc,
+  ) {
     if (!isValidType(type)) {
       throw new Error(
         `Invalid subscription key type sent to #subscribe: ${type}`,
@@ -138,7 +147,7 @@ export class KeyspaceNotifier {
    * @returns {Promise<void>}
    */
   async unsubscribe(
-    type: string,
+    type: KeyspaceNotificationType,
     key: string,
     cb: KeyspaceNotificationFunc,
   ): Promise<void> {

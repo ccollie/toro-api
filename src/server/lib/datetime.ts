@@ -1,5 +1,5 @@
 import boom from '@hapi/boom';
-import { isDate } from 'lodash';
+import { isDate, isNil } from 'lodash';
 import { isNumber } from './utils';
 import ms from 'ms';
 
@@ -218,6 +218,9 @@ export function parseDate(date, defaultVal): Date {
 }
 
 export function parseTimestamp(date, defaultVal: number = undefined): number {
+  if (isNil(date)) {
+    return defaultVal;
+  }
   if (isNumber(date)) {
     return parseInt(date);
   }

@@ -16,12 +16,12 @@ export function getSlidingWindowDefaults(): StatsWindow {
   if (!defaultSlidingWindow) {
     defaultSlidingWindow = config.getValue('defaultSlidingWindow', {
       duration: DEFAULT_DURATION,
-      period: DEFAULT_PERIOD,
+      interval: DEFAULT_PERIOD,
     });
     defaultSlidingWindow.duration = parseDuration(
       defaultSlidingWindow.duration || DEFAULT_DURATION,
     );
-    defaultSlidingWindow.period = parseDuration(defaultSlidingWindow.period || DEFAULT_PERIOD);
+    defaultSlidingWindow.interval = parseDuration(defaultSlidingWindow.interval || DEFAULT_PERIOD);
   }
   return defaultSlidingWindow;
 }

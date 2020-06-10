@@ -7,7 +7,7 @@
   "flushInterval": 1000,
   "defaultSlidingWindow": {
     "duration": "2 mins",
-    "period": "1 sec"
+    "interval": "1 sec"
   },
   "server": {
     "host": "http://localhost",

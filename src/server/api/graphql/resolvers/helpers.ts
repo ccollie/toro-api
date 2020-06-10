@@ -4,11 +4,13 @@ import {
   QueueListener,
   Supervisor,
   HostManager,
+  StatsClient,
+  StatsGranularity,
 } from '../../common/imports';
-import { get } from 'lodash';
-import { parseDate } from '../../../lib/datetime';
+
+import { endOf, parseDate, startOf, subtract } from '../../../lib/datetime';
 import { systemClock } from '../../../lib/clock';
-import { isBefore } from 'date-fns';
+import getFieldNames from 'graphql-list-fields';
 
 export function getSupervisor(context): Supervisor {
   return context.supervisor as Supervisor;
@@ -28,26 +30,41 @@ export function getQueueHost(context, queueId: string): HostManager {
   return supervisor.getHost(manager && manager.host);
 }
 
-export function getQueueListener(context, id): QueueListener {
-  const manager = getSupervisor(context).getQueueManager(id);
+export function getQueueListener(context, id: string): QueueListener {
+  const manager = getQueueManager(context, id);
   return manager && manager.queueListener;
 }
 
-export function getQueryFields(info): string[] {
-  return get(info, 'fieldNodes[0].selectionSet.selections', []);
+export function getStatsClient(context, id: string): StatsClient {
+  const manager = getQueueManager(context, id);
+  return manager && manager.statsClient;
 }
 
-export function parseRangeQuery(options: any = {}) {
+export function normalizeGranularity(granularity: string): StatsGranularity {
+  return (granularity
+    ? granularity.toLowerCase()
+    : granularity) as StatsGranularity;
+}
+
+export function getResolverFields(info): string[] {
+  return getFieldNames(info);
+}
+
+export function parseRangeQuery(options: any = {}, unit?: StatsGranularity) {
   let { start, end } = options;
-  const { unit } = options;
   const now = systemClock.now();
-  if (start) {
+  unit = unit || StatsGranularity.Hour;
+  if (start && end) {
+    return { start, end };
+  } else if (!start && !end) {
+    end = endOf(now, unit);
+    start = startOf(end, unit);
+  } else if (start) {
     start = parseDate(start, now);
-    if (end) {
-      end = parseDate(end, now);
-    } else if (start && isBefore(start, now)) {
-      end = new Date(now);
-    }
+    end = endOf(start, unit);
+  } else {
+    end = parseDate(end, now);
+    start = subtract(end, 1, unit);
   }
   return { start, end };
 }

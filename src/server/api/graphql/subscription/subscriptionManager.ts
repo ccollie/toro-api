@@ -69,7 +69,7 @@ export type UnsubscribeFn = (
   args: any,
   context: any,
   info: any,
-) => void | Promise<void>;
+) => unknown;
 
 export interface SubscriptionCreationOptions {
   filter?: FilterFn;

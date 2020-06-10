@@ -1,5 +1,5 @@
 import { evalQuery } from '../support';
-import { QueryContext } from '@src/server/query';
+import { QueryContext } from '../../../../../src/server/query';
 
 describe('Conditional Operators', () => {
   let context: QueryContext;

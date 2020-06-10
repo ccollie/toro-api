@@ -71,7 +71,7 @@ end
 --[[
   Find score gaps > a given interval in a sorted set. Used in stats aggregation
   to determine where "catch up" is needed in the case that the server was down
-  for a period (hence aggregation was not done)
+  for a interval (hence aggregation was not done)
   Input:
     key         sorted set key
     startScore  start score

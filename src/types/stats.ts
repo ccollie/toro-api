@@ -1,3 +1,5 @@
+export type StatsMetricType = 'latency' | 'wait';
+
 export enum StatsGranularity {
   Minute = 'minute',
   Hour = 'hour',
@@ -22,7 +24,7 @@ export interface StatsWindow {
   /** the total length of the window (ms) */
   duration: number;
   /** the sub-divisions (sampling interval) */
-  period: number;
+  interval: number;
 }
 
 export interface StatisticalSnapshotOptions {

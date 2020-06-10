@@ -101,12 +101,12 @@ export class SlidingWindowCounter extends EventEmitter
 
   constructor(options: SlidingWindowOptions) {
     super();
-    const { duration, period } = options;
+    const { duration, interval } = options;
 
     this._windows = new SlidingWindow<Bucket>(
       {
         duration,
-        period,
+        interval,
       },
       () => new Bucket(),
     );
@@ -145,8 +145,8 @@ export class SlidingWindowCounter extends EventEmitter
     return this._windows.duration;
   }
 
-  get period(): number {
-    return this._windows.period;
+  get interval(): number {
+    return this._windows.interval;
   }
 
   get(key: string): number {

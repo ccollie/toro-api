@@ -1,4 +1,8 @@
-import { KeyspaceNotifier } from './index';
+import {
+  KeyspaceNotifier,
+  KeyspaceNotification,
+  KeyspaceNotificationType,
+} from './keyspace-notifier';
 
 export async function subscribeToJob(
   notifier: KeyspaceNotifier,
@@ -27,7 +31,7 @@ export async function subscribeToJob(
     }
   }
 
-  async function mainHandler(msg) {
+  async function mainHandler(msg: KeyspaceNotification): Promise<void> {
     switch (msg.event) {
       case 'hset':
         cb('update', jobKey);
@@ -41,8 +45,16 @@ export async function subscribeToJob(
 
   async function sub(): Promise<void> {
     unsubFunctions = await Promise.all([
-      notifier.subscribe('keyspace', jobKey, mainHandler),
-      notifier.subscribe('keyspace', logsKey, logsHandler),
+      notifier.subscribe(
+        KeyspaceNotificationType.KEYSPACE,
+        jobKey,
+        mainHandler,
+      ),
+      notifier.subscribe(
+        KeyspaceNotificationType.KEYSPACE,
+        logsKey,
+        logsHandler,
+      ),
     ]);
   }
 

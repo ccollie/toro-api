@@ -24,7 +24,7 @@ export class ZScoreAggregator extends BaseAggregator {
    * @param window
    * @param {Object} options options
    * @param {Number} options.duration rolling statistical window for the smoothing functions
-   * @param {Number} options.period period for rolling window
+   * @param {Number} options.interval interval for rolling window
    * @param {Number} options.threshold standard deviations for signal
    * @param {Number} options.influence between 0 and 1, where 1 is normal influence, 0.5 is half
    * @param {Number} options.lag minimum number of samples

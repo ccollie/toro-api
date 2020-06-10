@@ -1,7 +1,7 @@
 import pAll from 'p-all';
 import { Queue } from 'bullmq';
 import { WriteCache } from '../redis';
-import { roundDown, roundUp, parseTimestamp } from '../lib/datetime';
+import { roundDown, roundUp, parseTimestamp, DateLike } from '../lib/datetime';
 import { AbstractHistogram } from 'hdr-histogram-js';
 import { getSnapshot, stringEncode } from './utils';
 import { addMilliseconds, isAfter } from 'date-fns';
@@ -13,6 +13,7 @@ import {
   StatisticalSnapshot,
   StatisticalSnapshotOptions,
   StatsGranularity,
+  StatsMetricType,
 } from 'index';
 import { systemClock } from '../lib/clock';
 import IORedis from 'ioredis';
@@ -21,8 +22,6 @@ const QUEUE_LISTENER = Symbol('queue listener');
 const STATS_LISTENER = Symbol('stats listener');
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
-
-export type StatsMetricType = 'latency' | 'wait';
 
 export type StatsWriteOptions = {
   jobType: string;
@@ -104,8 +103,8 @@ export class StatsClient {
   getLatency(
     jobName: string,
     unit: StatsGranularity,
-    start,
-    end,
+    start: DateLike,
+    end: DateLike,
   ): Promise<StatisticalSnapshot[]> {
     const key = this.getKey(jobName, 'latency', unit);
     return this.getRange<StatisticalSnapshot>(key, start, end);
@@ -114,16 +113,21 @@ export class StatsClient {
   getWaitTimes(
     jobName: string,
     unit: StatsGranularity,
-    start,
-    end,
+    start: DateLike,
+    end: DateLike,
   ): Promise<StatisticalSnapshot[]> {
     const key = this.getKey(jobName, 'wait', unit);
     return this.getRange<StatisticalSnapshot>(key, start, end);
   }
 
-  async getSpan(jobType: string, tag: string, unit: StatsGranularity) {
+  async getSpan(jobType: string, tag: string, unit?: StatsGranularity) {
     const key = this.getKey(jobType, tag, unit);
-    return this.call('span', key);
+    const span = this.call('span', key);
+    if (Array.isArray(span)) {
+      const [start, end] = span;
+      return { start, end };
+    }
+    return null;
   }
 
   async getLast(jobType: string, tag: string, unit: StatsGranularity) {
@@ -222,15 +226,15 @@ export class StatsClient {
     const _ts = parseTimestamp(ts);
     const key = this.getKey(jobType, type, unit);
 
-    const value = JSON.stringify(stats);
+    const data = JSON.stringify(stats);
     const eventName = `stats.${type}.updated`;
     const eventData = {
-      jobType,
+      jobName: jobType,
       ts: _ts,
       unit,
-      data: value,
+      data,
     };
-    multi.zadd(key, _ts.toString(), value);
+    multi.zadd(key, _ts.toString(), data);
     this.bus.pipelineEmit(multi, eventName, eventData);
   }
 
@@ -424,6 +428,50 @@ export class StatsClient {
     this._writeHistogram(wait, jobType, 'wait', counts, options);
   }
 
+  private onStatsUpdate(
+    type: StatsMetricType,
+    jobName: string,
+    granularity: StatsGranularity,
+    handler: (eventData: any) => unknown,
+  ): Promise<Function> {
+    const listener = (data: any) => {
+      if (data) {
+        const good =
+          data.value &&
+          (!data.jobName || data.jobName === jobName) &&
+          (!data.unit || data.unit === granularity);
+
+        if (good) {
+          try {
+            const snapshot = JSON.parse(data.value);
+            return handler(snapshot);
+          } catch (e) {
+            // todo: properly log
+            console.log(e);
+          }
+        }
+      }
+    };
+    const eventName = `stats.${type}.updated`;
+    return this.bus.on(eventName, listener);
+  }
+
+  async onLatencyStatsUpdated(
+    jobName: string,
+    granularity: StatsGranularity,
+    handler: (eventData: any) => unknown,
+  ): Promise<Function> {
+    return this.onStatsUpdate('latency', jobName, granularity, handler);
+  }
+
+  async onWaitTimeStatsUpdated(
+    jobName: string,
+    granularity: StatsGranularity,
+    handler: (eventData: any) => unknown,
+  ): Promise<Function> {
+    return this.onStatsUpdate('wait', jobName, granularity, handler);
+  }
+
   private _callStats(
     client,
     method: string,
@@ -448,7 +496,7 @@ function getCursorKey(
   type: string,
   unit: StatsGranularity = null,
 ): string {
-  jobType = jobType || '__QUEUE__';
+  jobType = jobType || '__default__';
   const key = [jobType, type, unit].filter((value) => !!value).join('-');
   return `cursor:${key}`;
 }

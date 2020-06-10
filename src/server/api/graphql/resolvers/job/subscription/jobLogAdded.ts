@@ -1,8 +1,12 @@
 import { getQueueManager, getQueueHost } from '../../helpers';
+import { debounce } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
+import { KeyspaceNotificationType } from '../../../../../redis';
 
 export function jobLogAdded(): GraphQLFieldResolver<any, any> {
+  const DELAY = 250; // todo: read from config (or get from args)
+
   let unsub;
 
   function channelName(_, { queueId, jobId }): string {
@@ -19,15 +23,25 @@ export function jobLogAdded(): GraphQLFieldResolver<any, any> {
     const jobKey = queue.toKey(jobId);
     const logsKey = `${jobKey}:logs`;
 
-    function handler({ event }): void {
-      if (event === 'rpush') {
-        queue.getJobLogs(jobId, -1).then((res) => {
-          pubsub.publish(channelName, { jobId, logs: res.logs });
-        });
-      }
+    function handler(): void {
+      const calls = arguments.length;
+      queue.getJobLogs(jobId, -1 * calls).then((res) => {
+        const { logs: rows, count } = res;
+        pubsub.publish(channelName, { rows, count });
+      });
     }
 
-    unsub = notifier.subscribe('keyspace', logsKey, handler);
+    const update = debounce(handler, DELAY, { maxItems: 4 });
+
+    unsub = notifier.subscribe(
+      KeyspaceNotificationType.KEYSPACE,
+      logsKey,
+      ({ event }) => {
+        if (event === 'rpush') {
+          update();
+        }
+      },
+    );
   }
 
   async function onUnsubscribe(): Promise<any> {

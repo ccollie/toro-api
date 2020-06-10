@@ -5,7 +5,7 @@ import { RedisMetrics } from '@src/types';
 
 export const hostResolver = {
   Query: {
-    allHosts(_, args, { supervisor }): HostManager[] {
+    hosts(_, args, { supervisor }): HostManager[] {
       return (supervisor as Supervisor).hosts;
     },
     host(_, { id }, { supervisor }): HostManager {

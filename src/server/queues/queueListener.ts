@@ -10,19 +10,11 @@ import { isFinishedStatus } from '../lib/utils';
 import { parseTimestamp } from '../lib/datetime';
 import { systemClock } from '../lib/clock';
 import { timestampFromStreamId, parseStreamId } from '../redis/streams';
-import { AppJob } from 'jobs';
+import { AppJob, JobStatusEnum } from '../../types';
 
 const MAKE_HANDLER = Symbol('make job event handler');
 
-const QUEUE_EVENTS = [
-  'completed',
-  'waiting',
-  'active',
-  'failed',
-  'progress',
-  'removed',
-  'stalled',
-];
+const QUEUE_EVENTS = Object.values(JobStatusEnum);
 
 const CACHE_TIMEOUT = ms('2 hours');
 
@@ -88,7 +80,10 @@ export class QueueListener extends Emittery {
 
     this._handlerMap = {};
     QUEUE_EVENTS.forEach((state) => {
-      this._handlerMap[state] = this[MAKE_HANDLER](state);
+      const handler = this[MAKE_HANDLER](state);
+      if (handler) {
+        this._handlerMap[state] = handler;
+      }
     });
 
     this.keysToFetch = [...DEFAULT_FIELDS_TO_FETCH];
@@ -111,7 +106,11 @@ export class QueueListener extends Emittery {
   [MAKE_HANDLER](eventName: string) {
     const handlerName = `handle${capitalize(eventName)}`;
     const isFinished = isFinishedStatus(eventName);
-    const fn = this[handlerName].bind(this);
+    let fn = this[handlerName];
+    if (!fn) {
+      return null;
+    }
+    fn = fn.bind(this);
     const cache = this.cache;
     const name = this.queue.name;
 
@@ -127,9 +126,11 @@ export class QueueListener extends Emittery {
         job.id = jobId;
         cache.set(jobId, job);
       }
-      if (eventName !== 'progress') {
-        job.state = eventName;
-      }
+      job.state =
+        eventName === 'progress'
+          ? JobStatusEnum.active
+          : (eventName as JobStatusEnum);
+
       job.prevState = evt.prev;
       job.lastSeen = timestamp;
 
@@ -139,6 +140,7 @@ export class QueueListener extends Emittery {
 
         await fn(job, evt, timestamp);
         const evtData = {
+          eventName,
           event: evt,
           job,
           queue: name,
@@ -227,7 +229,7 @@ export class QueueListener extends Emittery {
 
   async markFinished(job: JobEventData, ts, failed = false): Promise<void> {
     job.finishedOn = ts;
-    job.state = failed ? 'failed' : 'completed';
+    job.state = failed ? JobStatusEnum.failed : JobStatusEnum.completed;
 
     const { latency, wait } = await this.getDurations(job);
 
@@ -238,6 +240,7 @@ export class QueueListener extends Emittery {
       wait,
       success: !failed,
       failed,
+      eventName: job.state,
     });
   }
 
@@ -297,6 +300,7 @@ export class QueueListener extends Emittery {
     if (includeJob) {
       addJob(includeJob);
     }
+    // todo: if were completed, also return value
 
     const response = await pipeline.exec();
     const result = [];

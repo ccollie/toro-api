@@ -2,8 +2,8 @@
 import { advanceBy, clear } from 'jest-date-mock';
 import pMap from 'p-map';
 import { toArray, random } from 'lodash';
-import { JobRateMetric, MetricOptions } from '@src/server/metrics';
-import { QueueListener } from '@src/server/queues';
+import { JobRateMetric, MetricOptions } from '../../../src/server/metrics';
+import { QueueListener } from '../../../src/server/queues';
 import { createQueueListener } from '../rules/utils';
 
 const EVENT_NAME = 'job.finished';
@@ -12,7 +12,7 @@ describe('JobRateMetric', () => {
   let queueListener: QueueListener;
   const defaultWindow = {
     duration: 10000,
-    period: 100,
+    interval: 100,
   };
   const defaultOptions: MetricOptions = {
     window: defaultWindow,
@@ -89,7 +89,7 @@ describe('JobRateMetric', () => {
       b = new JobRateMetric(queueListener, {
         window: {
           duration: 5000,
-          period: 500,
+          interval: 500,
         },
       });
     });
@@ -120,7 +120,7 @@ describe('JobRateMetric', () => {
       (b = new JobRateMetric(queueListener, {
         window: {
           duration: 5000,
-          period: 500,
+          interval: 500,
         },
       }));
 

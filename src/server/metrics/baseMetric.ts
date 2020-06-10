@@ -17,7 +17,7 @@ export interface MetricOptions {
 
 const slidingWindowSchema = Joi.object().keys({
   duration: durationSchema,
-  period: Joi.number().integer().positive().default(750), // todo: get default from config
+  interval: Joi.number().integer().positive().default(750), // todo: get default from config
 });
 
 const schema = Joi.object().keys({

@@ -1,4 +1,4 @@
-import { Query } from '@src/server/query';
+import { Query } from '../../../../src/server/query';
 import { createContext, personData, find, findFirst } from './support';
 
 const obj = { ...personData };

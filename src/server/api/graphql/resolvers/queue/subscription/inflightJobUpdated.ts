@@ -1,14 +1,16 @@
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { isEmpty, isDate, isNumber } from 'lodash';
-import { isFinishedStatus, diff } from '../../../../../lib';
+import { isFinishedStatus, diff, hashObject } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
-import { getQueueListener } from '../../helpers';
-import { JobStatusEnum } from '../../../../common/imports';
+import { getQueueListener, getResolverFields } from '../../helpers';
+import { createAsyncIterator, JobStatusEnum } from '../../../../common/imports';
 import { createJobNameFilter } from '../../../../../metrics/lib/utils';
 
-const JOB_STATES = Object.values(JobStatusEnum);
+const EVENT_NAMES = Object.values(JobStatusEnum)
+  .map((name) => `job.${name}`)
+  .concat('job.removed');
 
 type QueueJobChangesFilter = {
   name?: string[];
@@ -71,9 +73,7 @@ export function inflightJobUpdated(): GraphQLFieldResolver<any, any> {
   });
 
   const MAX_AGE = 1000;
-
   const DATE_FIELDS = ['timestamp', 'processedOn', 'finishedOn'];
-  let resultFilter: FilterPredicate = null;
 
   function formatDelta(delta): any {
     DATE_FIELDS.forEach((field) => {
@@ -85,18 +85,25 @@ export function inflightJobUpdated(): GraphQLFieldResolver<any, any> {
     return delta;
   }
 
-  function getChannelName(_, { queueId }): string {
-    return `QUEUE_JOBS_UPDATED:${queueId}`;
+  function getChannelName(_, { input }): string {
+    const { queueId, ...filter } = input;
+    const hash = isEmpty(filter) ? '' : ':' + hashObject(filter);
+    return `INFLIGHT_JOBS_UPDATED:${queueId}${hash}`;
   }
 
-  const cleanups = [];
-
-  function onSubscribe(_, { queueId, filter }, context): void {
+  function onSubscribe(_, { input }, context, info): AsyncIterator<any> {
+    const { queueId, ...filter } = input;
     const listener = getQueueListener(context, queueId);
-    const { channelName, pubsub } = context;
+    const fields = getResolverFields(info);
+    const fieldMap = fields.reduce((res, name) => {
+      res[name] = 1;
+      return res;
+    }, {});
 
-    const handler = (eventName: string, arg): void => {
-      const { job, timestamp, latency, wait } = arg;
+    console.log(fields);
+
+    const transformer = (eventName: string, event): any => {
+      const { job, timestamp, latency, wait } = event;
 
       // we only want realtime events
       if (Date.now() - timestamp > MAX_AGE) {
@@ -116,47 +123,36 @@ export function inflightJobUpdated(): GraphQLFieldResolver<any, any> {
         delta = diff(job, prev, { trackRemoved: false });
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { prevState, jobId, lastSeen, id, ...rest } = delta;
-      if (!isEmpty(rest)) {
-        const result = formatDelta(rest);
-        result.id = job.id;
-        cache.set(job.id, { ...result });
-        pubsub.publish(channelName, result);
-      }
-      if (isFinishedStatus(eventName)) {
+      const { prevState, jobId, lastSeen, id, ...data } = delta;
+      const isFinished = isFinishedStatus(eventName);
+      if (isFinished) {
         cache.del(job.id);
       }
-      // todo: how to handle delete ?
+      if (!isEmpty(data)) {
+        const result = formatDelta(data);
+        result.id = job.id;
+        if (!isFinished) {
+          cache.set(job.id, { ...result });
+        }
+        return result;
+      }
     };
 
-    JOB_STATES.forEach((eventName) => {
-      const cb = (data) => {
-        return handler(eventName, data);
-      };
-      const actualEventName = `job.${eventName}`;
-      cleanups.push(listener.on(actualEventName, cb));
-    });
-
-    // handle removed
-    cleanups.push(
-      listener.on('job.removed', (data) => {
-        return handler('removed', data);
-      }),
+    const resultFilter = createFilter(filter);
+    return createAsyncIterator(
+      listener,
+      EVENT_NAMES,
+      resultFilter,
+      transformer,
     );
-
-    resultFilter = createFilter(filter);
   }
 
   function onUnsubscribe(): void {
-    cleanups.forEach((fn) => {
-      fn();
-    });
     cache.reset();
   }
 
   return createResolver({
     channelName: getChannelName,
-    filter: resultFilter,
     onSubscribe,
     onUnsubscribe,
   });

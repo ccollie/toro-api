@@ -3,6 +3,7 @@ import { queueResolver } from './queue';
 import { jobResolver } from './job';
 import { ruleResolver } from './rule';
 import { appInfoResolver } from './appInfo';
+import { statsResolver } from './stats';
 import typeResolvers from './types';
 
 export const resolvers = [
@@ -12,4 +13,5 @@ export const resolvers = [
   jobResolver,
   ruleResolver,
   typeResolvers,
+  statsResolver,
 ];

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { get, isFunction, isNil, isObject } from 'lodash';
+import { get, isFunction, isObject, isEmpty } from 'lodash';
 import { JobStatusEnum } from '../../types';
 
 export function hash(data, algorithm = 'sha1'): string {
@@ -7,12 +7,17 @@ export function hash(data, algorithm = 'sha1'): string {
 }
 
 export function objToString(hash): string {
-  if (!hash) return '' + hash;
+  if (isEmpty(hash)) {
+    return '' + hash;
+  }
   const keys = Object.keys(hash).sort();
   return keys.reduce((res, k) => res + `${k}:${hash[k]}`, '');
 }
 
-export function hashObject(obj, algorithm = 'sha1'): string {
+export function hashObject(
+  obj: Record<string, any>,
+  algorithm = 'sha1',
+): string {
   const asString = objToString(obj);
   return hash(asString, algorithm);
 }
@@ -245,11 +250,4 @@ export function abbreviateNumber(number, precision = 2, units): number {
     len--;
   }
   return number;
-}
-
-export function formatBoomPayload(error) {
-  return {
-    ...error.output.payload,
-    ...(isNil(error.data) ? {} : { data: error.data }),
-  };
 }

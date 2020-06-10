@@ -12,7 +12,7 @@ function getDefaultValue(defaultValue): any {
 
 export interface SlidingWindowOptions {
   duration: number;
-  period?: number;
+  interval?: number;
 }
 
 export class SlidingWindow<T> extends EventEmitter {
@@ -22,19 +22,19 @@ export class SlidingWindow<T> extends EventEmitter {
   public duration: number;
   private _windowStart: number;
   private readonly _start: number;
-  public readonly period: number;
+  public readonly interval: number;
   private readonly _timer: any;
 
   constructor(options: SlidingWindowOptions, defaultValue?: T | (() => T)) {
     super();
     const defaults = getSlidingWindowDefaults();
     const duration = parseDuration(options.duration || defaults.duration);
-    const period = parseDuration(
-      options.period || calculateWindowSize(duration),
+    const interval = parseDuration(
+      options.interval || calculateWindowSize(duration),
     );
     const valueDefault = defaultValue || 0;
-    const len = Math.ceil(duration / period);
-    this.period = period; // ??
+    const len = Math.ceil(duration / interval);
+    this.interval = interval; // ??
     this._ptr = 0;
     this._len = len;
 
@@ -46,7 +46,7 @@ export class SlidingWindow<T> extends EventEmitter {
 
     this.duration = duration;
     this._windowStart = this._start = systemClock.now();
-    this._timer = accurateInterval(() => this.spin(), this.period);
+    this._timer = accurateInterval(() => this.spin(), this.interval);
   }
 
   destroy(): void {

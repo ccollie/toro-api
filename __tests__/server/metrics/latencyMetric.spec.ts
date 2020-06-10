@@ -1,7 +1,7 @@
 /* global test, expect */
 import pMap from 'p-map';
-import { LatencyMetric, MetricOptions } from '@src/server/metrics';
-import { createQueueListener } from '../../factories';
+import { LatencyMetric, MetricOptions } from '../../../src/server/metrics';
+import { createQueueListener } from '../factories';
 
 const EVENT_NAME = 'job.finished';
 
@@ -9,7 +9,7 @@ describe('LatencyMetric', () => {
   let queueListener;
   const defaultWindow = {
     duration: 10000,
-    period: 100,
+    interval: 100,
   };
   const defaultOptions: MetricOptions = {
     window: defaultWindow,

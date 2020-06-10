@@ -4,18 +4,20 @@ import IORedis from 'ioredis';
 import pSettle from 'p-settle';
 import { isString } from 'lodash';
 import { QueueManager } from '../queues';
-import { WriteCache, LockManager, RedisStreamAggregator } from '../redis';
+import {
+  KeyspaceNotifier,
+  LockManager,
+  RedisStreamAggregator,
+  WriteCache,
+} from '../redis';
+import { RedisMetrics } from '@src/types';
 import { ConnectionOptions, HostConfig, QueueConfig } from 'config';
 import { createClient, discoverQueues, getRedisInfo } from '../redis/utils';
-import { RedisMetrics } from '@src/types';
-import {
-  KeyspaceNotification,
-  KeyspaceNotifier,
-} from '../redis/keyspace-notifier';
 
 import config from '../config';
 import logger from '../lib/logger';
 import { generateQueueId } from '../config/host-config';
+import { NotificationManager } from '../notifications';
 
 const WRITER = Symbol('writer');
 const WRITE_LOCK = Symbol('write lock');
@@ -57,7 +59,7 @@ export class HostManager {
   private readonly bullOpts: any = {};
   private readonly config: HostConfig;
 
-  constructor(opts: HostConfig, notifications) {
+  constructor(opts: HostConfig, notifications: NotificationManager) {
     this.name = opts.name;
     this.config = opts;
     this.description = opts.description;
@@ -74,14 +76,19 @@ export class HostManager {
       connectionOpts: this.connectionOpts,
     });
 
-    this[WRITE_LOCK] = new LockManager(client, opts.name);
+    this.keyspaceNotifier = new KeyspaceNotifier(this.connectionOpts);
+
+    this[WRITE_LOCK] = new LockManager(
+      client,
+      this.keyspaceNotifier,
+      opts.name,
+    );
+
     this[WRITER] = new WriteCache(
       client,
       this[WRITE_LOCK],
       config.getValue('flushInterval'),
     );
-
-    this.keyspaceNotifier = new KeyspaceNotifier(this.connectionOpts);
 
     new Emittery().bindMethods(this);
 
@@ -93,8 +100,8 @@ export class HostManager {
     const lock = this[WRITE_LOCK] as LockManager;
     writer.destroy();
     const dtors = this.queueManagers.map((manager) => () => manager.destroy());
-    dtors.push(() => this.keyspaceNotifier.destroy());
     dtors.push(() => lock.destroy());
+    dtors.push(() => this.keyspaceNotifier.destroy());
     dtors.push(() => this.streamAggregator.destroy());
     const settlement = await pSettle(dtors, { concurrency: 4 });
     // TODO:
@@ -107,6 +114,10 @@ export class HostManager {
 
   get id(): string {
     return this.config.id;
+  }
+
+  get client(): IORedis.Redis {
+    return this.defaultRedisClient;
   }
 
   discoverQueues(): Promise<string[]> {
@@ -168,17 +179,6 @@ export class HostManager {
     this.addToQueueSet(queueConfigs);
     const lock = this[WRITE_LOCK];
     await lock.start();
-    await this.keyspaceNotifier.subscribe(
-      'keyspace',
-      lock.lockKey,
-      (msg: KeyspaceNotification) => {
-        switch (msg.event) {
-          case 'expire':
-          case 'del':
-            return lock.checkLockStatus();
-        }
-      },
-    );
   }
 
   getQueueById(id: string): Queue | undefined {

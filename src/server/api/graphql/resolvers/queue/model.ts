@@ -13,6 +13,10 @@ export const model = {
   prefix(queue: Queue): string {
     return queue.opts.prefix;
   },
+  host(queue: Queue, _, { supervisor }): string {
+    const manager = (supervisor as Supervisor).getQueueManager(queue);
+    return manager.host;
+  },
   isPaused(queue: Queue, _, { supervisor }): Promise<boolean> {
     const manager = supervisor.getQueueManager(queue);
     return manager.isPaused();
@@ -24,8 +28,8 @@ export const model = {
       //worker.host = parent.host;
       return worker;
     });
+    workers = workers.sort((a, b) => a.idle - b.idle);
     if (args.limit) {
-      workers = workers.sort((a, b) => a.idle - b.idle);
       workers = workers.slice(0, args.limit - 1);
     }
     return workers;
@@ -41,8 +45,10 @@ export const model = {
     const states = fields.map((node) => node.name.value);
     return queue.getJobCounts(...states);
   },
-  async jobs(queue: Queue, args, { supervisor }): Promise<any> {
-    const { offset, limit, state, asc } = args;
+  async jobs(queue: Queue, { input }, { supervisor }): Promise<any> {
+    const { offset = 0, limit = 10, state = 'completed', order = 'asc' } =
+      input || {};
+    const asc = order.toLowerCase() === 'asc';
     const manager = (supervisor as Supervisor).getQueueManager(queue);
     // todo: check out requested fields. If "state" is requested
     // use the optimized method to get states in bulk

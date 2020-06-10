@@ -104,7 +104,7 @@ export class StatsListener extends Emittery {
     return jobTypeStats;
   }
 
-  async onFinished(data) {
+  onFinished(data): void {
     const { job, ts, latency, wait, failed } = data;
 
     const jobTypeStats = this.getJobTypeStats(job.name);
@@ -161,7 +161,7 @@ export class StatsListener extends Emittery {
     }
   }
 
-  async takeSnapshot(ts = null) {
+  takeSnapshot(ts = null): void {
     if (this._snapshotting) return;
     this._snapshotting = true;
 

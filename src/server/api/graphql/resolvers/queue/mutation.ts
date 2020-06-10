@@ -19,13 +19,12 @@ export const Mutation = {
   async drainQueue(_, { id, delayed }, context): Promise<any> {
     const queue = getQueueById(context, id);
     await queue.drain(delayed);
-    return {};
+    return { success: true };
   },
-  async cleanQueue(_, args, ctx) {
-    const { id, grace, limit, type } = args;
+  async cleanQueue(_, { filter: { id, grace, status, limit } }, ctx) {
     const gracePeriod = parseDuration(grace);
     const queue = getQueueById(ctx, id);
-    const jobIds = queue.clean(gracePeriod, limit, type);
+    const jobIds = queue.clean(gracePeriod, limit, status);
     return {
       jobIds,
     };

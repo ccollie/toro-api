@@ -11,11 +11,11 @@ type RedisInfo {
   used_memory: Int!
   used_memory_peak: Int!
   used_memory_lua: Int!
-  used_cpu_sys: Int!
+  used_cpu_sys: Float!
   maxmemory: Int!
   number_of_cached_scripts: Int!
   instantaneous_ops_per_sec: Int!
-  mem_fragmentation_ratio: Int
+  mem_fragmentation_ratio: Float
   role: String
 }
 
@@ -47,7 +47,7 @@ extend type Query {
   """
   Returns a list of all configured hosts
   """
-  allHosts: [QueueHost!]
+  hosts: [QueueHost!]
   """
   Returns a host by id
   """

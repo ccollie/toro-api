@@ -197,7 +197,6 @@ input CreateRuleInput {
 
 type CreateRulePayload {
     rule: Rule
-    status: ActionStatus
 }
 
 extend type Query {
