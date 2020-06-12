@@ -20,9 +20,23 @@ input RepeatableJobRemoveOptions {
   cron: String
 }
 
+input RemoveRepeatableJobsInput {
+  """The queue the jobs belong to"""
+  queueId: ID!,
+  """The job name"""
+  name: String!,
+  repeatOpts: RepeatableJobRemoveOptions!,
+  jobId: String
+}
+
 type RemoveRepeatableJobsPayload {
   key: String
   queue: Queue
+}
+
+input RemoveRepeatableJobsByKeyInput {
+  queueId: ID!
+  key: String!
 }
 
 type RemoveRepeatableJobByKeyPayload {
@@ -31,13 +45,6 @@ type RemoveRepeatableJobByKeyPayload {
 }
 
 extend type Mutation {
-  removeRepeatableJobs(
-    queueId: ID!,
-    """The job name"""
-    name: String!,
-    repeat: RepeatableJobRemoveOptions!,
-    jobId: String
-  ): RemoveRepeatableJobsPayload
-
-  removeRepeatableJobByKey(queueId: ID!, key: String): RemoveRepeatableJobByKeyPayload
+  removeRepeatableJobs(input: RemoveRepeatableJobsInput): RemoveRepeatableJobsPayload
+  removeRepeatableJobByKey(input: RemoveRepeatableJobsByKeyInput): RemoveRepeatableJobByKeyPayload
 }

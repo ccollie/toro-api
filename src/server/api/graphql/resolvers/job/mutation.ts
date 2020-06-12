@@ -1,6 +1,7 @@
 'use strict';
 import boom from '@hapi/boom';
-import { getQueueById } from '../helpers';
+import nanoid from 'nanoid';
+import { getJobById, getQueueById } from '../helpers';
 import { processJobCommand } from '../../../../models/jobs';
 import { createMutationHandler, createBulkMutationHandler } from './utils';
 
@@ -11,26 +12,28 @@ const retryBulkJobs = createBulkMutationHandler('retry');
 const promoteBulkJobs = createBulkMutationHandler('promote');
 const deleteBulkJobs = createBulkMutationHandler('remove');
 
-async function deleteJob(_, { queueId, id }, ctx) {
+async function deleteJob(_, { input }, ctx) {
+  const { queueId, jobId } = input;
   const queue = getQueueById(ctx, queueId);
-  await processJobCommand('remove', queue, id);
+  await processJobCommand('remove', queue, jobId);
   return {
     queue,
-    id,
+    id: jobId,
   };
 }
 
-// used by all
-async function addJob(_, { input: { queueId, jobName, data, options } }, ctx) {
+async function addJob(_, { input: { queueId, job: jobData } }, ctx) {
   const queue = await getQueueById(ctx, queueId);
-  const job = await queue.add(jobName, data, options);
+  const { name, data, opts } = jobData;
+  const job = await queue.add(name, data, opts);
   return {
     job,
     queue,
   };
 }
 
-async function addBulkJobs(_, { queueId, jobs }, ctx) {
+async function addBulkJobs(_, { input }, ctx) {
+  const { queueId, jobs } = input;
   const queue = getQueueById(ctx, queueId);
   const jobsRes = await queue.addBulk(jobs);
   return {
@@ -39,12 +42,9 @@ async function addBulkJobs(_, { queueId, jobs }, ctx) {
   };
 }
 
-async function addJobLog(_, { queueId, jobId, row }, ctx) {
-  const queue = getQueueById(ctx, queueId);
-  const job = await queue.getJob(jobId);
-  if (!job) {
-    throw boom.notFound('Job not found!');
-  }
+async function addJobLog(_, { input }, ctx) {
+  const { queueId, jobId, row } = input;
+  const job = await getJobById(ctx, queueId, jobId);
   const count = await job.log(row);
 
   return {
@@ -55,7 +55,8 @@ async function addJobLog(_, { queueId, jobId, row }, ctx) {
   };
 }
 
-async function updateJob(_, { queueId, jobId, data }, ctx) {
+async function updateJob(_, { input }, ctx) {
+  const { queueId, jobId, data } = input;
   const queue = getQueueById(ctx, queueId);
   const job = await queue.getJob(jobId);
   if (!job) {
@@ -68,8 +69,24 @@ async function updateJob(_, { queueId, jobId, data }, ctx) {
   };
 }
 
-async function removeRepeatableJobByKey(_, { id, key }, ctx) {
-  const queue = getQueueById(ctx, id);
+async function moveJobToFailed(_, { input }, ctx) {
+  const { queueId, jobId, reason = 'Failed by user' } = input;
+  const queue = getQueueById(ctx, queueId);
+  const job = await getJobById(ctx, queueId, jobId);
+
+  const err = new Error(reason);
+  const token = nanoid(8);
+  await job.moveToFailed(err, token, false);
+
+  return {
+    job,
+    queue,
+  };
+}
+
+async function removeRepeatableJobByKey(_, { input }, ctx) {
+  const { queueId, key } = input;
+  const queue = getQueueById(ctx, queueId);
   await queue.removeRepeatableByKey(key);
   return {
     key,
@@ -77,9 +94,10 @@ async function removeRepeatableJobByKey(_, { id, key }, ctx) {
   };
 }
 
-async function removeRepeatableJobs(_, { id, name, repeat, jobId }, ctx) {
-  const queue = getQueueById(ctx, id);
-  await queue.removeRepeatable(name, repeat, jobId);
+async function removeRepeatableJobs(_, { input }, ctx) {
+  const { queueId, name, repeatOpts, jobId } = input;
+  const queue = getQueueById(ctx, queueId);
+  await queue.removeRepeatable(name, repeatOpts, jobId);
   return {
     queue,
   };
@@ -87,13 +105,12 @@ async function removeRepeatableJobs(_, { id, name, repeat, jobId }, ctx) {
 
 export const Mutation = {
   addJob,
-  addRepeatableCronJob: addJob,
-  addRepeatableEveryJob: addJob,
   addJobLog,
   updateJob,
   deleteJob,
   promoteJob,
   retryJob,
+  moveJobToFailed,
   addBulkJobs,
   retryBulkJobs,
   promoteBulkJobs,

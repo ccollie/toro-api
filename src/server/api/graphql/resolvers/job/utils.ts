@@ -10,8 +10,8 @@ export function createBulkMutationHandler(action: string) {
     throw boom.forbidden(`action ${action} not permitted`);
   }
 
-  return async function handler(_, args, context): Promise<any> {
-    const { queueId, jobs: ids } = args;
+  return async function handler(_, { input }, context): Promise<any> {
+    const { queueId, jobs: ids } = input;
     const queue = getQueueById(context, queueId);
 
     const status = await bulkJobHandler(action, queue, ids);
@@ -31,10 +31,10 @@ export function createBulkMutationHandler(action: string) {
 
 export function createMutationHandler(cmd) {
   return async (parent, args, ctx): Promise<any> => {
-    const { queueId, id } = args;
+    const { queueId, jobId } = args;
     const queue = getQueueById(ctx, queueId);
 
-    const job = processJobCommand(cmd, queue, id);
+    const job = processJobCommand(cmd, queue, jobId);
     if (job) {
       // job.queueId = queueId;
     }

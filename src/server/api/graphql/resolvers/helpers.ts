@@ -1,4 +1,5 @@
-import { Queue } from 'bullmq';
+import boom from '@hapi/boom';
+import { Queue, Job } from 'bullmq';
 import {
   QueueManager,
   QueueListener,
@@ -18,6 +19,16 @@ export function getSupervisor(context): Supervisor {
 
 export function getQueueById(context, id: string): Queue {
   return getSupervisor(context).getQueueById(id);
+}
+
+export async function getJobById(context, queueId, jobId): Promise<Job> {
+  const queue = getQueueById(context, queueId);
+  const job = await queue.getJob(jobId);
+  if (!job) {
+    const msg = `Job #${jobId} not found in queue "${queue.name}"`;
+    throw boom.notFound(msg);
+  }
+  return job;
 }
 
 export function getQueueManager(context, id: string): QueueManager {
