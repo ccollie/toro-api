@@ -55,6 +55,12 @@ input QueueJobsInput {
   order: SortOrderEnum = ASC
 }
 
+input RepeatableJobsInput {
+  offset: Int = 0
+  limit: Int = 10
+  sortOrder: SortOrderEnum = ASC
+}
+
 type Queue {
   id: String!
   name: String
@@ -63,11 +69,7 @@ type Queue {
   isPaused: Boolean
   jobCounts: JobCounts
   jobs(input: QueueJobsInput): [Job!]!
-  repeatableJobs(
-    offset: Int = 0
-    limit: Int = 10
-    asc: Boolean = true
-  ): [RepeatableJob!]!
+  repeatableJobs(input: RepeatableJobsInput): [RepeatableJob!]!
   repeatableCount: Int!
   jobNames: [String!]!
   workers(limit: Int = 10): [QueueWorker!]!
@@ -78,18 +80,22 @@ type Queue {
 
 type PauseQueuePayload {
   isPaused: Boolean
+  queue: Queue
 }
 
 type ResumeQueuePayload {
   isPaused: Boolean
+  queue: Queue
 }
 
 type CleanQueuePayload {
   jobIds:[ID!]
+  queue: Queue
 }
 
 type DrainQueuePayload {
   success: Boolean
+  queue: Queue
 }
 
 input DeleteQueueOptions {
@@ -139,7 +145,7 @@ type Mutation {
   You can clean the getJobs with the following states: completed, wait (typo for waiting),
   active, delayed, and failed.
   """
-  cleanQueue(filter: CleanQueueFilter): CleanQueuePayload
+  cleanQueue(input: CleanQueueFilter): CleanQueuePayload
 
   deleteQueue(id: ID!, options: DeleteQueueOptions): DeleteQueuePayload
 }
@@ -198,40 +204,6 @@ type WorkersChangedMessage {
   added: [QueueWorker!]!
   """The list of removed workers"""
   removed: [QueueWorker!]!
-}
-
-"""Filter for in-flight job updates"""
-input QueueJobChangesFilter {
-  """The queue to monitor"""
-  queueId: ID!
-  """Job name filter. A message will be returned if the job name is in this list"""
-  name: [String!]
-  """Job state filter. A message will be returned if the job state is in this list"""
-  state: [JobState!]
-  """
-  Attempts filter. The record will be returned if the job attempts are greater than
-  or equal to this number
-  """
-  attemptsMade: Int
-}
-
-"""Provides information on `in-flight` jobs i.e. jobs being processed"""
-type InflightJobUpdatedMessage {
-  """The job id"""
-  id: String!
-  """The current status of the job"""
-  state: String!
-  timestamp: DateTime
-  """The current progress of the job"""
-  progress: JobProgress
-  """The timestamp of the job completion"""
-  finishedOn: DateTime
-  """The timestamp of the start of job execution"""
-  processedOn: DateTime
-  """Execution latency in ms. Only valid for state === 'failed' || state === 'completed'"""
-  latency: Int
-  """Job wait time in ms. Only valid for state === 'failed' || state === 'completed'"""
-  waitTime: Int
 }
 
 """Peak detection status"""
@@ -297,8 +269,6 @@ type Subscription {
   jobErrorRateChanged(input: MetricsInput!): JobErrorRateChangedMessage
   """Emits a message when the status of a queue changes"""
   queueStateChanged(queueId: ID!): QueueStateChangedMessage
-  """Returns messages when the status of in-flight (currently processing) jobs change"""
-  inflightJobUpdated(input: QueueJobChangesFilter): InflightJobUpdatedMessage
   """Subscribes to a change in the list of workers associated with a queue"""
   workersChanged(queueId: ID!): WorkersChangedMessage
   """Subscribes to a change in the count of workers associated with a queue"""

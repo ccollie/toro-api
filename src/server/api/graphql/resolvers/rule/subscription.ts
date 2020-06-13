@@ -16,7 +16,7 @@ export function ruleAlertTriggered(): GraphQLFieldResolver<any, any> {
     const { ruleManager } = queueManager;
 
     function handler(event): Promise<void> {
-      return pubsub.publish(channelName, { state: event });
+      return pubsub.publish(channelName, { event });
     }
 
     unsub = ruleManager.onAlertTriggered(ruleId, handler);
@@ -48,7 +48,7 @@ export function ruleAlertReset(): GraphQLFieldResolver<any, any> {
     const { ruleManager } = queueManager;
 
     function handler(event): Promise<void> {
-      return pubsub.publish(channelName, { state: event });
+      return pubsub.publish(channelName, { event });
     }
 
     unsub = ruleManager.onAlertReset(ruleId, handler);

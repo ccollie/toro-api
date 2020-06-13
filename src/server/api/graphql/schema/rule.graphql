@@ -201,11 +201,31 @@ type CreateRulePayload {
 
 extend type Query {
     rule(queueId: ID!, ruleId: ID!): Rule
+    ruleAlert(queueId: ID!, ruleId: ID!, alertId: ID!): RuleAlert
+}
+
+type RuleActivationPayload {
+    isActive: Boolean
+    rule: Rule
+}
+
+input DeleteRuleAlertInput {
+    queueId: ID!
+    ruleId: ID!
+    alertId: ID!
+}
+
+type DeleteRuleAlertPayload {
+    ruleId: ID!
+    rule: Rule
 }
 
 extend type Mutation {
     createRule(input: CreateRuleInput!): CreateRulePayload
     deleteRule(queueId: ID!, ruleId: ID!): ActionStatus
+    activateRule(queueId: ID!, ruleId: ID!): RuleActivationPayload
+    deactivateRule(queueId: ID!, ruleId: ID!): RuleActivationPayload
+    deleteRuleAlert(input: DeleteRuleAlertInput!): DeleteRuleAlertPayload
 }
 
 extend type Subscription {

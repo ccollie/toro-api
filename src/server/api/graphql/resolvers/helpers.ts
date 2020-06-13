@@ -32,7 +32,11 @@ export async function getJobById(context, queueId, jobId): Promise<Job> {
 }
 
 export function getQueueManager(context, id: string): QueueManager {
-  return getSupervisor(context).getQueueManager(id);
+  const manager = getSupervisor(context).getQueueManager(id);
+  if (!manager) {
+    throw boom.notFound(`Cannot find queue for id#${id}`);
+  }
+  return manager;
 }
 
 export function getQueueHost(context, queueId: string): HostManager {

@@ -78,31 +78,6 @@ export interface SubscriptionCreationOptions {
   onUnsubscribe?: UnsubscribeFn;
 }
 
-// to handle unsubscribe https://github.com/apollographql/graphql-subscriptions/issues/99
-// https://stackoverflow.com/questions/56886412/detect-an-unsubscribe-in-apollo-graphql-server
-export function withCancel<T>(
-  asyncIterator: AsyncIterator<T | undefined>,
-  onCancel: () => void | Promise<void>,
-): AsyncIterator<T | undefined> {
-  if (!asyncIterator.return) {
-    asyncIterator.return = () =>
-      Promise.resolve({ value: undefined, done: true });
-  }
-
-  const savedReturn = asyncIterator.return.bind(asyncIterator);
-  asyncIterator.return = () => {
-    const val = onCancel() as any;
-
-    if (val && val.then && typeof val.then === 'function') {
-      return (val as any).finally(() => savedReturn());
-    }
-
-    return savedReturn();
-  };
-
-  return asyncIterator;
-}
-
 export function publish(eventName: string, payload?: any): Promise<void> {
   return pubsub.publish(eventName, payload);
 }
@@ -199,7 +174,7 @@ export function createResolver(
       }
 
       const savedReturn = iterator.return.bind(iterator);
-      iterator.return = async () => {
+      iterator.return = async (): Promise<any> => {
         try {
           await handleUnsubscribe();
         } catch {}

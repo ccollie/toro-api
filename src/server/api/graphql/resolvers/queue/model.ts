@@ -54,8 +54,9 @@ export const model = {
     // use the optimized method to get states in bulk
     return manager.getJobs(state, offset, limit, asc);
   },
-  async repeatableJobs(queue: Queue, args, { supervisor }): Promise<any> {
-    const { offset, limit, asc } = args;
+  async repeatableJobs(queue: Queue, { input }, { supervisor }): Promise<any> {
+    const { offset = 10, limit = 10, sortOrder = 'ASC' } = input || {};
+    const asc = sortOrder === 'ASC';
     const manager = supervisor.getQueueManager(queue);
     return manager.getRepeatableJobs(offset, limit, asc);
   },

@@ -28,7 +28,6 @@ describe('JobRateMetric', () => {
       return queueListener.emit(EVENT_NAME, {
         ts: Date.now(),
         success,
-        failed: !success,
       });
     });
   }
@@ -132,16 +131,16 @@ describe('JobRateMetric', () => {
       clear();
     });
 
-    function setCompletion(failed: boolean): Promise<void> {
+    function setCompletion(success: boolean): Promise<void> {
       return queueListener.emit(EVENT_NAME, {
         ts: Date.now(),
         latency: random(10, 5000),
-        failed,
+        success,
       });
     }
 
-    const failure = (): Promise<void> => setCompletion(true);
-    const success = (): Promise<void> => setCompletion(false);
+    const failure = (): Promise<void> => setCompletion(false);
+    const success = (): Promise<void> => setCompletion(true);
 
     it('calculates rate correctly over time', async () => {
       // keep us right on the edge of closing (50% failure rate) for amounts of

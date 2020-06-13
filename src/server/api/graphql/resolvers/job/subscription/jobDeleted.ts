@@ -1,4 +1,4 @@
-import { getQueueManager } from '../../helpers';
+import {getQueueListener, getQueueManager} from '../../helpers';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 
@@ -19,6 +19,7 @@ export function jobDeleted(): GraphQLFieldResolver<any, any> {
   // TODO: would it be better to simply use keyspace notifications ?
   async function onSubscribe(_, { queueId, jobId }, context) {
     const queueManager = getQueueManager(context, queueId);
+    const listener = getQueueListener(context, queueId);
     const { channelName, pubsub } = context;
     const event = `job.${jobId}`;
 

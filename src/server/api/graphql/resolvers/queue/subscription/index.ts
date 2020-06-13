@@ -3,9 +3,10 @@ import { jobErrorRateChanged } from './jobErrorRateChanged';
 import { jobRateChanged } from './jobRateChanged';
 import { queueStateChanged } from './queueStateChanged';
 import { workersCountChanged } from './workersCountChanged';
-import { inflightJobUpdated } from './inflightJobUpdated';
+import { queueJobUpdates } from './queueJobUpdates';
 import { latencyPeak, waitTimePeak } from './peakChanged';
 import { consecutiveErrorCountChanged } from './consecutiveErrorCountChanged';
+import { workersChanged } from './workersChanged';
 
 export const Subscription = {
   jobCountsChanged: {
@@ -26,13 +27,16 @@ export const Subscription = {
   workersCountChanged: {
     subscribe: workersCountChanged(),
   },
-  inflightJobUpdated: {
-    subscribe: inflightJobUpdated(),
+  queueJobUpdates: {
+    subscribe: queueJobUpdates(),
   },
   latencyPeak: {
     subscribe: latencyPeak(),
   },
   waitTimePeak: {
     subscribe: waitTimePeak(),
+  },
+  workersChanged: {
+    subscribe: workersChanged(),
   },
 };

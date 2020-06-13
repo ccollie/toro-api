@@ -11,6 +11,9 @@ import { parseTimestamp } from '../lib/datetime';
 import { systemClock } from '../lib/clock';
 import { timestampFromStreamId, parseStreamId } from '../redis/streams';
 import { AppJob, JobStatusEnum } from '../../types';
+import { createAsyncIterator, IteratorOptions } from '../lib';
+
+const FINISHED_EVENT = 'job.finished';
 
 const MAKE_HANDLER = Symbol('make job event handler');
 
@@ -112,7 +115,6 @@ export class QueueListener extends Emittery {
     }
     fn = fn.bind(this);
     const cache = this.cache;
-    const name = this.queue.name;
 
     return async (evt, ts): Promise<void> => {
       const { jobId } = evt;
@@ -121,7 +123,7 @@ export class QueueListener extends Emittery {
       let job = cache.get(jobId, !isFinished);
       if (!job) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { event, data, ...rest } = evt;
+        const { event, data, jobId: ignore, ...rest } = evt;
         job = rest;
         job.id = jobId;
         cache.set(jobId, job);
@@ -140,11 +142,9 @@ export class QueueListener extends Emittery {
 
         await fn(job, evt, timestamp);
         const evtData = {
-          eventName,
-          event: evt,
-          job,
-          queue: name,
           timestamp,
+          job,
+          event: evt.event,
         };
 
         this.currentJob = job;
@@ -216,7 +216,7 @@ export class QueueListener extends Emittery {
       // we're new
       job.timestamp = ts;
     }
-    job.delay = delay;
+    job.delay = parseInt(delay);
   }
 
   handleStalled(job): void {
@@ -233,14 +233,13 @@ export class QueueListener extends Emittery {
 
     const { latency, wait } = await this.getDurations(job);
 
-    return this.emit('job.finished', {
+    return this.emit(FINISHED_EVENT, {
       job,
-      ts,
+      timestamp: ts,
       latency,
       wait,
       success: !failed,
-      failed,
-      eventName: job.state,
+      event: 'finished',
     });
   }
 
@@ -316,7 +315,8 @@ export class QueueListener extends Emittery {
           processedOn,
           finishedOn,
           name,
-          failedReason,
+          // failedReason,
+          attemptsMade,
         ] = jobData;
         const job = jobs[index];
         job.timestamp = parseInt(timestamp);
@@ -327,7 +327,10 @@ export class QueueListener extends Emittery {
         if (finishedOn) {
           job.finishedOn = parseInt(finishedOn);
         }
-        job.failedReason = failedReason;
+        if (attemptsMade !== undefined) {
+          job.attemptsMade = parseInt(attemptsMade, 10);
+        }
+        // job.failedReason = failedReason;
       }
     });
 
@@ -377,5 +380,11 @@ export class QueueListener extends Emittery {
 
     await this.queueEvents.waitUntilReady();
     this._listening = true;
+  }
+
+  createAsyncIterator<T = any, TOutput = T>(
+    options: IteratorOptions<any, T, TOutput>,
+  ): AsyncIterator<TOutput> {
+    return createAsyncIterator<any, T, TOutput>(this, options);
   }
 }

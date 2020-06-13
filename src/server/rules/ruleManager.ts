@@ -24,6 +24,11 @@ import { RuleAlert, RuleConfigOptions } from 'rules';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
+export interface RuleAlertFilter {
+  eventNames?: string[];
+  ruleIds?: string[];
+}
+
 /**
  * Manages the storage of {@link Rule} and alert instances related to a queue
  */
@@ -449,27 +454,25 @@ export class RuleManager {
     return this.onAlertEvent('alert.reset', ruleId, handler);
   }
 
-  async subscribeToAlerts(ruleId: string, handler): Promise<() => void> {
-    let cleanups = [];
-
-    const registerHandler = async (eventName: string): Promise<void> => {
-      const fn = (alert: RuleAlert) => {
-        if (!ruleId || ruleId === alert.ruleId) {
-          return handler(eventName, alert);
-        }
-      };
-
-      cleanups.push(await this.bus.on(`alert.${eventName}`, fn));
+  subscribeToAlerts(options?: RuleAlertFilter): AsyncIterator<RuleAlert> {
+    const defaultOptions: RuleAlertFilter = {
+      eventNames: ['alert.triggered', 'alert.reset'],
     };
+    options = Object.assign({}, defaultOptions, options || {});
 
-    await Promise.all([registerHandler('triggered'), registerHandler('reset')]);
+    const eventNames = options.eventNames;
 
-    function unsub(): void {
-      cleanups.forEach((fn) => fn());
-      cleanups = [];
+    let filter = (evt, data) => true;
+    if (options.ruleIds && options.ruleIds.length) {
+      filter = (evt, alert): boolean => {
+        return !alert || options.ruleIds.includes(alert.ruleId);
+      };
     }
 
-    return unsub;
+    return this.bus.createAsyncIterator<RuleAlert>({
+      eventNames,
+      filter,
+    });
   }
 
   /**

@@ -9,7 +9,6 @@ enum JobState {
   paused
 }
 
-
 type JobRepeatOptions {
   """Cron string"""
   cron: String
@@ -328,6 +327,11 @@ type DeleteJobPayload {
   queue: Queue
 }
 
+type RetryFailedJobsPayload {
+  success: Int!
+  failure: Int!
+}
+
 extend type Mutation {
   addJob(input: AddJobInput): AddJobPayload
   addJobLog(input: AddJobLogInput): AddJobLogPayload
@@ -336,6 +340,7 @@ extend type Mutation {
   retryJob(input: JobLocatorInput): RetryJobPayload
   deleteJob(input: JobLocatorInput): DeleteQueuePayload
   updateJob(input: UpdateJobInput): UpdateJobPayload
+  retryFailedJobs(queueId: ID!): RetryFailedJobsPayload
   """
   Moves a job to the failed queue.
   """
@@ -372,6 +377,46 @@ type JobLogAddedMessage {
   count: Int
 }
 
+"""Filter for in-flight job updates"""
+input QueueJobChangesFilter {
+  """The queue to monitor"""
+  queueId: ID!
+  """Job name filter. A message will be returned if the job name is in this list"""
+  name: [String!]
+  """Job state filter. A message will be returned if the job state is in this list"""
+  state: [JobState!]
+  """
+  Attempts filter. The record will be returned if the job attempts are greater than
+  or equal to this number
+  """
+  attemptsMade: Int
+  """
+
+  """
+  batchInterval: Duration
+}
+
+type JobUpdateDelta {
+  """The job id"""
+  id: ID!
+  delta: JSON
+  """Execution latency in ms. Only valid for state === 'failed' || state === 'completed'"""
+  latency: Int
+  """Job wait time in ms. Only valid for state === 'failed' || state === 'completed'"""
+  waitTime: Int
+}
+
+"""Provides information on `in-flight` jobs i.e. jobs being processed"""
+type QueueJobUpdatesPayload {
+  """The queue for this job"""
+  queue: Queue
+  """
+  Batched job updates
+  """
+  updates: [JobUpdateDelta!]!
+}
+
+
 extend type Subscription {
   jobCreated(queueId: ID!): JobCreatedMessage
   jobUpdated(input: JobLocatorInput): JobUpdatedMessage
@@ -379,4 +424,6 @@ extend type Subscription {
   jobPromoted(input: JobLocatorInput): JobPromotedMessage
   jobLogAdded(input: JobLocatorInput): JobLogAddedMessage
   # todo: onJobFinished ( failed or completed )
+  """Returns messages when the status of in-flight (currently processing) jobs change"""
+  queueJobUpdates(input: QueueJobChangesFilter): QueueJobUpdatesPayload
 }

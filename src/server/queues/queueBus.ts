@@ -4,6 +4,7 @@ import Emittery from 'emittery';
 import { RedisStreamAggregator, toKeyValueList } from '../redis';
 import { Pipeline, Redis } from 'ioredis';
 import nanoid from 'nanoid';
+import { IteratorOptions, createAsyncIterator } from '../lib';
 
 const SENDER_ID_KEY = '__sid';
 
@@ -128,6 +129,12 @@ export class QueueBus {
 
   cleanup(maxLen = 1000): Promise<number> {
     return this.client.xtrim(this._key, 'MAXLEN', '~', maxLen);
+  }
+
+  createAsyncIterator<T = any, TOutput = T>(
+    options: IteratorOptions<any, T, TOutput>,
+  ): AsyncIterator<TOutput> {
+    return createAsyncIterator<any, T, TOutput>(this._emitter, options);
   }
 
   private _formatData(data = {}): any {

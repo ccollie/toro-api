@@ -69,7 +69,7 @@ describe('Rule', () => {
         latency,
         wait: random(0, 2000),
         success: true,
-        failed: false,
+        eventName: 'finished',
         ...data,
       };
 

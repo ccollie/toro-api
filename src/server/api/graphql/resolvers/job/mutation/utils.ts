@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
-import { getQueueById } from '../helpers';
-import { bulkJobHandler, processJobCommand } from '../../../../models/jobs';
+import { getQueueById } from '../../helpers';
+import { bulkJobHandler, processJobCommand } from '../../../../common/imports';
 import { Queue } from 'bullmq';
 import { isString } from 'lodash';
 
