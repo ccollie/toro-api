@@ -136,7 +136,7 @@ export class StatsClient {
     unit: StatsGranularity,
   ): Promise<StatisticalSnapshot> {
     const key = this.getKey(jobName, tag, unit);
-    const [, value] = await this.call('last', key);
+    const [, value] = await this.call('getLast', key);
     if (value) {
       return JSON.parse(value) as StatisticalSnapshot;
     }

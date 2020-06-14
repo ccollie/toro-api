@@ -1,6 +1,6 @@
 
 local StatsAPI = {}
-StatsAPI.__index = AlertAPI;
+StatsAPI.__index = StatsAPI;
 
 local busKey = KEYS[2]
 
@@ -21,11 +21,19 @@ function StatsAPI.add(key, ts, value)
     return res
 end
 
-local function minMaxHelper(args, withScores)
-    if (withScores == true) then
-        args[#args] = "WITHSCORES"
+
+local function minMaxHelper(key, isMin, withScores)
+    local pos, res
+    if isMin then
+        pos = 0
+    else
+        pos = -1
     end
-    local res = redis.call(unpack(args))
+    if withScores then
+        res = redis.call("ZRANGE", key, pos, pos, "WITHSCORES")
+    else
+        res = redis.call("ZRANGE", key, pos, pos)
+    end
     if (type(res) == "table") then
         if (withScores == true) then
             return { res[2], res[1] }
@@ -36,13 +44,11 @@ local function minMaxHelper(args, withScores)
 end
 
 local function getFirst(key, withScores)
-    local args = {"ZRANGE", key, "-inf", "+inf", "LIMIT", 0, 1}
-    return minMaxHelper(args, withScores)
+    return minMaxHelper(key, true, withScores)
 end
 
 local function getLast(key, withScores)
-    local args = {"ZREVRANGE", key, "+inf", "-inf", "LIMIT", 0, 1}
-    return minMaxHelper(args, withScores)
+    return minMaxHelper(key, false, withScores)
 end
 
 function StatsAPI.getSpan(key)
