@@ -15,6 +15,7 @@ import {
   StatsGranularity,
   StatsMetricType,
 } from 'index';
+import { isNil } from 'lodash';
 import { systemClock } from '../lib/clock';
 import IORedis from 'ioredis';
 
@@ -440,14 +441,20 @@ export class StatsClient {
     type: StatsMetricType,
     jobName: string,
     granularity: StatsGranularity,
+    since?: DateLike,
   ): AsyncIterator<StatisticalSnapshot> {
     function filter(_, data: any): boolean {
-      return (
+      let good =
         data &&
         data.value &&
         (!data.jobName || data.jobName === jobName) &&
-        (!data.unit || data.unit === granularity)
-      );
+        (!data.unit || data.unit === granularity);
+
+      if (good && !isNil(since)) {
+        const ts = parseTimestamp(since, systemClock.now());
+        good = data.ts && data.ts > ts;
+      }
+      return good;
     }
 
     function transform(_, data: any): StatisticalSnapshot {
@@ -466,14 +473,14 @@ export class StatsClient {
     jobName: string,
     granularity: StatsGranularity,
   ): AsyncIterator<StatisticalSnapshot> {
-    return this.onStatsUpdate('latency', jobName, granularity);
+    return this.onStatsUpdate('latency', jobName, granularity, systemClock.now());
   }
 
   waitTimeStatsUpdateIterator(
     jobName: string,
     granularity: StatsGranularity,
   ): AsyncIterator<StatisticalSnapshot> {
-    return this.onStatsUpdate('wait', jobName, granularity);
+    return this.onStatsUpdate('wait', jobName, granularity, systemClock.now());
   }
 
   private _callStats(
