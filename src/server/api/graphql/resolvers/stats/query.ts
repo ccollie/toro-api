@@ -66,6 +66,18 @@ async function getRange(type: StatsMetricType, args, context) {
   }
 }
 
+async function getLast(
+  metric: StatsMetricType,
+  _,
+  { input },
+  context,
+): Promise<StatisticalSnapshot> {
+  const { queueId, jobName, granularity } = input as StatsRangeQueryInput;
+  const client: StatsClient = getStatsClient(context, queueId);
+  const _granularity = normalizeGranularity(granularity);
+  return client.getLast(jobName, metric, _granularity);
+}
+
 export const Query = {
   latencyStatsSpan(_, args, context): Promise<any> {
     return getSpan('latency', args, context);
@@ -78,5 +90,11 @@ export const Query = {
   },
   waitTimes(_, args, context): Promise<StatisticalSnapshot[]> {
     return getRange('wait', args, context);
+  },
+  lastRecordedLatency(_, args, context) {
+    return getLast('latency', _, args, context);
+  },
+  lastRecordedWaitTime(_, args, context) {
+    return getLast('wait', _, args, context);
   },
 };

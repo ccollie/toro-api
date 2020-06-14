@@ -1,14 +1,14 @@
 import pAll from 'p-all';
 import { Queue } from 'bullmq';
 import { WriteCache } from '../redis';
-import { roundDown, roundUp, parseTimestamp, DateLike } from '../lib/datetime';
+import { DateLike, parseTimestamp, roundDown, roundUp } from '../lib/datetime';
 import { AbstractHistogram } from 'hdr-histogram-js';
 import { getSnapshot, stringEncode } from './utils';
 import { addMilliseconds, isAfter } from 'date-fns';
 import { Timespan } from 'timespan';
 import { QueueBus, QueueListener } from '../queues';
 import { StatsListener } from './statsListener';
-import { getStatsKey, getQueueBusKey, getQueueMetaKey } from '../monitor/keys';
+import { getQueueBusKey, getQueueMetaKey, getStatsKey } from '../monitor/keys';
 import {
   StatisticalSnapshot,
   StatisticalSnapshotOptions,
@@ -130,9 +130,17 @@ export class StatsClient {
     return null;
   }
 
-  async getLast(jobType: string, tag: string, unit: StatsGranularity) {
-    const key = this.getKey(jobType, tag, unit);
-    return this.call('last', key);
+  async getLast(
+    jobName: string,
+    tag: string,
+    unit: StatsGranularity,
+  ): Promise<StatisticalSnapshot> {
+    const key = this.getKey(jobName, tag, unit);
+    const [, value] = await this.call('last', key);
+    if (value) {
+      return JSON.parse(value) as StatisticalSnapshot;
+    }
+    return null;
   }
 
   async getMeta(): Promise<Record<string, string>> {
@@ -432,44 +440,40 @@ export class StatsClient {
     type: StatsMetricType,
     jobName: string,
     granularity: StatsGranularity,
-    handler: (eventData: any) => unknown,
-  ): Promise<Function> {
-    const listener = (data: any) => {
-      if (data) {
-        const good =
-          data.value &&
-          (!data.jobName || data.jobName === jobName) &&
-          (!data.unit || data.unit === granularity);
+  ): AsyncIterator<StatisticalSnapshot> {
+    function filter(_, data: any): boolean {
+      return (
+        data &&
+        data.value &&
+        (!data.jobName || data.jobName === jobName) &&
+        (!data.unit || data.unit === granularity)
+      );
+    }
 
-        if (good) {
-          try {
-            const snapshot = JSON.parse(data.value);
-            return handler(snapshot);
-          } catch (e) {
-            // todo: properly log
-            console.log(e);
-          }
-        }
-      }
-    };
+    function transform(_, data: any): StatisticalSnapshot {
+      return JSON.parse(data.value) as StatisticalSnapshot;
+    }
+
     const eventName = `stats.${type}.updated`;
-    return this.bus.on(eventName, listener);
+    return this.bus.createAsyncIterator<any, StatisticalSnapshot>({
+      eventNames: [eventName],
+      filter,
+      transform,
+    });
   }
 
-  async onLatencyStatsUpdated(
+  latencyStatsUpdateIterator(
     jobName: string,
     granularity: StatsGranularity,
-    handler: (eventData: any) => unknown,
-  ): Promise<Function> {
-    return this.onStatsUpdate('latency', jobName, granularity, handler);
+  ): AsyncIterator<StatisticalSnapshot> {
+    return this.onStatsUpdate('latency', jobName, granularity);
   }
 
-  async onWaitTimeStatsUpdated(
+  waitTimeStatsUpdateIterator(
     jobName: string,
     granularity: StatsGranularity,
-    handler: (eventData: any) => unknown,
-  ): Promise<Function> {
-    return this.onStatsUpdate('wait', jobName, granularity, handler);
+  ): AsyncIterator<StatisticalSnapshot> {
+    return this.onStatsUpdate('wait', jobName, granularity);
   }
 
   private _callStats(

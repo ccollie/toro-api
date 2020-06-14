@@ -276,11 +276,11 @@ type AddJobLogPayload {
 }
 
 input MoveJobToFailedInput {
-  queueId: Int!
+  queueId: ID!
   """
   The job id
   """
-  jobId: Int!
+  jobId: ID!
   """
   The reason why the job is being failed. This becomes
   Job.failedReason
@@ -291,6 +291,27 @@ input MoveJobToFailedInput {
 type MoveJobToFailedPayload {
   job: Job
   queue: Queue
+}
+
+input MoveJobToDelayedInput {
+  queueId: ID!
+  """
+  The job id
+  """
+  jobId: ID!
+  """
+  The amount of time to delay execution
+  """
+  delay: Duration
+}
+
+type MoveJobToDelayedPayload {
+  """The job that was modified"""
+  job: Job
+  """The job delay"""
+  delay: Duration
+  """Estimated excution time"""
+  executeAt: DateTime
 }
 
 """
@@ -345,6 +366,11 @@ extend type Mutation {
   Moves a job to the failed queue.
   """
   moveJobToFailed(input: MoveJobToFailedInput): MoveJobToFailedPayload
+  """
+  Moves a job from active to delayed.
+  """
+  moveJobToDelayed(input: MoveJobToDelayedInput): MoveJobToDelayedPayload
+
   deleteBulkJobs(input: BulkJobActionInput): DeleteBulkJobsPayload
   retryBulkJobs(input: BulkJobActionInput): RetryBulkJobsPayload
   promoteBulkJobs(input: BulkJobActionInput): PromoteBulkJobsPayload

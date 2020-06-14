@@ -5,6 +5,7 @@ import { deleteJob } from './deleteJob';
 import { removeRepeatableJobs } from './removeRepeatableJobs';
 import { removeRepeatableJobByKey } from './removeRepeatableJobByKey';
 import { moveJobToFailed } from './moveJobToFailed';
+import { moveJobToDelayed } from './moveJobToDelayed';
 import { retryFailedJobs } from './retryFailedJobs';
 import { updateJob } from './updateJob';
 
@@ -26,6 +27,7 @@ export const Mutation = {
   promoteJob,
   promoteBulkJobs,
   moveJobToFailed,
+  moveJobToDelayed,
   retryJob,
   retryBulkJobs,
   retryFailedJobs,

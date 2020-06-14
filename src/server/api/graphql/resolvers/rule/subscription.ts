@@ -1,75 +1,43 @@
 import { createResolver } from '../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
+import { getRuleManager } from '../helpers';
+import { RuleAlert } from '../../../../../types';
 
-export function ruleAlertTriggered(): GraphQLFieldResolver<any, any> {
-  let unsub: Function;
-
-  function getChannelName(_, { queueId, ruleId }): string {
-    let name = `RULE_ALERT_TRIGGERED:${queueId}`;
-    if (ruleId) name += `:${ruleId}`;
+export function ruleAlerts(): GraphQLFieldResolver<any, any> {
+  function channelName(_, { input }): string {
+    const { queueId, ruleIds = [], returnResetEvents } = input || {};
+    let name = `RULE_ALERTS:${queueId}`;
+    if (returnResetEvents && !ruleIds.length) {
+      return name;
+    }
+    name = name + '_';
+    if (ruleIds.length) {
+      const ids = ruleIds.sort().join(',');
+      name += ids;
+    }
     return name;
   }
 
-  function onSubscribe(_, { queueId, ruleId }, context): void {
-    const { channelName, pubsub, supervisor } = context;
-    const queueManager = supervisor.getQueueById(queueId);
-    const { ruleManager } = queueManager;
+  function onSubscribe(_, { input }, context): AsyncIterator<RuleAlert> {
+    const { queueId, ruleIds = [], returnResetEvents } = input || {};
+    const ruleManager = getRuleManager(context, queueId);
+    const eventNames = ['alert.triggered'];
+    if (returnResetEvents) eventNames.push('alert.reset');
 
-    function handler(event): Promise<void> {
-      return pubsub.publish(channelName, { event });
-    }
-
-    unsub = ruleManager.onAlertTriggered(ruleId, handler);
-  }
-
-  async function onUnsubscribe(): Promise<void> {
-    return unsub && unsub();
+    return ruleManager.subscribeToAlerts({
+      eventNames,
+      ruleIds,
+    });
   }
 
   return createResolver({
-    channelName: getChannelName,
+    channelName,
     onSubscribe,
-    onUnsubscribe,
-  });
-}
-
-export function ruleAlertReset(): GraphQLFieldResolver<any, any> {
-  let unsub: Function;
-
-  function getChannelName(_, { queueId, ruleId }): string {
-    let name = `RULE_ALERT_RESET:${queueId}`;
-    if (ruleId) name += `:${ruleId}`;
-    return name;
-  }
-
-  function onSubscribe(_, { queueId, ruleId }, context): void {
-    const { channelName, pubsub, supervisor } = context;
-    const queueManager = supervisor.getQueueById(queueId);
-    const { ruleManager } = queueManager;
-
-    function handler(event): Promise<void> {
-      return pubsub.publish(channelName, { event });
-    }
-
-    unsub = ruleManager.onAlertReset(ruleId, handler);
-  }
-
-  async function onUnsubscribe(): Promise<void> {
-    return unsub && unsub();
-  }
-
-  return createResolver({
-    channelName: getChannelName,
-    onSubscribe,
-    onUnsubscribe,
   });
 }
 
 export const Subscription = {
-  ruleAlertTriggered: {
-    subscribe: ruleAlertTriggered(),
-  },
-  ruleAlertReset: {
-    subscribe: ruleAlertReset(),
+  ruleAlerts: {
+    subscribe: ruleAlerts(),
   },
 };

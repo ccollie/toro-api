@@ -1,7 +1,7 @@
 import { createResolver } from '../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getStatsClient, normalizeGranularity } from '../helpers';
-import { StatsMetricType } from 'stats';
+import { StatisticalSnapshot, StatsMetricType } from 'stats';
 import { firstChar, StatsClient } from '../../../common/imports';
 
 interface StatsUpdateFilter {
@@ -11,9 +11,7 @@ interface StatsUpdateFilter {
 }
 
 function statsUpdated(type: StatsMetricType): GraphQLFieldResolver<any, any> {
-  let unsub: Function;
-
-  function getChannelName(_, { filter }): string {
+  function channelName(_, { filter }): string {
     const { queueId, jobName, granularity: g } = filter;
     const granularity = normalizeGranularity(g);
     const base = `${type.toUpperCase()}_UPDATED:${queueId}`;
@@ -25,36 +23,26 @@ function statsUpdated(type: StatsMetricType): GraphQLFieldResolver<any, any> {
     return parts.join(':');
   }
 
-  async function onSubscribe(_, { filter }, context): Promise<void> {
-    const { channelName, pubsub } = context;
+  function onSubscribe(
+    _,
+    { filter },
+    context,
+  ): AsyncIterator<StatisticalSnapshot> {
     const { queueId, jobName, granularity: g } = filter;
     const granularity = normalizeGranularity(g);
 
     const client: StatsClient = getStatsClient(context, queueId);
 
-    function handler(snapshot): Promise<void> {
-      return pubsub.publish(channelName, snapshot);
-    }
-
     if (type === 'latency') {
-      unsub = await client.onLatencyStatsUpdated(jobName, granularity, handler);
+      return client.latencyStatsUpdateIterator(jobName, granularity);
     } else {
-      unsub = await client.onWaitTimeStatsUpdated(
-        jobName,
-        granularity,
-        handler,
-      );
+      return client.waitTimeStatsUpdateIterator(jobName, granularity);
     }
-  }
-
-  async function onUnsubscribe(): Promise<void> {
-    return unsub && unsub();
   }
 
   return createResolver({
-    channelName: getChannelName,
+    channelName,
     onSubscribe,
-    onUnsubscribe,
   });
 }
 

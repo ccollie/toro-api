@@ -113,6 +113,16 @@ input StatsUpdateFilter {
   granularity: Granularity
 }
 
+input StatsLatestQueryInput {
+  """ The queue id"""
+  queueId: ID!
+  """
+  The job name. If omitted, it will return aggregate results for the queue
+  """
+  jobName: String
+  granularity: Granularity
+}
+
 extend type Query {
   """
   For the given query, return the date range of stored latency data
@@ -124,6 +134,8 @@ extend type Query {
   waitTimeStatsSpan(input: StatsSpanQueryInput!): DateRange
   latencies(input: StatsQueryInput!): [StatsSnapshot!]!
   waitTimes(input: StatsQueryInput!): [StatsSnapshot!]!
+  lastRecordedLatency(input: StatsLatestQueryInput): StatsSnapshot
+  lastRecordedWaitTime(input: StatsLatestQueryInput): StatsSnapshot
 }
 
 extend type Subscription {

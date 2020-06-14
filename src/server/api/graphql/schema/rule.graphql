@@ -220,23 +220,32 @@ type DeleteRuleAlertPayload {
     rule: Rule
 }
 
+type ClearRuleAlertsPayload {
+    deletedItems: Int!
+    rule: Rule
+}
 extend type Mutation {
     createRule(input: CreateRuleInput!): CreateRulePayload
     deleteRule(queueId: ID!, ruleId: ID!): ActionStatus
     activateRule(queueId: ID!, ruleId: ID!): RuleActivationPayload
     deactivateRule(queueId: ID!, ruleId: ID!): RuleActivationPayload
     deleteRuleAlert(input: DeleteRuleAlertInput!): DeleteRuleAlertPayload
+    clearRuleAlerts(queueId: ID!, ruleId: ID!): ClearRuleAlertsPayload
+}
+
+input RuleAlertsInput {
+    """The queue id"""
+    queueId: ID!
+    """Rule ids. Leave empty to return all events for the given queue"""
+    ruleIds: [ID!]
+    """Return reset events as well"""
+    returnResetEvents: Boolean = true
 }
 
 extend type Subscription {
-   """
-   Returns alerts when an rule's conditions are met. If no ruleId
-   is specified, all alerts for the given queueId are returned.
-   """
-   ruleAlertTriggered(queueId: ID!, ruleId: ID): RuleAlert
     """
-    Returns events when an rules conditions are no longer valid given the queue state.
-    If no ruleId is specified, all reset events for the given queueId are returned.
+    Returns alerts when an rule's conditions are met. If no ruleId
+    is specified, all alerts for the given queueId are returned.
     """
-    ruleAlertReset(queueId: ID!, ruleId: ID): RuleAlert
+    ruleAlerts(input: RuleAlertsInput): RuleAlert
 }

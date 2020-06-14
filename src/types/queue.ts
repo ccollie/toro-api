@@ -7,7 +7,6 @@ export enum QueueEventsEnum {
   RESUMED = 'resumed',
   DRAINED = 'drained',
   CLEANED = 'cleaned',
-  ERROR = 'error',
 }
 
 export interface AppQueue {

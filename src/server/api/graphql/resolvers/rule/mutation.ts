@@ -1,4 +1,4 @@
-import { getQueueManager, getResolverFields } from '../helpers';
+import { getQueueManager, getResolverFields, getRuleManager } from '../helpers';
 
 async function changeActiveStatus(active: boolean, rule, args, context, info) {
   const { queueId, id } = args;
@@ -38,6 +38,18 @@ async function deleteRuleAlert(_, { input }, context, info) {
   return result;
 }
 
+async function clearRuleAlerts(_, { queueId, ruleId }, context) {
+  const rules = getRuleManager(context, queueId);
+  const queueManager = getQueueManager(context, queueId);
+  const items = await rules.clearAlerts(ruleId);
+  // todo: validate rule
+  const rule = queueManager.getRule(ruleId);
+  return {
+    deletedItems: items,
+    rule,
+  };
+}
+
 // TODO: use queueBus to publish messages for subscription support
 export const Mutation = {
   async createRule(_, args, context): Promise<any> {
@@ -54,4 +66,5 @@ export const Mutation = {
   activateRule,
   deactivateRule,
   deleteRuleAlert,
+  clearRuleAlerts,
 };

@@ -7,6 +7,7 @@ import {
   HostManager,
   StatsClient,
   StatsGranularity,
+  RuleManager,
 } from '../../common/imports';
 
 import { endOf, parseDate, startOf, subtract } from '../../../lib/datetime';
@@ -37,6 +38,11 @@ export function getQueueManager(context, id: string): QueueManager {
     throw boom.notFound(`Cannot find queue for id#${id}`);
   }
   return manager;
+}
+
+export function getRuleManager(context, id: string): RuleManager {
+  const manager = getQueueManager(context, id);
+  return manager.ruleManager;
 }
 
 export function getQueueHost(context, queueId: string): HostManager {

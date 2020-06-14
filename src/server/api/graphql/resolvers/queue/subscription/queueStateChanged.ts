@@ -1,49 +1,34 @@
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { QueueEventsEnum } from '../../../../common/imports';
+import { getQueueListener } from '../../helpers';
 
 const EventNames = Object.values(QueueEventsEnum);
 
 export function queueStateChanged(): GraphQLFieldResolver<any, any> {
-  const cleanups = [];
-
-  function getChannelName(_, { queueId }): string {
+  function channelName(_, { queueId }): string {
     return `QUEUE_STATE_CHANGED:${queueId}`;
   }
 
-  function onSubscribe(_, { queueId }, context): void {
-    const { channelName, pubsub, supervisor } = context;
-    const queueManager = supervisor.getQueueById(queueId);
-    const { queue, queueListener } = queueManager;
+  function onSubscribe(_, { queueId }, context): AsyncIterator<any> {
+    const listener = getQueueListener(context, queueId);
+    const queue = listener.queue;
 
-    function handler(event): Promise<void> {
-      return pubsub.publish(channelName, { state: event });
+    function transform(state, event): any {
+      return {
+        state,
+        queue,
+      };
     }
 
-    EventNames.forEach((eventName) => {
-      cleanups.push(queueListener.on(eventName, () => handler(eventName)));
-    });
-
-    // The cleaned event is emitted on the queue itself (i.e. not on the queue event stream)
-    // TODO: we need a global event, otherwise its visible only on the current node.
-    // Maybe emit in the mutation
-    const handleCleaned = () => {
-      handler('cleaned').catch((err) => console.log(err));
-    };
-
-    queue.on('cleaned', handleCleaned);
-    cleanups.push(() => queue.off('cleaned', handleCleaned));
-  }
-
-  async function onUnsubscribe(): Promise<void> {
-    cleanups.forEach((fn) => {
-      fn();
+    return listener.createAsyncIterator({
+      eventNames: EventNames,
+      transform,
     });
   }
 
   return createResolver({
-    channelName: getChannelName,
+    channelName,
     onSubscribe,
-    onUnsubscribe,
   });
 }
