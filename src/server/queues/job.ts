@@ -1,10 +1,8 @@
 import boom from '@hapi/boom';
 import nanoid from 'nanoid';
-import { Job, JobsOptions, Queue } from 'bullmq';
-import pSettle, {
-  PromiseRejectedResult,
-} from 'p-settle';
-import { getMultipleJobsById } from './queues';
+import { Job, Queue } from 'bullmq';
+import pSettle, { PromiseRejectedResult } from 'p-settle';
+import { getMultipleJobsById } from './queue';
 
 // https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
 export const JobFields = [
@@ -84,20 +82,6 @@ export async function multiGetJobState(
   });
 
   return result;
-}
-
-export async function createJob(
-  queue: Queue,
-  name: string,
-  data = {},
-  opts: JobsOptions = {},
-): Promise<Job> {
-  const options = {
-    removeOnComplete: false, // If true, removes the job when it successfully
-    removeOnFail: false,
-    ...opts,
-  };
-  return queue.add(name, data, options); // todo: validate all these
 }
 
 async function processJobInternal(

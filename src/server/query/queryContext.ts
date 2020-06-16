@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import config from '../config';
-import { JobFields } from '../models/jobs';
+import { JobFields } from '../queues/job';
 import { resolve } from './utils';
 import { QueueListener } from '../queues';
 import * as metrics from '../metrics';

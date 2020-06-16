@@ -1,4 +1,4 @@
-import { getJobTypes, getJobCounts, queueIsPaused } from '../../../models';
+import { getJobTypes, getJobCounts, queueIsPaused } from '../../../queues';
 import pAll from 'p-all';
 
 export async function getQueueInfo(host, ...queueList) {

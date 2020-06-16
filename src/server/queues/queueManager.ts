@@ -9,16 +9,11 @@ import { deleteAllQueueData, RedisStreamAggregator } from '../redis';
 import { QueueListener } from './queueListener';
 import { QueueBus } from './queueBus';
 import { HostContext } from '../monitor/hostManager';
-import { getJobTypes } from '../models/queues';
+import { getJobTypes } from './queue';
 import { subscribeToJob } from '../redis/keyspace-utils';
 import { systemClock } from '../lib/clock';
 import { getStatsKey } from '../monitor/keys';
-import {
-  QueueConfig,
-  QueueWorker,
-  RepeatableJob,
-  RuleAlert,
-} from 'index';
+import { QueueConfig, QueueWorker, RepeatableJob, RuleAlert } from 'index';
 import { isEmpty } from 'lodash';
 import { JobStatus } from 'jobs';
 import cronstrue from 'cronstrue/i18n';

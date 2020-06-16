@@ -1,5 +1,5 @@
 import { asyncHandler as wrap } from '../../middleware';
-import { getJobState } from '../../../../models';
+import { getJobState } from '../../../../queues';
 import { RequestHandler, Request, Response } from 'express';
 
 export const getState: RequestHandler = wrap(

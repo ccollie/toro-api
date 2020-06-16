@@ -74,6 +74,10 @@ export function getQueueBusKey(queue: Queue): string {
   return getKey(null, queue, null, 'bus');
 }
 
+export function getJobSchemaKey(queue: Queue): string {
+  return getKey(null, queue, null, 'job-schemas');
+}
+
 const granularitySegment = '(:w+)?';
 const regexCache = new Map();
 

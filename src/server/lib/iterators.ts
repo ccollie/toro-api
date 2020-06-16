@@ -5,8 +5,8 @@ import Emittery from 'emittery';
 import EventEmitter = NodeJS.EventEmitter;
 
 export interface IteratorBatchOptions<
-  TInput = any,
-  TTransformed = TInput,
+  TEvent = any,
+  TTransformed = TEvent,
   TOutput = TTransformed
 > {
   /***
@@ -20,23 +20,23 @@ export interface IteratorBatchOptions<
   transformer: (batch: TTransformed[]) => TOutput;
 }
 
-export interface IteratorOptions<TInput, TTransformed, TOutput> {
+export interface IteratorOptions<TEvent, TTransformed, TOutput> {
   eventNames: string | string[];
-  filter?: (eventName: string, value?: TInput) => boolean;
+  filter?: (eventName: string, value?: TEvent) => boolean;
   transform?: (
     eventName: string,
-    value?: TInput,
+    value?: TEvent,
   ) => TTransformed | Promise<TTransformed>;
-  batch?: IteratorBatchOptions<TInput, TTransformed, TOutput>;
+  batch?: IteratorBatchOptions<TEvent, TTransformed, TOutput>;
 }
 
 export function createAsyncIterator<
-  TInput = any,
-  TTransformed = TInput,
+  TEvent = any,
+  TTransformed = TEvent,
   TOutput = TTransformed
 >(
   emitter: Emittery | EventEmitter,
-  options: IteratorOptions<TInput, TTransformed, TOutput>,
+  options: IteratorOptions<TEvent, TTransformed, TOutput>,
 ): Required<AsyncIterator<TOutput>> {
   let pullSeries: any = [];
   let pushSeries: any = [];
@@ -85,7 +85,7 @@ export function createAsyncIterator<
     pushFn = debounce(batchedPush, options.batch.interval);
   }
 
-  const handler = (name: string, event?: TInput): void => {
+  const handler = (name: string, event?: TEvent): void => {
     if (filter(name, event)) {
       const transformed = transform(name, event);
       if (isPromise(transformed)) {
@@ -99,7 +99,7 @@ export function createAsyncIterator<
 
   const unsubscribers = [];
   eventNames.forEach((name) => {
-    const listener = (event) => handler(name, event as TInput);
+    const listener = (event) => handler(name, event as TEvent);
     emitter.on(name, listener);
     unsubscribers.push(() => emitter.off(name, listener));
   });

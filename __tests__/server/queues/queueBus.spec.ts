@@ -1,9 +1,9 @@
-import { QueueBus } from '../../../src/server/queues/queueBus';
-import { RedisStreamAggregator } from '../../../src/server/redis/streamAggregator';
+import { QueueBus } from '../../../src/server/queues';
+import { RedisStreamAggregator, deleteAllQueueData } from '../../../src/server/redis';
 import { randomString, delay, createClient } from '../utils';
 import nanoid from 'nanoid';
 import { Queue } from 'bullmq';
-import { deleteAllQueueData } from '../../../src/server/redis';
+
 
 describe('QueueBus', () => {
   // jest.setTimeout(5000);

@@ -95,7 +95,7 @@ enum JobTimingType {
 
 input StatsQueryInput {
   queueId: ID!
-  jobName: String,
+  jobName: String
   granularity: Granularity
   rangeStart: DateTime
   rangeEnd: DateTime
@@ -103,13 +103,13 @@ input StatsQueryInput {
 
 input StatsSpanQueryInput {
   queueId: ID!
-  jobName: String,
+  jobName: String
   granularity: Granularity
 }
 
 input StatsUpdateFilter {
   queueId: ID!
-  jobName: String,
+  jobName: String
   granularity: Granularity
 }
 

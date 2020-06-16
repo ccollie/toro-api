@@ -1,4 +1,4 @@
-import { processJobCommand } from '../../../../models/jobs';
+import { processJobCommand } from '../../../../queues/job';
 import { asyncHandler } from '../../middleware';
 
 module.exports = function createJobHandler(cmd) {

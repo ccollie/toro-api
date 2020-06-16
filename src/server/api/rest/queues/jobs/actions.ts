@@ -1,4 +1,4 @@
-import { processJobCommand } from '../../../../models';
+import { processJobCommand } from '../../../../queues';
 import { asyncHandler as wrap } from '../../middleware';
 import { RequestHandler, Request, Response } from 'express';
 

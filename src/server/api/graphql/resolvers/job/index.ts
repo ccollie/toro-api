@@ -1,52 +1,18 @@
 'use strict';
 import ms from 'ms';
 import { getQueueById } from '../helpers';
-import { getJobState } from '../../../../models/jobs';
+import { getJobState } from '../../../../queues/job';
 import { Subscription } from './subscription';
 import cronstrue from 'cronstrue/i18n';
 import { isNumber } from '../../../../lib';
-import { Queue, Job } from 'bullmq';
+import { Queue } from 'bullmq';
 import { Mutation } from './mutation';
-
-async function getJob(context, queueId, jobId, includeState = false) {
-  const queue = getQueueById(context, queueId);
-  let job, state;
-  if (includeState) {
-    const [_job, _state] = await Promise.all([
-      queue.getJob(jobId),
-      getJobState(queue, jobId),
-    ]);
-    job = _job;
-    state = _state;
-  } else {
-    job = await queue.getJob(jobId);
-  }
-
-  if (job) {
-    job.queueId = queueId;
-    if (state) job.state = state;
-  }
-  return job;
-}
+import { Query } from './query';
 
 export const jobResolver = {
-  Query: {
-    async job(_, { queueId, id }, ctx): Promise<Job> {
-      return getJob(ctx, queueId, id);
-    },
-  },
-  JobRepeatOptions: {
-    __resolveType(option): string {
-      if (option.cron) {
-        return 'JobRepeatOptionsCron';
-      }
-      if (option.hasOwnProperty('every')) {
-        return 'JobRepeatOptionsEvery';
-      }
-      // should not happen
-      return 'JobRepeatOption';
-    },
-  },
+  Query,
+  Mutation,
+  Subscription,
   Job: {
     async state(parent, args, ctx): Promise<string> {
       let result = parent.state;
@@ -71,6 +37,4 @@ export const jobResolver = {
       return cron ? cronstrue.toString(cron) : '';
     },
   },
-  Subscription,
-  Mutation,
 };

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { get, isFunction, isObject, isEmpty } from 'lodash';
+import { get, isFunction, isObject } from 'lodash';
 import { JobStatusEnum } from '../../types';
 
 export function hash(data, algorithm = 'sha1'): string {
@@ -7,11 +7,15 @@ export function hash(data, algorithm = 'sha1'): string {
 }
 
 export function objToString(hash): string {
-  if (isEmpty(hash)) {
+  if (!isObject(hash)) {
     return '' + hash;
   }
   const keys = Object.keys(hash).sort();
-  return keys.reduce((res, k) => res + `${k}:${hash[k]}`, '');
+  const parts = keys.map((key) => {
+    const val = hash[key];
+    return key + ':' + (typeof val === 'object' ? objToString(val) : '' + val);
+  });
+  return parts.join('');
 }
 
 export function hashObject(

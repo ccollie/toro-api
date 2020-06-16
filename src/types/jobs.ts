@@ -7,7 +7,7 @@ export enum JobStatusEnum {
   failed = 'failed',
   delayed = 'delayed',
   paused = 'paused',
-  stalled = 'stalled'
+  stalled = 'stalled',
 }
 
 export type JobFinishedState = JobStatusEnum.completed | JobStatusEnum.failed;
@@ -35,4 +35,10 @@ export interface AppJob {
   duration: number | undefined;
   nextRun: number | undefined;
   state: string | undefined;
+}
+
+export interface JobCreationOptions {
+  name: string;
+  data: any;
+  opts?: any;
 }

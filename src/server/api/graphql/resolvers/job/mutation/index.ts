@@ -1,7 +1,9 @@
 import { addJob } from './addJob';
+import { addJobSchema } from './addJobSchema';
 import { addBulkJobs } from './addBulkJobs';
 import { addJobLog } from './addJobLog';
 import { deleteJob } from './deleteJob';
+import { deleteJobSchema } from './deleteJobSchema';
 import { removeRepeatableJobs } from './removeRepeatableJobs';
 import { removeRepeatableJobByKey } from './removeRepeatableJobByKey';
 import { moveJobToFailed } from './moveJobToFailed';
@@ -20,9 +22,11 @@ const deleteBulkJobs = createBulkMutationHandler('remove');
 
 export const Mutation = {
   addJob,
+  addJobSchema,
   addJobLog,
   addBulkJobs,
   deleteJob,
+  deleteJobSchema,
   deleteBulkJobs,
   promoteJob,
   promoteBulkJobs,

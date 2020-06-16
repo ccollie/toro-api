@@ -219,6 +219,32 @@ type AddBulkJobsPayload {
   queue: Queue
 }
 
+input AddJobSchemaInput {
+  queueId: ID!
+  """
+  The job name
+  """
+  name: String!
+  """
+  The JSON-Schema to apply to jobs with this name
+  """
+  schema: JSONObject!
+  """
+  Default Job options
+  """
+  defaultOpts: JobOptionsInput
+}
+
+type AddJobSchemaPayload {
+  name: String!
+  queue: Queue
+}
+
+type DeleteJobSchemaPayload {
+  name: String!
+  queue: Queue
+}
+
 type JobAddCronPayload {
   job: Job
   queue: Queue
@@ -353,10 +379,43 @@ type RetryFailedJobsPayload {
   failure: Int!
 }
 
+input ValidateJobDataInput {
+  queueId: ID!
+  jobName: String!
+  data: JSONObject
+}
+
+type ValidateJobDataPayload {
+  isValid: Boolean!
+  errors: [String!]
+}
+
+type ValidateJobOptionsPayload {
+  isValid: Boolean!
+  errors: [String!]
+}
+
+extend type Query {
+  """Validate data against the stored schema for a job"""
+  validateJobData(input: ValidateJobDataInput): ValidateJobDataPayload
+
+  """Validate jobs options"""
+  validateJobOptions(input: JobOptionsInput): ValidateJobOptionsPayload
+}
+
 extend type Mutation {
   addJob(input: AddJobInput): AddJobPayload
   addJobLog(input: AddJobLogInput): AddJobLogPayload
   addBulkJobs(input: AddBulkJobsInput): AddBulkJobsPayload
+  """
+  Add a JSON-Schema schema to validate job data on job creation
+  """
+  addJobSchema(queueId: AddJobSchemaInput): AddJobSchemaPayload
+  """
+  Remove the JSON-Schema associated with a job name
+  """
+  deleteJobSchema(queueId: ID!, name: String!): DeleteJobSchemaPayload
+
   promoteJob(input: JobLocatorInput): PromoteJobPayload
   retryJob(input: JobLocatorInput): RetryJobPayload
   deleteJob(input: JobLocatorInput): DeleteQueuePayload

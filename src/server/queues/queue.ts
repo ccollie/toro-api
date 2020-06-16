@@ -1,25 +1,14 @@
 import ms from 'ms';
 import nanoid from 'nanoid';
-import { isEmpty } from 'lodash';
+import { isEmpty, uniq } from 'lodash';
 import { Queue, Job } from 'bullmq';
 import { getQueueConfig } from '../config/host-config';
 import { deleteByPattern } from '../redis/utils';
 import { systemClock } from '../lib/clock';
+import { getJobSchemas, validateBySchema, validateJobData } from './jobSchemas';
+import { JobCreationOptions, JobStatusEnum } from '../../types';
 
-const JOB_STATES = ['active', 'waiting', 'completed', 'delayed', 'failed'];
-
-function normalizeStates(...states) {
-  if (!states.length) {
-    states = JOB_STATES;
-  } else {
-    states = [].concat(...states);
-  }
-  states = states.filter((x) => !!x);
-  if (!states.length) {
-    states = JOB_STATES;
-  }
-  return states;
-}
+const JOB_STATES = Object.values(JobStatusEnum);
 
 /****
  * A more performant way to fetch multiple getJobs from a queue.
@@ -71,62 +60,6 @@ export async function getJobCounts(
     }
   });
   return result;
-}
-
-/**
- * Fetch a number of getJobs of certain type
- * @param {Queue} queue
- * @param {String|String[]} states Job types: {waiting|active|delayed|completed|failed}
- * @param {Number} offset Index offset (optional)
- * @param {Number} limit Limit of the number of getJobs returned (optional)
- * @param asc {Boolean} asc/desc
- * @returns {Promise} A promise that resolves to an array of getJobs
- */
-export async function getJobs(
-  queue: Queue,
-  states,
-  offset = 0,
-  limit = 30,
-  asc: boolean,
-) {
-  const order = {
-    waiting: true,
-    active: false,
-    delayed: true,
-    completed: false,
-    failed: false,
-  };
-
-  if (typeof states === 'string') {
-    states = states.split(',');
-  }
-
-  states = normalizeStates(states);
-
-  if (states.length === 1) {
-    const state = states[0];
-    if (asc === undefined) {
-      asc = order[state];
-    }
-  }
-
-  const end = limit < 0 ? -1 : offset + limit - 1;
-
-  // eslint-disable-next-line prefer-const
-  const ids = await queue.getRanges(states, offset, end, asc);
-  let jobs = [];
-  if (ids.length) {
-    const jids = ids as string[];
-    jobs = await getMultipleJobsById(queue, ...jids);
-    if (states.length === 1) {
-      const state = states[0];
-      jobs.forEach((job) => {
-        job.state = state;
-      });
-    }
-  }
-
-  return jobs;
 }
 
 export async function getQueueMeta(queue: Queue): Promise<Record<string, any>> {
@@ -193,4 +126,54 @@ export async function removeAllQueueData(
 ): Promise<number> {
   const pattern = `${prefix}:${queueName}:*`;
   return deleteByPattern(client, pattern);
+}
+
+export async function createJob(
+  queue: Queue,
+  job: JobCreationOptions,
+): Promise<Job> {
+  const { name, data, opts } = job;
+  const { options, data: validated } = await validateJobData(
+    queue,
+    name,
+    data,
+    opts,
+  );
+
+  return queue.add(name, validated, options);
+}
+
+export async function validateJobs(
+  queue: Queue,
+  jobs: JobCreationOptions[],
+): Promise<void> {
+  const names = jobs.map(({ name }) => name);
+  if (!names.length) return;
+  const schemas = await getJobSchemas(queue, uniq(names));
+  if (isEmpty(schemas)) {
+    return;
+  }
+
+  for (let i = 0; i < jobs.length; i++) {
+    const job = jobs[i];
+    const schema = schemas[job.name];
+    if (schema) {
+      const { data, options } = validateBySchema(
+        job.name,
+        schema,
+        job.data,
+        job.opts,
+      );
+      job.data = data;
+      job.opts = options;
+    }
+  }
+}
+
+export async function createBulkJobs(
+  queue: Queue,
+  jobs: JobCreationOptions[],
+): Promise<Job[]> {
+  await validateJobs(queue, jobs);
+  return queue.addBulk(jobs);
 }

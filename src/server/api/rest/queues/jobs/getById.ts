@@ -1,4 +1,4 @@
-import { getJobState } from '../../../../models/jobs';
+import { getJobState } from '../../../../queues/job';
 import { parseBool } from '../../../../lib';
 import { toJson } from './utils';
 import { asyncHandler as wrap } from '../../middleware';
