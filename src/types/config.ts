@@ -1,5 +1,10 @@
 import { RedisOptions } from 'ioredis';
 
+export interface DiscoveredQueue {
+  prefix: string;
+  name: string;
+}
+
 export interface QueueConfig {
   /** Unique, system generated id based on host/port/db/queue name */
   id?: string;
@@ -9,6 +14,8 @@ export interface QueueConfig {
   /** Notification channels for alerts */
   notifiers?: string[];
   jobTypes: string[];
+  /** Should we keep stats for this queue */
+  monitorStats?: boolean;
 }
 
 export type ConnectionOptions = string | RedisOptions;

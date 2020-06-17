@@ -18,6 +18,16 @@ export function getSupervisor(context): Supervisor {
   return context.supervisor as Supervisor;
 }
 
+export function getHostById(context, id: string): HostManager {
+  const { supervisor } = context;
+  const host = supervisor.getHostById(id);
+  if (!host) {
+    const msg = `Host #${id} not found`;
+    throw boom.notFound(msg);
+  }
+  return host;
+}
+
 export function getQueueById(context, id: string): Queue {
   return getSupervisor(context).getQueueById(id);
 }

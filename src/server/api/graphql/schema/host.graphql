@@ -19,6 +19,13 @@ type RedisInfo {
   role: String
 }
 
+type DiscoverQueuesPayload {
+  """The queue prefix"""
+  prefix: String!
+  """The queue name"""
+  name: String!
+}
+
 type QueueHost {
   id: ID
   """
@@ -30,10 +37,6 @@ type QueueHost {
   """
   description: String
   """
-  The prefix for queues on this host
-  """
-  prefix: String
-  """
   The queues registered for this host
   """
   queues: [Queue!]
@@ -41,6 +44,13 @@ type QueueHost {
   Redis information for the given host
   """
   redis: RedisInfo!
+  """
+  Discover Bull queues on the given host
+  """
+  discoverQueues(
+    """Optional prefix filter"""
+    prefix: String = ""
+  ): [DiscoverQueuesPayload!]!
 }
 
 extend type Query {

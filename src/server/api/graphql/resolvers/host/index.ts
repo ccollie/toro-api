@@ -1,7 +1,11 @@
 'use strict';
-import { HostManager, Supervisor } from '../../imports';
+import {
+  DiscoveredQueue,
+  HostManager,
+  Supervisor,
+  RedisMetrics,
+} from '../../imports';
 import { Queue } from 'bullmq';
-import { RedisMetrics } from '@src/types';
 
 export const hostResolver = {
   Query: {
@@ -21,6 +25,12 @@ export const hostResolver = {
     },
     queues(host: HostManager): Queue[] {
       return host.getQueues();
+    },
+    async discoverQueues(
+      host: HostManager,
+      { prefix },
+    ): Promise<DiscoveredQueue[]> {
+      return host.discoverQueues(prefix);
     },
   },
 };

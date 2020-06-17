@@ -100,6 +100,10 @@ export class QueueManager {
     return this.queue.name;
   }
 
+  get prefix(): string {
+    return this.config.prefix;
+  }
+
   get id(): string {
     return this.config.id;
   }

@@ -99,6 +99,11 @@ export class Supervisor {
     return hostName && hosts.get(hostName);
   }
 
+  getHostById(id: string): HostManager {
+    const values = Array.from(hosts.values());
+    return values.find((host) => host.id === id);
+  }
+
   getQueue(hostName: string, name: string): Queue {
     const host = this.getHost(hostName);
     return host && host.getQueue(name);

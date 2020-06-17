@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import Emittery from 'emittery';
 import IORedis from 'ioredis';
 import pSettle from 'p-settle';
-import { isString } from 'lodash';
+import { sortBy } from 'lodash';
 import { QueueManager } from '../queues';
 import {
   KeyspaceNotifier,
@@ -10,7 +10,7 @@ import {
   RedisStreamAggregator,
   WriteCache,
 } from '../redis';
-import { RedisMetrics } from '@src/types';
+import { DiscoveredQueue, RedisMetrics } from '@src/types';
 import { ConnectionOptions, HostConfig, QueueConfig } from 'config';
 import { createClient, discoverQueues, getRedisInfo } from '../redis/utils';
 
@@ -32,17 +32,9 @@ export interface HostContext {
   keyspaceNotifier: KeyspaceNotifier;
 }
 
-function createContext(self): HostContext {
-  return {
-    host: self.host,
-    writer: self[WRITER] as WriteCache,
-    client: self.client,
-    lock: self[WRITE_LOCK] as LockManager,
-    streamAggregator: self.streamAggregator,
-    notifications: self.notifications,
-    keyspaceNotifier: self.keyspaceNotifier,
-  };
-}
+const queueConfigKey = (prefix: string, name: string): string => {
+  return `${prefix}:${name}`;
+};
 
 /** Manages all resource (queues specifically) grouped under a named host */
 export class HostManager {
@@ -51,13 +43,13 @@ export class HostManager {
   private readonly connectionOpts: ConnectionOptions;
   private readonly defaultRedisClient: IORedis.Redis;
   private readonly queueManagerMap: Map<string, QueueManager>;
-  private readonly _initialized: Promise<void>;
   private readonly notifications: any;
   private readonly streamAggregator: RedisStreamAggregator;
   public queueManagers: QueueManager[] = [];
   public readonly keyspaceNotifier: KeyspaceNotifier;
-  private readonly bullOpts: any = {};
   private readonly config: HostConfig;
+  private readonly _context: HostContext;
+  private readonly _initialized: Promise<void>;
 
   constructor(opts: HostConfig, notifications: NotificationManager) {
     this.name = opts.name;
@@ -65,9 +57,6 @@ export class HostManager {
     this.description = opts.description;
     this.queueManagerMap = new Map<string, QueueManager>();
     this.notifications = notifications;
-    this.bullOpts = {
-      prefix: opts.prefix || 'bull',
-    };
     this.connectionOpts = opts.connection;
     const client = this.createClient(this.connectionOpts);
     this.defaultRedisClient = client;
@@ -92,7 +81,17 @@ export class HostManager {
 
     new Emittery().bindMethods(this);
 
-    this._initialized = this.init(opts);
+    this._context = {
+      host: this.name,
+      writer: this[WRITER] as WriteCache,
+      client: this.client,
+      lock: this[WRITE_LOCK] as LockManager,
+      streamAggregator: this.streamAggregator,
+      notifications: this.notifications,
+      keyspaceNotifier: this.keyspaceNotifier,
+    };
+
+    this._initialized = this.init();
   }
 
   async destroy(): Promise<void> {
@@ -120,8 +119,8 @@ export class HostManager {
     return this.defaultRedisClient;
   }
 
-  discoverQueues(): Promise<string[]> {
-    return discoverQueues(this.defaultRedisClient, this.bullOpts.prefix);
+  discoverQueues(prefix?: string): Promise<DiscoveredQueue[]> {
+    return discoverQueues(this.defaultRedisClient, prefix);
   }
 
   getRedisInfo(): Promise<RedisMetrics> {
@@ -135,44 +134,47 @@ export class HostManager {
     return createClient(redisOpts);
   }
 
-  private addQueue(context: HostContext, config: QueueConfig): QueueManager {
+  public addQueue(config: QueueConfig): QueueManager {
     logger.info(`host ${this.name}: added queue`, config.name);
-    const prefix = config.prefix || this.bullOpts.prefix || 'bull';
+
+    config.id =
+      config.id || generateQueueId(this.config, config.prefix, config.name);
+
     const opts = {
-      ...this.bullOpts,
-      prefix,
+      prefix: config.prefix,
       connection: this.defaultRedisClient,
     };
-    const queue = new Queue(config.name, opts);
-    const manager = new QueueManager(context, queue, config);
-    this.queueManagers.push(manager);
-    this.queueManagerMap.set(config.name, manager);
+
+    const key = queueConfigKey(config.prefix, config.name);
+    let manager = this.queueManagerMap.get(key);
+    if (!manager) {
+      const queue = new Queue(config.name, opts);
+      manager = new QueueManager(this._context, queue, config);
+      this.queueManagers.push(manager);
+      this.queueManagerMap.set(key, manager);
+    }
+
     return manager;
   }
 
   private addToQueueSet(queues: QueueConfig[]): void {
-    const context = createContext(this);
     for (const config of queues) {
-      if (this.queueManagerMap.has(config.name)) {
-        continue;
-      }
-      this.addQueue(context, config);
+      this.addQueue(config);
     }
   }
 
-  private async init(config: HostConfig): Promise<void> {
+  private async init(): Promise<void> {
     // init queues
+    const config = this.config;
     const queueConfigs = [...config.queues];
     if (config.autoDiscoverQueues) {
       const queues = await this.discoverQueues();
-      // TODO: use queue prefix if bullOpts.prefix not set
-      queues.forEach((name) => {
+      queues.forEach(({ name, prefix }) => {
         const cfg: QueueConfig = {
           name,
-          prefix: this.bullOpts.prefix,
+          prefix,
           jobTypes: [],
         };
-        cfg.id = generateQueueId(config, cfg.prefix, cfg.name);
         queueConfigs.push(cfg);
       });
     }
@@ -195,33 +197,23 @@ export class HostManager {
     return this.queueManagers.find((x) => x.queue.name === name);
   }
 
-  removeQueue(queue: string | Queue): QueueManager | null {
-    let idx;
-
+  removeQueue(queue: Queue): QueueManager | null {
     if (!queue) return null;
-    const name = typeof queue === 'string' ? queue : queue.name;
-    if (isString(queue)) {
-      idx = this.queueManagers.findIndex((x) => x.queue.name === name);
-    } else {
-      idx = this.queueManagers.findIndex((x) => x.queue === queue);
-    }
+    const idx = this.queueManagers.findIndex((x) => x.queue === queue);
 
     if (idx >= 0) {
       const result = this.queueManagers[idx];
       this.queueManagers.splice(idx, 1);
+      const key = queueConfigKey(result.prefix, result.name);
+      this.queueManagerMap.delete(key);
       return result;
     }
     return null;
   }
 
   getQueues(): Queue[] {
-    return this.queueManagers
-      .map((mgr) => mgr.queue)
-      .sort((a, b) => {
-        const nameA = a.name;
-        const nameB = b.name;
-        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
-      });
+    const queues = this.queueManagers.map((mgr) => mgr.queue);
+    return sortBy(queues, ['prefix', 'name']);
   }
 
   async waitUntilReady(): Promise<void> {

@@ -33,8 +33,10 @@ const connectionSchema = Joi.alternatives().try(
 const queueConfigSchema = Joi.object().keys({
   name: Joi.string().required(),
   prefix: Joi.string().optional().default('bull'),
+  description: Joi.string().optional(),
   notifiers: Joi.array().items(Joi.string()).optional(),
   jobTypes: Joi.array().items(Joi.string()).single().default([]),
+  monitorStats: Joi.boolean().optional().default(true),
 });
 
 export const hostConfigSchema = Joi.object().keys({

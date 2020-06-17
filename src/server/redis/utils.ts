@@ -3,8 +3,7 @@ import url, { Url } from 'url';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate } from '../lib/datetime';
 import { isNumber } from '../lib/utils';
-import { ConnectionOptions } from 'config';
-import { RedisMetrics } from '@src/types';
+import { ConnectionOptions, DiscoveredQueue, RedisMetrics } from '../../types';
 import { loadScripts } from '../commands';
 import logger from '../lib/logger';
 import { Queue } from 'bullmq';
@@ -127,36 +126,49 @@ export async function deleteByPattern(
   return totalCount;
 }
 
+// source
+// eslint-disable-next-line max-len
+// https://github.com/graphql-compose/graphql-compose-bullmq/blob/master/src/helpers/normalizePrefixGlob.ts
+export function normalizePrefixGlob(prefixGlob: string): string {
+  let prefixGlobNorm = prefixGlob || '';
+  const sectionsCount = prefixGlobNorm.split(':').length - 1;
+
+  if (sectionsCount > 1) {
+    prefixGlobNorm += prefixGlobNorm.endsWith(':') ? '' : ':';
+  } else if (sectionsCount == 1) {
+    prefixGlobNorm += prefixGlobNorm.endsWith(':') ? '*:' : ':';
+  } else {
+    prefixGlobNorm += prefixGlobNorm.trim().length > 0 ? ':*:' : '*:*:';
+  }
+
+  prefixGlobNorm += 'meta';
+
+  return prefixGlobNorm;
+}
+
 export async function discoverQueues(
   client: IORedis.Redis,
-  prefix: string,
-): Promise<string[]> {
-  const keyPattern = new RegExp(
-    `^${prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`,
-  );
+  prefix?: string,
+): Promise<DiscoveredQueue[]> {
+  const pattern = normalizePrefixGlob(prefix);
 
   const options = {
-    match: `${prefix}:*:*`,
+    match: pattern,
     count: 1000,
   };
-  const dedupe = Object.create(null);
   const result = [];
 
-  logger.info('running queue discovery', { pattern: keyPattern.source });
+  logger.info('running queue discovery', { pattern });
 
   await scanKeys(client, options, (keys) => {
-    keys.forEach((key) => {
-      const match = keyPattern.exec(key);
-      if (match && match[1]) {
-        const [prefix, name] = key.split(':');
-        const uniq = `${prefix}-${name}`;
-        if (!dedupe[uniq]) {
-          dedupe[uniq] = 1;
-          logger.info(`found queue "${prefix}:${name}"`);
-          result.push(name);
-        }
-      }
+    const current = keys.map((key) => {
+      const parts = key.split(':');
+      return {
+        prefix: parts.slice(0, -2).join(':'),
+        name: parts[parts.length - 2],
+      };
     });
+    result.push(...current);
   });
 
   return result;
