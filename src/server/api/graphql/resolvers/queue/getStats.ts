@@ -3,7 +3,7 @@ import {
   StatisticalSnapshot,
   StatsGranularity,
   StatsQueryOptions,
-} from '../../../common/imports';
+} from '../../imports';
 import { endOf, startOf } from '../../../../lib/datetime';
 
 function getPrevUnit(granularity: StatsGranularity): string {

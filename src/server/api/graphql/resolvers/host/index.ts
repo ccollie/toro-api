@@ -1,5 +1,5 @@
 'use strict';
-import { HostManager, Supervisor } from '../../../common/imports';
+import { HostManager, Supervisor } from '../../imports';
 import { Queue } from 'bullmq';
 import { RedisMetrics } from '@src/types';
 

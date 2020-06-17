@@ -1,7 +1,7 @@
 'use strict';
 import { Queue } from 'bullmq';
 import { getQueueById } from '../../helpers';
-import { createBulkJobs } from '../../../../common/imports';
+import { createBulkJobs } from '../../../imports';
 
 export async function addBulkJobs(_, { input }, ctx) {
   const { queueId, jobs: data } = input;

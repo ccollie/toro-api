@@ -3,7 +3,7 @@ import {
   MetricType,
   getByKey,
   create as createMetric,
-} from '../../../../common/imports';
+} from '../../../imports';
 import { getQueueListener } from '../../helpers';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';

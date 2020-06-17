@@ -1,6 +1,6 @@
 'use strict';
 import boom from '@hapi/boom';
-import { Rule, RuleAlert } from '../../../common/imports';
+import { Rule, RuleAlert } from '../../imports';
 import { Mutation } from './mutation';
 import { Subscription } from './subscription';
 import { getQueueManager } from '../helpers';

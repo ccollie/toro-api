@@ -8,7 +8,7 @@ import {
   StatsClient,
   StatsGranularity,
   RuleManager,
-} from '../../common/imports';
+} from '../imports';
 
 import { endOf, parseDate, startOf, subtract } from '../../../lib/datetime';
 import { systemClock } from '../../../lib/clock';

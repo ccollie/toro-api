@@ -5,7 +5,7 @@ import { isFinishedStatus, diff, hashObject } from '../../../../../lib';
 import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../helpers';
-import { JobStatusEnum } from '../../../../common/imports';
+import { JobStatusEnum } from '../../../imports';
 import { createJobNameFilter } from '../../../../../metrics/lib/utils';
 import { Queue } from 'bullmq';
 

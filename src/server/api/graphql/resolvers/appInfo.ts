@@ -1,6 +1,6 @@
 'use strict';
 import { AppInfo } from '@src/types';
-import { Supervisor } from '../../common/imports';
+import { Supervisor } from '../imports';
 
 export const appInfoResolver = {
   Query: {

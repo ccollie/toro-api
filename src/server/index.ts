@@ -3,12 +3,11 @@ import serveStatic from 'serve-static';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import compression from 'compression';
-import routes from './api/rest';
 import config from './config';
 import path from 'path';
-import { errorHandler } from './api/rest/middleware';
+import { errorHandler } from './api/errorHandler';
 import http from 'http';
-import context from './api/common/context';
+import context from './api/graphql/context';
 import { Supervisor } from '../server/monitor';
 
 import { createServer as createApolloServer } from './api/graphql';
@@ -79,7 +78,6 @@ const middleware = {
 
 const server = createApolloServer(middleware, context);
 
-app.use('/api', routes);
 const publicPath = path.resolve(__dirname, '../dist');
 const staticConf = { maxAge: '1hr', etag: true };
 

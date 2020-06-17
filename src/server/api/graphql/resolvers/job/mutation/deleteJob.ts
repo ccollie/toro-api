@@ -1,6 +1,6 @@
 'use strict';
 import { getQueueById } from '../../helpers';
-import { processJobCommand } from '../../../../common/imports';
+import { processJobCommand } from '../../../imports';
 
 export async function deleteJob(_, { input }, ctx) {
   const { queueId, jobId } = input;

@@ -3,7 +3,7 @@ import { createResolver } from '../../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueManager } from '../../helpers';
 import { QueueWorker } from '@src/types';
-import { QueueManager } from '../../../../common/imports';
+import { QueueManager } from '../../../imports';
 
 const POLLING_INTERVAL = 4500; // todo: get from config
 

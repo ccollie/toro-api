@@ -2,7 +2,7 @@ import { createResolver } from '../../subscription';
 import { GraphQLFieldResolver } from 'graphql';
 import { getStatsClient, normalizeGranularity } from '../helpers';
 import { StatisticalSnapshot, StatsMetricType } from 'stats';
-import { firstChar, StatsClient } from '../../../common/imports';
+import { firstChar, StatsClient } from '../../imports';
 
 interface StatsUpdateFilter {
   queueId: string;

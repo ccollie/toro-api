@@ -1,4 +1,4 @@
-import { MetricType } from '../../../../common/imports';
+import { MetricType } from '../../../imports';
 import { GraphQLFieldResolver } from 'graphql';
 import { createMetricResolver } from './metrics';
 

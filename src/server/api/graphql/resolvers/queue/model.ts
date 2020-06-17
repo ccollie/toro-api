@@ -1,5 +1,5 @@
 import { get } from 'lodash';
-import { Supervisor, QueueWorker } from '../../../common/imports';
+import { Supervisor, QueueWorker } from '../../imports';
 import { Queue } from 'bullmq';
 import { Rule } from '../../../../rules';
 import { StatisticalSnapshot } from 'stats';

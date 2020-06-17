@@ -3,7 +3,7 @@ import {
   StatsClient,
   StatsGranularity,
   StatisticalSnapshot,
-} from '../../../common/imports';
+} from '../../imports';
 
 import {
   getStatsClient,

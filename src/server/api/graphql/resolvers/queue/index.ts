@@ -1,5 +1,5 @@
 import { getQueueById } from '../helpers';
-import { Supervisor } from '../../../common/imports';
+import { Supervisor } from '../../imports';
 import { Queue } from 'bullmq';
 import { Subscription } from './subscription';
 import { Mutation } from './mutation';
