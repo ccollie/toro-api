@@ -44,13 +44,6 @@ type QueueHost {
   Redis information for the given host
   """
   redis: RedisInfo!
-  """
-  Discover Bull queues on the given host
-  """
-  discoverQueues(
-    """Optional prefix filter"""
-    prefix: String = ""
-  ): [DiscoverQueuesPayload!]!
 }
 
 extend type Query {
@@ -73,4 +66,14 @@ extend type Query {
     """
     hostName: String!
   ): QueueHost
+
+  """
+  Discover Bull queues on the given host
+  """
+  discoverQueues(
+    """Host Id"""
+    hostId: String!
+    """Optional prefix filter"""
+    prefix: String = ""
+  ): [DiscoverQueuesPayload!]!
 }

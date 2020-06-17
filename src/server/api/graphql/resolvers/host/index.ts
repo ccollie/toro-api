@@ -6,6 +6,7 @@ import {
   RedisMetrics,
 } from '../../imports';
 import { Queue } from 'bullmq';
+import boom from '@hapi/boom';
 
 export const hostResolver = {
   Query: {
@@ -18,6 +19,15 @@ export const hostResolver = {
     hostByName(_, { name }, { supervisor }): HostManager {
       return supervisor.getHost(name);
     },
+    async discoverQueues(_, args, context): Promise<DiscoveredQueue[]> {
+      const { supervisor } = context;
+      const { hostId, prefix } = args;
+      const host = supervisor.getHostById(hostId) || supervisor.getHost(hostId);
+      if (!host) {
+        throw boom.notFound(`Host with id "${hostId}"`);
+      }
+      return host.discoverQueues(prefix);
+    },
   },
   QueueHost: {
     async redis(parent: HostManager): Promise<RedisMetrics> {
@@ -25,12 +35,6 @@ export const hostResolver = {
     },
     queues(host: HostManager): Queue[] {
       return host.getQueues();
-    },
-    async discoverQueues(
-      host: HostManager,
-      { prefix },
-    ): Promise<DiscoveredQueue[]> {
-      return host.discoverQueues(prefix);
     },
   },
 };
