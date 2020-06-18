@@ -191,12 +191,9 @@ export function createHistogram(): AbstractHistogram {
   return histogram;
 }
 
-export function aggregateHistograms(
-  recs: StatisticalSnapshot[],
-): StatisticalSnapshot {
+export function aggregateData(recs: StatisticalSnapshot[]): AbstractHistogram {
   let hist: AbstractHistogram = null;
-  let completed = 0;
-  let failed = 0;
+
   recs.forEach((rec) => {
     if (rec.data) {
       if (!hist) {
@@ -207,11 +204,23 @@ export function aggregateHistograms(
         hist.add(src);
       }
     }
-    completed = completed + (rec.completed || 0);
-    failed = failed + (rec.failed || 0);
   });
 
   hist = hist || createHistogram();
+  return hist;
+}
+
+export function aggregateHistograms(
+  recs: StatisticalSnapshot[],
+): StatisticalSnapshot {
+  const hist = aggregateData(recs);
+
+  let completed = 0;
+  let failed = 0;
+  recs.forEach((rec) => {
+    completed = completed + (rec.completed || 0);
+    failed = failed + (rec.failed || 0);
+  });
 
   const snapshot = getSnapshot(hist);
   snapshot.data = stringEncode(hist);

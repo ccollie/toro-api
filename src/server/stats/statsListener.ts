@@ -105,7 +105,7 @@ export class StatsListener extends Emittery {
   }
 
   onFinished(data): void {
-    const { job, ts, latency, wait, failed } = data;
+    const { job, ts, latency, wait, success } = data;
 
     const jobTypeStats = this.getJobTypeStats(job.name);
     if (isNumber(wait) && wait) {
@@ -113,7 +113,7 @@ export class StatsListener extends Emittery {
       this.queueStats.markWaiting(wait, ts);
     }
     if (isNumber(latency) && latency > 0) {
-      if (!failed) {
+      if (success) {
         jobTypeStats && jobTypeStats.markCompleted(latency, ts);
         this.queueStats.markCompleted(latency, ts);
       } else {
