@@ -1,170 +1,193 @@
 // https://github.com/eoinmurray/histogram/blob/master/histogram.js
 'use strict';
-import { isFunction, isNumber } from 'lodash';
+import boom from '@hapi/boom';
+import AbstractHistogramIterator from 'hdr-histogram-js/AbstractHistogramIterator';
 
-const bisector = function (
-  f: (arr: number[], val?: number, mid?: number) => number,
-) {
-  return {
-    left: function (a: number[], x, lo = 0, hi): number {
-      hi = hi || a.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >>> 1;
-        if (f(a, a[mid], mid) < x) lo = mid + 1;
-        else hi = mid;
-      }
-      return lo;
-    },
-    right: function (a, x, lo = 0, hi): number {
-      hi = hi || a.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >>> 1;
-        if (x < f(a, a[mid], mid)) hi = mid;
-        else lo = mid + 1;
-      }
-      return lo;
-    },
-  };
+export interface HistogramBinningFunction {
+  (range: number[], values: number[], n: number): number;
+}
+
+export interface HistogramRangeFunction {
+  (values: number[], n: number): number[];
+}
+
+function quantile(data: number[], p: number): number {
+  const idx = 1 + (data.length - 1) * p,
+    lo = Math.floor(idx),
+    hi = Math.ceil(idx),
+    h = idx - lo;
+  return (1 - h) * data[lo] + h * data[hi];
+}
+
+export function histogramBinFreedmanDiaconis(
+  range: number[],
+  values: number[],
+  n: number,
+): number {
+  const iqr = quantile(values, 0.75) - quantile(values, 0.25);
+
+  // If IQR is 0, fd returns 1 bin. This is as per the NumPy implementation:
+  //   https://github.com/numpy/numpy/blob/master/numpy/lib/histograms.py#L138
+  let bins = 1;
+  if (iqr !== 0.0) {
+    const [min, max] = range;
+    const fd = 2.0 * (iqr / Math.pow(n, 1.0 / 3.0));
+    bins = Math.ceil((max - min) / fd);
+  }
+  return bins;
+}
+
+export function histogramBinSturges(
+  range: number[],
+  values: number[],
+  n: number,
+): number {
+  return Math.ceil(Math.log(n) / Math.LN2 + 1);
+}
+
+export function histogramBinAuto(
+  range: number[],
+  values: number[],
+  n: number,
+): number {
+  const sturges = Math.ceil(Math.log(n) / Math.LN2 + 1);
+  const fd = histogramBinFreedmanDiaconis(range, values, n);
+  return Math.max(sturges, fd);
+}
+
+function pretty(x: number): number {
+  let scale = Math.pow(10, Math.floor(Math.log(x / 10) / Math.LN10));
+  const err = (10 / x) * scale;
+  if (err <= 0.15) scale *= 10;
+  else if (err <= 0.35) scale *= 5;
+  else if (err <= 0.75) scale *= 2;
+  return scale * 10;
+}
+
+const binnerMap: Record<string, HistogramBinningFunction> = {
+  auto: histogramBinAuto,
+  sturges: histogramBinSturges,
+  freedman: histogramBinFreedmanDiaconis,
 };
 
-type HistogramBin = {
-  x: number;
+export type HistogramOptions = {
+  bins?: string | number | HistogramBinningFunction;
+  iterator: AbstractHistogramIterator;
+  range?: number[] | HistogramRangeFunction;
+  pretty?: boolean;
+};
+
+export type HistogramBin = {
   y: number;
-  dx: number;
-  data: number[];
+  x0: number;
+  x1: number;
 };
 
-const histogram = function (opts) {
-  const data = opts.data,
-    bins_temp = opts.bins;
+export type BinnedHistogramValues = {
+  min: number;
+  max: number;
+  binWidth: number;
+  bins: HistogramBin[];
+};
 
-  const dataLength = bins_temp.length;
+export function computeHistogramBins(
+  opts: HistogramOptions,
+): BinnedHistogramValues {
+  const iterator = opts.iterator;
 
-  let binner;
-  this.data = data;
-  const hist_bisector = bisector(function (d) {
-    return d;
-  });
-  const bisectLeft = hist_bisector.left;
-  const bisectRight = hist_bisector.right;
-  const bisect = bisectRight;
-
-  const minimum = function (array, f) {
-    let i = -1,
-      n = array.length,
-      a,
-      b;
-    if (arguments.length === 1) {
-      while (++i < n && !((a = array[i]) != null && a <= a)) a = undefined;
-      while (++i < n) if ((b = array[i]) != null && a > b) a = b;
-    } else {
-      while (++i < n && !((a = f(array, array[i], i)) != null && a <= a))
-        a = undefined;
-      while (++i < n) if ((b = f(array, array[i], i)) != null && a > b) a = b;
+  let binner: HistogramBinningFunction = histogramBinAuto;
+  if (opts.bins) {
+    const spec = opts.bins;
+    const type = typeof spec;
+    if (type === 'function') {
+      binner = spec as HistogramBinningFunction;
+    } else if (type === 'number') {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      binner = (range: number[], values: number[], n: number): number =>
+        spec as number;
+    } else if (type === 'string') {
+      const name = spec as string;
+      binner = binnerMap[name];
+      if (!binner) {
+        throw boom.badRequest(`Invalid binning function "${name}"`);
+      }
     }
-    return a;
-  };
+  }
 
-  const maximum = function (array, f) {
-    let i = -1,
-      n = array.length,
-      a,
-      b;
-    if (arguments.length === 1) {
-      while (++i < n && !((a = array[i]) != null && a <= a)) a = undefined;
-      while (++i < n) if ((b = array[i]) != null && b > a) a = b;
-    } else {
-      while (++i < n && !((a = f.call(array, array[i], i)) != null && a <= a))
-        a = undefined;
-      while (++i < n)
-        if ((b = f.call(array, array[i], i)) != null && b > a) a = b;
+  function bisect(a: HistogramBin[], x: number, lo = 0, hi: number): number {
+    hi = hi || a.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (x < a[mid].x0) hi = mid;
+      else lo = mid + 1;
     }
-    return a;
-  };
-
-  function value(x) {
-    if (!arguments.length) return valuer;
-    valuer = x;
-    return histogram;
+    return lo;
   }
 
-  function range(x) {
-    if (!arguments.length) return ranger;
-    ranger = hist_functor(x);
-    return histogram;
-  }
+  function makeBins(min: number, width: number, n: number): HistogramBin[] {
+    const f = new Array<HistogramBin>(n);
 
-  function hist_functor(v) {
-    return isFunction(v) ? v : () => v;
-  }
-
-  function makeBins(x) {
-    if (!arguments.length) return binner;
-    binner = isNumber(x)
-      ? (range) => histogramBinFixed(range, x)
-      : hist_functor(x);
-    return histogram;
-  }
-
-  function frequency(x) {
-    if (!arguments.length) return frequency;
-    frequency = !!x;
-    return histogram;
-  }
-
-  function histogramBinFixed(range, n): number[] {
-    const b = +range[0],
-      m = (range[1] - b) / n,
-      f = new Array(n);
     let x = -1;
-    while (++x <= n) f[x] = m * x + b;
+    let lower = min;
+    while (++x <= n) {
+      f[x] = {
+        x0: lower,
+        x1: lower + width,
+        y: 0,
+      };
+      lower = lower + width;
+    }
+
     return f;
   }
 
-  function histogramBinSturges(range, values) {
-    return histogramBinFixed(
-      range,
-      Math.ceil(Math.log(values.length) / Math.LN2 + 1),
-    );
+  const values: number[] = [];
+  const counts: number[] = [];
+
+  while (iterator.hasNext()) {
+    const current = iterator.next();
+    values.push(current.valueIteratedTo);
+    counts.push(current.countAtValueIteratedTo);
   }
 
-  function histogramRange(values) {
-    return [minimum(values), maximum(values)];
+  const n = values.length;
+
+  let range;
+  if (opts.range) {
+    if (Array.isArray(opts.range)) {
+      range = opts.range as number[];
+    } else {
+      range = opts.range(values, n);
+    }
+  } else {
+    range = [values[0], values[n - 1]];
   }
+  const [min, max] = range;
 
-  (frequency = true),
-    (valuer = Number),
-    (ranger = histogramRange),
-    (binner = histogramBinSturges);
-
-  makeBins(bins_temp);
-
-  const bins = [],
-    values = data.map(valuer),
-    n = values.length,
-    k = frequency ? 1 : 1 / n;
-
-  const range = ranger(values, dataLength);
-  const thresholds = binner(range, values, dataLength);
-  const m = thresholds.length - 1;
-  let i = -1;
-  while (++i < m) {
-    const bin = (bins[i] = []);
-    bin.dx = thresholds[i + 1] - (bin.x = thresholds[i]);
-    bin.y = 0;
+  let binCount = binner(range, values, n);
+  if (opts.pretty) {
+    binCount = pretty(binCount);
   }
+  const binWidth = (max - min) / n;
+
+  const bins = makeBins(min, binWidth, binCount);
+  const m = bins.length - 1;
 
   if (m > 0) {
     let i = -1;
     while (++i < n) {
       const x = values[i];
-      if (x >= range[0] && x <= range[1]) {
-        const bin = bins[bisect(thresholds, x, 1, m) - 1];
-        bin.y += k;
-        bin.push(data[i]);
+      if (x >= min && x <= max) {
+        const bin = bins[bisect(bins, x, 1, m) - 1];
+        bin.y += counts[i];
       }
     }
   }
 
-  return bins;
-};
+  return {
+    binWidth,
+    min,
+    max,
+    bins,
+  };
+}

@@ -1,5 +1,4 @@
 import config from '../config';
-import { pick } from 'lodash';
 import {
   AbstractHistogram,
   encodeIntoBase64String,
@@ -118,16 +117,6 @@ export function getSnapshot(
   return result;
 }
 
-const THROUGHPUT_FIELDS = [
-  'completed',
-  'failed',
-  'startTime',
-  'endTime',
-  'ratePerSecond',
-  'count',
-  'timestamp',
-];
-
 const INT_FIELDS = new Set([
   'count',
   'failed',
@@ -151,7 +140,7 @@ const FLOAT_FIELDS = new Set([
   'p99_5',
 ]);
 
-export function formatSnapshot(val, includeData = true) {
+export function formatSnapshot(val: StatisticalSnapshot, includeData = true) {
   if (!val) return val;
   Object.keys(val).forEach((key) => {
     const value = val[key];
@@ -165,20 +154,6 @@ export function formatSnapshot(val, includeData = true) {
   if (!includeData) {
     delete val.data;
   }
-  return val;
-}
-
-export function formatThroughput(val) {
-  if (!val) return val;
-  val = pick(val, THROUGHPUT_FIELDS);
-  Object.keys(val).forEach((key) => {
-    const value = val[key];
-    if (INT_FIELDS.has(key)) {
-      val[key] = parseInt(value);
-    } else if (FLOAT_FIELDS.has(key)) {
-      val[key] = parseFloat(value);
-    }
-  });
   return val;
 }
 

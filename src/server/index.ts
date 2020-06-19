@@ -3,7 +3,7 @@ import serveStatic from 'serve-static';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import compression from 'compression';
-import config from './config';
+import config, { getValue } from './config';
 import path from 'path';
 import { errorHandler } from './api/errorHandler';
 import http from 'http';
@@ -14,7 +14,7 @@ import { createServer as createApolloServer } from './api/graphql';
 
 const app = express();
 
-const port = config.getValue('port', 4000);
+const port = getValue('port', 4000);
 const env = config.get('env') || 'dev';
 const isProd = env === 'production';
 
