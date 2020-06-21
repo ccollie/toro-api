@@ -11,7 +11,11 @@ import { parseTimestamp } from '../lib/datetime';
 import { systemClock } from '../lib/clock';
 import { timestampFromStreamId, parseStreamId } from '../redis/streams';
 import { AppJob, JobStatusEnum } from '../../types';
-import { createAsyncIterator, IteratorOptions } from '../lib';
+import {
+  createAsyncIterator,
+  createAsyncIterable,
+  IteratorOptions,
+} from '../lib';
 
 const FINISHED_EVENT = 'job.finished';
 
@@ -30,23 +34,24 @@ const DEFAULT_FIELDS_TO_FETCH = [
   'attemptsMade',
 ];
 
-export interface JobEventData extends Partial<AppJob> {
+export interface JobEventData {
+  id: string;
+  job: Partial<AppJob>;
   prevState?: string;
-  lastSeen: number;
-  lastTimestamp: number;
+  waitStart?: number;
+  ts: number;
+  event: string;
   [k: string]: any;
 }
 
-export interface JobFinishedEventData {
-  job: Partial<AppJob>;
-  ts: number;
+export interface JobFinishedEvent extends JobEventData {
   latency: number;
   wait: number;
   success: boolean;
 }
 
 interface JobFinishedEventHandler {
-  (event: JobFinishedEventData): void;
+  (event: JobFinishedEvent): void;
 }
 
 interface JobEventHandler {
@@ -58,7 +63,6 @@ interface JobEventHandler {
  */
 export class QueueListener extends Emittery {
   private readonly cache: LRUCache;
-  public readonly host: string;
   public readonly queue: Queue;
   private lastStreamId = '$';
   private lastTimestamp = 0;
@@ -71,9 +75,8 @@ export class QueueListener extends Emittery {
   private currentJob: any;
   readonly queueConfig: QueueConfig;
 
-  constructor(host: string, queue: Queue) {
+  constructor(queue: Queue) {
     super();
-    this.host = host;
     this.queue = queue;
 
     this.cache = new LRUCache({
@@ -120,40 +123,45 @@ export class QueueListener extends Emittery {
       const { jobId } = evt;
       const timestamp = timestampFromStreamId(ts);
 
-      let job = cache.get(jobId, !isFinished);
-      if (!job) {
+      let job: Partial<AppJob>;
+      let jobData = cache.get(jobId, !isFinished) as JobEventData;
+      if (!jobData) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { event, data, jobId: ignore, ...rest } = evt;
         job = rest;
         job.id = jobId;
-        cache.set(jobId, job);
+        jobData = {
+          id: jobId,
+          event,
+          prevState: null,
+          job,
+          ts: timestamp.getTime(),
+        };
+        cache.set(jobId, jobData);
+      } else {
+        jobData.event = evt.event;
+        job = jobData.job || (jobData.job = {});
+        jobData.prevState = evt.prev;
+        jobData.ts = timestamp.getTime();
       }
       job.state =
         eventName === 'progress'
           ? JobStatusEnum.active
           : (eventName as JobStatusEnum);
 
-      job.prevState = evt.prev;
-      job.lastSeen = timestamp;
-
       try {
         this.lastStreamId = ts;
-        this.lastTimestamp = timestamp.getTime();
+        this.lastTimestamp = jobData.ts;
 
-        await fn(job, evt, timestamp);
-        const evtData = {
-          timestamp,
-          job,
-          event: evt.event,
-        };
+        await fn(jobData, evt, timestamp);
 
         this.currentJob = job;
 
         if (!isFinished) {
           // todo: use pQueue for these
           await Promise.all([
-            this.emit(`job.${eventName}`, evtData),
-            this.emit(`job.${jobId}`, evtData),
+            this.emit(`job.${eventName}`, jobData),
+            this.emit(`job.${jobId}`, jobData),
           ]);
         }
 
@@ -174,29 +182,33 @@ export class QueueListener extends Emittery {
    * @private
    * @ignore
    */
-  handleRemoved(job: JobEventData): void {
-    this.cache.del(job.id);
+  handleRemoved(event: JobEventData): void {
+    this.cache.del(event.id);
   }
 
-  handleActive(job: JobEventData, { prev }, ts): void {
+  handleActive(event: JobEventData, { prev }, ts): void {
+    const { job } = event;
     if (!job.timestamp && !prev) {
       job.timestamp = ts;
     }
     job.processedOn = ts;
   }
 
-  handleCompleted(job: JobEventData, { returnvalue }, ts): any {
+  handleCompleted(event: JobEventData, { returnvalue }, ts): any {
+    const { job } = event;
     job.returnvalue = returnvalue;
-    return this.markFinished(job, ts);
+    return this.markFinished(event, ts);
   }
 
-  handleFailed(job: JobEventData, { failedReason }, ts): any {
+  handleFailed(event: JobEventData, { failedReason }, ts): any {
+    const { job } = event;
     job.failedReason = failedReason;
-    return this.markFinished(job, ts, true);
+    return this.markFinished(event, ts, true);
   }
 
-  handleWaiting(job: JobEventData, evt, ts): void {
-    if (!job.prevState) {
+  handleWaiting(event: JobEventData, evt, ts): void {
+    const { job } = event;
+    if (!event.prevState) {
       // we're new
       if (!job.timestamp) {
         job.timestamp = ts;
@@ -204,15 +216,16 @@ export class QueueListener extends Emittery {
     } else {
       job.processedOn = ts;
     }
-    job.waitStart = ts;
+    event.waitStart = ts;
 
-    if (job.prevState === 'delayed') {
+    if (event.prevState === 'delayed') {
       job.delay = 0;
     }
   }
 
-  handleDelayed(job: JobEventData, { delay }, ts): void {
-    if (!job.prevState && !job.timestamp) {
+  handleDelayed(event: JobEventData, { delay }, ts): void {
+    const { job } = event;
+    if (!event.prevState && !job.timestamp) {
       // we're new
       job.timestamp = ts;
     }
@@ -223,27 +236,29 @@ export class QueueListener extends Emittery {
     job.isStalled = true;
   }
 
-  handleProgress(job: JobEventData, { data }): void {
+  handleProgress(event: JobEventData, { data }): void {
+    const { job } = event;
     job.progress = data;
   }
 
-  async markFinished(job: JobEventData, ts, failed = false): Promise<void> {
+  async markFinished(event: JobEventData, ts, failed = false): Promise<void> {
+    const { job } = event;
     job.finishedOn = ts;
     job.state = failed ? JobStatusEnum.failed : JobStatusEnum.completed;
 
-    const { latency, wait } = await this.getDurations(job);
+    const { latency, wait } = await this.getDurations(event);
 
-    return this.emit(FINISHED_EVENT, {
-      job,
-      timestamp: ts,
+    const finishedEvent: JobFinishedEvent = {
+      ...event,
       latency,
       wait,
       success: !failed,
       event: 'finished',
-    });
+    };
+    return this.emit(FINISHED_EVENT, finishedEvent);
   }
 
-  needsMeta(job: JobEventData): boolean {
+  private needsMeta(job: Partial<AppJob>): boolean {
     const needJobType = this.useJobTypes;
     return (
       (job && !job.timestamp) ||
@@ -254,8 +269,9 @@ export class QueueListener extends Emittery {
   }
 
   private async getDurations(
-    job: JobEventData,
+    event: JobEventData,
   ): Promise<{ latency: number; wait: number }> {
+    const { job } = event;
     if (this.needsMeta(job)) {
       // since we're hitting the backend anyway, grab data
       // for other getJobs at the same time
@@ -382,9 +398,15 @@ export class QueueListener extends Emittery {
     this._listening = true;
   }
 
-  createAsyncIterator<T = any, TOutput = T>(
+  createAsyncIterator<T = JobEventData, TOutput = T>(
     options: IteratorOptions<any, T, TOutput>,
   ): AsyncIterator<TOutput> {
     return createAsyncIterator<any, T, TOutput>(this, options);
+  }
+
+  createAsyncIterable<T = JobEventData, TOutput = T>(
+    options: IteratorOptions<any, T, TOutput>,
+  ): AsyncIterable<TOutput> {
+    return createAsyncIterable<any, T, TOutput>(this, options);
   }
 }

@@ -12,7 +12,6 @@ import { HostContext } from '../monitor/hostManager';
 import { getJobTypes } from './queue';
 import { subscribeToJob } from '../redis/keyspace-utils';
 import { systemClock } from '../lib/clock';
-import { getStatsKey } from '../monitor/keys';
 import { QueueConfig, QueueWorker, RepeatableJob, RuleAlert } from 'index';
 import { isEmpty } from 'lodash';
 import { JobStatus } from 'jobs';
@@ -61,23 +60,19 @@ export class QueueManager {
     this.rules = [];
     this.queueListener = this.createQueueListener();
     this.bus = new QueueBus(this.streamAggregator, queue, this.host);
-    this.statsClient = new StatsClient(
-      this.host,
-      queue,
-      this.bus,
-      context.writer,
-    );
+    this.statsClient = new StatsClient(queue, this.bus);
     this.ruleManager = new RuleManager(this.host, queue, this.bus);
     this[JANITOR] = new QueueSweeper(this, config);
     this[STATS_LISTENER] = new StatsListener(
       this.queueListener,
-      this.statsClient,
+      this.bus,
+      context.writer,
     );
     this[STATS_AGGREGATOR] = new StatsAggregator(
-      this.host,
       queue,
+      this.bus,
+      context.writer,
       config,
-      this.statsClient,
       this._workQueue,
     );
   }
@@ -113,7 +108,7 @@ export class QueueManager {
   }
 
   createQueueListener(): QueueListener {
-    return new QueueListener(this.host, this.queue);
+    return new QueueListener(this.queue);
   }
 
   getRule(name: string): Rule {
@@ -464,24 +459,5 @@ export class QueueManager {
     }
 
     return unsubscribe;
-  }
-
-  async subscribeToStream(key: string, offset, handler) {
-    if (typeof offset === 'function') {
-      handler = offset;
-      offset = '$';
-    }
-    await this.streamAggregator.subscribe(key, offset, handler);
-    return () => this.streamAggregator.unsubscribe(key, handler);
-  }
-
-  async subscribeToQueue(
-    jobType: string,
-    tag: string,
-    offset,
-    handler,
-  ): Promise<() => void> {
-    const key = getStatsKey(this.host, this.queue, jobType, tag);
-    return this.subscribeToStream(key, offset, handler);
   }
 }

@@ -37,7 +37,7 @@ export function createAsyncIterator<
 >(
   emitter: Emittery | EventEmitter,
   options: IteratorOptions<TEvent, TTransformed, TOutput>,
-): Required<AsyncIterator<TOutput>> {
+): AsyncIterator<TOutput> {
   let pullSeries: any = [];
   let pushSeries: any = [];
   let listening = true;
@@ -117,14 +117,14 @@ export function createAsyncIterator<
   }
 
   return {
-    [Symbol.asyncIterator]() {
+    [Symbol.asyncIterator](): AsyncIterator<TOutput> {
       return this;
     },
-    return() {
+    return(): Promise<IteratorResult<TOutput>> {
       release();
       return Promise.resolve({ value: undefined, done: true });
     },
-    next() {
+    next(): Promise<IteratorResult<TOutput>> {
       return listening ? pullValue() : this.return();
     },
     throw(error) {
@@ -134,6 +134,22 @@ export function createAsyncIterator<
   } as Required<AsyncIterator<TOutput>>;
 }
 
+export function createAsyncIterable<
+  TEvent = any,
+  TTransformed = TEvent,
+  TOutput = TTransformed
+>(
+  emitter: Emittery | EventEmitter,
+  options: IteratorOptions<TEvent, TTransformed, TOutput>,
+): AsyncIterable<TOutput> {
+  const iterator = createAsyncIterator<TEvent, TTransformed, TOutput>(
+    emitter,
+    options,
+  );
+  return {
+    [Symbol.asyncIterator]: () => iterator,
+  };
+}
 // to handle unsubscribe https://github.com/apollographql/graphql-subscriptions/issues/99
 // https://stackoverflow.com/questions/56886412/detect-an-unsubscribe-in-apollo-graphql-server
 export function withCancel<T>(

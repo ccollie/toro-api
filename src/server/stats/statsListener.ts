@@ -1,14 +1,16 @@
 import ms from 'ms';
-import Emittery from 'emittery';
-import { QueueListener } from '../queues';
-import { StatsClient } from './statsClient';
-import { StatisticalSnapshotOptions } from 'index';
+import { JobFinishedEvent, QueueListener } from '../queues';
+import { StatisticalSnapshotOptions } from '../../types';
 import { isNumber } from '../lib/utils';
-import { roundInterval, roundUp } from '../lib/datetime';
+import { roundDown, roundInterval, roundUp } from '../lib/datetime';
 import { accurateInterval } from '../lib/timers';
 import Status from './status';
 import config from '../config';
-import { Queue } from 'bullmq';
+import { StatsWriter } from './statsWriter';
+import { addMilliseconds, isAfter } from 'date-fns';
+import { systemClock } from '../lib/clock';
+import { WriteCache } from '../redis';
+import { QueueBus } from '../queues';
 
 const DEFAULT_SNAPSHOT_INTERVAL = ms('20 secs');
 const FINISHED_EVENT = 'job.finished';
@@ -17,11 +19,9 @@ const FINISHED_EVENT = 'job.finished';
  * A class that listens to a queue (via a {@link QueueListener}) and
  * generates periodic statistical snapshots
  */
-export class StatsListener extends Emittery {
+export class StatsListener extends StatsWriter {
   private readonly listener: QueueListener;
-  private readonly client: StatsClient;
-  private readonly snapshotInterval: number;
-  private _unlisten: Function = null;
+  private snapshotInterval: number;
   queueStats: Status;
   private _intervalTimer: any;
   private _snapshotting: boolean;
@@ -29,26 +29,28 @@ export class StatsListener extends Emittery {
   private readonly isValidJobName: (arg) => boolean;
   /** the valid job types (job.name in bullmq) to store stats for */
   private readonly jobTypes: string[];
+  private _iterator: AsyncIterator<JobFinishedEvent>;
 
   /**
    * Construct a {@link StatsListener}
    * @param {QueueListener} queueListener
-   * @param {StatsClient} statsClient
+   * @param {QueueBus} bus
    * @param {Number} [interval]
+   * @param {WriteCache} writer
    * @param {string[]} jobTypes valid job types to process.
    * Store stats for all if null
    */
   constructor(
     queueListener: QueueListener,
-    statsClient: StatsClient,
+    bus: QueueBus,
+    writer: WriteCache,
     interval?: number,
     jobTypes?: string[],
   ) {
-    super();
+    super(queueListener.queue, bus, writer);
     const { queue } = queueListener;
 
     this.listener = queueListener;
-    this.client = statsClient;
 
     const snapshotInterval =
       interval ||
@@ -73,28 +75,18 @@ export class StatsListener extends Emittery {
     this.unlisten();
   }
 
-  /**
-   * @property {*} queue the bull Queue we're listening to
-   * @return {Queue}
-   */
-  get queue(): Queue {
-    return this.listener.queue;
-  }
-
-  get hasLock(): boolean {
-    return this.client.hasLock;
-  }
-
   unlisten(): void {
-    if (this._unlisten) {
-      this._unlisten();
-      this._unlisten = null;
+    if (this._iterator) {
+      this._iterator.return().catch((err) => {
+        console.log(err);
+      });
+      this._iterator = null;
     }
     this.stopSnapshots();
     // this.listener.unlisten();
   }
 
-  getJobTypeStats(name: string): Status {
+  private getJobTypeStats(name: string): Status {
     let jobTypeStats = this.jobTypesMap.get(name);
     if (!jobTypeStats && this.isValidJobName(name)) {
       jobTypeStats = new Status(this.queue, name);
@@ -104,7 +96,14 @@ export class StatsListener extends Emittery {
     return jobTypeStats;
   }
 
-  onFinished(data): void {
+  clearStats(): void {
+    this.queueStats.reset();
+    for (const [, stats] of this.jobTypesMap.entries()) {
+      stats.reset();
+    }
+  }
+
+  updateStats(data: JobFinishedEvent): void {
     const { job, ts, latency, wait, success } = data;
 
     const jobTypeStats = this.getJobTypeStats(job.name);
@@ -123,13 +122,103 @@ export class StatsListener extends Emittery {
     }
   }
 
-  writeStats(status: Status, options?: StatisticalSnapshotOptions): void {
+  private _writeStats(
+    status: Status,
+    options?: StatisticalSnapshotOptions,
+  ): void {
     if (!status || !status.hasData || !status.lastTs) return;
     try {
-      this.client.writeStats(status, options);
+      this.writeStats(status, options);
     } finally {
       status.reset();
     }
+  }
+
+  /**
+   * Process raw job stats in a given (prior) range. This is mostly for processing
+   * previous job entries when the server (us) is down for greater than the sampling
+   * interval. This allows us to preserve prior stats after restart
+   * @param {number} start
+   * @param {number} end
+   * @param {number} interval
+   */
+  async processRange(start: number, end: number, interval: number) {
+    start = roundDown(start, interval);
+    end = roundUp(end || systemClock.now(), interval);
+
+    let intervalTimer;
+    let lastTs;
+    let nextTs = roundUp(start, interval);
+
+    const queueListener = this.listener;
+
+    const iterator = queueListener.createAsyncIterator<JobFinishedEvent>({
+      eventNames: [FINISHED_EVENT],
+    });
+
+    async function cleanup(): Promise<void> {
+      await queueListener.unlisten();
+      if (intervalTimer) {
+        clearInterval(intervalTimer);
+        intervalTimer = null;
+      }
+    }
+
+    async function cancel(): Promise<void> {
+      await iterator.return();
+      await cleanup();
+    }
+
+    let lastUpdate = systemClock.now();
+
+    function startTimeoutPoller(): void {
+      intervalTimer = setInterval(() => {
+        if (systemClock.now() - lastUpdate > 5000) {
+          cancel();
+        }
+      }, 1000);
+
+      intervalTimer.unref();
+    }
+
+    // ugly, but I need a handle to the iterator so we can call return() on
+    // it when we need to quit
+    const iterable = {
+      [Symbol.asyncIterator]: () => iterator,
+    };
+
+    this.clearStats();
+    // we're updating manually
+    this.stopSnapshots();
+    await queueListener.startListening(String(start));
+    startTimeoutPoller();
+
+    (async (): Promise<void> => {
+      for await (const event of iterable) {
+        lastUpdate = systemClock.now();
+        const { ts } = event;
+
+        if (isAfter(ts, end)) {
+          await cleanup();
+          return;
+        }
+
+        if (isAfter(ts, nextTs)) {
+          lastTs = this.queueStats.lastTs;
+          this.takeSnapshot(lastTs, interval);
+
+          nextTs = addMilliseconds(nextTs, interval).getTime();
+        }
+
+        this.updateStats(event);
+      }
+    })().catch((err) => {
+      console.log(err);
+    });
+
+    return {
+      cancel,
+    };
   }
 
   /**
@@ -137,10 +226,24 @@ export class StatsListener extends Emittery {
    */
   startListening(): Promise<void> {
     this.unlisten();
-    this._unlisten = this.listener.on(FINISHED_EVENT, (data) =>
-      this.onFinished(data),
-    );
+    this._iterator = this.listener.createAsyncIterator<JobFinishedEvent>({
+      eventNames: [FINISHED_EVENT],
+    });
+    // ugly, but I need a handle to the iterator so we can call return() on
+    // it when we need to quit
+    const iterable = {
+      [Symbol.asyncIterator]: () => this._iterator,
+    };
+
+    this.clearStats();
     this.startSnapshots();
+
+    (async (): Promise<void> => {
+      for await (const event of iterable) {
+        this.updateStats(event);
+      }
+    })();
+
     if (!this.listener.isListening) {
       return this.listener.startListening();
     }
@@ -161,11 +264,11 @@ export class StatsListener extends Emittery {
     }
   }
 
-  takeSnapshot(ts = null): void {
+  takeSnapshot(ts?: number, interval?: number): void {
     if (this._snapshotting) return;
     this._snapshotting = true;
 
-    const interval = this.snapshotInterval;
+    interval = interval || this.snapshotInterval;
 
     ts = this.queueStats.lastTs || ts;
     const endTime = roundUp(ts, interval);
@@ -180,10 +283,10 @@ export class StatsListener extends Emittery {
     // console.log(`Snapshotting ${this.queue.name}.  EndTime = `, new Date(opts.endTime));
     try {
       this.jobTypesMap.forEach((status) => {
-        this.writeStats(status, opts);
+        this._writeStats(status, opts);
       });
 
-      this.writeStats(this.queueStats, opts);
+      this._writeStats(this.queueStats, opts);
     } catch (err) {
       console.log(err);
       console.log(' EndTime = ', new Date(opts.endTime));

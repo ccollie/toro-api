@@ -2,7 +2,7 @@ import Emittery from 'emittery';
 import pMap from 'p-map';
 import { ObjectSchema } from '@hapi/joi';
 import { SlidingWindowOptions } from './lib';
-import { JobFinishedEventData, QueueListener } from '../queues';
+import { JobFinishedEvent, QueueListener } from '../queues';
 import { createJobNameFilter } from './lib/utils';
 import { Predicate } from 'index';
 import Joi from '@hapi/joi';
@@ -101,7 +101,7 @@ export class BaseMetric {
     const shouldFilter = this.options.jobNames && this.options.jobNames.length;
 
     if (hasJobNamePayload(eventName) && shouldFilter) {
-      const wrapper = (event: JobFinishedEventData) => {
+      const wrapper = (event: JobFinishedEvent) => {
         const name = event.job.name;
         if (this._filter(name)) {
           return handler(event);

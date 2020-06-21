@@ -4,3 +4,4 @@ export * from './statsListener';
 export * from './status';
 export * from './binning';
 export * from './utils';
+export * from './percentileDistribution';

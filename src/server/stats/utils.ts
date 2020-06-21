@@ -9,7 +9,7 @@ import {
   StatisticalSnapshot,
   StatisticalSnapshotOptions,
   StatsGranularity,
-} from 'index';
+} from '../../types';
 
 const CONFIG = {
   units: ['minutes', 'hours', 'days', 'weeks'],
@@ -21,7 +21,7 @@ const CONFIG = {
   },
 };
 
-const defaultPercentiles = [25, 50, 75, 90, 95, 99, 99.5];
+export const defaultPercentiles = [25, 50, 75, 90, 95, 99, 99.5];
 
 const defaultStatisticalSnapshotOptions: StatisticalSnapshotOptions = {
   includePercentiles: true,
@@ -140,7 +140,10 @@ const FLOAT_FIELDS = new Set([
   'p99_5',
 ]);
 
-export function formatSnapshot(val: StatisticalSnapshot, includeData = true) {
+export function formatSnapshot(
+  val: StatisticalSnapshot,
+  includeData = true,
+): StatisticalSnapshot {
   if (!val) return val;
   Object.keys(val).forEach((key) => {
     const value = val[key];

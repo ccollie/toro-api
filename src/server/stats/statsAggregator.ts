@@ -1,17 +1,19 @@
 import ms from 'ms';
 import { Queue } from 'bullmq';
-import { StatsClient, StatsWriteOptions } from './statsClient';
+import { StatsWriter, StatsWriteOptions } from './statsWriter';
 import cron from 'node-cron';
-import { random } from 'lodash';
+import { isString, random } from 'lodash';
 import PQueue from 'p-queue';
 import {
   QueueConfig,
   StatisticalSnapshot,
   StatsGranularity,
   StatsMetricType,
+  Timespan,
 } from '../../types';
 import { systemClock } from '../lib/clock';
 import {
+  DateLike,
   parseTimestamp,
   roundDate,
   roundDown,
@@ -20,6 +22,9 @@ import {
 } from '../lib/datetime';
 import { aggregateHistograms, getPrevUnit } from './utils';
 import { addMilliseconds, isBefore } from 'date-fns';
+import { StatsListener } from './statsListener';
+import { QueueBus, QueueListener } from '../queues';
+import { WriteCache } from '../redis';
 
 const CONFIG = {
   units: ['minutes', 'hours', 'days', 'weeks'],
@@ -28,15 +33,14 @@ const CONFIG = {
 
 const ONE_SECOND = 1000;
 
+/* eslint @typescript-eslint/no-use-before-define: 0 */
+
 /**
  * Manages rollups and maintenance of queue stats
  */
-export class StatsAggregator {
-  private readonly host: string;
-  private readonly queue: Queue;
+export class StatsAggregator extends StatsWriter {
   private readonly queueConfig: QueueConfig;
   private readonly activeJobs: Set<any>;
-  private readonly statsClient: StatsClient;
   private readonly workQueue: PQueue;
   private _done: boolean;
   private _started: number;
@@ -44,16 +48,14 @@ export class StatsAggregator {
   private readonly _destroyWorkQueue: boolean;
 
   constructor(
-    host: string,
     queue: Queue,
+    bus: QueueBus,
+    writer: WriteCache,
     config: QueueConfig,
-    statsClient: StatsClient,
     workQueue: PQueue,
   ) {
-    this.queue = queue;
+    super(queue, bus, writer);
     this.queueConfig = config;
-    this.host = host;
-    this.statsClient = statsClient;
     this.workQueue = workQueue;
 
     this.activeJobs = new Set();
@@ -91,10 +93,6 @@ export class StatsAggregator {
     this._tasks.forEach((task) => task.stop());
   }
 
-  get hasLock(): boolean {
-    return this.statsClient.hasLock;
-  }
-
   getJobTypes(): string[] {
     const cfg = this.queueConfig;
     return cfg && cfg.jobTypes && Array.isArray(cfg.jobTypes)
@@ -102,12 +100,116 @@ export class StatsAggregator {
       : [];
   }
 
-  private getKey(
+  private async getGaps(
+    key: string,
+    start: DateLike,
+    end: DateLike,
+    interval: number,
+  ): Promise<Timespan[]> {
+    start = parseTimestamp(start);
+    end = parseTimestamp(end);
+    const reply = await this.call('getGaps', key, start, end, interval);
+    return parseGapsReply(reply);
+  }
+
+  /** Async iterator to get all gaps > interval ms in the given range */
+  async *gapIterator(
+    key: string,
+    start: DateLike,
+    end: DateLike,
+    interval: number,
+  ) {
+    const cursorInterval = interval * 500; // todo: scale based on interval
+
+    if (isString(start) && start === '-') {
+      start = interval;
+    } else {
+      start = parseTimestamp(start);
+    }
+
+    let cursorStart = roundDown(start, interval);
+
+    if (isString(end) && end === '+') {
+      end = systemClock.now();
+    } else {
+      end = parseTimestamp(end);
+    }
+
+    end = roundUp(end, interval);
+
+    while (cursorStart < end) {
+      const cursorEnd = cursorStart + cursorInterval - 1;
+      const items = await this.getGaps(key, cursorStart, cursorEnd, interval);
+      if (items.length) {
+        for (let i = 0; i < items.length; i++) {
+          yield items[i];
+        }
+        const last = items[items.length - 1];
+        cursorStart = last.end + 1;
+      } else {
+        cursorStart = cursorStart + cursorInterval;
+      }
+    }
+  }
+
+  private async setCatchupCursor(
     jobType: string,
-    metric: StatsMetricType,
-    granularity: StatsGranularity,
-  ): string {
-    return this.statsClient.getKey(jobType, metric, granularity);
+    type: StatsMetricType,
+    unit: StatsGranularity,
+    value,
+  ): Promise<void> {
+    const key = getCursorKey(jobType, type, unit);
+    const update = {};
+    update[key] = value;
+    await this.setMeta(update);
+  }
+
+  private async getCatchUpCursor(
+    jobType: string,
+    type: StatsMetricType,
+    unit?: StatsGranularity,
+  ): Promise<string | null> {
+    const key = getCursorKey(jobType, type, unit);
+    let meta = await this.getMeta();
+    meta = meta || {};
+    // todo: look at
+    return meta[key] || null;
+  }
+
+  async catchUpRaw(interval: number, end?: number): Promise<void> {
+    const absoluteEnd = roundDown(end || systemClock.now(), interval);
+
+    const queueListener = new QueueListener(this.queue);
+    const statsListener = new StatsListener(
+      queueListener,
+      this.bus,
+      this.writer,
+    );
+
+    const processMetric = async (type: StatsMetricType): Promise<void> => {
+      const cursor = await this.getCatchUpCursor(null, type);
+
+      const start = roundDown(cursor, interval);
+      const key = this.getKey(null, type);
+
+      for await (const item of this.gapIterator(
+        key,
+        start,
+        absoluteEnd,
+        interval,
+      )) {
+        await statsListener.processRange(item.start, item.end, interval);
+        await this.setCatchupCursor(null, type, null, item.end);
+      }
+    };
+
+    try {
+      await processMetric('latency');
+      await processMetric('wait');
+    } finally {
+      await queueListener.destroy();
+      statsListener.destroy();
+    }
   }
 
   private async getUpdateMetadata(
@@ -120,8 +222,8 @@ export class StatsAggregator {
     const destKey = this.getKey(jobType, type, unit);
 
     const [srcSpan, destSpan] = await Promise.all([
-      this.statsClient.getSpan(jobType, type, prevUnit),
-      this.statsClient.getSpan(jobType, type, unit),
+      this.getSpan(jobType, type, prevUnit),
+      this.getSpan(jobType, type, unit),
     ]);
 
     const interval = ms(`1 ${unit}`);
@@ -169,11 +271,7 @@ export class StatsAggregator {
     const update = async (start): Promise<boolean> => {
       const ts = roundUp(start, interval); // subtract 1 ms ???
       const end = addMilliseconds(ts, -1);
-      const data = await this.statsClient.getRange<StatisticalSnapshot>(
-        srcKey,
-        start,
-        end,
-      );
+      const data = await this.getRange<StatisticalSnapshot>(srcKey, start, end);
 
       if (!data.length) {
         return false;
@@ -194,7 +292,7 @@ export class StatsAggregator {
         unit,
       };
 
-      this.statsClient.writeSnapshot(snapshot, options);
+      this.writeSnapshot(snapshot, options);
       count += data.length;
 
       return true;
@@ -256,4 +354,29 @@ export class StatsAggregator {
       timeout.unref();
     }
   }
+}
+
+function getCursorKey(
+  jobType: string,
+  type: string,
+  unit: StatsGranularity = null,
+): string {
+  jobType = jobType || '__default__';
+  const key = [jobType, type, unit].filter((value) => !!value).join('-');
+  return `cursor:${key}`;
+}
+
+function parseGapsReply(response): Timespan[] {
+  const result = [];
+
+  if (Array.isArray(response)) {
+    for (let i = 0; i < response.length; i += 2) {
+      result.push({
+        start: parseInt(response[i]),
+        end: parseInt(response[i + 1]),
+      });
+    }
+  }
+
+  return result;
 }
