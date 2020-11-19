@@ -1,22 +1,32 @@
 import crypto from 'crypto';
-import { get, isFunction, isNil, isObject } from 'lodash';
+import { get, isFunction, isObject } from 'lodash';
+import { JobStatusEnum } from '../../types';
 
-export function hash(data, algorithm = 'sha1'): string {
+export function hash(data: any, algorithm = 'sha1'): string {
   return crypto.createHash(algorithm).update(data).digest('hex');
 }
 
-export function objToString(hash): string {
-  if (!hash) return '' + hash;
+export function objToString(hash: Record<string, any>): string {
+  if (!isObject(hash)) {
+    return '' + hash;
+  }
   const keys = Object.keys(hash).sort();
-  return keys.reduce((res, k) => res + `${k}:${hash[k]}`, '');
+  const parts = keys.map((key) => {
+    const val = hash[key];
+    return key + ':' + (typeof val === 'object' ? objToString(val) : '' + val);
+  });
+  return parts.join('');
 }
 
-export function hashObject(obj, algorithm = 'sha1'): string {
+export function hashObject(
+  obj: Record<string, any>,
+  algorithm = 'sha1',
+): string {
   const asString = objToString(obj);
   return hash(asString, algorithm);
 }
 
-export function safeParse(item): any {
+export function safeParse(item: string): any {
   if (typeof item !== 'string' || !item.length) {
     return item;
   }
@@ -27,27 +37,26 @@ export function safeParse(item): any {
   }
 }
 
-export const parseBool = (val: any): boolean => {
+export function parseBool(val: unknown, defaultVal?: boolean): boolean {
   const type = typeof val;
-  if (type === 'boolean') return val;
+  if (val === null || type === 'undefined') {
+    return arguments.length > 1 ? defaultVal : false;
+  }
+  if (type === 'boolean') return val as boolean;
   if (type === 'number') return !!val;
-  return ['true', '1', 't'].includes(val.toLowerCase());
-};
+  return ['true', '1', 't'].includes(val.toString().toLowerCase());
+}
 
-export const BULL_STATES = [
-  'waiting',
-  'active',
-  'completed',
-  'failed',
-  'delayed',
-];
+// TODO:
+export const BULL_STATES = Object.values(JobStatusEnum);
 
-export const isFinishedState = (state: string) =>
+export const isFinishedStatus = (state: string): boolean =>
   ['completed', 'failed', 'removed'].includes(state);
 
-export const isValidState = (state) => BULL_STATES.includes(state);
+export const isValidState = (state: JobStatusEnum): boolean =>
+  BULL_STATES.includes(state);
 
-export function isNumber(num): boolean {
+export function isNumber(num: string | number): boolean {
   if (typeof num === 'number') {
     return num - num === 0;
   }
@@ -57,30 +66,20 @@ export function isNumber(num): boolean {
   return false;
 }
 
-export function isPromise(obj): boolean {
+export function isPromise(obj: any): boolean {
   return !!obj && (isObject(obj) || isFunction(obj)) && isFunction(obj['then']);
 }
 
 export function titleCase(str = ''): string {
-  const elems: string[] = str.toLowerCase().split(' ');
-  for (let i = 0; i < elems.length; i++) {
-    elems[i] = elems[i].charAt(0).toUpperCase() + elems[i].slice(1);
+  const elements: string[] = str.toLowerCase().split(' ');
+  for (let i = 0; i < elements.length; i++) {
+    elements[i] = elements[i].charAt(0).toUpperCase() + elements[i].slice(1);
   }
-  return elems.join(' ');
+  return elements.join(' ');
 }
 
-export const firstChar = (str) => (str && str.length ? str[0] : '');
-
-/**
- * Add commas to numbers
- *
- * @param {Number} `num`
- * @return {string}
- * @api public
- */
-export const addCommas = (num) => {
-  return num.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
-};
+export const firstChar = (str: string): string =>
+  str && str.length ? str[0] : '';
 
 /*!
  * Find the differences between two objects and push to a new object
@@ -90,7 +89,11 @@ export const addCommas = (num) => {
  * @param  {Object} obj2 The object to compare against it
  * @return {Object}      An object of differences between the two
  */
-export function diff(obj1, obj2, { trackRemoved = true } = {}) {
+export function diff(
+  obj1: Record<string, unknown>,
+  obj2: Record<string, unknown>,
+  { trackRemoved = true } = {},
+): Record<string, unknown> {
   // Make sure an object to compare is provided
   if (!obj2 || !isObject(obj2)) {
     return obj1;
@@ -123,7 +126,7 @@ export function diff(obj1, obj2, { trackRemoved = true } = {}) {
    * @param  {*}      item2 The second item
    * @param  {String} key   The key in our object
    */
-  function compare(item1, item2, key) {
+  function compare(item1, item2, key): void {
     // Get the object type
     const type1 = typeof item1;
     const type2 = typeof item2;
@@ -144,7 +147,7 @@ export function diff(obj1, obj2, { trackRemoved = true } = {}) {
 
     // If an object, compare recursively
     if (isObject(item1)) {
-      const objDiff = diff(item1, item2);
+      const objDiff = diff(item1 as Record<string, unknown>, item2);
       if (objDiff && Object.keys(objDiff).length > 1) {
         diffs[key] = objDiff;
       }
@@ -208,63 +211,27 @@ export function interpolate(
   );
 }
 
-/**
- * Deep merge two objects.
- * @param target
- * @param sources
- */
-export function mergeDeep(target, ...sources) {
-  if (!sources.length) return target;
-  const source = sources.shift();
-
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    }
-  }
-
-  return mergeDeep(target, ...sources);
+export function randomString(length = 8): string {
+  return crypto.randomBytes(length).toString('hex');
 }
 
-/**
- * Abbreviate numbers to the given number of `precision`. This is for
- * general numbers, not size in bytes.
- *
- * @param {Number} `number`
- * @param {Number} `precision`
- * @param units
- * @return {String}
- * @api public
- */
-export function abbreviateNumber(number, precision = 2, units): number {
-  units = units || ['k', 'm', 'b', 't', 'q'];
-  number = Number(number);
-  // 2 decimal places => 100, 3 => 1000, etc.
-  precision = Math.pow(10, precision);
-  const abbr = ['k', 'm', 'b', 't', 'q'];
-  let len = abbr.length - 1;
-
-  while (len >= 0) {
-    const size = Math.pow(10, (len + 1) * 3);
-    if (size <= number + 1) {
-      number = Math.round((number * precision) / size) / precision;
-      // todo: detect and use Intl.Numberformat
-      number += units[len];
-      break;
-    }
-    len--;
-  }
-  return number;
+export function getStaticProp(obj: any, name: string): any {
+  return (obj?.constructor ?? {})[name];
 }
 
-export function formatBoomPayload(error) {
-  return {
-    ...error.output.payload,
-    ...(isNil(error.data) ? {} : { data: error.data }),
-  };
+const EnglishOrdinalRules = new Intl.PluralRules('en', { type: 'ordinal' });
+const suffixes = {
+  one: 'st',
+  two: 'nd',
+  few: 'rd',
+  other: 'th',
+};
+
+export function ordinal(number: number): string {
+  const suffix = suffixes[EnglishOrdinalRules.select(number)];
+  return number + suffix;
+}
+
+export function hasOwn(instance: any, prop: string): boolean {
+  return Object.prototype.hasOwnProperty.call(instance, prop);
 }

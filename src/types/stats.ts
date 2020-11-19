@@ -1,6 +1,8 @@
+export type StatsMetricType = 'latency' | 'wait';
+
 export enum StatsGranularity {
   Minute = 'minute',
-  Hour = '',
+  Hour = 'hour',
   Day = 'day',
   Week = 'week',
   Month = 'month',
@@ -19,10 +21,10 @@ export type StatsQueryOptions = StatsRangeOptions & {
 };
 
 export interface StatsWindow {
-  /** the total length of the window */
+  /** the total length of the window (ms) */
   duration: number;
   /** the sub-divisions (sampling interval) */
-  period: number;
+  interval: number;
 }
 
 export interface StatisticalSnapshotOptions {
@@ -34,23 +36,23 @@ export interface StatisticalSnapshotOptions {
   counts?: Record<string, number>;
 }
 
-export interface StatisticalSnapshot {
-  failed?: number;
-  completed?: number;
-  count: number;
-  mean: number;
+export interface HistogramSnapshot {
   min: number;
   max: number;
+  mean: number;
   stddev: number;
-  p25: number;
-  p50: number;
+  count: number;
   p75: number;
   p90: number;
   p95: number;
   p99: number;
-  // eslint-disable-next-line camelcase
-  p99_5: number;
-  data?: string;
+  p995: number;
+  data?: string; // encoded data
+}
+
+export interface StatisticalSnapshot extends HistogramSnapshot {
+  failed?: number;
+  completed?: number;
   startTime?: number;
   endTime?: number;
 }

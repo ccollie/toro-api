@@ -1,5 +1,5 @@
 import boom from '@hapi/boom';
-import { isDate } from 'lodash';
+import { isDate, isNil } from 'lodash';
 import { isNumber } from './utils';
 import ms from 'ms';
 
@@ -8,7 +8,6 @@ import {
   toDate,
   parse,
   parseISO,
-  isBefore,
   addMilliseconds,
   addSeconds,
   addMinutes,
@@ -43,15 +42,13 @@ import {
   endOfYear,
 } from 'date-fns';
 
-import { systemClock } from './clock';
-
 export type DateLike = Date | number;
 
 // https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md
 const DATE_FORMATS = [
-  'yyyy-MM-dd\'T\'HH:mm:ss',
-  'yyyy-MM-dd\'T\'HH:mm:ss.SSS',
-  'yyyy-MM-dd\'T\'HH:mm',
+  "yyyy-MM-dd'T'HH:mm:ss",
+  "yyyy-MM-dd'T'HH:mm:ss.SSS",
+  "yyyy-MM-dd'T'HH:mm",
   'yyyy-MM-dd',
 ];
 
@@ -201,7 +198,7 @@ export function endOf(date: DateLike, unit: string): Date {
   return toDate(date);
 }
 
-export function parseDate(date, defaultVal): Date {
+export function parseDate(date, defaultVal: Date): Date {
   if (isNumber(date)) {
     date = parseInt(date);
     return toDate(date);
@@ -218,6 +215,9 @@ export function parseDate(date, defaultVal): Date {
 }
 
 export function parseTimestamp(date, defaultVal: number = undefined): number {
+  if (isNil(date)) {
+    return defaultVal;
+  }
   if (isNumber(date)) {
     return parseInt(date);
   }
@@ -261,7 +261,7 @@ export function fromStreamId(id: string): Date {
 }
 
 // Round timestamp to the 'precision' interval
-export function roundDate(time, precision, direction = 'down'): number {
+export function roundDate(time, precision: number, direction = 'down'): number {
   time = toDate(time);
   if (direction === 'down') {
     return Math.floor(time.getTime() / precision) * precision;
@@ -270,15 +270,15 @@ export function roundDate(time, precision, direction = 'down'): number {
   }
 }
 
-export function roundUp(date, precision): number {
+export function roundUp(date: DateLike, precision: number): number {
   return roundDate(addMilliseconds(date, precision), precision, 'up');
 }
 
-export function roundDown(date, precision): number {
+export function roundDown(date: DateLike, precision: number): number {
   return roundDate(subMilliseconds(date, precision), precision, 'down');
 }
 
-export function roundToNearest(date, precision): Date {
+export function roundToNearest(date: DateLike, precision: number): Date {
   const up = roundUp(date, precision);
   const down = roundDown(date, precision);
   return closestTo(date, [up, down]);
@@ -372,80 +372,4 @@ Object.keys(rangeUnitMap).reduce((res, key) => {
 
 export function isDateRangeConstant(v): boolean {
   return DATE_RANGE_CONSTANTS.includes(v);
-}
-
-export function getEndOfPrevious(
-  unit: string,
-  date: DateLike = undefined,
-): Date {
-  if (!date) date = systemClock.now();
-  return subMilliseconds(startOf(date, unit), 1);
-}
-
-export function calculateRelativeRange(type: string, from = null) {
-  let start, end;
-  const unit = rangeUnitMap[type];
-  const reference = toDate(from || systemClock.now());
-  const [relativePart] = type.split('_');
-  if (type === 'today') {
-    start = startOf(reference, 'day');
-    end = endOf(start, 'day');
-  } else if (type === 'yesterday') {
-    end = subMilliseconds(startOf(reference, 'day'), -1);
-    start = startOf(end, unit);
-  } else {
-    if (relativePart === 'last') {
-      end = getEndOfPrevious(unit, reference);
-      start = startOf(end, unit);
-    } else {
-      // this... eg this_week
-      start = startOf(reference, unit);
-      end = endOf(reference, unit);
-    }
-  }
-  return { start, end };
-}
-
-/**
- * @param {Date|Number} start start of range
- * @param {Date|Number} end end of range
- * @param {Number|String} interval = interval in milliseconds. Default to 10 seconds
- * @param {Boolean} align align dates to interval
- */
-export function* getIterator(start, end, interval = 10000, align = false) {
-  interval = parseDuration(interval);
-  let startDate = align ? roundDown(start, interval) : toDate(start);
-  const endDate = align ? roundUp(end, interval) : toDate(end);
-
-  while (isBefore(startDate, endDate)) {
-    const result = {
-      start: startDate,
-      end: subMilliseconds(startDate, 1),
-    };
-
-    startDate = addMilliseconds(startDate, interval);
-
-    yield result;
-  }
-}
-
-/**
- *
- * @param {Number|String} val
- * @returns {Date}
- */
-export function fromEpochSeconds(val): Date {
-  const int = typeof val === 'string' ? Number.parseFloat(val) : val;
-  return new Date(int * 1000);
-}
-
-/**
- *
- * @param {Number|Date} maybeDate
- * @returns {Number}
- */
-export function toEpochSeconds(maybeDate): number {
-  const msFromEpoch =
-    maybeDate instanceof Date ? maybeDate.getTime() : maybeDate;
-  return Math.floor(msFromEpoch / 1000);
 }

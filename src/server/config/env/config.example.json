@@ -8,13 +8,38 @@
   "aggregateInterval": 60000,
   "flushInterval": 1000,
   "percentiles": [25, 50, 75, 90, 95, 99, 99.5],
+  "mail":  {
+    "message": {
+      "from": "Toro Notifier <my@sender.com>",
+      "to": "recipient@example.com",
+      "bcc": ["mycc@mail.com"]
+    },
+    "transport": {
+      "jsonTransport": true
+    }
+  },
+  "channels": [
+    {
+      "id": "hook1",
+      "type": "webhook",
+      "name": "Sample Webhook",
+      "url": "{{server.host}}:{{server.port}}/webhooks/notification",
+      "retry": 3,
+      "httpSuccessCodes": [200]
+    },
+    {
+      "id": "mail",
+      "type": "mail",
+      "name": "Sample mail channel",
+      "recipients": "flames@example.com"
+    }
+  ],
   "hosts": [
     {
       "name": "Localhost",
       "host": "127.0.0.1",
       "port": 6379,
       "prefix": "bull",
-      "notifiers": ["console", "mail"],
       "queues": [
         {
           "name": "bb_queue",
@@ -31,32 +56,6 @@
           "name": "backup"
         }
       ]
-    }
-  ],
-  "notifiers": [
-    {
-      "id": "console",
-      "type": "console"
-    },
-    {
-      "id": "hook1",
-      "type": "webhook",
-      "urls": ["{{server.host}}:{{server.port}}/webhooks/notification"],
-      "retry": 3,
-      "httpSuccessCodes": [200]
-    },
-    {
-      "id": "mail",
-      "type": "mail",
-      "disable": false,
-      "defaults": {
-        "to": "flames@example.com",
-        "from": "my@sender.com",
-        "bcc": ["mycc@mail.com"]
-      },
-      "transport": {
-        "jsonTransport": true
-      }
     }
   ]
 }

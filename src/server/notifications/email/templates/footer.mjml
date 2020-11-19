@@ -1,0 +1,20 @@
+<mj-section>
+  <mj-column>
+    <mj-text> <strong>Timestamp</strong> {{ ts }} </mj-text>
+  </mj-column>
+
+  <mj-column>
+    <mj-text> <strong>V</strong> {{ app.version }} </mj-text>
+  </mj-column>
+
+  <mj-column>
+    <mj-text> <strong>Env</strong> {{ env }} </mj-text>
+  </mj-column>
+</mj-section>
+<mj-section>
+    <mj-column>
+        <mj-text align="center">
+            <a href="{{app.url}}">Dashboard</a>
+        </mj-text>
+    </mj-column>
+</mj-section>

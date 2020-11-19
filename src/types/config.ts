@@ -1,14 +1,20 @@
 import { RedisOptions } from 'ioredis';
+import { ChannelConfig } from './notifications';
+
+export interface DiscoveredQueue {
+  prefix: string;
+  name: string;
+}
 
 export interface QueueConfig {
-  /** Unique, system generated id based on host/port/db */
+  /** Unique, system generated id based on host/port/db/queue names */
   id?: string;
-  /** Queue name */
+  /** Queue names */
   name: string;
   prefix?: string;
-  /** Notification channels for alerts */
-  notifiers?: string[];
-  jobTypes: string[];
+  jobTypes?: string[];
+  /** Should we keep stats for this queue */
+  trackMetrics?: boolean;
 }
 
 export type ConnectionOptions = string | RedisOptions;
@@ -17,16 +23,21 @@ export type ConnectionOptions = string | RedisOptions;
 export interface HostConfig {
   /** Unique, system generated id based on host/port/db */
   id?: string;
-  /** A descriptive name of the host e.g. "e-commerce dev" */
+  /** A descriptive names of the host e.g. "e-commerce dev" */
   name: string;
-  /** Optional description for UI purposed */
+  /** Optional description for UI purposes */
   description?: string;
   /** Default prefix for queues on this host */
   prefix?: string;
   /** Default notification channels for alerts */
-  notifiers?: string[];
+  channels?: ChannelConfig[];
   /** If true, discover queues automatically in redis in addition to reading queues from config */
   autoDiscoverQueues: boolean;
+  /**
+   * Allow adding queues at runtime
+   */
+  allowDynamicQueues: boolean;
+  /* Redis connection options */
   connection: ConnectionOptions;
   /** Config information for queues associated with this host */
   queues: QueueConfig[];

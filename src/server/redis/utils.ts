@@ -2,12 +2,9 @@ import IORedis from 'ioredis';
 import url, { Url } from 'url';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate } from '../lib/datetime';
-import { isNumber } from '../lib/utils';
-import { ConnectionOptions } from 'config';
-import { RedisMetrics } from '@src/types';
+import { isNumber, logger } from '../lib';
+import { ConnectionOptions, RedisMetrics } from '../../types';
 import { loadScripts } from '../commands';
-import logger from '../lib/logger';
-import { Queue } from 'bullmq';
 
 export interface RedisStreamItem {
   id: string | number | Date;
@@ -17,15 +14,46 @@ export interface RedisStreamItem {
 export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
   let client;
   if (isNil(redisOpts)) {
-    client = new IORedis();
+    // @ts-ignore
+    client = new IORedis({ enableAutoPipelining: true }); // supported in 4.19.0
   } else if (isString(redisOpts)) {
     client = new IORedis(redisOpts as string);
   } else {
-    client = new IORedis(redisOpts as IORedis.RedisOptions);
+    // casting is done as types are behind the current release (4.19.0)
+    const opts = {
+      ...redisOpts,
+      enableAutoPipelining: true,
+    } as IORedis.RedisOptions;
+    client = new IORedis(opts);
   }
 
-  loadScripts(client).catch((err) => console.log(err));
+  loadScripts(client).catch((err) => logger.warn(err));
   return client;
+}
+
+/**
+ * Waits for a redis client to be ready.
+ * @param {Redis} redis client
+ */
+export async function waitUntilReady(client: IORedis.Redis): Promise<void> {
+  return new Promise(function (resolve, reject) {
+    if (client.status === 'ready') {
+      resolve();
+    } else {
+      async function handleReady() {
+        client.removeListener('error', handleError);
+        resolve();
+      }
+
+      function handleError(err: Error) {
+        client.removeListener('ready', handleReady);
+        reject(err);
+      }
+
+      client.once('ready', handleReady);
+      client.once('error', handleError);
+    }
+  });
 }
 
 export async function disconnect(client: IORedis.Redis): Promise<void> {
@@ -56,12 +84,13 @@ export function scanKeys(
   options: any = {},
   batchFn: (keys: string[]) => any,
 ): Promise<void> {
-  options.count = options.count || 200;
+  options.count = options.count || 500;
   return new Promise((resolve, reject) => {
     const stream = client.scanStream(options);
 
-    const close = () => {
+    const close = (err?: Error) => {
       stream.emit('close');
+      return err ? reject(err) : resolve();
     };
 
     stream.on('data', async (keys: string[]) => {
@@ -74,14 +103,12 @@ export function scanKeys(
         const res = await batchFn(keys);
         if (res === false) {
           close();
-          resolve();
         } else {
           stream.resume();
         }
       } catch (err) {
         err.pattern = options.match || '*';
-        close();
-        return reject(err);
+        close(err);
       }
     });
 
@@ -127,47 +154,24 @@ export async function deleteByPattern(
   return totalCount;
 }
 
-export async function discoverQueues(
-  client: IORedis.Redis,
-  prefix: string,
-): Promise<string[]> {
-  const keyPattern = new RegExp(
-    `^${prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`,
-  );
+// source
+// eslint-disable-next-line max-len
+// https://github.com/graphql-compose/graphql-compose-bullmq/blob/master/src/helpers/normalizePrefixGlob.ts
+export function normalizePrefixGlob(prefixGlob: string): string {
+  let prefixGlobNorm = prefixGlob || '';
+  const sectionsCount = prefixGlobNorm.split(':').length - 1;
 
-  const options = {
-    match: `${prefix}:*:*`,
-    count: 1000,
-  };
-  const dedupe = Object.create(null);
-  const result = [];
+  if (sectionsCount > 1) {
+    prefixGlobNorm += prefixGlobNorm.endsWith(':') ? '' : ':';
+  } else if (sectionsCount === 1) {
+    prefixGlobNorm += prefixGlobNorm.endsWith(':') ? '*:' : ':';
+  } else {
+    prefixGlobNorm += prefixGlobNorm.trim().length > 0 ? ':*:' : '*:*:';
+  }
 
-  logger.info('running queue discovery', { pattern: keyPattern.source });
+  prefixGlobNorm += 'meta';
 
-  await scanKeys(client, options, (keys) => {
-    keys.forEach((key) => {
-      const match = keyPattern.exec(key);
-      if (match && match[1]) {
-        const [prefix, name] = key.split(':');
-        const uniq = `${prefix}-${name}`;
-        if (!dedupe[uniq]) {
-          dedupe[uniq] = 1;
-          logger.info(`found queue "${prefix}:${name}"`);
-          result.push(name);
-        }
-      }
-    });
-  });
-
-  return result;
-}
-
-export async function deleteAllQueueData(queue: Queue): Promise<number> {
-  const prefix = queue.opts.prefix;
-  const pattern = `${prefix}:${queue.name}:*`;
-  const client = await queue.client;
-  // @ts-ignore
-  return deleteByPattern(client, pattern);
+  return prefixGlobNorm;
 }
 
 export function parseRedisURI(urlString: string): Record<string, any> {
@@ -188,7 +192,10 @@ export function parseRedisURI(urlString: string): Record<string, any> {
 
 // https://github.com/luin/ioredis/issues/747
 
-export function parseObjectResponse(reply: any[], customParser = null): object {
+export function parseObjectResponse(
+  reply: any[],
+  customParser = null,
+): Record<string, any> {
   if (!Array.isArray(reply)) {
     return reply;
   }
@@ -215,7 +222,7 @@ export function parseMessageResponse(reply: any[]): RedisStreamItem[] {
   });
 }
 
-export function parseXinfoResponse(reply) {
+export function parseXinfoResponse(reply): RedisStreamItem {
   return parseObjectResponse(reply, (key, value) => {
     if (Buffer.isBuffer(key)) {
       key = key.toString();
@@ -233,7 +240,18 @@ export function parseXinfoResponse(reply) {
       default:
         return value;
     }
-  });
+  }) as RedisStreamItem;
+}
+
+export function checkMultiErrors(replies: any[] | null): any[] {
+  return (
+    replies &&
+    replies.map((reply) => {
+      const err = reply[0];
+      if (err) throw err;
+      return reply[1];
+    })
+  );
 }
 
 export function toKeyValueList(hash: any): any[] {
@@ -254,15 +272,18 @@ export function toKeyValueList(hash: any): any[] {
 type MetricName = keyof RedisMetrics;
 const metrics: MetricName[] = [
   'redis_version',
+  'tcp_port',
   'uptime_in_seconds',
   'uptime_in_days',
   'connected_clients',
   'blocked_clients',
   'total_system_memory',
   'used_memory',
+  'used_memory_rss',
   'used_memory_peak',
   'used_cpu_sys',
   'maxmemory',
+  'used_memory_lua',
   'number_of_cached_scripts',
   'instantaneous_ops_per_sec',
   'mem_fragmentation_ratio',

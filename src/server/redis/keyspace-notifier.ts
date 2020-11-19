@@ -1,9 +1,11 @@
 'use strict';
-import Emittery from 'emittery';
-import { RedisConnection } from 'bullmq';
+import Emittery, { UnsubscribeFn } from 'emittery';
 import IORedis from 'ioredis';
 import { ConnectionOptions } from '@src/types';
-import { createClient } from './utils';
+import { createClient, waitUntilReady } from './utils';
+import { createDebug } from '../lib/debug';
+
+const debug = createDebug('keyspace notifications');
 
 // (1) -> keyspace || keyevent
 // (2) -> An integer 0-9 (redis db idx)
@@ -13,13 +15,18 @@ const ChannelRegex = /__(keyspace|keyevent)@([0-9]+)__:([^\s]+)/i;
 
 const isValidType = (type): boolean => ['keyevent', 'keyspace'].includes(type);
 
+export enum KeyspaceNotificationType {
+  KEYSPACE = 'keyspace',
+  KEYEVENT = 'keyevent',
+}
+
 // __<keyspace||keyevent>@<db idx>__:<some key>
-function getChannel(type: string, db = 0, key = '*'): string {
+export function getChannel(type: string, key = '*', db = 0): string {
   return `__${type}@${db}__:${key}`;
 }
 
 export interface KeyspaceNotification {
-  type: string;
+  type: KeyspaceNotificationType;
   key: string;
   event: string;
   pattern: string;
@@ -27,16 +34,14 @@ export interface KeyspaceNotification {
   db: number;
 }
 
-export interface KeyspaceNotificationFunc {
-  (msg: KeyspaceNotification): void;
-}
+export type KeyspaceNotificationFunc = (msg: KeyspaceNotification) => void;
 
 // http://redis.io/topics/notifications
 export class KeyspaceNotifier {
   private readonly emitter = new Emittery();
   private client: IORedis.Redis;
   private db = 0;
-  private initializing: Promise<IORedis.Redis>;
+  private readonly initializing: Promise<IORedis.Redis>;
   private readonly connectionOpts: ConnectionOptions;
 
   constructor(opts: ConnectionOptions) {
@@ -45,8 +50,8 @@ export class KeyspaceNotifier {
   }
 
   async destroy(): Promise<void> {
-    await this.client.disconnect();
     this.emitter.clearListeners();
+    await this.client.disconnect();
   }
 
   private async init(): Promise<IORedis.Redis> {
@@ -90,10 +95,22 @@ export class KeyspaceNotifier {
       });
     });
 
-    // TODO: investigate possible different versions of @types/ioredis
-    // @ts-ignore
-    await RedisConnection.waitUntilReady(client);
+    await waitUntilReady(client);
     return client;
+  }
+
+  async subscribeKey(
+    key: string | string[],
+    cb: KeyspaceNotificationFunc,
+  ): Promise<() => void> {
+    return this.subscribe(KeyspaceNotificationType.KEYSPACE, key, cb);
+  }
+
+  async subscribeEvent(
+    event: string | string[],
+    cb: KeyspaceNotificationFunc,
+  ): Promise<UnsubscribeFn> {
+    return this.subscribe(KeyspaceNotificationType.KEYEVENT, event, cb);
   }
 
   /**
@@ -103,43 +120,49 @@ export class KeyspaceNotifier {
    * @param {KeyspaceNotificationFunc} cb function to call on a keyspace notification
    * @returns {Promise<Function>} an unsubscribe function
    */
-  async subscribe(type: string, key: string, cb: KeyspaceNotificationFunc) {
+  private async subscribe(
+    type: KeyspaceNotificationType,
+    key: string | string[],
+    cb: KeyspaceNotificationFunc,
+  ): Promise<UnsubscribeFn> {
     if (!isValidType(type)) {
       throw new Error(
         `Invalid subscription key type sent to #subscribe: ${type}`,
       );
     }
 
-    const channel = getChannel(type, this.db, key);
-    const handlerCount = this.emitter.listenerCount(channel);
-    if (!handlerCount) {
-      // When the Redis subscriber is ready select the relevant db index
-      // and start subscribing to keyspace notifications.
-      //  if (firstPass) {
-      //      firstPass = false
-      //      await subscriber.select(db);
-      //  }
-      await this.client.psubscribe(channel);
+    await this.initializing;
+
+    const keys = Array.isArray(key) ? key : [key];
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const channel = getChannel(type, key, this.db);
+      const handlerCount = this.emitter.listenerCount(channel);
+
+      // this dedupes handlers
+      await this.emitter.on(channel, cb);
+      if (!handlerCount) {
+        await this.client.psubscribe(channel);
+      }
     }
 
-    // this dedupes handlers
-    this.emitter.on(channel, cb);
-
-    return (): Promise<void> => {
-      return this.unsubscribe(type, key, cb);
+    return (): void => {
+      this.unsubscribe(type, keys, cb).catch((err) => {
+        debug('error unsubscribing %O', err);
+      });
     };
   }
 
   /***
    * Unsubscribe from a keyspace notification
    * @param type {String} One of `keyspace` or `keyevent`
-   * @param key  {String} The specific key, or all #type events (*)
+   * @param key  {String | String[]} The specific key, or all #type events (*)
    * @param cb   {KeyspaceNotificationFunc} previously subscribed notification handler
    * @returns {Promise<void>}
    */
   async unsubscribe(
-    type: string,
-    key: string,
+    type: KeyspaceNotificationType,
+    key: string | string[],
     cb: KeyspaceNotificationFunc,
   ): Promise<void> {
     if (!isValidType(type)) {
@@ -148,16 +171,26 @@ export class KeyspaceNotifier {
       );
     }
 
-    const channel = getChannel(type, this.db, key);
-    this.emitter.off(channel, cb);
+    const keys = Array.isArray(key) ? key : [key];
+    for (let i = 0; i < keys.length; i++) {
+      const channel = getChannel(type, keys[i], this.db);
+      this.emitter.off(channel, cb);
 
-    const handlerCount = this.emitter.listenerCount(channel);
-    if (!handlerCount) {
-      await this.client.punsubscribe(channel);
+      const handlerCount = this.emitter.listenerCount(channel);
+      if (!handlerCount) {
+        await this.client.punsubscribe(channel);
+      }
     }
   }
 
   getSubscriptionCount(): number {
     return this.emitter.listenerCount();
+  }
+
+  // primarily for testing
+  onAny(cb: KeyspaceNotificationFunc): Emittery.UnsubscribeFn {
+    return this.emitter.onAny((eventName, eventData) => {
+      cb(eventData as KeyspaceNotification);
+    });
   }
 }

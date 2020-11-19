@@ -1,7 +1,0 @@
-<mj-section>
-  <mj-column>
-    <mj-text>
-      {{ siteTitle }}
-    </mj-text>
-  </mj-column>
-</mj-section>

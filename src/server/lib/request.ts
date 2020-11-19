@@ -10,7 +10,7 @@ const defaultOptions = {
   },
 };
 
-export default async function request(url, options) {
+export default async function request(url: string, options) {
   if (isEmpty(url)) {
     // todo: validate url
     throw boom.badRequest('url missing or invalid', { url });

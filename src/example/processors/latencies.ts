@@ -1,55 +1,27 @@
 import { rand } from './utils';
+import { normal, laplace, beta, sample } from 'unirand';
 
-import {
-  rnorm,
-  rbeta,
-  rlaplace,
-  rint,
-  sample,
-} from 'probability-distributions';
 // see https://statisticsblog.com/probability-distributions/
-
-export function gaussian(n: number, mean: number, sd = 1): number[] {
-  return rnorm(n, mean, sd);
-}
-
-function laplace(n: number, mean: number, scale = 2): number[] {
-  return rlaplace(n, mean, scale);
-}
-
-function normal(n: number, min: number, max: number): number[] {
-  return rint(n, min, max);
-}
-
-function beta(n: number, alpha: number, beta: number): number[] {
-  if (!beta) {
-    const t = alpha || 0.5;
-    beta = rand(t + 1.5, 8);
-  }
-  if (!alpha) {
-    alpha = rand(0.5, beta - 2);
-  }
-  return rbeta(n, alpha, beta);
-}
 
 export function generateRange(n: number, options): number[] {
   const { mean, max, min = 10, sd = 2, scale = 2 } = options;
 
-  const _gaussian = (): number[] => gaussian(n, mean, sd);
-  const _laplace = (): number[] => laplace(n, mean, scale);
-  const _normal = (): number[] => normal(n, min, max);
+  const _gaussian = () => normal(mean, sd).distribution(n);
+  const _laplace = () => laplace(mean, scale).distribution(n);
 
   const _beta = (): number[] => {
-    const rnd = beta(n, options.alpha, options.beta);
+    let a = options.alpha;
+    let b = options.beta;
+    if (!b) {
+      const t = a || 0.5;
+      b = rand(t + 1.5, 8);
+    }
+    a = a || rand(0.5, b - 2);
+    const rnd = beta(a, b).distribution(n);
     return rnd.map((x) => min + (max - min) * x);
   };
 
-  const [fn] = sample([_gaussian, _beta, _laplace, _normal], 1, true, [
-    0.4,
-    0.3,
-    0.2,
-    0.1,
-  ]);
+  const [fn] = sample([_gaussian, _beta, _laplace], 1);
   return fn();
 }
 

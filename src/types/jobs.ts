@@ -1,44 +1,35 @@
 import { JobsOptions, Job } from 'bullmq';
 
-export const JOB_STATUSES = {
-  active: 'active',
-  waiting: 'waiting',
-  completed: 'completed',
-  failed: 'failed',
-  delayed: 'delayed',
-  paused: 'paused',
-};
+export enum JobStatusEnum {
+  ACTIVE = 'active',
+  WAITING = 'waiting',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  DELAYED = 'delayed',
+  PAUSED = 'paused',
+  STALLED = 'stalled',
+  UNKNOWN = 'unknown',
+}
 
-export type JobStatus = keyof typeof JOB_STATUSES;
+export type JobFinishedState = JobStatusEnum.COMPLETED | JobStatusEnum.FAILED;
 
-export type JobCountStates = 'completed' | 'waiting' | 'active' | 'failed';
+export type JobStatus = keyof typeof JobStatusEnum;
+
+export type JobCountStates =
+  | JobStatusEnum.COMPLETED
+  | JobStatusEnum.WAITING
+  | JobStatusEnum.ACTIVE
+  | JobStatusEnum.FAILED
+  | JobStatusEnum.PAUSED;
 
 export type JobCounts = Record<JobCountStates, number>;
 
-// https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
-export type JobField =
-  | 'id'
-  | 'name'
-  | 'data'
-  | 'opts'
-  | 'progress'
-  | 'attemptsMade'
-  | 'finishedOn'
-  | 'processedOn'
-  | 'timestamp'
-  | 'failedReason'
-  | 'stacktrace'
-  | 'returnvalue'
-  // computed
-  | 'delay'
-  | 'state'
-  | 'duration'
-  | 'nextRun';
-
 export interface AppJob {
-  id: string | number | undefined;
+  id: string | undefined;
   timestamp: number | null;
+  /** The timestamp at which a worker started processing the job */
   processedOn: number | null;
+  /** The timestamp at which worker COMPLETED the job */
   finishedOn: number | null;
   progress: Job['progress'];
   attempts: Job['attemptsMade'];
@@ -52,4 +43,11 @@ export interface AppJob {
   duration: number | undefined;
   nextRun: number | undefined;
   state: string | undefined;
+  isStalled: boolean | undefined;
+}
+
+export interface JobCreationOptions {
+  name: string;
+  data: any;
+  opts?: any;
 }

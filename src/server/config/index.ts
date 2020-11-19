@@ -2,6 +2,7 @@ import nconf from 'nconf';
 import path from 'path';
 import { packageInfo } from '../packageInfo';
 import { isString, isObject } from 'lodash';
+import { AppInfo } from '@src/types';
 //const debug = require('debug')('toro:config');
 
 nconf.argv({
@@ -52,6 +53,7 @@ function processTemplate(tpl: any): any {
   if (isString(tpl)) {
     return tpl
       .replace(/!{{\s*([\w.|]+)}}/g, replacer(true))
+      .replace(/{{{\s*([\w.]+)}}}/g, (match, content) => `{{${content}}}`)
       .replace(/{{\s*([\w.|]+)}}/g, replacer());
   } else if (Array.isArray(tpl)) {
     return tpl.map(processTemplate);
@@ -65,9 +67,28 @@ function processTemplate(tpl: any): any {
   return tpl;
 }
 
-export function getValue(key: string, defaultValue: any): any {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function getValue(key: string, defaultValue?: any): any {
   const val = nconf.get(key);
   return val ? processTemplate(val) : defaultValue;
+}
+
+function getAppInfo(): AppInfo {
+  const server = nconf.get('server');
+  const env = nconf.get('env');
+  const title = nconf.get('title') || 'el toro';
+  const brand = nconf.get('brand') || 'GuanimaTech';
+  const url = !server
+    ? 'localhost'
+    : server.host + (server.port ? `:${server.port}` : '');
+  return {
+    title,
+    brand,
+    env,
+    url,
+    version: packageInfo.version,
+    author: packageInfo.author,
+  };
 }
 
 /**
@@ -77,8 +98,7 @@ nconf.set('env', environment);
 
 // todo: timezone
 nconf.set('packageInfo', packageInfo);
-
-nconf.getValue = getValue;
+nconf.set('appInfo', getAppInfo());
 
 // To output this, use DEBUG=pamplona:*,pamplona-config
 // debug(nconf.get());

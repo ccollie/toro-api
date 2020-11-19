@@ -1,18 +1,18 @@
 module.exports = {
-  "roots": [
+  roots: [
     "<rootDir>/__tests__"
   ],
-  "transform": {
+  transform: {
     "^.+\\.tsx?$": "ts-jest"
   },
-  "testMatch": [
+  testMatch: [
     "**/__tests__/**/*.js?(x)",
     "**/?(*.)+(spec|test).js?(x)",
-    "**/__tests__/?(*.)+(spec|test).js?(x)",
+    "**/__tests__/?(*.)+(spec|test).ts?(x)",
     "**/__tests__/**/*.ts?(x)",
     "**/?(*.)+(spec|test).ts?(x)"
   ],
-  "moduleFileExtensions": [
+  moduleFileExtensions: [
     "ts",
     "tsx",
     "js",
@@ -20,6 +20,11 @@ module.exports = {
     "json",
     "node"
   ],
-  "testEnvironment": "node",
-  "setupFiles": ["jest-date-mock"]
+  testEnvironment: "node",
+  setupFiles: ["jest-date-mock"],
+  preset: 'ts-jest',
+  moduleNameMapper: {
+    "^@src/(.*)$": "<rootDir>/src/$1",
+    "tests/(.*)": "<rootDir>/__tests__/$1",
+  }
 };

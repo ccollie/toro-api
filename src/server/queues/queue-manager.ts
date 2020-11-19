@@ -1,0 +1,391 @@
+import boom from '@hapi/boom';
+import PQueue from 'p-queue';
+import ms from 'ms';
+import { Job, Queue } from 'bullmq';
+import { StatsAggregator, StatsClient, StatsListener } from '../stats';
+import { Rule, RuleManager } from '../rules';
+import { QueueSweeper } from './queue-sweeper';
+import { EventBus } from '../redis';
+import { QueueListener } from './queue-listener';
+import { deleteAllQueueData, getJobTypes } from './queue';
+import { HostManager } from '../hosts';
+import { getQueueUri, logger, systemClock } from '../lib';
+import {
+  JobStatus,
+  QueueConfig,
+  QueueWorker,
+  RepeatableJob,
+  RuleConfigOptions,
+} from '../../types';
+import { isEmpty } from 'lodash';
+import cronstrue from 'cronstrue/i18n';
+import { getQueueBusKey } from '../lib/keys';
+
+const JANITOR = Symbol('janitor');
+const STATS_AGGREGATOR = Symbol('stats aggregator');
+const STATS_LISTENER = Symbol('stats listener');
+
+const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
+
+export function getCronDescription(cron: string | number): string {
+  function fromNumber(value: number): string {
+    return 'every ' + ms(value);
+  }
+
+  if (typeof cron === 'number') {
+    return fromNumber(cron);
+  } else {
+    const millis = parseInt(cron, 10);
+    if (!isNaN(millis)) {
+      return fromNumber(millis);
+    }
+    try {
+      return cron ? cronstrue.toString(cron) : '';
+    } catch {
+      return 'invalid';
+    }
+  }
+}
+
+/**
+ * Maintain all data related to a queue
+ * @property {RuleManager} ruleManager
+ * @property {StatsClient} statsClient
+ * @property {EventBus} bus
+ * @property {QueueListener} queueListener
+ * @property {Rule[]} rules
+ */
+export class QueueManager {
+  public readonly host: string;
+  public readonly queue: Queue;
+  public readonly hostManager: HostManager;
+  public readonly config: QueueConfig;
+  readonly queueListener: QueueListener;
+  readonly statsClient: StatsClient;
+  readonly ruleManager: RuleManager;
+  readonly bus: EventBus;
+  private readonly _workQueue: PQueue = new PQueue({ concurrency: 6 });
+  private _uri: string = undefined;
+
+  constructor(host: HostManager, queue: Queue, config: QueueConfig) {
+    this.host = host.name;
+    this.hostManager = host;
+    this.queue = queue;
+    this.config = config;
+    this.queueListener = this.createQueueListener();
+    this.bus = new EventBus(host.streamAggregator, getQueueBusKey(queue));
+    this.statsClient = new StatsClient(this);
+    this.ruleManager = new RuleManager(this);
+    this[JANITOR] = new QueueSweeper(this, this._workQueue);
+    this[STATS_LISTENER] = this.createStatsListener();
+    this[STATS_AGGREGATOR] = new StatsAggregator(this, this._workQueue);
+    this.onError = this.onError.bind(this);
+  }
+
+  async destroy(): Promise<void> {
+    await this.queueListener.destroy();
+    this.bus.destroy();
+    this.statsClient.destroy();
+    this.ruleManager.destroy();
+    this[JANITOR].destroy();
+    this[STATS_LISTENER].destroy();
+    this[STATS_AGGREGATOR].destroy();
+    await this._workQueue.onIdle(); // should we just clear ?
+    await this.queue.close();
+  }
+
+  onError(err: Error): void {
+    // todo: log
+    logger.warn(err);
+  }
+
+  catchupStats(): void {
+    const listener = this.createStatsListener();
+    const catchup = (): Promise<void> => {
+      return listener.catchUp().finally(() => {
+        listener.destroy();
+      });
+    };
+    this._workQueue.add(catchup).catch(this.onError);
+  }
+
+  get name(): string {
+    return this.queue.name;
+  }
+
+  get prefix(): string {
+    return this.queue.opts?.prefix;
+  }
+
+  get hostName(): string {
+    return this.hostManager.name;
+  }
+
+  get id(): string {
+    return this.config.id;
+  }
+
+  get uri(): string {
+    if (typeof this._uri === 'string') {
+      return this._uri;
+    }
+    // we've already tried.
+    if (this._uri === null) return null;
+    try {
+      const data = {
+        id: this.id,
+        name: this.name,
+        prefix: this.prefix,
+        host: {
+          id: this.hostManager.id,
+          name: this.hostManager.name,
+        },
+      };
+      this._uri = getQueueUri(data);
+    } catch (err) {
+      this._uri = null;
+      logger.warn(err);
+    }
+  }
+
+  get hasLock(): boolean {
+    return this.hostManager.lock.isOwner;
+  }
+
+  get rules(): Rule[] {
+    return this.ruleManager.rules;
+  }
+
+  private createQueueListener(): QueueListener {
+    return new QueueListener(this.queue);
+  }
+
+  private createStatsListener(): StatsListener {
+    return new StatsListener(this);
+  }
+
+  getRule(id: string): Promise<Rule> {
+    return this.ruleManager.getRule(id);
+  }
+
+  /**
+   *
+   * @param {Rule} rule
+   */
+  async addRule(rule: RuleConfigOptions): Promise<Rule> {
+    if (!rule) {
+      throw boom.badRequest('must pass a valid rule');
+    }
+    const oldRule = await this.getRule(rule.id);
+    if (oldRule) {
+      throw boom.badRequest(`An rule named "${rule.id}" already exists`);
+    }
+
+    return this.ruleManager.addRule(rule);
+  }
+
+  /**
+   * Delete a {@link Rule}
+   * @param {Rule|string} rule
+   * @return {Promise<void>}
+   */
+  async deleteRule(rule: Rule | string): Promise<boolean> {
+    return this.ruleManager.deleteRule(rule);
+  }
+
+  async loadRules(): Promise<Rule[]> {
+    return this.ruleManager.loadRules();
+  }
+
+  async listen(): Promise<void> {
+    const statsListener = this[STATS_LISTENER] as StatsListener;
+    await Promise.all([
+      this.loadRules(),
+      statsListener.startListening(),
+      this.queueListener.startListening(),
+    ]);
+  }
+
+  async isPaused(): Promise<boolean> {
+    const client = await this.queue.client;
+    const meta = await client.hgetall(this.queue.keys.meta);
+    return meta?.paused ? !!+meta.paused : false;
+  }
+
+  pause(): Promise<void> {
+    return this.queue.pause();
+  }
+
+  resume(): Promise<void> {
+    return this.queue.resume();
+  }
+
+  /****
+   * A more performant way to fetch multiple getJobs from a queue.
+   * The standard method in Bull makes a round trip per job. This
+   * method uses pipelining to get all getJobs in a single roundtrip
+   * @param  ids job ids
+   * @returns {Promise<[Job]>}
+   */
+  async getMultipleJobsById(...ids: (string | string[])[]): Promise<Job[]> {
+    const flat = [].concat(...ids);
+    const client = await this.queue.client;
+    const multi = client.multi();
+    flat.forEach((jid) => {
+      multi.hgetall(this.queue.toKey(jid));
+    });
+    const res = await multi.exec();
+    const result = [];
+
+    res.forEach((item, index) => {
+      if (item[0]) {
+        // err
+      } else {
+        const jobData = item[1];
+        const jid = flat[index];
+        if (!isEmpty(jobData)) {
+          const job = Job.fromJSON(this.queue, jobData, jid);
+          result.push(job);
+        }
+      }
+    });
+    return result;
+  }
+
+  /**
+   * Fetch a number of getJobs of certain type
+   * @param {String} state Job states: {WAITING|ACTIVE|DELAYED|COMPLETED|FAILED}
+   * @param {Number} offset Index offset (optional)
+   * @param {Number} limit Limit of the number of getJobs returned (optional)
+   * @param asc {Boolean} asc/desc
+   * @returns {Promise} A promise that resolves to an array of Jobs
+   */
+  async getJobs(
+    state: JobStatus,
+    offset = 0,
+    limit = 25,
+    asc?: boolean,
+  ): Promise<Job[]> {
+    const order = {
+      waiting: true,
+      active: false,
+      delayed: true,
+      completed: false,
+      failed: false,
+    };
+
+    if (asc === undefined) {
+      asc = order[state];
+    }
+    const end = limit < 0 ? -1 : offset + limit - 1;
+
+    // eslint-disable-next-line prefer-const
+    const ids = await this.queue.getRanges([state], offset, end, asc);
+    let jobs = [];
+    if (ids.length) {
+      jobs = await this.getMultipleJobsById(ids as string[]);
+      jobs.forEach((job) => {
+        (job as any).queueId = this.id;
+        job.state = state;
+      });
+    }
+
+    return jobs;
+  }
+
+  async getJobCounts(
+    states: JobStatus[] = ALL_STATUSES,
+  ): Promise<Record<JobStatus, number>> {
+    let result = await this.queue.getJobCounts(...states);
+    if (!result) result = {};
+    states.forEach((state) => {
+      if (typeof result[state] !== 'number') {
+        result[state] = 0;
+      }
+    });
+    return result as Record<JobStatus, number>;
+  }
+
+  /**
+   * Fetch a number of repeatable getJobs
+   * @param {Number} [offset] Index offset (optional)
+   * @param {Number} limit Limit of the number of getJobs returned (optional)
+   * @param asc {Boolean} asc/desc
+   * @returns {Promise} A promise that resolves to an array of repeatable getJobs
+   */
+  async getRepeatableJobs(
+    offset = 0,
+    limit = 30,
+    asc = true,
+  ): Promise<RepeatableJob[]> {
+    const end = limit < 0 ? -1 : offset + limit - 1;
+
+    const response = await this.queue.getRepeatableJobs(offset, end, !!asc);
+
+    return response.map((job: RepeatableJob) => {
+      job.descr = getCronDescription(job.cron);
+      return job;
+    });
+  }
+
+  /**
+   * Returns a promise that resolves to the quantity of repeatable getJobs.
+   */
+  async getRepeatableCount(): Promise<number> {
+    const repeat = await this.queue.repeat;
+    return repeat.getRepeatableCount();
+  }
+
+  // TODO: deleteRepeatable
+  async getJobTypes(): Promise<string[]> {
+    return getJobTypes(this.hostManager.name, this.queue);
+  }
+
+  async getWorkers(): Promise<QueueWorker[]> {
+    const INT_FIELDS = [
+      'id',
+      'age',
+      'idle',
+      'db',
+      'qbuf',
+      'qbuf-free',
+      'sub',
+      'obl',
+      'omem',
+    ];
+    const workers = await this.queue.getWorkers();
+    const now = systemClock.getTime();
+    const list = [];
+    workers.forEach((worker) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { fd, psub, multi, addr: address, ...res } = worker;
+      const [addr, port] = address.split(':');
+
+      const result: Record<string, any> = {
+        ...res,
+      };
+      result.addr = addr;
+      if (port) {
+        result.port = parseInt(port);
+      }
+      const id = parseInt(res.id);
+      if (!isNaN(id)) result.id = id;
+      INT_FIELDS.forEach((field) => {
+        result[field] = parseInt(res[field]);
+      });
+      result.started = now - result.age * 1000;
+      list.push(result as QueueWorker);
+    });
+
+    return list as QueueWorker[];
+  }
+
+  async getWorkerCount(): Promise<number> {
+    const workers = await this.getWorkers();
+    return workers.length;
+  }
+
+  async removeAllQueueData(): Promise<number> {
+    return deleteAllQueueData(this.queue);
+  }
+}
