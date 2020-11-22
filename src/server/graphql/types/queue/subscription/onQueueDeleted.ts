@@ -24,7 +24,7 @@ export const onQueueDeleted: FieldConfig = {
         description: 'The number of keys deleted',
       },
     },
-  }),
+  }).NonNull,
   args: {
     hostId: {
       type: 'String!',

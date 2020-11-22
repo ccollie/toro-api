@@ -19,7 +19,7 @@ export const jobLogAdd: FieldConfig = {
         makeRequired: true,
       },
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
     id: 'String!',

@@ -11,7 +11,7 @@ export const notificationChannelDelete: FieldConfig = {
       channelId: 'ID!',
       deleted: 'Boolean!',
     },
-  }),
+  }).NonNull,
   args: {
     hostId: 'String!',
     channelId: 'ID!',

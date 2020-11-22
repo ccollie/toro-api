@@ -9,7 +9,7 @@ import { WebhookChannel } from '../../../../notifications';
 
 export const webhookNotificationChannelAdd: FieldConfig = {
   description: 'Add a webhook notification channel',
-  type: WebhookNotificationChannelTC,
+  type: WebhookNotificationChannelTC.NonNull,
   args: {
     input: WebhookNotificationChannelInputTC,
   },

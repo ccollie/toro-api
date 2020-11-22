@@ -12,7 +12,7 @@ export const onQueueUnregistered: FieldConfig = {
       queueId: 'String!',
       prefix: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     hostId: {
       type: 'String!',

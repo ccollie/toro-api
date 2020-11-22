@@ -34,7 +34,7 @@ async function ensureQueueExists(
 
 export const queueRegister: FieldConfig = {
   description: 'Start tracking a queue',
-  type: QueueTC,
+  type: QueueTC.NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'RegisterQueueInput',

@@ -10,16 +10,16 @@ const JobUpdateInput = schemaComposer.createInputTC({
     queueId: 'String!',
     jobId: 'String!',
     data: 'JSONObject!',
-  }
+  },
 });
 
 export const jobUpdate: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'JobUpdatePayload',
     fields: {
-      job: JobTC,
+      job: JobTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobUpdateInput.NonNull,
   },

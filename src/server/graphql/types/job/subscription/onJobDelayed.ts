@@ -12,7 +12,7 @@ export const onJobDelayed: FieldConfig = {
       queueName: 'String!',
       delay: 'Int',
     },
-  }),
+  }).NonNull,
   args: {
     prefix: {
       type: 'String!',

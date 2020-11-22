@@ -11,7 +11,7 @@ const JobAddCronInput = schemaComposer.createInputTC({
     jobName: 'ID!',
     data: 'JSONObject',
     options: {
-      type: JobOptionsCronInputTC
+      type: JobOptionsCronInputTC,
     },
   },
 });
@@ -22,7 +22,7 @@ export const jobAddCron: FieldConfig = {
     fields: {
       job: JobTC,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobAddCronInput.NonNull,
   },

@@ -10,7 +10,7 @@ export const onJobRemoved: FieldConfig = {
       queue: QueueTC.NonNull,
       jobId: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
     jobId: 'String!',

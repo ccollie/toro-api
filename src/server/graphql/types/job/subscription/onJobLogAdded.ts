@@ -2,7 +2,7 @@ import {
   getQueueManager,
   getQueueHost,
   getQueueById,
-  createSubscriptionResolver
+  createSubscriptionResolver,
 } from '../../../helpers';
 import { debounce } from '../../../../lib';
 import { GraphQLFieldResolver } from 'graphql';
@@ -81,7 +81,7 @@ export const onJobLogAdded: FieldConfig = {
         description: 'The number of log lines after addition',
       },
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
     jobId: 'String!',

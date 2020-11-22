@@ -5,6 +5,7 @@ import {
   PeakSignalDirectionType,
   RuleOperatorType,
 } from '../../scalars';
+import has from 'lodash/has';
 
 const BaseFields = {
   errorThreshold: {
@@ -114,7 +115,7 @@ export const PeakConditionInputITC = PeakConditionTC.getITC().setTypeName(
 
 RuleConditionTC.addTypeResolver(
   ChangeConditionTC,
-  (value) => !!value.timeWindow && value.aggregationType,
+  (value) => has(value, 'timeWindow') && has(value, 'changeType'),
 );
 
 RuleConditionTC.addTypeResolver(PeakConditionTC, (value) => !!value.direction);

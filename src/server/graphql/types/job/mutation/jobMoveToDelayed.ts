@@ -16,7 +16,7 @@ export const jobMoveToDelayed: FieldConfig = {
         description: 'Estimated date/time of execution',
       },
     },
-  }),
+  }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'JobMoveToDelayedInput',
@@ -30,8 +30,8 @@ export const jobMoveToDelayed: FieldConfig = {
           description: 'The amount of time to delay execution (in ms)',
           defaultValue: 60000,
         },
-      }
-    })
+      },
+    }),
   },
   resolve: async (_, { input }) => {
     const { queueId, jobId, delay } = input;

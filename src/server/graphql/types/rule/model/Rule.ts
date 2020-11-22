@@ -55,10 +55,10 @@ export const RuleTC = schemaComposer.createObjectTC({
       description: 'Is this rule active or not',
     },
     metric: {
-      type: RuleMetricTC,
+      type: RuleMetricTC.NonNull,
     },
     condition: {
-      type: RuleConditionTC,
+      type: RuleConditionTC.NonNull,
       makeRequired: true,
     },
     message: {

@@ -8,7 +8,7 @@ export const queueRepeatableRemove: FieldConfig = {
     fields: {
       queue: QueueTC,
     },
-  }),
+  }).NonNull,
   args: {
     id: 'ID!',
     jobName: 'String',

@@ -27,7 +27,7 @@ const JobFilterUpdatePayload = schemaComposer.createObjectTC({
 
 export const queueJobFilterCreate: FieldConfig = {
   description: 'Update a job filter',
-  type: JobFilterUpdatePayload,
+  type: JobFilterUpdatePayload.NonNull,
   args: {
     input: JobFilterUpdateTC.NonNull,
   },

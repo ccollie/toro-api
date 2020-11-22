@@ -27,7 +27,7 @@ const JobUpdatedPayloadTC = schemaComposer.createObjectTC({
 });
 
 export const onJobUpdated: FieldConfig = {
-  type: JobUpdatedPayloadTC,
+  type: JobUpdatedPayloadTC.NonNull,
   args: {
     queueId: 'String!',
     jobId: 'String!',

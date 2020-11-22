@@ -1,5 +1,9 @@
-import { GraphQLDate, schemaComposer } from 'graphql-compose';
-import { GraphQLJobFilterQuery, JobStatusEnumType } from '../../scalars';
+import {
+  GraphQLDate,
+  GraphQLJSONObject,
+  schemaComposer,
+} from 'graphql-compose';
+import { JobStatusEnumType } from '../../scalars';
 
 export const JobFilterTC = schemaComposer.createObjectTC({
   name: 'JobFilter',
@@ -15,7 +19,7 @@ export const JobFilterTC = schemaComposer.createObjectTC({
       description: 'Optional job status to filter jobs by',
     },
     expression: {
-      type: GraphQLJobFilterQuery,
+      type: GraphQLJSONObject,
       makeRequired: true,
       description: 'A mongo compatible query filter',
     },

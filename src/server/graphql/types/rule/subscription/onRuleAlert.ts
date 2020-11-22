@@ -3,7 +3,7 @@ import { RuleAlert } from '../../../../../types';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { getRuleManager } from '../../../helpers';
-import { createSubscriptionResolver } from '../../../helpers/subscriptionManager';
+import { createSubscriptionResolver } from '../../../helpers';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_: unknown, { input }): string {
@@ -41,7 +41,7 @@ export const onRuleAlert: FieldConfig = {
     fields: {
       alert: RuleAlertTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'ID!',
     ruleIds: '[String!]',

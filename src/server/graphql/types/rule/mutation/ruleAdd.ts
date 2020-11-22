@@ -9,7 +9,7 @@ export const ruleAdd: FieldConfig = {
       rule: RuleTC.NonNull,
       queue: QueueTC.NonNull,
     },
-  }),
+  }).NonNull,
   description: 'Create a rule for a queue',
   args: {
     input: RuleAddInputTC.NonNull,

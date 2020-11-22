@@ -11,7 +11,7 @@ export const jobPromote: FieldConfig = {
       job: JobTC.NonNull,
       queue: QueueTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobLocatorInput.NonNull,
   },
@@ -21,7 +21,7 @@ export const jobPromote: FieldConfig = {
     const job = await processJobCommand('promote', queue, jobId);
     return {
       queue,
-      job
+      job,
     };
   },
 };

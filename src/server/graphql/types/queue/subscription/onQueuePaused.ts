@@ -8,7 +8,7 @@ export const onQueuePaused: FieldConfig = {
     fields: {
       queueId: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
   },

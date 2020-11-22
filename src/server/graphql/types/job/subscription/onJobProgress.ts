@@ -14,7 +14,7 @@ export const onJobProgress: FieldConfig = {
       jobId: 'String!',
       progress: JobProgress,
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
     jobId: 'String!',

@@ -8,7 +8,7 @@ import { SlackChannel } from '../../../../notifications';
 import { publishCreatedEvent } from './utils';
 
 export const slackNotificationChannelAdd: FieldConfig = {
-  type: SlackNotificationChannelTC,
+  type: SlackNotificationChannelTC.NonNull,
   args: {
     input: SlackNotificationChannelInputTC,
   },

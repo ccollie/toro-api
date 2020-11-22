@@ -44,7 +44,7 @@ export const onQueueStateChanged: FieldConfig = {
       queueName: 'String!',
       state: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
   },

@@ -11,7 +11,7 @@ export const jobMoveToCompleted: FieldConfig = {
       queue: QueueTC.NonNull,
       job: JobTC,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobLocatorInput.NonNull,
   },
