@@ -5,25 +5,27 @@ import { jobQueueIdFC } from './Job.queueId';
 import { jobLogs } from './Job.logs';
 import { JobProgress } from '../../scalars';
 
-export const JobOptionsInputTC = JobOptionsTC.getITC().setTypeName('JobOptionsInput');
+export const JobOptionsInputTC = JobOptionsTC.getITC().setTypeName(
+  'JobOptionsInput',
+);
 
 export const JobTC = schemaComposer.createObjectTC({
   name: 'Job',
   fields: {
     id: 'ID!',
-    name: 'String',
-    data: 'JSONObject',
+    name: 'String!',
+    data: 'JSONObject!',
     progress: JobProgress,
     delay: 'Int',
     timestamp: 'Date!',
-    attemptsMade: 'Int',
+    attemptsMade: 'Int!',
     failedReason: 'JSON',
-    stacktrace: '[String]',
+    stacktrace: '[String!]',
     returnvalue: 'JSON',
     finishedOn: 'Date',
     processedOn: 'Date',
     opts: {
-      type: JobOptionsTC,
+      type: JobOptionsTC.NonNull,
     },
     state: jobStateFC,
     queueId: jobQueueIdFC,
