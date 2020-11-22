@@ -19,7 +19,6 @@ import {
 import { getQueueMetaKey, getQueueStatsPattern } from '../lib';
 import IORedis from 'ioredis';
 import logger from '../lib/logger';
-import { loadScripts } from '../commands';
 
 const JOB_STATES = Object.values(JobStatusEnum);
 
@@ -87,7 +86,7 @@ export async function getExists(queue: Queue): Promise<Record<string, any>> {
   return client.hgetall(key);
 }
 
-export async function setQueueMeta(queue: Queue, meta: any): Promise<void> {
+export async function setQueueMeta(queue: Queue, meta: Record<string, any>): Promise<void> {
   const client = await queue.client;
   await client.hmset(getQueueMetaKey(queue), meta || {});
 }
@@ -228,67 +227,4 @@ export async function deleteAllQueueData(queue: Queue): Promise<number> {
   const pattern = `${prefix}:${queue.name}:*`;
   const client = await queue.client;
   return deleteByPattern(client, pattern);
-}
-
-export interface FilteredJobsResult {
-  nextCursor: number;
-  jobs: Job[];
-}
-
-export async function getJobsByFilter(
-  queue: Queue,
-  type: string,
-  filter: Record<string, any>,
-  cursor: number,
-  count = 100,
-): Promise<FilteredJobsResult> {
-  const client = await loadScripts(await queue.client);
-  type = type === 'waiting' ? 'wait' : type; // alias
-  const key = queue.toKey(type);
-  const prefix = queue.toKey('');
-  const criteria = JSON.stringify(filter);
-
-  // @ts-ignore
-  const response = await client.getJobsByFilter(
-    key,
-    prefix,
-    criteria,
-    cursor,
-    count,
-  );
-
-  const newCursor = response[0] === '0' ? null : Number(response[0]);
-  const jobs: Job[] = [];
-
-  let currentJob: Record<string, string> = {};
-  let jobId: string = null;
-
-  function addJobIfNeeded() {
-    if (!isEmpty(currentJob) && jobId) {
-      const job = Job.fromJSON(queue, currentJob, jobId);
-      const ts = currentJob['timestamp'];
-      job.timestamp = ts ? parseInt(ts) : Date.now();
-      jobs.push(job);
-    }
-  }
-
-  for (let i = 1; i < response.length; i += 2) {
-    const key = response[i];
-    const value = response[i + 1];
-
-    if (key === 'jobId') {
-      addJobIfNeeded();
-      jobId = value;
-      currentJob = {};
-    } else {
-      currentJob[key] = value;
-    }
-  }
-
-  addJobIfNeeded();
-
-  return {
-    nextCursor: newCursor,
-    jobs,
-  };
 }

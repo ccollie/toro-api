@@ -1,10 +1,10 @@
 import boom from '@hapi/boom';
 import fnv from 'fnv-plus';
 import { isEmpty } from 'lodash';
-import { getJobSchemaKey } from '../lib/keys';
+import { getJobSchemaKey } from '../lib';
 import { Queue, JobsOptions } from 'bullmq';
 import { ValidateFunction } from 'ajv';
-import { JobsOptionsSchema } from './jobOptionsSchema';
+import { JobsOptionsSchema } from './job-options-schema';
 import { logger, objToString, safeParse } from '../lib';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
