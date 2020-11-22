@@ -11,7 +11,7 @@ export const ruleDeactivate: FieldConfig = {
       },
       rule: RuleTC.NonNull,
     },
-  }),
+  }).NonNull,
   description: 'Removes all alerts associated with a rule',
   args: {
     input: schemaComposer.createInputTC({

@@ -10,7 +10,7 @@ const JobAddInput = schemaComposer.createInputTC({
     jobName: 'String!',
     data: 'JSONObject',
     options: {
-      type: JobOptionsInputTC
+      type: JobOptionsInputTC,
     },
   },
 });
@@ -21,7 +21,7 @@ export const jobAdd: FieldConfig = {
     input: JobAddInput,
   },
   resolve: async (_, { input }) => {
-    const { queueId, jobName, data, options } = input
+    const { queueId, jobName, data, options } = input;
     const queue = await getQueueById(queueId);
 
     return addJob(queue, jobName, data, options);

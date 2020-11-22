@@ -1,5 +1,5 @@
 import { keyBy } from 'lodash';
-import { createSubscriptionResolver } from '../../../helpers/subscriptionManager';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueManager } from '../../../helpers';
 import { QueueWorker } from '../../../../../types';
@@ -99,7 +99,7 @@ export const onQueueWorkersChanged: FieldConfig = {
       added: QueueWorkerTC.List.NonNull,
       removed: QueueWorkerTC.List.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
   },

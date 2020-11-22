@@ -16,7 +16,7 @@ export const ruleDelete: FieldConfig = {
       queueId: 'ID!',
       isDeleted: 'Boolean!',
     },
-  }),
+  }).NonNull,
   description: 'Delete a rule',
   args: {
     input: schemaComposer.createInputTC({

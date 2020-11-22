@@ -11,7 +11,7 @@ export const jobRetry: FieldConfig = {
       job: JobTC.NonNull,
       queue: QueueTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobLocatorInput.NonNull,
   },
@@ -21,7 +21,7 @@ export const jobRetry: FieldConfig = {
     const job = await processJobCommand('retry', queue, jobId);
     return {
       job,
-      queue
+      queue,
     };
   },
 };

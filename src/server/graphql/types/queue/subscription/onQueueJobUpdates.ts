@@ -2,7 +2,7 @@ import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { isEmpty, isNumber } from 'lodash';
 import { isFinishedStatus, diff, hashObject } from '../../../../lib';
-import { createSubscriptionResolver } from '../../../helpers/subscriptionManager';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../../helpers';
 import { JobStatusEnum } from '../../../imports';
@@ -230,7 +230,7 @@ export const onQueueJobUpdates: FieldConfig = {
       queueId: 'String!',
       changes: JobDeltaTC.List.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: QueueJobUpdatesFilter.NonNull,
   },

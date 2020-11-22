@@ -1,9 +1,5 @@
 import { Queue } from 'bullmq';
-import { get } from 'lodash';
-import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
-import { JobStatusEnum } from '../../../../../types';
-
 
 export const pendingJobCount: FieldConfig = {
   type: 'Int!',

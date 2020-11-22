@@ -3,7 +3,7 @@ import { getQueueManager } from '../../../helpers';
 import { logger } from '../../../../lib';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { createSubscriptionResolver } from '../../../helpers/subscriptionManager';
+import { createSubscriptionResolver } from '../../../helpers';
 
 const POLLING_INTERVAL = 2500; // todo: get from config
 
@@ -58,7 +58,7 @@ export const onQueueWorkersCountChanged: FieldConfig = {
       queueId: 'String!',
       workersCount: 'Int!',
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
   },

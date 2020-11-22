@@ -11,12 +11,12 @@ export const jobRemove: FieldConfig = {
       queue: QueueTC.NonNull,
       job: JobTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobLocatorInput.NonNull,
   },
   resolve: async (_, { input }) => {
-   const  { queueId, jobId } = input;
+    const { queueId, jobId } = input;
     const queue = await getQueueById(queueId);
     const job = await processJobCommand('remove', queue, jobId);
 

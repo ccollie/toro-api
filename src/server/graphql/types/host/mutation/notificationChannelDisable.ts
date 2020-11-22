@@ -8,7 +8,7 @@ export const notificationChannelDisable: FieldConfig = {
     fields: {
       updated: 'Boolean!',
     },
-  }),
+  }).NonNull,
   args: {
     hostId: 'String!',
     channelId: 'ID!',

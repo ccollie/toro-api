@@ -9,7 +9,7 @@ export const ruleAlertDelete: FieldConfig = {
       ruleId: 'ID!',
       rule: RuleTC,
     },
-  }),
+  }).NonNull,
   description: 'Delete a rule alert',
   args: {
     input: schemaComposer.createInputTC({

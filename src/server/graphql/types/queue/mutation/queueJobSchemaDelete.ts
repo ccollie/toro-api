@@ -12,7 +12,7 @@ export const queueJobSchemaDelete: FieldConfig = {
       jobName: 'String!',
       queue: QueueTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'QueueJobSchemaDeleteInput',

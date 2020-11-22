@@ -24,7 +24,7 @@ export const queueDelete: FieldConfig = {
         description: 'The number of keys deleted',
       },
     },
-  }),
+  }).NonNull,
   args: {
     id: 'ID!',
     options: schemaComposer.createInputTC({
@@ -39,7 +39,7 @@ export const queueDelete: FieldConfig = {
           defaultValue: true,
         },
       },
-    })
+    }),
   },
   resolve: async (
     _,

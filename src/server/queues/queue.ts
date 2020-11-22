@@ -86,7 +86,10 @@ export async function getExists(queue: Queue): Promise<Record<string, any>> {
   return client.hgetall(key);
 }
 
-export async function setQueueMeta(queue: Queue, meta: Record<string, any>): Promise<void> {
+export async function setQueueMeta(
+  queue: Queue,
+  meta: Record<string, any>,
+): Promise<void> {
   const client = await queue.client;
   await client.hmset(getQueueMetaKey(queue), meta || {});
 }

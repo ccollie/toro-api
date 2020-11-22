@@ -12,7 +12,7 @@ export const onNotificationChannelDeleted: FieldConfig = {
       channelName: 'String!',
       channelType: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     hostId: {
       type: 'String!',

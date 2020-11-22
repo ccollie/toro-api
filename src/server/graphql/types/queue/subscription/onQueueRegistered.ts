@@ -2,7 +2,7 @@ import { QUEUE_REGISTERED_PREFIX } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { getHostById } from '../../../helpers';
-import { pubsub } from '../../../helpers/subscriptionManager';
+import { pubsub } from '../../../helpers';
 
 export const onQueueRegistered: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -13,7 +13,7 @@ export const onQueueRegistered: FieldConfig = {
       queueName: 'String!',
       prefix: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     hostId: {
       type: 'String!',

@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { throttle, isEmpty } from 'lodash';
 import { diff } from '../../../../lib';
-import { createSubscriptionResolver } from '../../../helpers/subscriptionManager';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { JobStatusEnum, QueueEventsEnum } from '../../../imports';
 import { FieldConfig } from '../../index';
@@ -21,7 +21,6 @@ function getResolver(): GraphQLFieldResolver<any, any> {
   let channelName;
 
   async function sendCounts(): Promise<void> {
-    const queue = queueManager.queue;
     const queueId = queueManager.id;
     const counts = await queueManager.getJobCounts();
 
@@ -97,7 +96,7 @@ export const onQueueJobCountsChanged: FieldConfig = {
         },
       }),
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'String!',
   },

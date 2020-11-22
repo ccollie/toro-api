@@ -8,7 +8,7 @@ export const onQueueResumed: FieldConfig = {
     fields: {
       queueId: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'ID!',
   },

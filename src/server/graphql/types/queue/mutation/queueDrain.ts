@@ -11,7 +11,7 @@ export const queueDrain: FieldConfig = {
     fields: {
       queue: QueueTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     id: 'ID!',
     delayed: {

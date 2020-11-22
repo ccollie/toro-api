@@ -9,7 +9,7 @@ export const jobDiscard: FieldConfig = {
     fields: {
       job: JobTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobLocatorInput.NonNull,
   },
@@ -19,7 +19,7 @@ export const jobDiscard: FieldConfig = {
     await job.discard();
 
     return {
-      job
+      job,
     };
   },
 };

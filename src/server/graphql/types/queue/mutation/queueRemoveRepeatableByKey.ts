@@ -9,7 +9,7 @@ export const queueRepeatableRemoveByKey: FieldConfig = {
       key: 'String!',
       queue: QueueTC,
     },
-  }),
+  }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'RepeatableJobRemoveByKeyInput',

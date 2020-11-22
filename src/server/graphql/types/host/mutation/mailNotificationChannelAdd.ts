@@ -8,7 +8,7 @@ import { publishCreatedEvent } from './utils';
 import { MailChannel } from '../../../../notifications';
 
 export const mailNotificationChannelAdd: FieldConfig = {
-  type: MailNotificationChannelTC,
+  type: MailNotificationChannelTC.NonNull,
   args: {
     input: MailNotificationChannelInputTC,
   },

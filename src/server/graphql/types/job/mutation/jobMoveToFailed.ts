@@ -11,7 +11,7 @@ export const jobMoveToFailed: FieldConfig = {
       job: JobTC.NonNull,
       queue: QueueTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'JobMoveToFailedInput',

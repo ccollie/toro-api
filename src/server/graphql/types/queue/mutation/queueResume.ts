@@ -7,10 +7,10 @@ export const queueResume: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'QueueResumePayload',
     fields: {
-      queue: QueueTC,
+      queue: QueueTC.NonNull,
       isPaused: 'Boolean!',
     },
-  }),
+  }).NonNull,
   args: {
     id: 'ID!',
   },

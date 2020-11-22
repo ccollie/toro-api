@@ -11,7 +11,7 @@ const JobAddEveryInput = schemaComposer.createInputTC({
     jobName: 'ID!',
     data: 'JSONObject',
     options: {
-      type: JobOptionsEveryInputTC
+      type: JobOptionsEveryInputTC,
     },
   },
 });
@@ -22,7 +22,7 @@ export const jobAddEvery: FieldConfig = {
     fields: {
       job: JobTC.NonNull,
     },
-  }),
+  }).NonNull,
   args: {
     input: JobAddEveryInput,
   },

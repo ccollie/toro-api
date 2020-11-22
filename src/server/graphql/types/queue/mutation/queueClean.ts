@@ -24,7 +24,7 @@ export const queueClean: FieldConfig = {
         description: 'Returns a list of cleared job ids',
       },
     },
-  }),
+  }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'QueueCleanFilter',

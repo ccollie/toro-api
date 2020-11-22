@@ -1,11 +1,11 @@
 import { schemaComposer } from 'graphql-compose';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../index';
-import { publish } from '../../../helpers/subscriptionManager';
+import { publish } from '../../../helpers';
 import { Job, Queue } from 'bullmq';
 
 function getChannelName(queueId: string): string {
-  return `job-added-${queueId}`;
+  return `queue-job-added-${queueId}`;
 }
 
 function getQueueId(queue: Queue): string {
@@ -42,7 +42,7 @@ export const onJobAdded: FieldConfig = {
       queueId: 'String!',
       queueName: 'String!',
     },
-  }),
+  }).NonNull,
   args: {
     queueId: 'ID!',
   },

@@ -15,7 +15,7 @@ export const queuePause: FieldConfig = {
       queue: QueueTC.NonNull,
       isPaused: 'Boolean!',
     },
-  }),
+  }).NonNull,
   args: {
     id: 'ID!',
   },

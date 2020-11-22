@@ -17,7 +17,7 @@ export const JobCountsTC = schemaComposer.createObjectTC({
 });
 
 export const jobCounts: FieldConfig = {
-  type: JobCountsTC,
+  type: JobCountsTC.NonNull,
   async resolve(
     queue: Queue,
     args: unknown,

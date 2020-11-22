@@ -13,7 +13,7 @@ export const queueUnregister: FieldConfig = {
       queue: QueueTC.NonNull,
       isRemoved: 'Boolean!',
     },
-  }),
+  }).NonNull,
   args: {
     id: 'ID!',
   },
