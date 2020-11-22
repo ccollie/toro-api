@@ -29,6 +29,7 @@ const JobsByFilterIdInput = schemaComposer.createInputTC({
   },
 });
 
+// Todo: share this resul type with jobSearch
 export const jobsByFilterId: FieldConfig = {
   description: 'Fetch jobs based on a previously stored filter',
   type: schemaComposer.createObjectTC({
@@ -39,7 +40,7 @@ export const jobsByFilterId: FieldConfig = {
       },
       jobs: [JobTC.NonNull],
     },
-  }),
+  }).NonNull,
   args: {
     filter: JobsByFilterIdInput.NonNull,
   },

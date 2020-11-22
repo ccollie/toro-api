@@ -5,7 +5,7 @@ import { JobFilterTC } from '../../job/model/Job.filter';
 import { JobFilter } from '../../../../../types';
 
 export const queueJobFilters: FieldConfig = {
-  type: JobFilterTC.List.NonNull,
+  type: JobFilterTC.NonNull.List.NonNull,
   args: {
     ids: '[ID!]',
   },

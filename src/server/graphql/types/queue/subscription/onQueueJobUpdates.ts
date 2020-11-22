@@ -228,7 +228,7 @@ export const onQueueJobUpdates: FieldConfig = {
     name: 'OnQueueJobUpdatesPayload',
     fields: {
       queueId: 'String!',
-      changes: JobDeltaTC.List.NonNull,
+      changes: JobDeltaTC.NonNull.List.NonNull,
     },
   }).NonNull,
   args: {

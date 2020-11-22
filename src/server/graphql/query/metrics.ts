@@ -31,7 +31,7 @@ const MetricsInfoTC = schemaComposer.createObjectTC({
 });
 
 export const metrics: FieldConfig = {
-  type: MetricsInfoTC.List.NonNull,
+  type: MetricsInfoTC.NonNull.List.NonNull,
   description: 'Get the list of metrics available',
   resolve(): MetricsInfo[] {
     const keys = Array.from(metricsMap.keys());

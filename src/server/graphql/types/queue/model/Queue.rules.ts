@@ -6,7 +6,7 @@ import { RuleTC } from '../../rule/model/Rule';
 
 export const queueRules: FieldConfig = {
   args: {},
-  type: RuleTC.List.NonNull,
+  type: RuleTC.NonNull.List.NonNull,
   resolve(queue: Queue): Rule[] {
     const manager = getQueueManager(queue);
     return manager.rules;

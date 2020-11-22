@@ -96,8 +96,8 @@ export const onQueueWorkersChanged: FieldConfig = {
     name: 'OnQueueWorkersChangedPayload',
     fields: {
       queueId: 'String!',
-      added: QueueWorkerTC.List.NonNull,
-      removed: QueueWorkerTC.List.NonNull,
+      added: QueueWorkerTC.NonNull.List.NonNull,
+      removed: QueueWorkerTC.NonNull.List.NonNull,
     },
   }).NonNull,
   args: {
