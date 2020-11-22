@@ -18,7 +18,7 @@ export const HostTC = schemaComposer.createObjectTC({
       description: 'An optional description of the host',
     },
     queues: {
-      type: QueueTC.List.NonNull,
+      type: QueueTC.NonNull.List.NonNull,
       description: 'The queues registered for this host',
       resolve: (host: HostManager): Queue[] => {
         return host.getQueues();

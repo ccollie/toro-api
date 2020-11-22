@@ -46,7 +46,7 @@ export const jobSearch: FieldConfig = {
       },
       jobs: [JobTC.NonNull],
     },
-  }),
+  }).NonNull,
   args: {
     filter: JobSearchInput.NonNull,
   },

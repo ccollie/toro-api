@@ -6,7 +6,7 @@ export const queueRepeatableRemove: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'QueueRemoveRepeatablePayload',
     fields: {
-      queue: QueueTC,
+      queue: QueueTC.NonNull,
     },
   }).NonNull,
   args: {

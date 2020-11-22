@@ -4,7 +4,7 @@ import { Queue } from 'bullmq';
 import { JobSchemaTC } from '../../job/model/Job.schema';
 
 export const queueJobSchemas: FieldConfig = {
-  type: JobSchemaTC.List.NonNull,
+  type: JobSchemaTC.NonNull.List.NonNull,
   async resolve(
     queue: Queue,
     { jobNames }: { jobNames: string[] },

@@ -31,19 +31,19 @@ export const QueueWorkerTC = schemaComposer.createObjectTC({
       description: 'the current database number',
     },
     role: 'String!',
-    sub: 'Int',
-    multi: 'Int',
-    qbuf: 'Int',
-    qbufFree: 'Int',
-    obl: 'Int',
-    oll: 'Int',
-    omem: 'Int',
+    sub: 'Int!',
+    multi: 'Int!',
+    qbuf: 'Int!',
+    qbufFree: 'Int!',
+    obl: 'Int!',
+    oll: 'Int!',
+    omem: 'Int!',
   },
 });
 
 export const queueWorkers: FieldConfig = {
   args: {},
-  type: QueueWorkerTC.List.NonNull,
+  type: QueueWorkerTC.NonNull.List.NonNull,
   async resolve(queue: Queue, args: any): Promise<QueueWorker[]> {
     const manager = getQueueManager(queue);
     let workers = await manager.getWorkers();

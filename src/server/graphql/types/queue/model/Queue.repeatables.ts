@@ -41,7 +41,7 @@ export const repeatableJob = schemaComposer.createObjectTC({
 });
 
 export const repeatableJobs: FieldConfig = {
-  type: repeatableJob.List.NonNull,
+  type: repeatableJob.NonNull.List.NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'RepeatableJobsInput',

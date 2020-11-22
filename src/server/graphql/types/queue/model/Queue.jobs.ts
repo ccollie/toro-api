@@ -7,7 +7,7 @@ import { JobStatusEnum } from '../../../../../types';
 import { JobTC } from '../../job/model/Job';
 
 export const queueJobs: FieldConfig = {
-  type: JobTC.List.NonNull,
+  type: JobTC.NonNull.List.NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'QueueJobsInput',

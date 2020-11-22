@@ -18,7 +18,7 @@ const DiscoverQueuesPayloadTC = schemaComposer.createObjectTC({
 });
 
 export const discoverQueues: FieldConfig = {
-  type: DiscoverQueuesPayloadTC.List.NonNull,
+  type: DiscoverQueuesPayloadTC.NonNull.List.NonNull,
   description: 'Discover Bull queues on the given host',
   args: {
     hostId: {
