@@ -25,8 +25,8 @@ export type JobCountStates =
 export type JobCounts = Record<JobCountStates, number>;
 
 export interface AppJob {
-  id: string | undefined;
-  timestamp: number | null;
+  id: string;
+  timestamp: number;
   /** The timestamp at which a worker started processing the job */
   processedOn: number | null;
   /** The timestamp at which worker COMPLETED the job */
@@ -51,3 +51,11 @@ export interface JobCreationOptions {
   data: any;
   opts?: any;
 }
+
+export type JobFilter = {
+  id: string;
+  name: string;
+  status?: JobStatusEnum;
+  expression: Record<string, any>;
+  createdAt: number;
+};

@@ -3,7 +3,7 @@ import { GraphQLInt, GraphQLObjectType, GraphQLSchema, graphql } from 'graphql';
 
 // eslint-disable-next-line import/no-named-as-default
 import { GraphQLJSONSchema } from '../../../../src/server/graphql/types/scalars';
-import { JobsOptionsSchema } from '../../../../src/server/queues/jobOptionsSchema';
+import { JobsOptionsSchema } from '../../../../src/server/queues';
 
 const INVALID_SCHEMA = {
   type: 'object',

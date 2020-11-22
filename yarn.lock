@@ -8401,6 +8401,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mongodb-language-model@npm:^1.6.1":
+  version: 1.6.1
+  resolution: "mongodb-language-model@npm:1.6.1"
+  checksum: f376e1012eac5b831f694521b19cb1ae52d2e9ad8077ca772963ed49a9c768f857ddf131e38f41c47b28a0f9121cc7b6991570b7bfb6c311d56e005171119ad8
+  languageName: node
+  linkType: hard
+
 "morgan@npm:^1.10.0":
   version: 1.10.0
   resolution: "morgan@npm:1.10.0"
@@ -11392,6 +11399,7 @@ resolve@^1.18.1:
     lodash: ^4.17.20
     lru-cache: ^6.0.0
     mjml: 4.7.1
+    mongodb-language-model: ^1.6.1
     morgan: ^1.10.0
     ms: ^2.1.2
     nanoid: ^2.1.11

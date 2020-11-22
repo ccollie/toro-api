@@ -100,6 +100,7 @@
     "lodash": "^4.17.20",
     "lru-cache": "^6.0.0",
     "mjml": "4.7.1",
+    "mongodb-language-model": "^1.6.1",
     "morgan": "^1.10.0",
     "ms": "^2.1.2",
     "nanoid": "^2.1.11",

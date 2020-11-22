@@ -10,9 +10,10 @@ import { jobNames } from './Queue.jobNames';
 import { queueHostName } from './Queue.host';
 import { queueWorkerCount } from './Queue.worker-count';
 import { queueHostId } from './Queue.host-id';
-import { queueJobSchemasFC } from './Queue.jobSchemas';
+import { queueJobSchemas } from './Queue.jobSchemas';
 import { queueRules } from './Queue.rules';
 import { pendingJobCount } from './Queue.pendingJobCount';
+import { queueJobFilters } from './Queue.jobFilters';
 
 export const QueueTC = schemaComposer.createObjectTC({
   name: 'Queue',
@@ -30,7 +31,8 @@ export const QueueTC = schemaComposer.createObjectTC({
     isPaused,
     jobCounts,
     jobNames,
-    jobSchemas: queueJobSchemasFC,
+    jobFilters: queueJobFilters,
+    jobSchemas: queueJobSchemas,
     pendingJobCount,
     repeatableJobs,
     repeatableJobCount,

@@ -93,10 +93,14 @@ export function getJobSchemaKey(queue: Queue): string {
   return getKey(null, queue, null, 'job-schemas');
 }
 
+export function getJobFiltersKey(queue: Queue): string {
+  return getKey(null, queue, null, 'job-filters');
+}
+
 const granularitySegment = '(:w+)?';
 const regexCache = new Map();
 
-export function getRegex(spec): RegExp {
+export function getRegex(spec: string): RegExp {
   let regex = regexCache.get(spec);
   if (!regex) {
     regex = new RegExp(spec, 'ig');

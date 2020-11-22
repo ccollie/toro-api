@@ -1,11 +1,10 @@
 import { Queue } from 'bullmq';
-import { SortOrderEnum, OrderEnumType } from '../../scalars/SortOrderEnum';
-import { JobTC } from '../../job/model/Job';
+import { SortOrderEnum, OrderEnumType, JobStatusEnumType } from '../../scalars';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnumType } from '../../scalars';
 import { JobStatusEnum } from '../../../../../types';
+import { JobTC } from '../../job/model/Job';
 
 export const queueJobs: FieldConfig = {
   type: JobTC.List.NonNull,

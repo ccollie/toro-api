@@ -418,6 +418,9 @@ end
 -- Returns a predicate function that matches
 -- *all* of the given predicate functions.
 local function join_AND(predicates)
+  if (#predicates == 1) then
+    return predicates[1]
+  end
   return function(s)
     for _, func in ipairs(predicates) do
       if not func(s) then
@@ -431,6 +434,9 @@ end
 -- Returns a predicate function that matches
 -- *any* of the given predicate functions.
 local function join_OR(predicates)
+  if (#predicates == 1) then
+    return predicates[1]
+  end
   return function(s)
     for _, func in ipairs(predicates) do
       if func(s) then return true end
@@ -943,15 +949,8 @@ local function parseSingleParamMathFn(name, expr, fn)
   end
 end
 
-
 --------------- Conditional Operators --------------------------------------------------------------
----
--- Evaluates an expression and returns the first expression if it evaluates to a non-null value.
--- Otherwise, $ifNull returns the second expression's value.
---
--- @param expr
--- @returns {function}
---
+
 ExprOperators['$ifNull'] = function(expr)
   assert(isArray(expr) and #expr == 2,
           '$ifNull expression must resolve to array(2)')
@@ -962,12 +961,6 @@ ExprOperators['$ifNull'] = function(expr)
   end
 end
 
---
--- A ternary operator that evaluates one expression,
--- and depending on the result returns the value of one following expressions.
---
--- @param expr
---
 ExprOperators['$cond'] = function(expr)
   local ifExpr, thenExpr, elseExpr
   local errorMsg = '$cond: invalid arguments'
@@ -1527,6 +1520,8 @@ ExprOperators['$arrayElemAt'] = function(expr)
     assert(isNumber(arr[1]), 'Second operand to $arrayElemAt must resolve to an integer')
     local idx = arr[2]
     arr = arr[1]
+    -- translate from 0 to 1 bases
+    if idx > 0 then idx = idx + 1 end
     local len = #arr
     if (idx < 0 and math.abs(idx) <= len) then
       return arr[idx + len]
@@ -1634,8 +1629,12 @@ local function search(key, keyPrefix, criteria, cursor, count)
   local match = keyPrefix .. '*'
   local fullScan = false
 
-  local keyType = redis.call("TYPE", key)
-  keyType = keyType["ok"]
+  local keyType = ''
+
+  if (key ~= nil and #key > 0) then
+    redis.call("TYPE", key)
+    keyType = keyType["ok"]
+  end
 
   if (keyType == 'zset') then
     scanResult = redis.call('zscan', key, cursor, "COUNT", count, 'MATCH', match)
