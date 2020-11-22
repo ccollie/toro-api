@@ -29,7 +29,7 @@ export const queueJobSchemaSet: FieldConfig = {
     return {
       jobName,
       schema: _schema.schema,
-      defaultOpts: _schema.defaultOpts
-    }
+      defaultOpts: _schema.defaultOpts,
+    };
   },
 };

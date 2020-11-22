@@ -3,8 +3,7 @@ import { getJobSchemas } from '../../../../queues';
 import { Queue } from 'bullmq';
 import { JobSchemaTC } from '../../job/model/Job.schema';
 
-
-export const queueJobSchemasFC: FieldConfig = {
+export const queueJobSchemas: FieldConfig = {
   type: JobSchemaTC.List.NonNull,
   async resolve(
     queue: Queue,
@@ -16,7 +15,7 @@ export const queueJobSchemasFC: FieldConfig = {
       return {
         jobName,
         schema: schema.schema,
-        defaultOpts: schema.defaultOpts
+        defaultOpts: schema.defaultOpts,
       };
     });
   },
