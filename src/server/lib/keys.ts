@@ -53,8 +53,12 @@ export function getStatsKey(
   return queue.toKey(fragment);
 }
 
-export function getQueueStatsPattern(queue: Queue): string {
-  return getStatsKey(queue, null, '*');
+export function getQueueStatsPattern(
+  queue: Queue,
+  jobName: string = null,
+  granularity?: StatsGranularity,
+): string {
+  return getStatsKey(queue, jobName || '*', '*', granularity);
 }
 
 export function getRuleKey(queue: Queue, id: string = null): string {

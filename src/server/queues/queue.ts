@@ -15,6 +15,7 @@ import {
   DiscoveredQueue,
   JobCreationOptions,
   JobStatusEnum,
+  StatsGranularity,
 } from '../../types';
 import { getQueueMetaKey, getQueueStatsPattern } from '../lib';
 import IORedis from 'ioredis';
@@ -219,9 +220,13 @@ export async function createBulkJobs(
   return queue.addBulk(jobs);
 }
 
-export async function deleteQueueStats(queue: Queue): Promise<number> {
+export async function deleteQueueStats(
+  queue: Queue,
+  jobName: string = null,
+  granularity?: StatsGranularity,
+): Promise<number> {
   const client = await queue.client;
-  const pattern = getQueueStatsPattern(queue);
+  const pattern = getQueueStatsPattern(queue, jobName, granularity);
   return deleteByPattern(client, pattern);
 }
 

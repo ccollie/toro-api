@@ -198,7 +198,7 @@ export function endOf(date: DateLike, unit: string): Date {
   return toDate(date);
 }
 
-export function parseDate(date, defaultVal: Date): Date {
+export function parseDate(date, defaultVal: DateLike): Date {
   if (isNumber(date)) {
     date = parseInt(date);
     return toDate(date);
@@ -211,7 +211,7 @@ export function parseDate(date, defaultVal: Date): Date {
     result = parse(date, DATE_FORMATS[i], null);
     if (isValidDate(result)) return result;
   }
-  return defaultVal;
+  return toDate(defaultVal);
 }
 
 export function parseTimestamp(date, defaultVal: number = undefined): number {
