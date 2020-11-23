@@ -10,7 +10,7 @@ export const jobOptionsValidate: FieldConfig = {
       isValid: 'Boolean!',
       errors: '[String!]!',
     },
-  }),
+  }).NonNull,
   description: 'Validate BullMQ job options structure',
   args: {
     input: JobOptionsInputTC.NonNull,

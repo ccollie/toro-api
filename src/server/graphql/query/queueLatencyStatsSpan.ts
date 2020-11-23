@@ -1,7 +1,4 @@
-import {
-  normalizeGranularity,
-  getStatsClient,
-} from '../helpers';
+import { normalizeGranularity, getStatsClient } from '../helpers';
 import { FieldConfig } from '../types';
 import { QueueStatsSpanInput, QueueStatsSpanPayload } from '../types/stats';
 

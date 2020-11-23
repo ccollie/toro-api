@@ -6,7 +6,7 @@ import boom from '@hapi/boom';
 import { fieldsList } from 'graphql-fields-list';
 
 export const job: FieldConfig = {
-  type: JobTC,
+  type: JobTC.NonNull,
   args: {
     queueId: 'ID!',
     id: 'ID!',

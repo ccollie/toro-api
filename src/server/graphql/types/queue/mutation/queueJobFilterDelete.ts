@@ -20,7 +20,7 @@ export const queueJobFilterDelete: FieldConfig = {
         queueId: 'ID!',
         filterId: 'ID!',
       },
-    }),
+    }).NonNull,
   },
   async resolve(_, { input }) {
     const { queueId, filterId } = input;

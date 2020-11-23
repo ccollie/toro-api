@@ -28,7 +28,7 @@ const AppInfoTC = schemaComposer.createObjectTC({
 });
 
 export const appInfo: FieldConfig = {
-  type: AppInfoTC,
+  type: AppInfoTC.NonNull,
   description: 'Get general app info',
   resolve(_): AppInfo {
     return Supervisor.getAppInfo();

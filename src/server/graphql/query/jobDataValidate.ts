@@ -15,7 +15,7 @@ export const jobDataValidate: FieldConfig = {
       queueId: 'ID!',
       jobName: 'String!',
     },
-  }),
+  }).NonNull,
   description:
     'Validate job data against a schema previoudly defined on a queue',
   args: {
@@ -27,7 +27,7 @@ export const jobDataValidate: FieldConfig = {
         data: 'JSONObject',
         opts: JobOptionsInputTC,
       },
-    }),
+    }).NonNull,
   },
   async resolve(_, { input }) {
     const { queueId, jobName, data = {}, opts = {} } = input;

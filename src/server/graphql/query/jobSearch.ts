@@ -44,7 +44,7 @@ export const jobSearch: FieldConfig = {
       nextCursor: {
         type: 'Int!',
       },
-      jobs: [JobTC.NonNull],
+      jobs: JobTC.NonNull.List.NonNull,
     },
   }).NonNull,
   args: {

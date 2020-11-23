@@ -25,7 +25,7 @@ export const ruleAlertsFC: FieldConfig = {
           defaultValue: SortOrderEnum.ASC,
         },
       },
-    }),
+    }).NonNull,
   },
   async resolve(parent: Rule, { input }): Promise<RuleAlert[]> {
     const { start = 0, end, sortOrder = 'ASC' } = input;
