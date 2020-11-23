@@ -30,7 +30,7 @@ export const queueStatsDelete: FieldConfig = {
             'Optional stats granularity. If omitted, the entire range of data is deleted',
         },
       },
-    }),
+    }).NonNull,
   },
   async resolve(_, { input }) {
     const { queueId, jobName } = input;

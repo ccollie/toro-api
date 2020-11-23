@@ -51,7 +51,7 @@ export const queueClean: FieldConfig = {
             'If not provided will clean all matching jobs.',
         },
       },
-    }),
+    }).NonNull,
   },
   resolve: async (_, { id, filter: { grace, status, limit } }) => {
     const queue = await getQueueById(id);

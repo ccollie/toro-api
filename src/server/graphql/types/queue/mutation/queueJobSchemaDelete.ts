@@ -20,7 +20,7 @@ export const queueJobSchemaDelete: FieldConfig = {
         queueId: 'ID!',
         jobName: 'String!',
       },
-    }),
+    }).NonNull,
   },
   async resolve(_, { input }) {
     const { queueId, jobName } = input;

@@ -3,6 +3,20 @@ import { schemaComposer } from 'graphql-compose';
 import { getQueueHost } from '../../../helpers';
 import { QUEUE_DELETED_PREFIX } from '../../../helpers';
 
+export const QueueDeleteOptions = schemaComposer.createInputTC({
+  name: 'QueueDeleteOptions',
+  fields: {
+    checkExistence: {
+      type: 'Boolean',
+      defaultValue: true,
+    },
+    checkActivity: {
+      type: 'Boolean',
+      defaultValue: true,
+    },
+  },
+});
+
 export const queueDelete: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'QueueDeletePayload',
@@ -27,19 +41,7 @@ export const queueDelete: FieldConfig = {
   }).NonNull,
   args: {
     id: 'ID!',
-    options: schemaComposer.createInputTC({
-      name: 'QueueDeleteOptions',
-      fields: {
-        checkExistence: {
-          type: 'Boolean',
-          defaultValue: true,
-        },
-        checkActivity: {
-          type: 'Boolean',
-          defaultValue: true,
-        },
-      },
-    }),
+    options: QueueDeleteOptions,
   },
   resolve: async (
     _,
