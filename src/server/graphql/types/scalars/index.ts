@@ -14,5 +14,6 @@ export * from './jobRemoveOption';
 export * from './jsonSchema';
 export * from './MetricType';
 export * from './MetricCategory';
+export * from './StatsGranularityEnum';
 export * from './JobFilterQuery';
 export { GraphQLDateTime } from 'graphql-iso-date';

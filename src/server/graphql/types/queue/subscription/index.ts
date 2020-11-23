@@ -8,3 +8,5 @@ export { onQueueJobUpdates } from './onQueueJobUpdates';
 export { onQueueRegistered } from './onQueueRegistered';
 export { onQueueUnregistered } from './onQueueUnregistered';
 export { onQueueWorkersCountChanged } from './onQueueWorkersCountChanged';
+export { onQueueWaitTimeStatsUpdated } from './onQueueWaitTimeStatsUpdated';
+export { onQueueLatencyStatsUpdated } from './onQueueLatencyStatsUpdated';

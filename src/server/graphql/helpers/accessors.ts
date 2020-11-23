@@ -66,7 +66,6 @@ export function getQueueHost(queueId: string): HostManager {
   return manager?.hostManager;
 }
 
-
 export function getAsyncIterator(queueId: string, eventName: string) {
   const queueEvents = getQueueListener(queueId);
   return createAsyncIterator(queueEvents, {
