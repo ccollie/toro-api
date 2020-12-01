@@ -14,6 +14,16 @@ const FILES = [
   { path: './getJobNames-8.lua', numberOfKeys: 8, name: 'getJobNames' },
   { path: './getJobsByFilter-1.lua', numberOfKeys: 1, name: 'getJobsByFilter' },
   { path: './timeseries-lex.lua', numberOfKeys: 1, name: 'timeseries' },
+  {
+    path: './getAvgJobMemoryUsage-1.lua',
+    numberOfKeys: 1,
+    name: 'getAvgJobMemoryUsage',
+  },
+  {
+    path: './getDurationAverage-1.lua',
+    numberOfKeys: 1,
+    name: 'getDurationAverage',
+  },
 ];
 
 let scripts;

@@ -1,14 +1,6 @@
 {
-  "percentiles": [50, 75, 90, 95, 99, 99.5],
   "url": "http://localhost:4000",
   "title": "El-Toro Sample Dashboard",
-  "snapshotInterval": 20000,
-  "aggregateInterval": 60000,
-  "flushInterval": 1000,
-  "defaultSlidingWindow": {
-    "duration": "2 mins",
-    "interval": "1 sec"
-  },
   "server": {
     "host": "http://localhost",
     "port": 4000

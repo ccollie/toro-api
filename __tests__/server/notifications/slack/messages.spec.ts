@@ -9,7 +9,7 @@ import { getMessage } from '../../../../src/server/notifications/slack/messages'
 import { createNotificationContext } from '../helpers';
 import { random } from 'lodash';
 import ms from 'ms';
-import nanoid = require('nanoid');
+import nanoid from 'nanoid';
 
 const ONE_HOUR = ms('1 hour');
 const ONE_MINUTE = ms('1 minute');

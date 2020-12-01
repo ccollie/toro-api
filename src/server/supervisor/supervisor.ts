@@ -5,22 +5,13 @@ import prexit from 'prexit';
 import { isString, isNil } from 'lodash';
 import { Queue } from 'bullmq';
 import { QueueManager, QueueListener } from '../queues';
-import { getKeyRegex, logger } from '../lib';
-import { formatSnapshot } from '../stats/utils';
-import { registerDeserializer } from '../redis';
+import { logger } from '../lib';
 import config from '../config';
 import { getHosts, HostManager } from '../hosts';
 import { AppInfo } from '../../types';
 import { registerHelpers } from '../lib/hbs';
-
-// setup stream deserializers
-function initStreams(): void {
-  const types = ['latency', 'wait'];
-  types.forEach((type) => {
-    const regExp = getKeyRegex(type);
-    registerDeserializer(regExp, formatSnapshot);
-  });
-}
+import ms from 'ms';
+import { parseDuration } from '../lib/datetime';
 
 let _isInit = false;
 
@@ -32,12 +23,16 @@ export type QueueDeleteOptions = {
   checkActivity?: boolean;
 };
 
+const DEFAULT_SWEEP_INTERVAL = ms('15 mins');
+
 /**
  * A single class which manages all hosts and queues registered
  * with the system
  */
 export class Supervisor {
   private static instance: Supervisor;
+  private sweepTimer: NodeJS.Timer;
+  private sweepInterval: number;
 
   private queueManagersById: Map<string, QueueManager>;
   private hostManagerByQueue: Map<string, HostManager> = new Map<
@@ -54,6 +49,10 @@ export class Supervisor {
   }
 
   async destroy(): Promise<void> {
+    if (this.sweepTimer) {
+      clearInterval(this.sweepTimer);
+      this.sweepTimer = null;
+    }
     const dtors = Array.from(hosts.values()).map((x) => () => x.destroy());
     await pSettle(dtors);
     _isInit = false;
@@ -64,9 +63,27 @@ export class Supervisor {
   public static getInstance(): Supervisor {
     if (!Supervisor.instance) {
       Supervisor.instance = new Supervisor();
+      _isInit = true;
     }
-    _isInit = true;
     return Supervisor.instance;
+  }
+
+  private initSweepTimer(): void {
+    this.sweepInterval = parseDuration(
+      process.env.SWEEP_INTERVAL,
+      DEFAULT_SWEEP_INTERVAL,
+    );
+    this.sweepTimer = setInterval(() => this.sweep(), this.sweepInterval);
+  }
+
+  /**
+   * Run a garbage collection pass over queues
+   * @private
+   */
+  private sweep(): void {
+    hosts.forEach((host) => {
+      host.sweep();
+    });
   }
 
   private async init(): Promise<void> {
@@ -85,6 +102,7 @@ export class Supervisor {
       concurrency: 4,
     });
 
+    this.initSweepTimer();
     _isInit = true;
   }
 
@@ -284,7 +302,6 @@ export class Supervisor {
 
 registerHelpers();
 
-initStreams();
 // todo: do in app
 prexit(() => {
   if (_isInit) {

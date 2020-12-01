@@ -4,6 +4,7 @@ import { JobOptionsTC } from './Job.opts';
 import { jobQueueIdFC } from './Job.queueId';
 import { jobLogs } from './Job.logs';
 import { JobProgress } from '../../scalars';
+import { Job } from 'bullmq';
 
 export const JobOptionsInputTC = JobOptionsTC.getITC().setTypeName(
   'JobOptionsInput',
@@ -16,11 +17,21 @@ export const JobTC = schemaComposer.createObjectTC({
     name: 'String!',
     data: 'JSONObject!',
     progress: JobProgress,
-    delay: 'Int',
+    delay: {
+      type: 'Int!',
+      resolve(parent: Job): number {
+        return parent.opts.delay || 0;
+      },
+    },
     timestamp: 'Date!',
     attemptsMade: 'Int!',
     failedReason: 'JSON',
-    stacktrace: '[String!]',
+    stacktrace: {
+      type: '[String!]!',
+      resolve(parent: Job): string[] {
+        return parent.stacktrace || [];
+      },
+    },
     returnvalue: 'JSON',
     finishedOn: 'Date',
     processedOn: 'Date',

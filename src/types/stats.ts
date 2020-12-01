@@ -1,4 +1,4 @@
-export type StatsMetricType = 'latency' | 'wait';
+export type StatsMetricType = 'latency' | 'wait' | 'counts';
 
 export enum StatsGranularity {
   Minute = 'minute',
@@ -10,7 +10,7 @@ export enum StatsGranularity {
 
 export type StatsRangeOptions = {
   type?: string;
-  metric: string;
+  metric: StatsMetricType;
   jobName?: string;
   granularity?: StatsGranularity;
 };
@@ -40,9 +40,9 @@ export interface HistogramSnapshot {
   min: number;
   max: number;
   mean: number;
+  median: number;
   stddev: number;
   count: number;
-  p75: number;
   p90: number;
   p95: number;
   p99: number;

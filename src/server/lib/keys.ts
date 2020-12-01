@@ -1,12 +1,14 @@
 import config from '../config';
 import { firstChar } from './utils';
 import { Queue } from 'bullmq';
-import { StatsGranularity } from '../../types';
+import { StatsGranularity, StatsMetricType } from '../../types';
 
 const statsPrefix = config.get('statsPrefix') || 'toro';
 
-export function getHostKey(host: string, tag: string = null): string {
-  return `${statsPrefix}:host:${host}` + (tag ? `:${tag}` : '');
+export function getHostKey(host: string, ...tags: string[]): string {
+  return (
+    `${statsPrefix}:host:${host}` + (tags.length ? ':' + tags.join(':') : '')
+  );
 }
 
 export function getLockKey(host: string): string {
@@ -38,13 +40,12 @@ export function getKey(
 
 export function getStatsKey(
   queue: Queue,
-  jobType: string,
-  tag: string,
+  jobName: string,
+  metric: StatsMetricType,
   granularity?: StatsGranularity,
 ): string {
-  const parts = ['stats'];
-  if (jobType) parts.push(jobType);
-  parts.push(tag);
+  const parts = ['stats', metric];
+  if (jobName) parts.push(jobName);
   const suffix = getGranularitySuffix(granularity);
   if (suffix) {
     parts.push(`1${suffix}`);
@@ -53,12 +54,31 @@ export function getStatsKey(
   return queue.toKey(fragment);
 }
 
+export function getHostStatsKey(
+  host: string,
+  jobName: string,
+  metric: StatsMetricType,
+  unit: StatsGranularity,
+): string {
+  const parts = ['stats', metric];
+  if (jobName) parts.push(jobName);
+  const suffix = getGranularitySuffix(unit);
+  if (suffix) {
+    parts.push(`1${suffix}`);
+  }
+  return getHostKey(host, ...parts);
+}
+
 export function getQueueStatsPattern(
   queue: Queue,
   jobName: string = null,
   granularity?: StatsGranularity,
 ): string {
-  return getStatsKey(queue, jobName || '*', '*', granularity);
+  const pattern = getStatsKey(queue, jobName, 'wait', granularity);
+  const parts = pattern.split(':');
+  const pos = parts.length - (!!granularity ? 2 : 1);
+  parts[pos] = '*';
+  return parts.join(':');
 }
 
 export function getRuleKey(queue: Queue, id: string = null): string {
@@ -83,38 +103,12 @@ export function getQueueBusKey(queue: Queue): string {
   return getKey(null, queue, null, 'bus');
 }
 
-export function getHostChannelKey(
-  host: string,
-  id: string,
-  tag?: string,
-): string {
-  let key = getHostKey(host, `channels:${id}`);
-  if (tag) key = `${key}:${tag}`;
-  return key;
-}
-
 export function getJobSchemaKey(queue: Queue): string {
   return getKey(null, queue, null, 'job-schemas');
 }
 
 export function getJobFiltersKey(queue: Queue): string {
   return getKey(null, queue, null, 'job-filters');
-}
-
-const granularitySegment = '(:w+)?';
-const regexCache = new Map();
-
-export function getRegex(spec: string): RegExp {
-  let regex = regexCache.get(spec);
-  if (!regex) {
-    regex = new RegExp(spec, 'ig');
-  }
-  return regex;
-}
-
-export function getKeyRegex(type: string): RegExp {
-  const fragment = `:stats:${type}${granularitySegment}`;
-  return getRegex(fragment);
 }
 
 export function getQueueMetaKey(queue: Queue): string {

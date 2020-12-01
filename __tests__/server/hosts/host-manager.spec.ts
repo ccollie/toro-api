@@ -2,7 +2,7 @@ import { HostConfig } from '../../../src/types';
 import { getUniqueId } from '../../../src/server/lib';
 import { HostManager } from '../../../src/server/hosts';
 import { clearDb, DEFAULT_CLIENT_OPTIONS } from '../utils';
-import nanoid = require('nanoid');
+import nanoid from 'nanoid';
 
 describe('HostManager', () => {
 

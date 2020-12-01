@@ -1,5 +1,4 @@
 import querystring from 'querystring';
-import { isNumber } from '../../lib/utils';
 import {
   trim,
   snakeCase,
@@ -8,16 +7,6 @@ import {
   toLower,
   startCase,
 } from 'lodash';
-
-export const toFixed = (number, digits?: number): string => {
-  if (!isNumber(number)) {
-    number = 0;
-  }
-  if (!isNumber(digits)) {
-    digits = 0;
-  }
-  return Number(number).toFixed(digits);
-};
 
 export const escapeURI = (str: string | undefined): string => {
   if (isString(str)) {

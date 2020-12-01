@@ -8,7 +8,7 @@ import boom from '@hapi/boom';
 export const queueJobSchema: FieldConfig = {
   type: JobSchemaTC,
   description:
-    'Get a JSONSchema document previously set for a jobname on a queue',
+    'Get a JSONSchema document previously set for a job name on a queue',
   args: {
     input: schemaComposer.createInputTC({
       name: 'QueueJobSchemaInput',

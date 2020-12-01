@@ -67,7 +67,7 @@ export async function disconnect(client: IORedis.Redis): Promise<void> {
       _reject = reject;
     });
 
-    client.disconnect();
+    await client.disconnect();
 
     try {
       await disconnecting;
@@ -94,9 +94,9 @@ export function scanKeys(
     };
 
     stream.on('data', async (keys: string[]) => {
-      stream.pause();
+      await stream.pause();
       if (keys.length === 0) {
-        stream.resume();
+        await stream.resume();
         return;
       }
       try {
@@ -104,7 +104,7 @@ export function scanKeys(
         if (res === false) {
           close();
         } else {
-          stream.resume();
+          await stream.resume();
         }
       } catch (err) {
         err.pattern = options.match || '*';

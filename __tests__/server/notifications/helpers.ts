@@ -1,6 +1,6 @@
 import { NotificationContext } from '../../../src/types';
 import config, { getValue } from '../../../src/server/config';
-import nanoid = require('nanoid');
+import nanoid from 'nanoid';
 
 export function createNotificationContext(): NotificationContext {
   const env = config.get('env');

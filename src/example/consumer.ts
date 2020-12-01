@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'example';
 import { Worker, QueueScheduler } from 'bullmq';
 import { tacos, widgets, encoding, backup } from './processors';
 

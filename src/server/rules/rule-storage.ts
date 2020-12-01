@@ -7,13 +7,12 @@ import {
   isObject,
   isString,
 } from 'lodash';
-import { DateLike, parseTimestamp } from '../lib/datetime';
+import { parseTimestamp } from '../lib/datetime';
 import {
   checkMultiErrors,
   convertTsForStream,
   EventBus,
   parseMessageResponse,
-  parseObjectResponse,
 } from '../redis';
 import { parseBool } from '../lib';
 import { getAlertsKey, getRuleKey } from '../lib/keys';
@@ -28,6 +27,7 @@ import {
 } from '../../types';
 import IORedis from 'ioredis';
 import { getUniqueId, systemClock } from '../lib';
+import { PossibleTimestamp, TimeSeries } from '../commands/timeseries';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -216,8 +216,8 @@ export class RuleStorage {
     const client = await this.getClient();
     const pipeline = client.pipeline();
 
-    (pipeline as any).timeseries(alertsKey, 'size');
-    const responses = await pipeline
+    const responses = await TimeSeries.multi
+      .size(pipeline, alertsKey)
       .del(ruleKey)
       .del(alertsKey)
       .zrem(this.rulesIndexKey, ruleId)
@@ -304,15 +304,17 @@ export class RuleStorage {
       alert.severity = data.severity = severity;
     }
 
-    let id = data.id || data.start;
+    const client = await this.getClient();
+    const alertsKey = this.getAlertsKey(rule);
 
+    let id = data.id || data.start;
     let serialized = JSON.stringify(alert);
     if (!data.id) {
-      id = await this._alertsStorageMethod(rule, 'add', id, serialized);
+      id = await TimeSeries.add(client, alertsKey, id, serialized);
     } else {
-      serialized = await this._alertsStorageMethod(
-        rule,
-        'updateJson',
+      serialized = await TimeSeries.updateJson(
+        client,
+        alertsKey,
         data.id,
         serialized,
       );
@@ -356,7 +358,9 @@ export class RuleStorage {
    */
   async getAlert(rule: Rule | string, id: string): Promise<RuleAlert> {
     const ruleId = getRuleId(rule);
-    const data = await this._alertsStorageMethod(rule, 'get', id);
+    const key = this.getAlertsKey(rule);
+    const client = await this.getClient();
+    const data = await TimeSeries.get(client, key, id);
     const result = deserializeAlert(data);
     if (result !== null) {
       result.ruleId = ruleId;
@@ -365,7 +369,9 @@ export class RuleStorage {
   }
 
   async deleteAlert(rule: Rule | string, id: string): Promise<boolean> {
-    const deleted = await this._alertsStorageMethod(rule, 'del', id);
+    const client = await this.getClient();
+    const alertsKey = this.getAlertsKey(rule);
+    const deleted = await TimeSeries.del(client, alertsKey, id);
     if (!!deleted) {
       const ruleId = getRuleId(rule);
       await this.bus.emit(RuleEventsEnum.ALERT_DELETED, {
@@ -386,24 +392,24 @@ export class RuleStorage {
    */
   async getRuleAlerts(
     rule: Rule | string,
-    start: DateLike | string = '-',
-    end: DateLike | string = '+',
+    start: PossibleTimestamp = '-',
+    end: PossibleTimestamp = '+',
     asc = true,
   ): Promise<RuleAlert[]> {
-    const method = asc ? 'range' : 'revrange';
-    const reply = await this._alertsStorageMethod(rule, method, start, end);
+    const client = await this.getClient();
+    const key = this.getAlertsKey(rule);
+    const method = asc ? TimeSeries.getRange : TimeSeries.getRevRange;
+    const reply = await method(client, key, start, end);
 
-    if (!Array.isArray(reply)) {
-      return [];
-    }
-    return reply.map((message) => {
-      const data = parseObjectResponse(message[1]);
-      return deserializeAlert(data);
+    return reply.map(({ value }) => {
+      return deserializeAlert(value);
     });
   }
 
   async getRuleAlertCount(rule: Rule | string): Promise<number> {
-    return this._alertsStorageMethod(rule, 'size');
+    const client = await this.getClient();
+    const key = this.getAlertsKey(rule);
+    return TimeSeries.size(client, key);
   }
 
   /**
@@ -421,7 +427,7 @@ export class RuleStorage {
     limit?: number,
   ): Promise<RuleAlert[]> {
     function sortFn(first, second): number {
-      const comp = first.ts - second.ts;
+      const comp = first.start - second.start;
       if (comp === 0) {
         const a = first.ruleId;
         const b = second.ruleId;
@@ -445,12 +451,10 @@ export class RuleStorage {
       end = temp;
     }
 
-    const method = asc ? 'range' : 'revrange';
-    const args = limit && limit > 0 ? ['limit', 0, limit] : [];
-
+    const fn = asc ? TimeSeries.multi.getRange : TimeSeries.multi.getRevRange;
     ruleIds.forEach((ruleId) => {
       const key = this.getAlertsKey(ruleId);
-      (pipeline as any).timeseries(key, method, start, end, ...args);
+      fn(pipeline, key, start, end, 0, limit);
     });
 
     const reply = await pipeline.exec();
@@ -481,7 +485,7 @@ export class RuleStorage {
     const client = await this.getClient();
     const pipeline = client.pipeline();
     ruleIds.forEach((ruleId) => {
-      (pipeline as any).timeseries(this.getAlertsKey(ruleId), 'size');
+      TimeSeries.multi.size(pipeline, this.getAlertsKey(ruleId));
     });
     const reply = await pipeline.exec().then(checkMultiErrors);
 
@@ -507,7 +511,9 @@ export class RuleStorage {
    */
   async pruneAlerts(rule: Rule | string, retention: number): Promise<number> {
     // TODO: raise event
-    return this._alertsStorageMethod(rule, 'truncate', retention);
+    const client = await this.getClient();
+    const alertsKey = this.getAlertsKey(rule);
+    return TimeSeries.truncate(client, alertsKey, retention);
   }
 
   async getRuleIds(): Promise<string[]> {
@@ -609,13 +615,15 @@ function deserializeRule(data?: any): Rule {
 }
 
 function serializeAlert(data: RuleAlert): Record<string, any> {
-  return {
-    payload: serializeObject(data.payload),
-    severity: data.severity || Severity.WARNING,
-    state: serializeObject(data.state),
-    violations: data.violations || 0,
-    ...data,
-  };
+  const { state, payload, ...res } = data;
+  if (!isEmpty(payload)) {
+    res['payload'] = serializeObject(payload);
+  }
+  if (!isEmpty(state)) {
+    res['payload'] = serializeObject(state);
+  }
+  res.violations = res.violations || 0;
+  return res;
 }
 
 function deserializeAlert(data: any): RuleAlert {
@@ -626,7 +634,6 @@ function deserializeAlert(data: any): RuleAlert {
 
   const alertData: Record<string, any> = { ...data };
   alertData.end = parseTimestamp(data['end']);
-  alertData.severity = data['severity'] || Severity.WARNING;
   alertData.start = parseTimestamp(data['start']);
   alertData.state = deserializeObject(data['state']);
   alertData.violations = data['violations'] || 0;

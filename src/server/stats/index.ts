@@ -1,4 +1,5 @@
-export * from './stats-aggregator';
+import QueueStats from './queue-stats';
 export * from './stats-client';
 export * from './stats-listener';
-export * from './status';
+export * from './utils';
+export { QueueStats };

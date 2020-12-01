@@ -8,7 +8,6 @@ export enum JobStatusEnum {
   DELAYED = 'delayed',
   PAUSED = 'paused',
   STALLED = 'stalled',
-  UNKNOWN = 'unknown',
 }
 
 export type JobFinishedState = JobStatusEnum.COMPLETED | JobStatusEnum.FAILED;

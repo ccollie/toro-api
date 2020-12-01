@@ -3,16 +3,16 @@ import { getLatencies } from '../latencies';
 import { Job } from 'bullmq';
 
 const options = {
-  min: ms('25 secs'),
-  max: ms('3 mins'),
-  mean: ms('1.5 mins'),
+  min: ms('10 secs'),
+  max: ms('1.5 mins'),
+  mean: ms('25 secs'),
 };
 
 const latencies = getLatencies(options);
 
 export const process = async (job: Job): Promise<any> => {
   const { data } = job;
-  const { jobId, queue } = data;
+  const { queue } = data;
   const { protein, salsa, orderNumber } = data;
   const cookTime = Math.floor(latencies.next().value);
 
@@ -32,7 +32,7 @@ export const process = async (job: Job): Promise<any> => {
     const maybeThrow = (): void => {
       const dice = Math.random();
       if (dice < 0.2) {
-        return reject(new Error(`taco ${jobId} burned`));
+        return reject(new Error(`taco #${job.id} burned`));
       }
     };
 

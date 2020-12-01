@@ -6,7 +6,7 @@ import nanoid from 'nanoid';
 import { Queue } from 'bullmq';
 import { createRuleOptions } from './utils';
 import * as IORedis from 'ioredis';
-import { random } from 'lodash';
+import { random, sortBy } from 'lodash';
 import pAll from 'p-all';
 
 describe('RuleStorage', () => {
@@ -195,10 +195,9 @@ describe('RuleStorage', () => {
         value: 100,
         threshold: 200,
         name: rule.name,
-        description: rule.description,
         start: Date.now(),
         state: {},
-        severity: undefined,
+        severity: data.severity,
         violations: 0,
         ...data
       };
@@ -304,14 +303,8 @@ describe('RuleStorage', () => {
 
     describe('.getRuleAlerts', () => {
 
-      function idSortFunc(a: string, b: string): number {
-        const a1 = parseInt(a, 10);
-        const b1 = parseInt(b, 10);
-        return a1 - b1;
-      }
-
       function sortList(items: RuleAlert[]): RuleAlert[] {
-        return items.sort((a, b) => idSortFunc(a.id, b.id));
+        return sortBy(items, 'id');
       }
 
       async function addAlerts(rule: Rule, count?: number): Promise<RuleAlert[]> {

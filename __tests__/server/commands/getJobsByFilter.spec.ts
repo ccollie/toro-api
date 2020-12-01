@@ -1,7 +1,7 @@
 import { clearDb, createClient } from '../utils';
 import { createQueue } from '../factories';
 import { Job, Queue } from 'bullmq';
-import { getJobsByFilter } from '../../../src/server/queues';
+import { Scripts } from '../../../src/server/commands/scripts';
 
 
 const Person = {
@@ -66,7 +66,7 @@ describe('getJobsByFilter', () => {
       return {name: 'default', data: item}
     })
     await queue.addBulk(bulkData)
-    const {jobs} = await getJobsByFilter(queue, 'waiting', criteria, 0, 100);
+    const {jobs} = await Scripts.getJobsByFilter(queue, 'waiting', criteria, 0, 100);
     return jobs.map((job) => job.data);
   }
 
@@ -100,7 +100,7 @@ describe('getJobsByFilter', () => {
   }
 
   async function attempt(criteria, expectMatch = true): Promise<void> {
-    const {jobs} = await getJobsByFilter(queue, 'waiting', criteria, 0);
+    const {jobs} = await Scripts.getJobsByFilter(queue, 'waiting', criteria, 0);
     expect(!!jobs.length).toEqual(expectMatch);
   }
 
@@ -491,7 +491,7 @@ describe('getJobsByFilter', () => {
     });
 
     async function check(criteria, expectMatch = true): Promise<void> {
-      const {jobs} = await getJobsByFilter(queue, 'waiting', criteria, 0);
+      const {jobs} = await Scripts.getJobsByFilter(queue, 'waiting', criteria, 0);
       expect(!!jobs.length).toEqual(expectMatch);
     }
 

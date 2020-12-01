@@ -1,11 +1,10 @@
-import config from '../config';
 import { random } from 'lodash';
 import { UniqueID } from 'nodejs-snowflake';
 
 const Epoch = +new Date(2020, 1, 1);
 
 function getMachineID(): number {
-  const id = config.get('machineId');
+  const id = process.env.MACHINE_ID;
   const machineId: number = parseInt(id, 10);
   return isNaN(machineId) ? random(0, 4096) : machineId;
 }

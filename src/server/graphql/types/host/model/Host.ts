@@ -2,8 +2,15 @@ import { schemaComposer } from 'graphql-compose';
 import { QueueTC } from '../../queue/model/Queue';
 import { Queue } from 'bullmq';
 import { HostManager } from '../../../../hosts';
-import { hostRedisFC } from './Host.redis';
-import { hostChannelsFC } from './Host.channels';
+import { hostRedisFC as redis } from './Host.redis';
+import { hostChannelsFC as channels } from './Host.channels';
+import {
+  histogram,
+  percentileDistribution,
+  stats,
+  statsLatest as lastStatsSnapshot,
+  statsDateRange,
+} from '../../stats';
 
 export const HostTC = schemaComposer.createObjectTC({
   name: 'QueueHost',
@@ -24,7 +31,12 @@ export const HostTC = schemaComposer.createObjectTC({
         return host.getQueues();
       },
     },
-    channels: hostChannelsFC,
-    redis: hostRedisFC,
+    channels,
+    histogram,
+    lastStatsSnapshot,
+    percentileDistribution,
+    redis,
+    stats,
+    statsDateRange,
   },
 });

@@ -1,143 +1,290 @@
 import { Queue } from 'bullmq';
-import { EventBus, WriteCache } from '../redis';
-import { DateLike, parseTimestamp } from '../lib/datetime';
-import { StatsClientBase } from './statsClientBase';
-import { getQueueBusKey } from '../lib/keys';
+import { DateLike } from '../lib/datetime';
+import { getHostStatsKey, getQueueMetaKey, getStatsKey } from '../lib';
 import {
   StatisticalSnapshot,
   StatsGranularity,
   StatsMetricType,
+  Timespan,
 } from '@src/types';
-import { isNil } from 'lodash';
-import { systemClock } from '../lib';
-import IORedis from 'ioredis';
+import IORedis, { Pipeline } from 'ioredis';
+import { TimeSeries } from '../commands/timeseries';
+import Emittery from 'emittery';
+import logger from '../lib/logger';
+import toDate from 'date-fns/toDate';
 import { QueueManager } from '../queues';
-
-/* eslint @typescript-eslint/no-use-before-define: 0 */
-
-export type StatsWriteOptions = {
-  jobType: string;
-  ts: number | Date;
-  type: StatsMetricType;
-  unit?: StatsGranularity;
-};
+import { aggregateSnapshots, getRetention } from '../stats/utils';
+import { WriteCache } from '../redis';
 
 /**
- * A helper class responsible for managing collected queue stats in redis
+ * Base class for manipulating and querying collected queue stats in redis
  */
-export class StatsClient extends StatsClientBase {
-  readonly queue: Queue;
-  /**
-   * The queue event bus
-   */
-  private readonly bus: EventBus;
-  private readonly writer: WriteCache;
+export class StatsClient extends Emittery {
+  private readonly queueManager;
+  private readonly _client: IORedis.Redis;
 
   constructor(queueManager: QueueManager) {
-    super(queueManager.queue);
-    this.queue = queueManager.queue;
-    const { writer, bus } = queueManager.hostManager;
-    this.writer = writer;
-    this.bus = bus;
+    super();
+    this.queueManager = queueManager;
+    this._client = queueManager.hostManager.client;
+    this.onError = this.onError.bind(this);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  destroy(): any {}
+
+  get queue(): Queue {
+    return this.queueManager.queue;
+  }
+
+  protected get writer(): WriteCache {
+    return this.queueManager.hostManager.writer;
   }
 
   get client(): IORedis.Redis {
-    return this.writer.client;
+    return this._client;
   }
 
-  get hasLock(): boolean {
-    return this.writer.hasLock;
+  protected _emit(name: string, data?: any): void {
+    this.emit(name, data).catch(this.onError);
   }
 
-  get busKey(): string {
-    return getQueueBusKey(this.queue);
+  async getRange<T = any>(
+    key: string,
+    start: DateLike,
+    end: DateLike,
+    offset?: number,
+    count?: number,
+  ): Promise<T[]> {
+    const results = await TimeSeries.getRange<T>(
+      this.client,
+      key,
+      start,
+      end,
+      offset,
+      count,
+    );
+    return results.map((x) => x.value);
   }
 
-  async cleanup(
+  async getSpan(
+    jobName: string,
+    metric: StatsMetricType,
+    unit?: StatsGranularity,
+  ): Promise<Timespan | null> {
+    const key = this.getKey(jobName, metric, unit);
+    return TimeSeries.getTimeSpan(this.client, key);
+  }
+
+  async getHostSpan(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+  ): Promise<Timespan | null> {
+    const key = this.getHostKey(jobName, metric, unit);
+    return TimeSeries.getTimeSpan(this.client, key);
+  }
+
+  async getLast(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+  ): Promise<StatisticalSnapshot> {
+    const key = this.getKey(jobName, metric, unit);
+    return TimeSeries.get<StatisticalSnapshot>(this.client, key, '+');
+  }
+
+  getStats(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<StatisticalSnapshot[]> {
+    const key = this.getKey(jobName, metric, unit);
+    return this.getRange<StatisticalSnapshot>(key, start, end);
+  }
+
+  async aggregateStats(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<StatisticalSnapshot> {
+    const items = await this.getStats(jobName, metric, unit, start, end);
+    return aggregateSnapshots(items);
+  }
+
+  getHostStats(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<StatisticalSnapshot[]> {
+    const key = this.getHostKey(jobName, metric, unit);
+    return this.getRange<StatisticalSnapshot>(key, start, end);
+  }
+
+  async aggregateHostStats(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<StatisticalSnapshot> {
+    const items = await this.getHostStats(jobName, metric, unit, start, end);
+    return aggregateSnapshots(items);
+  }
+
+  async getHostLast(
+    jobName: string,
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+  ): Promise<StatisticalSnapshot> {
+    const key = this.getHostKey(jobName, metric, unit);
+    return TimeSeries.get<StatisticalSnapshot>(this.client, key, '+');
+  }
+
+  async getMeta(): Promise<Record<string, string>> {
+    const key = getQueueMetaKey(this.queue);
+    const client = await this.queue.client;
+    return client.hgetall(key);
+  }
+
+  private async updateMeta(
+    pipeline: Pipeline,
+    data: Record<string, any>,
+  ): Promise<void> {
+    const key = getQueueMetaKey(this.queue);
+    await pipeline.hmset(key, data);
+  }
+
+  async setMeta(data: Record<string, any>): Promise<void> {
+    const key = getQueueMetaKey(this.queue);
+    const client = await this.queue.client;
+    await client.hmset(key, data);
+  }
+
+  protected updateWriteCursor(
+    pipeline: Pipeline,
     jobType: string,
     type: StatsMetricType,
     unit: StatsGranularity,
-    retention: number,
-  ): Promise<void> {
-    const srcKey = this.getKey(jobType, type, unit);
-    const multi = this.writer.multi;
-
-    await this._callStats(multi, 'cleanup', srcKey, retention);
+    value: DateLike,
+  ): Pipeline {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    const key = getCursorKey(jobType, type, unit);
+    const update = {
+      [key]: toDate(value).getTime(),
+    };
+    return this.updateMeta(pipeline, update);
   }
 
-  getLatency(
-    jobName: string,
-    unit: StatsGranularity,
-    start: DateLike,
-    end: DateLike,
-  ): Promise<StatisticalSnapshot[]> {
-    const key = this.getKey(jobName, 'latency', unit);
-    return this.getRange<StatisticalSnapshot>(key, start, end);
-  }
-
-  getWaitTimes(
-    jobName: string,
-    unit: StatsGranularity,
-    start: DateLike,
-    end: DateLike,
-  ): Promise<StatisticalSnapshot[]> {
-    const key = this.getKey(jobName, 'wait', unit);
-    return this.getRange<StatisticalSnapshot>(key, start, end);
-  }
-
-  private onStatsUpdate(
+  async setLastWriteCursor(
+    jobType: string,
     type: StatsMetricType,
-    jobName: string,
-    granularity: StatsGranularity,
-    since?: DateLike,
-  ): AsyncIterator<StatisticalSnapshot> {
-    function filter(_, data: any): boolean {
-      let good =
-        data &&
-        data.value &&
-        (!data.jobName || data.jobName === jobName) &&
-        (!data.unit || data.unit === granularity);
+    unit: StatsGranularity,
+    value: DateLike,
+  ): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    const key = getCursorKey(jobType, type, unit);
+    const update = {
+      [key]: toDate(value).getTime(),
+    };
 
-      if (good && !isNil(since)) {
-        const ts = parseTimestamp(since, systemClock.getTime());
-        good = data.ts && data.ts > ts;
-      }
-      return good;
+    return this.setMeta(update);
+  }
+
+  async getLastWriteCursor(
+    jobType: string,
+    type: string,
+    unit?: string,
+  ): Promise<number | null> {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    const key = getCursorKey(jobType, type, unit);
+    let meta = await this.getMeta();
+    meta = meta || {};
+    // todo: look at
+    const value = meta[key];
+    if (!value) {
+      return 0;
     }
 
-    function transform(_, data: any): StatisticalSnapshot {
-      return JSON.parse(data.value) as StatisticalSnapshot;
+    return parseInt(value, 10);
+  }
+
+  /**
+   * Clean a range of items
+   * @param isHost are we cleaning up host level resources ?
+   * @param jobName
+   * @param type
+   * @param unit
+   * @param retention  retention time in ms. Items with score < (latest - retention) are removed
+   * @return the number of items removed
+   */
+  cleanup(
+    isHost: boolean,
+    jobName: string,
+    type: StatsMetricType,
+    unit: StatsGranularity,
+    retention?: number,
+  ): void {
+    retention = retention || getRetention(unit);
+    const key = isHost
+      ? this.getHostKey(jobName, type, unit)
+      : this.getKey(jobName, type, unit);
+
+    const multi = this.writer.multi;
+    const event = (isHost ? 'host.' : '') + 'stats.cleanup';
+    const data = {
+      key,
+      type,
+      unit,
+      retention,
+    };
+    if (!isHost) {
+      data['queueId'] = this.queueManager.id;
     }
-
-    const eventName = `stats.${type}.updated`;
-    return this.bus.createAsyncIterator<any, StatisticalSnapshot>({
-      eventNames: [eventName],
-      filter,
-      transform,
-    });
+    TimeSeries.multi.truncate(multi, key, retention);
+    this.queueManager.bus.pipelineEmit(multi, event, data);
   }
 
-  latencyStatsUpdateIterator(
+  async removeRange(
+    key: string,
+    start: DateLike,
+    end: DateLike,
+    offset?: number,
+    count?: number,
+  ): Promise<number> {
+    return TimeSeries.removeRange(this.client, key, start, end, offset, count);
+  }
+
+  getKey(
     jobName: string,
-    granularity: StatsGranularity,
-  ): AsyncIterator<StatisticalSnapshot> {
-    return this.onStatsUpdate(
-      'latency',
-      jobName,
-      granularity,
-      systemClock.getTime(),
-    );
+    metric: StatsMetricType,
+    unit?: StatsGranularity,
+  ): string {
+    return getStatsKey(this.queue, jobName, metric, unit);
   }
 
-  waitTimeStatsUpdateIterator(
+  getHostKey(
     jobName: string,
-    granularity: StatsGranularity,
-  ): AsyncIterator<StatisticalSnapshot> {
-    return this.onStatsUpdate(
-      'wait',
-      jobName,
-      granularity,
-      systemClock.getTime(),
-    );
+    metric: StatsMetricType,
+    unit: StatsGranularity,
+  ): string {
+    const host = this.queueManager.hostManager.name;
+    return getHostStatsKey(host, jobName, metric, unit);
   }
+
+  onError(err: Error) {
+    logger.warn(err);
+  }
+}
+
+function getCursorKey(jobType: string, type: string, unit: string): string {
+  jobType = jobType || '~QUEUE';
+  const key = [jobType, type, unit].filter((value) => !!value).join('-');
+  return `cursor:${key}`;
 }

@@ -1,7 +1,8 @@
 import { FieldConfig, JobTC } from '../types';
 import { getQueueById } from '../helpers';
-import { FilteredJobsResult, getJobsByFilterId } from '../../queues';
 import { schemaComposer } from 'graphql-compose';
+import { FilteredJobsResult } from '../../commands/scripts';
+import { getJobsByFilterId } from '../../queues';
 
 const JobsByFilterIdInput = schemaComposer.createInputTC({
   name: 'JobsByFilterIdInput',

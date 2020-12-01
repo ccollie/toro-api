@@ -7,7 +7,7 @@ import {
 } from 'hdr-histogram-js';
 import { HistogramSnapshot, StatisticalSnapshotOptions } from '@src/types';
 
-const defaultPercentiles = [75, 90, 95, 99, 99.5];
+const defaultPercentiles = [90, 95, 99, 99.5];
 
 const defaultStatisticalSnapshotOptions: StatisticalSnapshotOptions = {
   includePercentiles: true,
@@ -21,7 +21,7 @@ const emptyHistogramSnapshot: HistogramSnapshot = {
   min: 0,
   max: 0,
   stddev: 0,
-  p75: 0,
+  median: 0,
   p90: 0,
   p95: 0,
   p99: 0,
@@ -66,20 +66,23 @@ export function getHistogramSnapshot(
 
   const count = hist.totalCount;
   const mean = Math.ceil(hist.mean * 100) / 100;
+  const median = Math.ceil(hist.getValueAtPercentile(0.5) * 100) / 100;
 
   const result: HistogramSnapshot = {
     ...emptyHistogramSnapshot,
     count,
     mean,
+    median,
     stddev: Math.ceil(hist.stdDeviation * 100) / 100,
     min: getMin(hist),
     max: getMax(hist),
+    data: encodeHistogram(hist),
   };
 
   if (opts.includePercentiles && opts.percentiles && opts.percentiles.length) {
-    opts.percentiles.forEach((perc) => {
-      const key = `p${perc}`.replace('.', '');
-      result[key] = hist.getValueAtPercentile(perc);
+    opts.percentiles.forEach((percent) => {
+      const key = `p${percent}`.replace('.', '');
+      result[key] = hist.getValueAtPercentile(percent);
     });
   }
 
@@ -116,7 +119,6 @@ export function aggregateHistograms(
   hist = hist || createHistogram();
 
   const snapshot = getHistogramSnapshot(hist);
-  snapshot.data = encodeHistogram(hist);
 
   hist.destroy();
   return snapshot;

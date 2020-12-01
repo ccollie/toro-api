@@ -57,7 +57,7 @@ export interface SlackChannelConfig extends ChannelConfig {
   token?: string;
   /** The slack channel, if using the chat.postMessage method of posting */
   channel?: string;
-  /**  Slack webhook URL */
+  /** Slack webhook URL */
   webhook?: string;
 }
 

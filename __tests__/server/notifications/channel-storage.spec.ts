@@ -9,7 +9,7 @@ import {
 import { EventBus } from '../../../src/server/redis';
 import { clearDb, DEFAULT_CLIENT_OPTIONS, delay } from '../utils';
 import IORedis from 'ioredis';
-import nanoid = require('nanoid');
+import nanoid from 'nanoid';
 import {
   ChannelConfig,
   HostConfig,

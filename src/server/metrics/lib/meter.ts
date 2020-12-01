@@ -132,7 +132,10 @@ export class BaseMeter {
     return (this._count / this.elapsedTime) * this._rateUnit;
   }
 
-  currentRate(): number {
+  /**
+   * the rate of the meter since the meter was started
+   */
+  get currentRate(): number {
     const currentSum = this._currentSum;
     const duration = this.getTime() - this._lastToJSON;
     const currentRate = (currentSum / duration) * this._rateUnit;
@@ -148,7 +151,7 @@ export class BaseMeter {
     return {
       meanRate: this.meanRate,
       count: this.count,
-      currentRate: this.currentRate(),
+      currentRate: this.currentRate,
     };
   }
 
@@ -211,6 +214,15 @@ export class SimpleMeter extends BaseMeter {
       rate: this.rate,
     };
   }
+}
+
+export interface MeterSummary {
+  count: number;
+  meanRate: number;
+  currentRate: number;
+  avg1Minute: number;
+  avg5Minute: number;
+  avg15Minute: number;
 }
 
 const DefaultMeterProperties: MeterProperties = {
@@ -295,12 +307,25 @@ export class Meter extends BaseMeter {
     return this._m1Rate.rate(this.rateUnit);
   }
 
+  getSummary(): MeterSummary {
+    return {
+      count: this.count,
+      currentRate: this.currentRate,
+      meanRate: this.meanRate,
+      avg1Minute: this.get1MinuteRate(),
+      avg5Minute: this.get5MinuteRate(),
+      avg15Minute: this.get15MinuteRate(),
+    };
+  }
+
   toJSON(): Record<string, any> {
     return {
       ...super.toJSON(),
-      '1MinuteRate': this.get1MinuteRate(),
-      '5MinuteRate': this.get5MinuteRate(),
-      '15MinuteRate': this.get15MinuteRate(),
+      count: this.count,
+      currentRate: this.currentRate,
+      avg1Minute: this.get1MinuteRate(),
+      avg5Minute: this.get5MinuteRate(),
+      avg15Minute: this.get15MinuteRate(),
     };
   }
 }

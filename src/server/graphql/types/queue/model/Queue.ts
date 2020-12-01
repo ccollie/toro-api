@@ -1,19 +1,32 @@
 import { Queue } from 'bullmq';
 import { jobCounts } from './Queue.jobCounts';
-import { queueWorkers } from './Queue.workers';
+import { queueWorkers as workers } from './Queue.workers';
 import { schemaComposer } from 'graphql-compose';
 import { repeatableJobCount, repeatableJobs } from './Queue.repeatables';
-import { queueJobs } from './Queue.jobs';
+import { queueJobs as jobs } from './Queue.jobs';
 import { queueId } from './Queue.id';
 import { isPaused } from './Queue.isPaused';
 import { jobNames } from './Queue.jobNames';
-import { queueHostName } from './Queue.host';
-import { queueWorkerCount } from './Queue.worker-count';
-import { queueHostId } from './Queue.host-id';
-import { queueJobSchemas } from './Queue.jobSchemas';
-import { queueRules } from './Queue.rules';
+import { jobDurationAvg } from './Queue.jobDurationAvg';
+import { jobMemoryAvg } from './Queue.jobMemoryAvg';
+import { queueHostName as host } from './Queue.host';
+import { queueWorkerCount as workerCount } from './Queue.worker-count';
+import { queueHostId as hostId } from './Queue.host-id';
+import { queueJobSchemas as jobSchemas } from './Queue.jobSchemas';
+import { queueRules as rules } from './Queue.rules';
 import { pendingJobCount } from './Queue.pendingJobCount';
-import { queueJobFilters } from './Queue.jobFilters';
+import { queueJobFilters as jobFilters } from './Queue.jobFilters';
+import { getRatesResolver } from './rates';
+import {
+  histogram,
+  percentileDistribution,
+  stats,
+  statsLatest as lastStatsSnapshot,
+  statsDateRange,
+} from '../../stats';
+
+const throughput = getRatesResolver('completed');
+const errorRate = getRatesResolver('error');
 
 export const QueueTC = schemaComposer.createObjectTC({
   name: 'Queue',
@@ -26,20 +39,28 @@ export const QueueTC = schemaComposer.createObjectTC({
       },
     },
     name: 'String!',
-    host: queueHostName,
-    hostId: queueHostId,
+    histogram,
+    host,
+    hostId,
     isPaused,
     jobCounts,
     jobNames,
-    jobFilters: queueJobFilters,
-    jobSchemas: queueJobSchemas,
+    jobFilters,
+    jobSchemas,
+    jobDurationAvg,
+    jobMemoryAvg,
+    lastStatsSnapshot,
     pendingJobCount,
+    percentileDistribution,
     repeatableJobs,
     repeatableJobCount,
-    jobs: queueJobs,
-    // jobsMemoryUsageAvg: createJobsMemoryUsageAvgFC(sc),
-    rules: queueRules,
-    workers: queueWorkers,
-    workerCount: queueWorkerCount,
+    jobs,
+    rules,
+    stats,
+    statsDateRange,
+    throughput,
+    errorRate,
+    workers,
+    workerCount,
   },
 });

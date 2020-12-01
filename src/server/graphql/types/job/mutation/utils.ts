@@ -86,16 +86,3 @@ export function createBulkMutationHandler(
     },
   });
 }
-
-export function createMutationHandler(cmd) {
-  return async (parent, { input }): Promise<any> => {
-    const { queueId, jobId } = input;
-    const queue = getQueueById(queueId);
-
-    const job = await processJobCommand(cmd, queue, jobId);
-    if (job) {
-      // job.queueId = queueId;
-    }
-    return { job, queue };
-  };
-}

@@ -2,6 +2,7 @@ import { Queue } from 'bullmq';
 import Emittery from 'emittery';
 import IORedis from 'ioredis';
 import pSettle from 'p-settle';
+import pAll from 'p-all';
 import { sortBy, uniqBy } from 'lodash';
 import { QueueManager, discoverQueues } from '../queues';
 import {
@@ -33,9 +34,6 @@ import { Channel } from '../notifications';
 import { NotificationManager } from '../notifications';
 import { getHostUri } from '../lib';
 
-const WRITER = Symbol('writer');
-const WRITE_LOCK = Symbol('write lock');
-
 const queueConfigKey = (prefix: string, name: string): string => {
   return `${prefix}:${name}`;
 };
@@ -49,6 +47,9 @@ export class HostManager {
   public readonly notifications: NotificationManager;
   public readonly streamAggregator: RedisStreamAggregator;
   public readonly bus: EventBus;
+  public readonly lock: LockManager;
+  public readonly writer: WriteCache;
+
   private readonly connectionOpts: ConnectionOptions;
   private readonly defaultRedisClient: IORedis.Redis;
   private readonly queueManagerMap: Map<string, QueueManager>;
@@ -72,9 +73,9 @@ export class HostManager {
     this.notifications = new NotificationManager(this);
 
     const lockKey = getLockKey(opts.name);
-    const lock = (this[WRITE_LOCK] = new LockManager(client, { key: lockKey }));
+    this.lock = new LockManager(client, { key: lockKey });
 
-    this[WRITER] = new WriteCache(client, lock, getValue('flushInterval'));
+    this.writer = new WriteCache(client, this.lock);
 
     new Emittery().bindMethods(this);
 
@@ -82,7 +83,7 @@ export class HostManager {
   }
 
   async destroy(): Promise<void> {
-    this.writer?.destroy();
+    this.writer.destroy();
     this.bus.destroy();
     const dtors = this.queueManagers.map((manager) => () => manager.destroy());
     dtors.push(() => this.lock.destroy());
@@ -104,13 +105,6 @@ export class HostManager {
     return this.defaultRedisClient;
   }
 
-  get lock(): LockManager {
-    return this[WRITE_LOCK];
-  }
-
-  get writer(): WriteCache {
-    return this[WRITER] as WriteCache;
-  }
   get hostQueuesKey(): string {
     return getHostKey(this.name, 'queues');
   }
@@ -254,13 +248,18 @@ export class HostManager {
       }
     }
 
-    const lock = this[WRITE_LOCK];
+    const calls = [
+      () => this.addToQueueSet(queueConfigs),
+      () => this.bus.waitUntilReady(),
+    ];
+    if (process.env.NODE_ENV !== 'example') {
+      this.writer.poll();
+      calls.push(async () => {
+        await this.lock.start();
+      });
+    }
     // make this pSettle ?
-    await Promise.all([
-      this.addToQueueSet(queueConfigs),
-      this.bus.waitUntilReady(),
-      lock.start(),
-    ]);
+    await pAll(calls);
   }
 
   getQueueById(id: string): Queue | undefined {
@@ -315,6 +314,13 @@ export class HostManager {
 
   listen(): void {
     this.queueManagers.forEach((handler) => handler.listen());
+  }
+
+  sweep(): void {
+    this.bus.cleanup().catch((err) => {
+      logger.warn(err);
+    });
+    this.queueManagers.forEach((handler) => handler.sweep());
   }
 
   createNotificationContext(): NotificationContext {

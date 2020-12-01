@@ -2,7 +2,15 @@ import boom from '@hapi/boom';
 import Emittery, { UnsubscribeFn } from 'emittery';
 import { clone, isNil, isString } from 'lodash';
 import { parseTimestamp } from '../lib/datetime';
-import { Clock, getUniqueId, ManualClock, systemClock } from '../lib';
+import {
+  AccurateInterval,
+  Clock,
+  createAccurateInterval,
+  getUniqueId,
+  logger,
+  ManualClock,
+  systemClock,
+} from '../lib';
 import { ruleConfigSchema } from './schemas';
 import {
   ErrorLevel,
@@ -15,12 +23,6 @@ import {
   RuleState,
   Severity,
 } from '../../types';
-import {
-  AccurateInterval,
-  createAccurateInterval,
-} from '../lib/accurateInterval';
-
-const ALERT_COUNT = Symbol('alert-count');
 
 // todo: tags, copy ctor
 
@@ -72,6 +74,13 @@ export class Rule extends Emittery {
   public isActive: boolean;
   public payload: Record<string, any>;
   public severity: Severity;
+
+  /**
+   * The number of alerts raised for the current event
+   * @type {Number}
+   */
+  public alertCount = 0;
+
   public violations = 0;
   private alertStart?: number;
 
@@ -111,16 +120,7 @@ export class Rule extends Emittery {
       throw error;
     }
 
-    const {
-      id,
-      name,
-      condition,
-      metric,
-      active,
-      persist,
-      payload,
-      description,
-    } = opts;
+    const { id, name, condition, metric, active, payload, description } = opts;
 
     this.onError = this.onError.bind(this);
     this.handleResult = this.handleResult.bind(this);
@@ -168,7 +168,7 @@ export class Rule extends Emittery {
     this.condition = condition;
 
     this.alertStart = null;
-    this[ALERT_COUNT] = 0;
+    this.alertCount = 0;
     this.severity = config.severity || Severity.WARNING;
   }
 
@@ -236,14 +236,6 @@ export class Rule extends Emittery {
     return !!this._warmupEnd && this.getTime() < this._warmupEnd;
   }
 
-  /**
-   * The number of alerts raised for the current event
-   * @type {Number}
-   */
-  get alertCount(): number {
-    return this[ALERT_COUNT] || 0;
-  }
-
   get isInAlertDelay(): boolean {
     return !!this._alertDelayEnd && this.getTime() < this._alertDelayEnd;
   }
@@ -252,7 +244,7 @@ export class Rule extends Emittery {
     this._resetStart = 0;
     this._warmupEnd = 0;
     this._alertDelayEnd = 0;
-    this[ALERT_COUNT] = 0;
+    this.alertCount = 0;
     this.violations = 0;
     this.alertStart = null;
     this.updateRuleState(RuleState.NORMAL);
@@ -284,7 +276,9 @@ export class Rule extends Emittery {
     this._alertDelayEnd = triggerWindow ? this.getTime() + triggerWindow : 0;
   }
 
-  private onError(err: Error): void {}
+  private onError(err: Error): void {
+    logger.warn(err);
+  }
 
   async handleResult(result: EvaluationResult): Promise<void> {
     if (this.skipCheck()) {
@@ -355,7 +349,7 @@ export class Rule extends Emittery {
     event: RuleEventsEnum,
     result: EvaluationResult,
   ): RuleAlert {
-    const { id, name, description, payload, alertStart: start } = this;
+    const { alertStart: start } = this;
     const alert: RuleAlert = {
       id: getUniqueId(),
       event,
@@ -394,14 +388,14 @@ export class Rule extends Emittery {
     const eventName = RuleEventsEnum.ALERT_TRIGGERED;
     const context = this.createAlert(eventName, result);
     return this.emit(eventName, context).finally(() => {
-      this[ALERT_COUNT] = this.alertCount + 1;
+      this.alertCount = this.alertCount + 1;
       this._lastAlertAt = this.getTime();
     });
   }
 
   private async trigger(state: EvaluationResult): Promise<void> {
     if (!this.isTriggered) {
-      this[ALERT_COUNT] = 0;
+      this.alertCount = 0;
       this.violations = 0;
       this.startAlertTimeout();
       this.alertStart = this.getTime();
@@ -429,7 +423,7 @@ export class Rule extends Emittery {
     const shouldAlert = !!this.options.alertOnReset;
 
     const clear = (): void => {
-      this[ALERT_COUNT] = 0;
+      this.alertCount = 0;
       this.violations = 0;
       this.updateRuleState(RuleState.NORMAL);
     };

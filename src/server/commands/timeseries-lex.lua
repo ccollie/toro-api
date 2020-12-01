@@ -214,7 +214,7 @@ end
 
 --- PARAMETER PARSING --------
 local function assertTimestamp(ts)
-  assert(isValidTimestamp(ts), "timestamp must be a number")
+  assert(isValidTimestamp(ts), "timestamp must be a number. Got: " .. utils.tostring(ts))
   return ts
 end
 
@@ -364,7 +364,10 @@ local function get_single_value(key, timestamp, name)
       raw_value = raw_value
     }
   elseif #ra > 1 then
-    error('Critical error in timeseries.' .. name .. ' : multiple values for a timestamp')
+    error(
+    'Multiple values for timeseries.' .. name .. '. key: "' .. key ..'", ' ..
+    'ts: ' .. utils.tostring(timestamp)
+    )
   end
   return nil
 end
@@ -466,31 +469,44 @@ function Timeseries.span(key)
 end
 
 --[[
-  Find score gaps > a given interval in a sorted set.
+  Find gaps > a given interval in a sorted set.
   Input:
     key         sorted set key
     startScore  start score
     end         end score
     interval    interval time in ms
+    max         max number of items to return at a time
   Output:
     gaps in items as a list of [start, end]
 ]]
-function Timeseries.getGaps(key, startScore, endScore, interval)
+function Timeseries.gaps(key, startScore, endScore, interval, max)
+  max = tonumber(max) or 250
   local params = parse_range_params(key,{}, startScore, endScore)
   interval = assert(tonumber(interval), 'interval value must be a number (ms)')
   local ids = {}
   local lastSetIndex = -10
   local range = redis.call('zrangebylex', key, params.min, params.max)
 
+  -- ts_debug(tostring(key) .. '[' .. tostring(params.min) .. ',' .. tostring(params.max) ..']')
+  -- ts_debug('count [' .. tostring(#range) .. ']')
+
+  local count, diff = 0, 0
   local score, prev = 0, 0
   for k, value in ipairs(range) do
-    score = split(value)
-    if (k > 1) and ((score - prev) > interval) then
+    local _s, _ = split(value)
+    score = tonumber(_s)
+    diff = score - prev
+
+    if (k > 1) and (diff > interval) then
       local len = #ids
       --- consolidate consecutive gaps
       if (k - lastSetIndex == 1) then
         ids[len] = score
       else
+        if (count + 1) > max then
+          break
+        end
+        count = count + 1
         --- add a new gap
         ids[len + 1] = prev
         ids[len + 2] = score
@@ -499,7 +515,6 @@ function Timeseries.getGaps(key, startScore, endScore, interval)
     end
     prev = score
   end
-
   return ids
 end
 
@@ -526,7 +541,7 @@ end
 -- Set the value associated with *timestamp*
 function Timeseries.set(key, timestamp, value)
   local current = get_single_value(key, timestamp, 'set')
-  assert(value ~= nil, 'set: Must specify a value ' .. key .. '(' .. tostring(timestamp) .. ') ')
+  assert(value ~= nil, 'timeseries.set: Must specify a value ' .. key .. '(' .. utils.tostring(timestamp) .. ') ')
 
   -- remove old value
   if (current ~= nil) then

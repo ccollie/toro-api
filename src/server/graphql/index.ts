@@ -2,7 +2,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { schema } from './schema';
 import { formatGraphqlError } from './errors';
 import config from '../config';
-import { Supervisor } from '../monitor';
+import { Supervisor } from '../supervisor';
 import { packageInfo } from '../packageInfo';
 import { publish, pubsub, createSubscriptionResolver } from './helpers';
 
