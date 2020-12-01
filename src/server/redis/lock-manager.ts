@@ -1,11 +1,10 @@
 // Based on https://github.com/bluerivers/redlock-coordinator
 import * as IORedis from 'ioredis';
 import { EventEmitter } from 'events';
-import config from '../config';
 import logger from '../lib/logger';
-import { createDebug } from '../lib';
 import RedLock from 'redlock';
 import Timeout = NodeJS.Timeout;
+import { parseDuration } from '../lib/datetime';
 
 export interface LockOptions {
   key: string;
@@ -20,12 +19,13 @@ export interface LockOptions {
   };
 }
 
+const DEFAULT_LOCK_TTL = 10000;
 export const DEFAULT_LOCK_KEY = 'toro:writer';
 
 const defaultOption: Partial<LockOptions> = {
   key: DEFAULT_LOCK_KEY,
   ttl: 10000,
-  renew: 5000,
+  renew: 8000,
   wait: 1000,
   redlock: {
     driftFactor: 0.01,
@@ -35,21 +35,9 @@ const defaultOption: Partial<LockOptions> = {
   },
 };
 
-function getDefaultTTL(): number {
-  const defaultValue = 10000;
-  const ttl = config.get('lockTTL'); // todo: get from config
-  if (typeof ttl === 'string') {
-    const value = parseInt(ttl, 10);
-    return isNaN(value) ? defaultValue : value;
-  }
-  return defaultValue;
+function getLockTTL(): number {
+  return parseDuration(process.env.LOCK_TTL, DEFAULT_LOCK_TTL);
 }
-
-const LockManagerEvent = {
-  ACQUIRED: 'elected',
-  RELEASED: 'released',
-  ERROR: 'lock-error',
-};
 
 /**
  * Class to maintain a distributed redlock to control writing to the db
@@ -65,12 +53,16 @@ export class LockManager extends EventEmitter {
   private renewId: Timeout = null;
   private electId: Timeout = null;
 
+  static ACQUIRED = 'elected';
+  static RELEASED = 'released';
+  static ERROR = 'lock-error';
+
   constructor(client: IORedis.Redis, options?: Partial<LockOptions>) {
     super();
     this.client = client;
 
     const opts = Object.assign(
-      { ttl: getDefaultTTL() },
+      { ttl: getLockTTL() },
       options || {},
       defaultOption,
     );
@@ -107,7 +99,7 @@ export class LockManager extends EventEmitter {
   }
 
   get isStarted(): boolean {
-    return !!this.electId || !!this.renewId;
+    return !!this.lock || !!this.electId || !!this.renewId;
   }
 
   get isOwner(): boolean {
@@ -122,6 +114,7 @@ export class LockManager extends EventEmitter {
   }
 
   async stop(): Promise<void> {
+    this.clearTimers();
     if (this.isStarted) {
       this.emit('lock:stopped', this);
       await this.release();
@@ -139,16 +132,19 @@ export class LockManager extends EventEmitter {
         new Date(this.lock.expiration),
       );
 
+      console.log('Lock acquired: ' + this.key);
+      this.clearTimers();
       this.renewId = setInterval(() => this.renew(), this.renewTime);
-      this.emit(LockManagerEvent.ACQUIRED);
+      this.emit(LockManager.ACQUIRED, this);
     } catch (error) {
       this.lock = null;
       if (error.name === 'LockError') {
         logger.debug('[acquire] not the owner');
       } else {
         logger.error('[acquire] error occurred - error: %O', error);
-        this.emit(LockManagerEvent.ERROR, error);
+        this.emit(LockManager.ERROR, error);
       }
+      this.clearTimers();
       this.electId = setTimeout(() => this.acquire(), this.waitTime);
     }
     return this.isOwner;
@@ -167,12 +163,11 @@ export class LockManager extends EventEmitter {
           logger.error('[renew] extend FAILED - error: %O', error);
         }
 
-        clearInterval(this.renewId);
-        this.renewId = null;
-
         try {
-          this.emit(LockManagerEvent.ERROR, error);
+          this.emit(LockManager.ERROR, error);
         } catch {}
+
+        this.clearTimers();
 
         if (!expired) {
           try {
@@ -183,15 +178,14 @@ export class LockManager extends EventEmitter {
         }
 
         this.lock = null;
-        this.emit(LockManagerEvent.RELEASED);
+        this.emit(LockManager.RELEASED, this);
 
         logger.error('[renew] Attempting to acquire');
         this.electId = setTimeout(() => this.acquire(), this.waitTime);
       }
     } else {
       logger.debug('[renew] non-owner reset renew interval');
-      clearInterval(this.renewId);
-      this.renewId = null;
+      this.clearTimers();
       this.electId = setTimeout(() => this.acquire(), this.waitTime);
     }
     return this.isOwner;
@@ -200,24 +194,32 @@ export class LockManager extends EventEmitter {
   async release(): Promise<void> {
     logger.info('[release] start release');
 
-    clearInterval(this.renewId);
-    clearTimeout(this.electId);
-    this.renewId = null;
-    this.electId = null;
+    this.clearTimers();
 
     if (this.isOwner) {
       try {
         await this.lock.unlock();
 
         logger.info('[release] release complete');
-        this.emit(LockManagerEvent.RELEASED);
+        this.emit(LockManager.RELEASED, this);
       } catch (error) {
         logger.error('[release] unlock FAILED - error: %O', error);
-        this.emit(LockManagerEvent.ERROR, error);
+        this.emit(LockManager.ERROR, error);
       }
     }
 
     this.lock = null;
+  }
+
+  private clearTimers() {
+    if (this.renewId) {
+      clearInterval(this.renewId);
+      this.renewId = null;
+    }
+    if (this.electId) {
+      clearInterval(this.electId);
+      this.electId = null;
+    }
   }
 
   async checkLockStatus(): Promise<boolean> {

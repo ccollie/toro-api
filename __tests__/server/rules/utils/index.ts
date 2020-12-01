@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import nanoid from 'nanoid';
 import { RuleConfigOptions, RuleOperator, RuleType } from '../../../../src/types';
 import { defaultRuleAlertOptions, Rule } from '../../../../src/server/rules';
+import { getUniqueId } from '../../../../src/server/lib';
 
 export * from '../../factories';
 
@@ -17,7 +18,7 @@ export function createRuleOptions(options: Partial<RuleConfigOptions> = {}): Rul
   return {
     options: defaultRuleAlertOptions,
     name: 'rule-test-' + randomString(5),
-    id: randomId(),
+    id: getUniqueId(),
     metric: {
       type: 'latency',
       options: {}

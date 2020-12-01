@@ -32,6 +32,7 @@ import {
   startOfDay,
   startOfMonth,
   startOfQuarter,
+  startOfWeek,
   startOfYear,
   endOfSecond,
   endOfMinute,
@@ -39,8 +40,10 @@ import {
   endOfDay,
   endOfMonth,
   endOfQuarter,
+  endOfWeek,
   endOfYear,
 } from 'date-fns';
+import { Timespan } from '@src/types';
 
 export type DateLike = Date | number;
 
@@ -52,7 +55,7 @@ const DATE_FORMATS = [
   'yyyy-MM-dd',
 ];
 
-export function isValidDate(obj): boolean {
+export function isValidDate(obj: unknown): boolean {
   return obj instanceof Date && !isNaN(obj.getTime());
 }
 
@@ -165,6 +168,8 @@ export function startOf(date: DateLike, unit: string): Date {
       return startOfQuarter(date);
     case 'month':
       return startOfMonth(date);
+    case 'week':
+      return startOfWeek(date);
     case 'day':
       return startOfDay(date);
     case 'hour':
@@ -186,6 +191,8 @@ export function endOf(date: DateLike, unit: string): Date {
       return endOfQuarter(date);
     case 'month':
       return endOfMonth(date);
+    case 'week':
+      return endOfWeek(date);
     case 'day':
       return endOfDay(date);
     case 'hour':
@@ -237,7 +244,16 @@ export function parseTimestamp(date, defaultVal: number = undefined): number {
   return defaultVal;
 }
 
-export function parseDuration(value, defaultValue: number = undefined): number {
+export function parseDuration(
+  value: any,
+  defaultValue: number = undefined,
+): number {
+  if (value === undefined) {
+    if (defaultValue !== undefined) {
+      return parseDuration(defaultValue);
+    }
+    return undefined; // ?? NaN
+  }
   if (isNumber(value)) {
     return parseInt(value);
   }
@@ -246,7 +262,7 @@ export function parseDuration(value, defaultValue: number = undefined): number {
 
   if (value === undefined) {
     if (arguments.length > 1) {
-      return defaultValue;
+      return defaultValue ? parseDuration(defaultValue) : undefined; // NaN ?
     }
     throw boom.badRequest(`Invalid duration value ${value}`);
   }
@@ -261,7 +277,11 @@ export function fromStreamId(id: string): Date {
 }
 
 // Round timestamp to the 'precision' interval
-export function roundDate(time, precision: number, direction = 'down'): number {
+export function roundDate(
+  time: DateLike,
+  precision: number,
+  direction = 'down',
+): number {
   time = toDate(time);
   if (direction === 'down') {
     return Math.floor(time.getTime() / precision) * precision;
@@ -279,8 +299,12 @@ export function roundDown(date: DateLike, precision: number): number {
 }
 
 export function roundToNearest(date: DateLike, precision: number): Date {
+  date = toDate(date);
+  const ts = date.getTime();
   const up = roundUp(date, precision);
+  if (ts === up) return date;
   const down = roundDown(date, precision);
+  if (ts === down) return date;
   return closestTo(date, [up, down]);
 }
 
@@ -293,23 +317,18 @@ export function roundInterval(interval: number): number {
   let divisors;
   const amount = Number(count);
 
-  switch (unit) {
+  switch (normalizeUnit(unit)) {
     case 'millisecond':
-    case 'milliseconds':
       divisors = [5];
       break;
     case 'second':
-    case 'seconds':
     case 'minute':
-    case 'minutes':
       divisors = [5, 10, 15, 20, 30];
       break;
     case 'hour':
-    case 'hours':
       divisors = [1, 2, 3, 4, 6];
       break;
     case 'day':
-    case 'days':
       divisors = [1, 7];
       break;
   }
@@ -331,45 +350,83 @@ export function roundInterval(interval: number): number {
   return Math.floor(interval / precision) * precision;
 }
 
-const DATE_RANGE_CONSTANTS = [
-  'last_min',
-  'this_min',
-  'last_hour',
-  'this_hour',
-  'today',
-  'yesterday',
-  'last_day',
-  'this_week',
-  'last_week',
-  'this_month',
-  'last_month',
-];
+const NumericalRangeRegex = /(\d+)\s*-\s*(\d+)/g;
+const DurationRegex = /(\d*)([a-zA-Z]+)/g;
 
-const rangeUnitMap = {
-  /* eslint-disable */
-  last_min: 'minute',
-  last_minute: 'minute',
-  this_min: 'minute',
-  this_minute: 'minute',
-  last_hour: 'hour',
-  this_hour: 'hour',
-  today: 'day',
-  yesterday: 'day',
-  last_day: 'day',
-  this_week: 'week',
-  last_week: 'week',
-  this_month: 'month',
-  last_month: 'month',
-  /* eslint-enable */
-};
+export function parseRange(expr: string, reference?: Date | number): Timespan {
+  reference = reference || Date.now();
 
-Object.keys(rangeUnitMap).reduce((res, key) => {
-  const msSpec =
-    rangeUnitMap[key] === 'month' ? '31d' : '1 ' + rangeUnitMap[key];
-  res[key] = ms(msSpec);
-  return res;
-}, {});
+  function raiseError(): void {
+    throw boom.badRequest(`Invalid token "${expr}"`);
+  }
 
-export function isDateRangeConstant(v): boolean {
-  return DATE_RANGE_CONSTANTS.includes(v);
+  function assert(test: boolean): void {
+    if (!test) raiseError();
+  }
+
+  function getRange(unit: string): Timespan {
+    return {
+      start: startOf(reference, unit).getTime(),
+      end: endOf(reference, unit).getTime(),
+    };
+  }
+
+  function getPrevRange(unit: string): Timespan {
+    const end = addMilliseconds(startOf(reference, unit), -1).getTime();
+    const start = startOf(end, unit).getTime();
+    return {
+      start,
+      end,
+    };
+  }
+
+  const m = NumericalRangeRegex.exec(expr);
+  if (m?.length) {
+    return {
+      start: parseInt(m[1]),
+      end: parseInt(m[2]),
+    };
+  }
+  if (expr === 'today') {
+    return getRange('day');
+  } else if (expr === 'yesterday') {
+    return getPrevRange('day');
+  } else {
+    const parts = expr.split('_');
+    assert(parts.length === 2);
+    const [relativePart, durationSpec] = parts;
+    assert(['this', 'last'].includes(relativePart));
+
+    if (relativePart === 'this') {
+      // handle cases like "this_week"
+      if (!isNumber(durationSpec[0])) {
+        const unit = normalizeUnit(durationSpec);
+        return getPrevRange(unit);
+      }
+      raiseError();
+    } else {
+      // handle cases like "last_week"
+      if (!isNumber(durationSpec[0])) {
+        const unit = normalizeUnit(durationSpec);
+        return getPrevRange(unit);
+      }
+      // handle cases like last_6hrs
+      const m = DurationRegex.exec(durationSpec);
+      assert(m.length > 1);
+
+      const count = parseInt(m[1]);
+      const unit = normalizeUnit(m[2]);
+      if (!unit) {
+        throw boom.badRequest(`Invalid unit "${m[2]}" in range "${expr}"`);
+      }
+      // TODO: should this be the end of the previous period ??
+      const end = endOf(reference, unit);
+      const start = add(end, -1 * count, unit);
+
+      return {
+        start: start.getTime(),
+        end: end.getTime(),
+      };
+    }
+  }
 }

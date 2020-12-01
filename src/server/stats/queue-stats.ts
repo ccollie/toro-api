@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import { createHistogram, getHistogramSnapshot, Meter } from '../metrics/lib';
 import { Histogram } from 'hdr-histogram-js';
 import { Clock } from '../lib';
@@ -8,19 +7,20 @@ import { StatisticalSnapshot } from '@src/types';
  * Class to hold statistics aggregated from a queue over
  * a time window
  */
-export default class Status extends EventEmitter {
+export default class QueueStats {
   public readonly jobType: string = null;
   private readonly wait: Histogram;
   private readonly latency: Histogram;
-  private readonly meter: Meter;
+  public readonly meter: Meter;
+  public readonly errorMeter: Meter;
   private counts: { waiting: number; completed: number; failed: number };
 
   constructor(clock: Clock, jobType: string = null) {
-    super();
     this.jobType = jobType;
     this.wait = createHistogram();
     this.latency = createHistogram();
     this.meter = new Meter(clock);
+    this.errorMeter = new Meter(clock);
     this.counts = {
       completed: 0,
       failed: 0,
@@ -41,7 +41,7 @@ export default class Status extends EventEmitter {
     return this.meter.count;
   }
 
-  clearCounts(): Status {
+  clearCounts(): QueueStats {
     this.counts = {
       failed: 0,
       completed: 0,
@@ -51,9 +51,9 @@ export default class Status extends EventEmitter {
   }
 
   /**
-   * @param {Status} other
+   * @param {QueueStats} other
    */
-  add(other: Status): Status {
+  add(other: QueueStats): QueueStats {
     this.wait.add(other.wait);
     this.latency.add(other.latency);
     Object.keys(this.counts).forEach((key) => {
@@ -62,10 +62,10 @@ export default class Status extends EventEmitter {
     return this;
   }
 
-  reset(): Status {
+  reset(): QueueStats {
     this.latency.reset();
     this.wait.reset();
-    this.meter.reset();
+    // this.meter.reset();
     this.clearCounts();
     return this;
   }
@@ -74,7 +74,7 @@ export default class Status extends EventEmitter {
   markFailed(runTime: number): this {
     this.latency.recordValue(runTime);
     this.counts.failed++;
-    this.meter.mark();
+    this.errorMeter.mark();
     return this;
   }
 

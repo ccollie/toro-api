@@ -1,10 +1,9 @@
 import boom from '@hapi/boom';
-import { isEmpty } from 'lodash';
 import { getJobFiltersKey, getUniqueId, safeParse } from '../lib';
-import { Queue, Job } from 'bullmq';
+import { Queue } from 'bullmq';
 import { JobFilter, JobStatusEnum } from '../../types';
-import { loadScripts } from '../commands';
 import { accepts as isValid, parse } from 'mongodb-language-model';
+import { FilteredJobsResult, Scripts } from '../commands/scripts';
 
 function unserialize(data: string): JobFilter {
   const value = safeParse(data);
@@ -177,71 +176,6 @@ export async function deleteAllJobFilters(queue: Queue): Promise<number> {
   return deleted ? count : 0;
 }
 
-export interface FilteredJobsResult {
-  nextCursor: number;
-  jobs: Job[];
-}
-
-export async function getJobsByFilter(
-  queue: Queue,
-  type: string,
-  filter: Record<string, any>,
-  cursor: number,
-  count = 100,
-): Promise<FilteredJobsResult> {
-  const client = await loadScripts(await queue.client);
-  type = type === 'waiting' ? 'wait' : type; // alias
-  const key = type ? queue.toKey(type) : '';
-  const prefix = queue.toKey('');
-  // todo: substitutions
-  // $$NOW -> Date.now()
-  const criteria = JSON.stringify(filter);
-
-  // @ts-ignore
-  const response = await client.getJobsByFilter(
-    key,
-    prefix,
-    criteria,
-    cursor,
-    count,
-  );
-
-  const newCursor = response[0] === '0' ? null : Number(response[0]);
-  const jobs: Job[] = [];
-
-  let currentJob: Record<string, string> = {};
-  let jobId: string = null;
-
-  function addJobIfNeeded() {
-    if (!isEmpty(currentJob) && jobId) {
-      const job = Job.fromJSON(queue, currentJob, jobId);
-      const ts = currentJob['timestamp'];
-      job.timestamp = ts ? parseInt(ts) : Date.now();
-      jobs.push(job);
-    }
-  }
-
-  for (let i = 1; i < response.length; i += 2) {
-    const key = response[i];
-    const value = response[i + 1];
-
-    if (key === 'jobId') {
-      addJobIfNeeded();
-      jobId = value;
-      currentJob = {};
-    } else {
-      currentJob[key] = value;
-    }
-  }
-
-  addJobIfNeeded();
-
-  return {
-    nextCursor: newCursor,
-    jobs,
-  };
-}
-
 export async function getJobsByFilterId(
   queue: Queue,
   id: string,
@@ -254,7 +188,7 @@ export async function getJobsByFilterId(
       `No job filter with id "${id}" found for queue "${queue.name}"`,
     );
 
-  return getJobsByFilter(
+  return Scripts.getJobsByFilter(
     queue,
     filter.status,
     filter.expression,

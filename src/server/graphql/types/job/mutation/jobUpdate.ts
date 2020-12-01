@@ -1,8 +1,8 @@
-import { MutationError, ErrorCodeEnum } from '../../../helpers';
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
 import { validateJobData } from '../../../../queues';
+import boom from '@hapi/boom';
 
 const JobUpdateInput = schemaComposer.createInputTC({
   name: 'JobUpdateInput',
@@ -27,8 +27,9 @@ export const jobUpdate: FieldConfig = {
     const { queueId, jobId, data } = input;
     const queue = await getQueueById(queueId);
     let job = await queue.getJob(jobId);
-    if (!job)
-      throw new MutationError('Job not found!', ErrorCodeEnum.JOB_NOT_FOUND);
+    if (!job) {
+      throw boom.notFound(`Job #${jobId} not found!`);
+    }
 
     await validateJobData(queue, job.name, data);
     await job.update(data); // Data is completely replaced

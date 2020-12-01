@@ -1,5 +1,3 @@
-export * from './MutationError';
-export * from './wrapMutationFC';
 export * from './getState';
 export * from './consts';
 export * from './accessors';

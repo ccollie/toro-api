@@ -13,7 +13,7 @@ const BaseFields = {
   },
   name: {
     type: 'String!',
-    description: 'The names of the channel',
+    description: 'The name of the channel',
   },
   enabled: {
     type: 'Boolean!',

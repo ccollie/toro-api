@@ -3,6 +3,7 @@ import { Queue } from 'bullmq';
 import { FieldConfig } from '../../utils';
 import { QueueWorker } from '../../../../../types';
 import { getQueueManager } from '../../../helpers';
+import toDate from 'date-fns/toDate';
 
 export const QueueWorkerTC = schemaComposer.createObjectTC({
   // see https://redis.io/commands/client-list
@@ -25,12 +26,15 @@ export const QueueWorkerTC = schemaComposer.createObjectTC({
     started: {
       type: 'DateTime',
       description: 'Date/time when the connection started',
+      resolve(parent: QueueWorker): Date {
+        return toDate(parent.started);
+      },
     },
     db: {
       type: 'Int!',
       description: 'the current database number',
     },
-    role: 'String!',
+    role: 'String',
     sub: 'Int!',
     multi: 'Int!',
     qbuf: 'Int!',

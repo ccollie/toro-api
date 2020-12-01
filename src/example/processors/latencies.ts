@@ -6,10 +6,10 @@ import { normal, laplace, beta, sample } from 'unirand';
 export function generateRange(n: number, options): number[] {
   const { mean, max, min = 10, sd = 2, scale = 2 } = options;
 
-  const _gaussian = () => normal(mean, sd).distribution(n);
-  const _laplace = () => laplace(mean, scale).distribution(n);
+  const _gaussian = () => normal(mean, sd).distributionSync(n);
+  const _laplace = () => laplace(mean, scale).distributionSync(n);
 
-  const _beta = (): number[] => {
+  const _beta = async (): Promise<number[]> => {
     let a = options.alpha;
     let b = options.beta;
     if (!b) {
@@ -17,7 +17,7 @@ export function generateRange(n: number, options): number[] {
       b = rand(t + 1.5, 8);
     }
     a = a || rand(0.5, b - 2);
-    const rnd = beta(a, b).distribution(n);
+    const rnd = beta(a, b).distributionSync(n);
     return rnd.map((x) => min + (max - min) * x);
   };
 

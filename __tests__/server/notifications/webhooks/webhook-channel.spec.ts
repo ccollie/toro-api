@@ -2,8 +2,7 @@ import { WebhookChannelConfig } from '../../../../src/types';
 import { WebhookChannel } from '../../../../src/server/notifications';
 import createTestServer from 'create-test-server';
 import { createNotificationContext } from '../helpers';
-import nanoid = require('nanoid');
-import { delay } from '../../utils';
+import nanoid from 'nanoid';
 import { registerHelpers } from '../../../../src/server/lib/hbs';
 
 describe('WebhookChannel', () => {

@@ -4,10 +4,6 @@
     "host": "http://localhost",
     "port": 4000
   },
-  "snapshotInterval": 10000,
-  "aggregateInterval": 60000,
-  "flushInterval": 1000,
-  "percentiles": [25, 50, 75, 90, 95, 99, 99.5],
   "mail":  {
     "message": {
       "from": "Toro Notifier <my@sender.com>",
@@ -37,8 +33,10 @@
   "hosts": [
     {
       "name": "Localhost",
-      "host": "127.0.0.1",
-      "port": 6379,
+      "connection": {
+        "host": "127.0.0.1",
+        "port": 6379
+      },
       "prefix": "bull",
       "queues": [
         {

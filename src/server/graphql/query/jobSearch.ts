@@ -1,7 +1,7 @@
 import { FieldConfig, JobStatusEnumType, JobTC } from '../types';
 import { getQueueById } from '../helpers';
-import { getJobsByFilter, FilteredJobsResult } from '../../queues';
 import { GraphQLJSONObject, schemaComposer } from 'graphql-compose';
+import { Scripts, FilteredJobsResult } from '../../commands/scripts';
 
 const JobSearchInput = schemaComposer.createInputTC({
   name: 'JobSearchInput',
@@ -13,11 +13,13 @@ const JobSearchInput = schemaComposer.createInputTC({
     status: {
       type: JobStatusEnumType,
       makeRequired: true,
+      makeFieldNonNull: true,
       description: 'Search for jobs having this status',
     },
     criteria: {
       type: GraphQLJSONObject,
       makeRequired: true,
+      makeFieldNonNull: true,
       description: 'A mongo-compatible filter job filter',
     },
     cursor: {
@@ -55,7 +57,7 @@ export const jobSearch: FieldConfig = {
 
     const queue = getQueueById(queueId);
 
-    const { jobs, nextCursor } = await getJobsByFilter(
+    const { jobs, nextCursor } = await Scripts.getJobsByFilter(
       queue,
       status,
       criteria,

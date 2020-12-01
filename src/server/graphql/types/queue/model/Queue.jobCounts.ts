@@ -6,6 +6,7 @@ import { JobStatusEnum } from '../../../../../types';
 
 export const JobCountsTC = schemaComposer.createObjectTC({
   name: 'JobCounts',
+  description: 'The count of jobs according to status',
   fields: {
     [JobStatusEnum.COMPLETED]: 'Int!',
     [JobStatusEnum.FAILED]: 'Int!',

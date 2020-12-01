@@ -3,8 +3,9 @@ import {
   QueueListener,
   QueueManager,
   RuleManager,
+  StatsListener,
   Supervisor,
-} from '../../monitor';
+} from '../../supervisor';
 import boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import { fieldsList } from 'graphql-fields-list';
@@ -49,6 +50,11 @@ export function getQueueManager(queue: Queue | string): QueueManager {
 export function getQueueListener(queue: Queue | string): QueueListener {
   const manager = getQueueManager(queue);
   return manager.queueListener;
+}
+
+export function getStatsListener(queue: Queue | string): StatsListener {
+  const manager = getQueueManager(queue);
+  return manager.statsListener;
 }
 
 export function getResolverFields(info): string[] {

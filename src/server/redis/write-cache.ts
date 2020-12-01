@@ -2,16 +2,14 @@ import IORedis, { Redis, Pipeline } from 'ioredis';
 import { isObject, isEmpty } from 'lodash';
 
 import logger from '../lib/logger';
-import config from '../config';
 import * as streams from './streams';
-import { isNumber } from '../lib/utils';
-import { systemClock } from '../lib/clock';
+import { systemClock } from '../lib';
 import { LockManager } from './lock-manager';
+import { parseDuration } from '../lib/datetime';
 
 const LAST_CALL = Symbol('last call');
-const POLL_TIMER = Symbol('poll timer');
-const CACHE_WRITE_LOCK = Symbol('write lock');
 const DEREGISTER_TIMEOUT = 10 * 1000;
+const DEFAULT_FLUSH_INTERVAL = 1000;
 
 function incrementValues(
   buffer: Record<string, Record<string, number>>,
@@ -46,14 +44,14 @@ export class WriteCache {
     del: string[];
     hset: Record<symbol, any>;
   };
+  readonly lock: LockManager;
 
   /**
    * Constructs a {@link WriteCache}
    * @param {Redis} client a redis client
    * @param {LockManager} lockMgr
-   * @param {Number} interval
    */
-  constructor(client: Redis, lockMgr: LockManager, interval?: number) {
+  constructor(client: Redis, lockMgr: LockManager) {
     this.timer = null;
     this._isFlushing = false;
     this._changed = false;
@@ -69,11 +67,11 @@ export class WriteCache {
     };
     this.flush.bind(this);
     this[LAST_CALL] = systemClock.getTime();
-    this[POLL_TIMER] = null;
-    this[CACHE_WRITE_LOCK] = lockMgr;
-    this.flushInterval = isNumber(interval)
-      ? interval
-      : parseInt(config.get('flushInterval') || 1000);
+    this.lock = lockMgr;
+    this.flushInterval = parseDuration(
+      process.env.FLUSH_INTERVAL,
+      DEFAULT_FLUSH_INTERVAL,
+    );
   }
 
   /**
@@ -81,7 +79,7 @@ export class WriteCache {
    * @returns {Boolean}
    */
   get hasLock(): boolean {
-    return this[CACHE_WRITE_LOCK].isOwner;
+    return this.lock.isOwner;
   }
 
   get multi(): Pipeline {
@@ -89,21 +87,21 @@ export class WriteCache {
   }
 
   get isChanged(): boolean {
-    return this._changed;
+    return this._changed || this.pendingMulti?.length > 0;
   }
 
   poll(): void {
-    if (!this[POLL_TIMER]) {
+    if (!this.timer) {
       const pollTimer = setInterval(() => this.flush(), this.flushInterval);
       pollTimer.unref();
-      this[POLL_TIMER] = pollTimer;
+      this.timer = pollTimer;
     }
   }
 
   unpoll(): void {
-    if (this[POLL_TIMER]) {
-      clearInterval(this[POLL_TIMER]);
-      this[POLL_TIMER] = null;
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
     }
   }
 
@@ -255,12 +253,13 @@ export class WriteCache {
 
     if (!this.hasLock) {
       this.discardBuffer();
+      this._isFlushing = false;
       return;
     }
 
     let current,
       len = 0;
-    if (this._changed) {
+    if (this.isChanged) {
       current = this.multi;
       this.pendingMulti = null;
       this.processBuffer(current);
@@ -284,7 +283,7 @@ export class WriteCache {
       this._isFlushing = false;
       const now = systemClock.getTime();
       if (now - this[LAST_CALL] > DEREGISTER_TIMEOUT) {
-        this.unpoll();
+        // this.unpoll();
       }
       this[LAST_CALL] = now;
     }

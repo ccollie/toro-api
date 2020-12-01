@@ -1573,9 +1573,6 @@ local function initOperators()
 end
 
 
---export interface AppJob {
---progress: Job['progress'];
---}
 local function prepProgress(job)
   if referencedFields['progress'] then
     local v = job['progress']

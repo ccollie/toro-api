@@ -32,11 +32,6 @@ export function calculateInterval(duration: number): number {
   return units.SECONDS;
 }
 
-export function calculateWindowSize(duration: number): number {
-  const len = Math.ceil(Math.log(duration) / Math.log(2));
-  return Math.max((duration / len) | 0, 250);
-}
-
 export function createJobNameFilter(
   jobNames?: string | string[],
 ): Predicate<string> {

@@ -20,8 +20,7 @@ export const jobMoveToCompleted: FieldConfig = {
     const queue = await getQueueById(queueId);
     const job = await queue.getJob(jobId);
     if (job) {
-      const token = `token-${Math.random()}`;
-      await job.moveToCompleted({}, token);
+      await job.moveToCompleted({}, queue.token);
     }
     return {
       queue,

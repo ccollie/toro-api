@@ -1,6 +1,6 @@
 import { HostTC, FieldConfig } from '../types';
 import { HostManager } from '../../hosts';
-import { Supervisor } from '../../monitor';
+import { Supervisor } from '../../supervisor';
 
 export const hostByName: FieldConfig = {
   type: HostTC,

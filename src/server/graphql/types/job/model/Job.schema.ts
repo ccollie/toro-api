@@ -8,7 +8,6 @@ export const JobSchemaTC = schemaComposer.createObjectTC({
     jobName: 'String!',
     schema: {
       type: GraphQLJSONSchema,
-      makeRequired: true,
       description: 'The JSON schema associated with the job name',
     },
     defaultOpts: {

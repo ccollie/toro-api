@@ -3,7 +3,7 @@ import { FieldConfig } from '../../utils';
 import { getQueueManager } from '../../../helpers';
 
 export const jobQueueIdFC: FieldConfig = {
-  type: 'String',
+  type: 'String!',
   makeNonNull: true,
   async resolve(parent: Job): Promise<string> {
     let queueId = (parent as any).queueId;

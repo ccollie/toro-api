@@ -1,6 +1,6 @@
 import { FieldConfig } from '../types';
 import { AppInfo } from '../../../types';
-import { Supervisor } from '../../monitor';
+import { Supervisor } from '../../supervisor';
 import { schemaComposer } from 'graphql-compose';
 
 const AppInfoTC = schemaComposer.createObjectTC({

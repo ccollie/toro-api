@@ -43,9 +43,7 @@ const QuantileAggregatorSchema = baseSchema.keys({
 /**
  * An aggregator which calculates a quantile over streaming data with configurable accuracy
  */
-export class QuantileAggregator extends SlidingTimeWindowAggregator<
-  QuantileEstimator
-> {
+export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEstimator> {
   private readonly accumulator: QuantileEstimator;
   private current: QuantileEstimator;
 

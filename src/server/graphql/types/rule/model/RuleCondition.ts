@@ -74,7 +74,7 @@ export const ChangeConditionInputTC = ChangeConditionTC.getITC().setTypeName(
 
 export const PeakConditionTC = schemaComposer.createObjectTC({
   name: 'PeakCondition',
-  description: 'A condition based on a deviations from a rolling average',
+  description: 'A condition based on deviations from a rolling average',
   interfaces: [RuleConditionTC],
   fields: {
     errorThreshold: {

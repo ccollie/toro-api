@@ -18,6 +18,7 @@ import { NotificationManager } from '../hosts';
 import { RuleEvaluator } from './rule-evaluator';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
 import handlebars from 'handlebars';
+import { parseDuration } from '../lib/datetime';
 
 type RuleLike = Rule | RuleConfigOptions | string;
 
@@ -32,6 +33,15 @@ function getRuleTemplateKey(rule: RuleLike): string {
   return `rule-template:${id}`;
 }
 
+const DEFAULT_RETENTION = ms('2 weeks');
+
+function getRetention(): number {
+  const baseValue = process.env.ALERT_RETENTION;
+  return baseValue
+    ? parseDuration(baseValue, DEFAULT_RETENTION)
+    : DEFAULT_RETENTION;
+}
+
 /**
  * Manages the storage of {@link Rule} and alert instances related to a queue
  */
@@ -39,7 +49,7 @@ export class RuleManager {
   public readonly storage: RuleStorage;
   public readonly notifications: NotificationManager;
   public readonly metricsListener: MetricsListener;
-  // RuleId tp evaluator map
+  // RuleId to evaluator map
   private readonly _evalMap = new Map<string, RuleEvaluator>();
   private readonly cache: LRUCache;
   private readonly queueManager: QueueManager;
@@ -379,9 +389,10 @@ export class RuleManager {
    * @param {Number} retention in ms. Alerts before (getTime - retention) will be removed
    * @returns {Promise<Number>}
    */
-  async pruneAlerts(retention: number): Promise<number> {
+  async pruneAlerts(retention?: number): Promise<number> {
     const ids = await this.storage.getRuleIds();
     if (ids.length) {
+      retention = retention || getRetention();
       const keys = ids.map((id) => this.storage.getRuleKey(id));
       const counts = await pMap(
         keys,

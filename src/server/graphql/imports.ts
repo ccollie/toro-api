@@ -1,4 +1,4 @@
-export * from '../monitor';
+export * from '../supervisor';
 export * from '../lib';
 export * from '../../types';
 export * from '../queues';

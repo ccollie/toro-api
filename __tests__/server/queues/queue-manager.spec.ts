@@ -4,7 +4,7 @@ import { createQueue } from '../factories';
 import { QueueConfig } from '../../../src/types';
 import { clearDb } from '../utils';
 import { createHostManager } from '../../fixtures/host-manager';
-import nanoid = require('nanoid');
+import nanoid from 'nanoid';
 
 describe('QueueManager', () => {
   let hostManager: HostManager;

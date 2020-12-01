@@ -20,6 +20,7 @@ local keyPrefix = ARGV[1]
 local scratchKey = KEYS[7]
 local destination = KEYS[8]
 
+local MAX_ITEMS = 110
 local function add_from_list (key, result, dedupe)
     local items = {}
 
@@ -39,6 +40,9 @@ local function add_from_list (key, result, dedupe)
         if dedupe[v] ~= 1 then
             dedupe[v] = 1
             result[#result + 1] = v
+            if #result >= MAX_ITEMS then
+                return
+            end
         end
     end
 end
@@ -59,7 +63,7 @@ end
 if #result > 0 then
     redis.call("sadd", scratchKey, unpack(result))
 
-    local allNames = redis.call("sort", scratchKey, "BY", "nosort", "GET", keyPrefix .. "*->names")
+    local allNames = redis.call("sort", scratchKey, "BY", "nosort", "GET", keyPrefix .. "*->name", "LIMIT", 0, MAX_ITEMS)
 
     --- in some circumstances, we get non strings in the answer
     result = {}

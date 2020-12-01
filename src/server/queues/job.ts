@@ -4,6 +4,7 @@ import { Job, Queue } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
 import { JobStatusEnum } from '../../types';
+import { Scripts } from '../commands/scripts';
 
 // https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
 export const JobFields = [
@@ -20,70 +21,6 @@ export const JobFields = [
   'stacktrace',
   'returnvalue',
 ];
-
-/**
- * Get the job states
- * @param {String} queue Queue names
- * @param {String} id job Id
- * @param client
- * @returns {Promise<string>} A promise that resolves to the job states or "unknown"
- */
-export async function getJobState(
-  queue: Queue,
-  id: string,
-  client = null,
-): Promise<string> {
-  client = client || (await queue.client);
-  const queueKeys = queue.keys;
-
-  const args = [
-    queueKeys.completed,
-    queueKeys.failed,
-    queueKeys.delayed,
-    queueKeys.active,
-    queueKeys.waiting,
-    queueKeys.paused,
-    id,
-  ];
-
-  return (client as any).getJobState(...args);
-}
-
-export async function multiGetJobState(
-  queue: Queue,
-  ids: string[],
-): Promise<string[]> {
-  const client = await queue.client;
-  const queueKeys = queue.keys;
-  const multi = client.multi();
-
-  ids.forEach((id) => {
-    const args = [
-      queueKeys.completed,
-      queueKeys.failed,
-      queueKeys.delayed,
-      queueKeys.active,
-      queueKeys.waiting,
-      queueKeys.paused,
-      id,
-    ];
-    (multi as any).getJobState(...args);
-  });
-
-  const res = await multi.exec();
-  const result = new Array<string>(ids.length);
-
-  res.forEach((item, index) => {
-    if (item[0]) {
-      // err
-      result[index] = null;
-    } else {
-      result[index] = item[1];
-    }
-  });
-
-  return result;
-}
 
 async function processJobInternal(
   cmd: string,
@@ -135,7 +72,7 @@ export async function processJobCommand(
   // NOTE!! - backdoor optimization especially for bulk actions
   let state = (job as any).state;
   if (!state) {
-    state = await getJobState(queue, id);
+    state = await Scripts.getJobState(queue, id);
     (job as any).state = state;
   }
 
@@ -187,7 +124,7 @@ export async function bulkJobHandler(
 
   if (jobs.length) {
     const jids = jobs.map((job) => job.id);
-    const states = await multiGetJobState(queue, jids);
+    const states = await Scripts.multiGetJobState(queue, jids);
     const promises = jobs.map((job, index) => {
       const state = states[index] as JobStatusEnum;
       return processJobInternal(action, job, state);

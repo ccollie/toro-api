@@ -120,24 +120,6 @@ export async function getInfo(
   }
 }
 
-export async function getLast(
-  client: IORedis.Redis,
-  key: string,
-): Promise<RedisStreamItem> {
-  const info = await getInfo(client, key);
-  let result = info && info['last-entry'];
-  if (result) {
-    const deserializer = getDeserializer(key);
-    if (deserializer) {
-      result = {
-        id: result.id,
-        data: deserializer(result.data),
-      };
-    }
-  }
-  return result;
-}
-
 export async function getSpan(client: IORedis.Redis, key: string) {
   const info = await getInfo(client, key);
 

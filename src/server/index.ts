@@ -6,7 +6,7 @@ import compression from 'compression';
 import config from './config';
 import path from 'path';
 import http from 'http';
-import { Supervisor } from './monitor';
+import { Supervisor } from './supervisor';
 
 import { createServer as createApolloServer } from './graphql';
 import ms from 'ms';
@@ -14,7 +14,7 @@ import ms from 'ms';
 const app = express();
 
 const port = config.get('port') || 4000;
-const env = config.get('env') || 'dev';
+const env = process.env.NODE_ENV || 'dev';
 const isProd = env === 'production';
 const isDevelopment = env === 'dev' || env === 'development';
 
@@ -105,13 +105,13 @@ supervisor
       const address: string =
         'address' in addressInfo
           ? addressInfo.address === '::'
-          ? 'http://localhost:'
-          : addressInfo.address
+            ? 'http://localhost:'
+            : addressInfo.address
           : '';
 
       console.log(`Server startup after ${duration}!`);
-      console.log(`🚀 Server ready at ${address}:${port}${server.graphqlPath}`)
-      console.log(`🚀 Subscriptions available at ${server.subscriptionsPath}`)
+      console.log(`🚀 Server ready at ${address}:${port}${server.graphqlPath}`);
+      console.log(`🚀 Subscriptions available at ${server.subscriptionsPath}`);
     });
   })
   .catch((err) => {

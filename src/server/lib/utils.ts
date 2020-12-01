@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { get, isFunction, isObject } from 'lodash';
-import { JobStatusEnum } from '../../types';
 
 export function hash(data: any, algorithm = 'sha1'): string {
   return crypto.createHash(algorithm).update(data).digest('hex');
@@ -47,14 +46,8 @@ export function parseBool(val: unknown, defaultVal?: boolean): boolean {
   return ['true', '1', 't'].includes(val.toString().toLowerCase());
 }
 
-// TODO:
-export const BULL_STATES = Object.values(JobStatusEnum);
-
 export const isFinishedStatus = (state: string): boolean =>
   ['completed', 'failed', 'removed'].includes(state);
-
-export const isValidState = (state: JobStatusEnum): boolean =>
-  BULL_STATES.includes(state);
 
 export function isNumber(num: string | number): boolean {
   if (typeof num === 'number') {
@@ -230,8 +223,4 @@ const suffixes = {
 export function ordinal(number: number): string {
   const suffix = suffixes[EnglishOrdinalRules.select(number)];
   return number + suffix;
-}
-
-export function hasOwn(instance: any, prop: string): boolean {
-  return Object.prototype.hasOwnProperty.call(instance, prop);
 }

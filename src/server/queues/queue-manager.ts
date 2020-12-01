@@ -2,10 +2,9 @@ import boom from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
 import { Job, Queue } from 'bullmq';
-import { StatsAggregator, StatsClient, StatsListener } from '../stats';
+import { StatsClient, StatsListener } from '../stats';
 import { Rule, RuleManager } from '../rules';
-import { QueueSweeper } from './queue-sweeper';
-import { EventBus } from '../redis';
+import { EventBus, LockManager } from '../redis';
 import { QueueListener } from './queue-listener';
 import { deleteAllQueueData, getJobTypes } from './queue';
 import { HostManager } from '../hosts';
@@ -20,10 +19,6 @@ import {
 import { isEmpty } from 'lodash';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../lib/keys';
-
-const JANITOR = Symbol('janitor');
-const STATS_AGGREGATOR = Symbol('stats aggregator');
-const STATS_LISTENER = Symbol('stats listener');
 
 const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
 
@@ -65,7 +60,9 @@ export class QueueManager {
   readonly ruleManager: RuleManager;
   readonly bus: EventBus;
   private readonly _workQueue: PQueue = new PQueue({ concurrency: 6 });
+  public readonly statsListener: StatsListener;
   private _uri: string = undefined;
+  private inStatsUpdate = false;
 
   constructor(host: HostManager, queue: Queue, config: QueueConfig) {
     this.host = host.name;
@@ -76,20 +73,28 @@ export class QueueManager {
     this.bus = new EventBus(host.streamAggregator, getQueueBusKey(queue));
     this.statsClient = new StatsClient(this);
     this.ruleManager = new RuleManager(this);
-    this[JANITOR] = new QueueSweeper(this, this._workQueue);
-    this[STATS_LISTENER] = this.createStatsListener();
-    this[STATS_AGGREGATOR] = new StatsAggregator(this, this._workQueue);
+    this.statsListener = this.createStatsListener();
     this.onError = this.onError.bind(this);
+    this.handleLockEvent = this.handleLockEvent.bind(this);
+    this.init();
+  }
+
+  protected init() {
+    if (this.hasLock) {
+      process.nextTick(() => {
+        this.catchupStats();
+      });
+    }
+    this.lock.on(LockManager.ACQUIRED, this.handleLockEvent);
   }
 
   async destroy(): Promise<void> {
+    this.lock.off(LockManager.ACQUIRED, this.handleLockEvent);
     await this.queueListener.destroy();
     this.bus.destroy();
     this.statsClient.destroy();
     this.ruleManager.destroy();
-    this[JANITOR].destroy();
-    this[STATS_LISTENER].destroy();
-    this[STATS_AGGREGATOR].destroy();
+    this.statsListener.destroy();
     await this._workQueue.onIdle(); // should we just clear ?
     await this.queue.close();
   }
@@ -97,16 +102,20 @@ export class QueueManager {
   onError(err: Error): void {
     // todo: log
     logger.warn(err);
+    throw err;
   }
 
   catchupStats(): void {
+    if (this.inStatsUpdate) return;
     const listener = this.createStatsListener();
     const catchup = (): Promise<void> => {
+      this.inStatsUpdate = false;
       return listener.catchUp().finally(() => {
+        this.inStatsUpdate = false;
         listener.destroy();
       });
     };
-    this._workQueue.add(catchup).catch(this.onError);
+    this.addWork(catchup);
   }
 
   get name(): string {
@@ -148,8 +157,12 @@ export class QueueManager {
     }
   }
 
+  get lock(): LockManager {
+    return this.hostManager.lock;
+  }
+
   get hasLock(): boolean {
-    return this.hostManager.lock.isOwner;
+    return this.lock.isOwner;
   }
 
   get rules(): Rule[] {
@@ -166,6 +179,18 @@ export class QueueManager {
 
   getRule(id: string): Promise<Rule> {
     return this.ruleManager.getRule(id);
+  }
+
+  addWork(fn: () => void | Promise<void>): void {
+    this._workQueue.add(fn).catch((err) => {
+      logger.warn(err);
+    });
+  }
+
+  private handleLockEvent(): void {
+    if (!this.inStatsUpdate) {
+      this.catchupStats();
+    }
   }
 
   /**
@@ -198,10 +223,9 @@ export class QueueManager {
   }
 
   async listen(): Promise<void> {
-    const statsListener = this[STATS_LISTENER] as StatsListener;
     await Promise.all([
       this.loadRules(),
-      statsListener.startListening(),
+      this.statsListener.startListening(),
       this.queueListener.startListening(),
     ]);
   }
@@ -230,7 +254,7 @@ export class QueueManager {
   async getMultipleJobsById(...ids: (string | string[])[]): Promise<Job[]> {
     const flat = [].concat(...ids);
     const client = await this.queue.client;
-    const multi = client.multi();
+    const multi = client.pipeline();
     flat.forEach((jid) => {
       multi.hgetall(this.queue.toKey(jid));
     });
@@ -387,5 +411,20 @@ export class QueueManager {
 
   async removeAllQueueData(): Promise<number> {
     return deleteAllQueueData(this.queue);
+  }
+
+  /**
+   * Run queue garbage collection
+   */
+  sweep() {
+    if (this.hasLock) {
+      this._workQueue
+        .addAll([
+          () => this.statsListener.sweep(),
+          () => this.ruleManager.pruneAlerts(),
+          () => this.bus.cleanup(),
+        ])
+        .catch((err) => this.onError(err));
+    }
   }
 }

@@ -11,6 +11,5 @@ export const JobStatusEnumType = new GraphQLEnumType({
     [JobStatusEnum.FAILED]: { value: JobStatusEnum.FAILED },
     // eslint-disable-next-line max-len
     [JobStatusEnum.PAUSED]: { value: JobStatusEnum.PAUSED }, //TODO: в bull написано что устарело, теперь все WAITING
-    [JobStatusEnum.UNKNOWN]: { value: JobStatusEnum.UNKNOWN },
   },
 });

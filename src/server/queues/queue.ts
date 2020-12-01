@@ -1,10 +1,9 @@
 import ms from 'ms';
-import nanoid from 'nanoid';
 import { isEmpty, uniq } from 'lodash';
-import { Queue, Job } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { getQueueConfig } from '../hosts';
 import { deleteByPattern, normalizePrefixGlob, scanKeys } from '../redis';
-import { systemClock } from '../lib';
+import { getQueueMetaKey, getQueueStatsPattern, systemClock } from '../lib';
 import {
   getJobNamesWithSchemas,
   getJobSchemas,
@@ -17,9 +16,9 @@ import {
   JobStatusEnum,
   StatsGranularity,
 } from '../../types';
-import { getQueueMetaKey, getQueueStatsPattern } from '../lib';
 import IORedis from 'ioredis';
 import logger from '../lib/logger';
+import { Scripts } from '../commands/scripts';
 
 const JOB_STATES = Object.values(JobStatusEnum);
 
@@ -127,29 +126,10 @@ export async function discoverJobNames(
   queue: Queue,
   expiration: number,
 ): Promise<string[]> {
-  const client = await queue.client;
-  const destKey = queue.toKey('jobTypes');
-
-  const scratchKey = queue.toKey(`scratch:${nanoid(10)}`);
-  const keyPrefix = queue.toKey('');
-  const queueKeys = queue.keys;
-
-  const keys = [
-    queueKeys.completed,
-    queueKeys.failed,
-    queueKeys.delayed,
-    queueKeys.active,
-    queueKeys.waiting,
-    queueKeys.paused,
-    scratchKey,
-    destKey,
-  ];
-  const args = [...keys, keyPrefix, expiration];
-
   // Note: we also return names for which we have defined
   // schemas, even if no jobs of the type have been created
   const [fromQueue, fromSchema] = await Promise.all([
-    (client as any).getJobNames(...args),
+    Scripts.getJobNames(queue, expiration),
     getJobNamesWithSchemas(queue),
   ]);
   const uniq = new Set([...fromQueue, ...fromSchema]);
@@ -234,5 +214,6 @@ export async function deleteAllQueueData(queue: Queue): Promise<number> {
   const prefix = queue.opts.prefix;
   const pattern = `${prefix}:${queue.name}:*`;
   const client = await queue.client;
+  // todo: need to delete data at the host level
   return deleteByPattern(client, pattern);
 }

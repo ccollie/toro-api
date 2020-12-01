@@ -12,6 +12,7 @@ export interface QueueWorker {
   multi: number;
   qbuf: number;
   qbufFree: number;
+  role: string;
   obl: number;
   oll: number;
   omem: number;

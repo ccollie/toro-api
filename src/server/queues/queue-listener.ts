@@ -140,6 +140,7 @@ export class QueueListener extends Emittery {
   onError(err: Error) {
     logger.warn(err);
   }
+
   private addProxyHandler(eventName: string): void {
     // only register a single listener.
     this.eventRefCounts[eventName] = (this.eventRefCounts[eventName] || 0) + 1;
@@ -184,7 +185,7 @@ export class QueueListener extends Emittery {
       let job = cache.get(jobId, !isFinished);
       if (!job) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { event, data, jobId: ignore, ...rest } = evt;
+        const { data, jobId, ...rest } = evt;
         job = rest;
         job.id = jobId;
         cache.set(jobId, job);
@@ -219,6 +220,7 @@ export class QueueListener extends Emittery {
           // cache.del(jobId);
         }
       } catch (err) {
+        console.log(err);
         logger.error(`Error in handler for event: "${eventName}"`, {
           err,
           jobId,
@@ -362,7 +364,6 @@ export class QueueListener extends Emittery {
     if (includeJob) {
       addJob(includeJob);
     }
-    // todo: if were COMPLETED, also return value
 
     const response = await pipeline.exec();
     const result = [];

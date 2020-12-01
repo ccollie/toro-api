@@ -1,9 +1,9 @@
 import { FieldConfig, JobTC } from '../types';
 import { getQueueById } from '../helpers';
-import { getJobState } from '../../queues';
 import { Job } from 'bullmq';
 import boom from '@hapi/boom';
 import { fieldsList } from 'graphql-fields-list';
+import { Scripts } from '../../commands/scripts';
 
 export const job: FieldConfig = {
   type: JobTC.NonNull,
@@ -18,7 +18,7 @@ export const job: FieldConfig = {
     const needState = fields.includes('state');
     const calls: Array<Promise<any>> = [queue.getJob(id)];
     if (needState) {
-      calls.push(getJobState(queue, id));
+      calls.push(Scripts.getJobState(queue, id));
     }
 
     const [job, state] = await Promise.all(calls);

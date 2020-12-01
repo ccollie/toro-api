@@ -9,7 +9,7 @@ export const jobLogs: FieldConfig = {
       count: 'Int!',
       items: '[String!]!',
     },
-  }),
+  }).NonNull,
   args: {
     start: {
       type: 'Int!',
@@ -17,18 +17,14 @@ export const jobLogs: FieldConfig = {
     },
     end: {
       type: 'Int!',
-      defaultValue: -1
-    }
+      defaultValue: -1,
+    },
   },
   resolve: async (job: Job, { start, end }) => {
     // `queue` is private property of Job instance
     // so here we are not guaranteed that log will be available in the future
     const queue = (job as any).queue as Queue<any>;
-    const { logs: items, count } = await queue.getJobLogs(
-      job.id,
-      start,
-      end,
-    );
+    const { logs: items, count } = await queue.getJobLogs(job.id, start, end);
     return {
       items,
       count,

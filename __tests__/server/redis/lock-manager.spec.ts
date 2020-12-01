@@ -22,7 +22,7 @@ describe('LockManager', () => {
       }
     })
 
-    describe('Lock Aquisition', () => {
+    describe('Lock Acquisition', () => {
       it('attempts to acquire lock on start', async () => {
         lock = new LockManager(client, {
           key: LOCK_KEY,

@@ -92,7 +92,7 @@ export enum ChangeAggregationType {
 }
 
 export interface ChangeConditionOptions extends RuleConditionThresholds {
-  /*
+  /**
   The sliding window for metric measurement
    */
   timeWindow: number;
@@ -156,7 +156,7 @@ export interface RuleAlertOptions {
    */
   maxAlertsPerEvent?: number;
 
-  /*
+  /**
    * The minimum amount of time after the last notification before a new alert is raised
    * on for same incident.
    * */
@@ -227,7 +227,7 @@ export interface RuleAlert {
   readonly start: number;
   /** timestamp of when an alert was reset */
   end?: number;
-  /**The value of the alert threshold set in the rule’s alert conditions. */
+  /** The value of the alert threshold set in the rule’s alert conditions. */
   readonly threshold: number;
   /** The metric value that crossed the threshold.*/
   readonly value: number;

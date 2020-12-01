@@ -19,7 +19,7 @@ export interface QueueConfig {
 
 export type ConnectionOptions = string | RedisOptions;
 
-/* A grouped collection of bull queues on a single redis instance */
+/** A grouped collection of bull queues on a single redis instance */
 export interface HostConfig {
   /** Unique, system generated id based on host/port/db */
   id?: string;
@@ -37,7 +37,7 @@ export interface HostConfig {
    * Allow adding queues at runtime
    */
   allowDynamicQueues: boolean;
-  /* Redis connection options */
+  /** Redis connection options */
   connection: ConnectionOptions;
   /** Config information for queues associated with this host */
   queues: QueueConfig[];

@@ -2,7 +2,6 @@ import { schemaComposer } from 'graphql-compose';
 import { FieldConfig, QueueTC } from '../../index';
 import { JobTC } from '../../index';
 import { getJobById, getQueueById } from '../../../helpers';
-import nanoid from 'nanoid';
 
 export const jobMoveToFailed: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -27,9 +26,8 @@ export const jobMoveToFailed: FieldConfig = {
     const job = await getJobById(queueId, jobId);
 
     const err = new Error(reason);
-    const token = nanoid(8);
-    await job.moveToFailed(err, token, false);
     const queue = getQueueById(queueId);
+    await job.moveToFailed(err, queue.token, false);
     return {
       queue,
       job,
