@@ -24,6 +24,11 @@ const FILES = [
     numberOfKeys: 1,
     name: 'getDurationAverage',
   },
+  {
+    path: './getWaitTimeAverage-1.lua',
+    numberOfKeys: 1,
+    name: 'getWaitTimeAverage',
+  },
 ];
 
 let scripts;
