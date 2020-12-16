@@ -2799,9 +2799,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^1.11.2":
-  version: 1.11.2
-  resolution: "bullmq@npm:1.11.2"
+"bullmq@npm:^1.12.0":
+  version: 1.12.0
+  resolution: "bullmq@npm:1.12.0"
   dependencies:
     "@types/ioredis": ^4.16.3
     cron-parser: ^2.7.3
@@ -2811,7 +2811,7 @@ __metadata:
     semver: ^6.3.0
     tslib: ^1.10.0
     uuid: ^8.2.0
-  checksum: ddc2cd18c37faa91d5fd1ca6707dac62252e27b9abf270a4f6a969cc39c12c1a15bc195e0ffb3c1544410d53b16de1b7cf72adaf1dd017618d6d780a584ea480
+  checksum: a8b4b7c68ab0bc3afb72de5f3936e845653199111fc67750e5b76cad10610873c4a2069c6b14b69cc2e0abd5524f7b7c62d5f3d27a9bc3585e29b33293794946
   languageName: node
   linkType: hard
 
@@ -11342,7 +11342,7 @@ resolve@^1.18.1:
     apollo-server-express: ^2.19.0
     better-ajv-errors: ^0.6.7
     body-parser: ^1.19.0
-    bullmq: ^1.11.2
+    bullmq: ^1.12.0
     chalk: ^4.1.0
     compression: ^1.7.4
     concurrently: ^5.3.0
