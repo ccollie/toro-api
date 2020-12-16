@@ -9,6 +9,7 @@ import { isPaused } from './Queue.isPaused';
 import { jobNames } from './Queue.jobNames';
 import { jobDurationAvg } from './Queue.jobDurationAvg';
 import { jobMemoryAvg } from './Queue.jobMemoryAvg';
+import { waitTimeAvg } from './Queue.waitTimeAvg';
 import { queueHostName as host } from './Queue.host';
 import { queueWorkerCount as workerCount } from './Queue.worker-count';
 import { queueHostId as hostId } from './Queue.host-id';
@@ -49,6 +50,7 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobSchemas,
     jobDurationAvg,
     jobMemoryAvg,
+    waitTimeAvg,
     lastStatsSnapshot,
     pendingJobCount,
     percentileDistribution,

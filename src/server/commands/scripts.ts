@@ -125,6 +125,19 @@ export class Scripts {
     return (client as any).getDurationAverage(...args);
   }
 
+  static async getAvgWaitTime(
+    queue: Queue,
+    jobName: string = null,
+    status: JobFinishedState,
+    limit = 1000,
+  ): Promise<number> {
+    const client = await queue.client;
+    const prefix = queue.toKey('');
+    const key = queue.toKey(status);
+    const args = [key, prefix, jobName, limit];
+    return (client as any).getWaitTimeAverage(...args);
+  }
+
   static async getJobsByFilter(
     queue: Queue,
     type: string,
