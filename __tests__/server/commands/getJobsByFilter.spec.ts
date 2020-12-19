@@ -810,7 +810,7 @@ describe('getJobsByFilter', () => {
       testExpressionCases('$strcasecmp', cases)
     });
 
-    describe('$strLen', () => {
+    describe('$strLenBytes', () => {
       const cases = [
         ["abcde", 5],
         ["Hello World!", 12],
@@ -820,7 +820,7 @@ describe('getJobsByFilter', () => {
         // ["$€λG", 4],
         // ["寿司" , 2]
       ];
-      testExpressionCases('$strLen', cases)
+      testExpressionCases('$strLenBytes', cases)
     });
 
     describe('$substr', () => {
@@ -835,7 +835,23 @@ describe('getJobsByFilter', () => {
         [["cafeteria", 7, 3], "ia"],
         [["cafeteria", 3, 1], "e"]
       ];
-      testExpressionCases('$substr', cases)
+      testExpressionCases('$substr', cases);
+    });
+
+    describe('$substr/$substrBytes', () => {
+      const cases = [
+        [[null, 2], null],
+        [["hello", -1], ''],
+        [["hello", 1, -2], 'ello'],
+        [["abcde", 1, 2], "bc"],
+        [["Hello World!", 6, 5], "World"],
+        [["cafeteria", 0, 5], "cafet"],
+        [["cafeteria", 5, 4], "eria"],
+        [["cafeteria", 7, 3], "ia"],
+        [["cafeteria", 3, 1], "e"]
+      ];
+      testExpressionCases('$substr', cases);
+      testExpressionCases('$substrBytes', cases)
     });
 
     describe('$concat', () => {

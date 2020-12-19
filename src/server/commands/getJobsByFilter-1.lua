@@ -457,7 +457,7 @@ local function intersection(first, second)
   local len = 0
   local dedup = {}
   for _, v in ipairs(first) do
-    if inArray(second, v) and not dedup[v] then
+    if (not dedup[v]) and inArray(second, v) then
       len = len + 1
       t[len] = v
       dedup[v] = true
@@ -1061,13 +1061,13 @@ ExprOperators['$strcasecmp'] = function(expr)
   end
 end
 
-ExprOperators['$strLen'] = function(expr)
+ExprOperators['$strLenBytes'] = function(expr)
   local exec = parseExpression(expr)
 
   return function(obj)
     local val = exec(obj)
     if (isNil(val)) then return 0 end
-    assert(isString(val), '$strLen must resolve to a string')
+    assert(isString(val), '$strLenBytes must resolve to a string')
     return val:len()
   end
 end
@@ -1081,7 +1081,6 @@ ExprOperators['$substr'] = function(expr)
             'expected $substr: [ <string>, <start>[, <length>] ]')
     local s = args[1]
     local start = args[2]
-    debug('$substr. s = ' .. tostr(s))
     if (isNil(s)) then return nil end
     assert(isString(s), '$substr: expected string as first argument')
     if (start < 0) then
@@ -1098,6 +1097,8 @@ ExprOperators['$substr'] = function(expr)
     return s:sub(start, start + count - 1)
   end
 end
+
+ExprOperators['$substrBytes'] = ExprOperators['$substr']
 
 ExprOperators['$toLower'] = function(expr)
   local exec = parseExpression(expr)
@@ -1157,7 +1158,7 @@ local function trim(name, expr, left, right)
         codepoints[ch] = true
       end
 
-      debug('chars = ' .. chars .. ', codepoints = ' .. tostr(codepoints))
+      --- debug('chars = ' .. chars .. ', codepoints = ' .. tostr(codepoints))
       local i = 1
       local j = len
       local s = input
@@ -1540,7 +1541,7 @@ local function createComparison(name)
       local args = exec(obj)
       assert(isArray(args) and #args == 2, name .. ': comparison expects 2 arguments. Got ' .. tostr(args))
       local val = fn(args[1], args[2])
-      debug('Comparison: ' .. tostr(args[1]) .. ' ' .. name .. ' ' .. tostr(args[2]) .. ' = ' .. tostr(val))
+      --- debug('Comparison: ' .. tostr(args[1]) .. ' ' .. name .. ' ' .. tostr(args[2]) .. ' = ' .. tostr(val))
       return val
     end
   end
@@ -1555,7 +1556,7 @@ local function initOperators()
         -- value of field must be fully resolved.
         local lhs = resolveFn(obj)
         local val = predicate(lhs, value)
-        debug('Predicate: ' .. tostr(lhs) .. ' ' .. name .. ' ' .. tostr(value) .. ' = ' .. tostr(val))
+        --- debug('Predicate: ' .. tostr(lhs) .. ' ' .. name .. ' ' .. tostr(value) .. ' = ' .. tostr(val))
         return val
       end
     end
