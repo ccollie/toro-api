@@ -12,6 +12,8 @@
 --  EVALSHA sha1 1 key add 100000 key value
 --  EVALSHA sha1 1 key range 100000 100500 0 25
 
+local MAX_INTEGER = 4503599627370495  --- 2^52 - 1
+
 local function ts_debug(msg)
   redis.call('rpush', 'ts-debug', msg)
 end
@@ -209,7 +211,7 @@ local function incrementTimestamp(val)
   else
     return num + 1
   end
-  return assert(false, "timestamp must be a number")
+  return assert(false, "timestamp must be a number. got: " .. tostring(val))
 end
 
 --- PARAMETER PARSING --------
@@ -231,9 +233,9 @@ local function parse_timestamp_value(key, ts)
     local val = redis.call('TIME')
     return val[1]
   elseif (ts == '-') then
-    return getFirstScore(key)
+    return getFirstScore(key) or 0
   elseif (ts == '+') then
-    return getLastScore(key)
+    return getLastScore(key) or (MAX_INTEGER - 2)
   end
   return assertTimestamp(ts)
 end
