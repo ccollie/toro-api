@@ -4,12 +4,15 @@ import { Queue } from 'bullmq';
 import { HostManager } from '../../../../hosts';
 import { hostRedisFC as redis } from './Host.redis';
 import { hostChannelsFC as channels } from './Host.channels';
+import { discoverQueues } from './Host.discoverQueues';
+import { ping } from './Host.ping';
 import {
   histogram,
   percentileDistribution,
   stats,
   statsLatest as lastStatsSnapshot,
   statsDateRange,
+  statsAggregate,
 } from '../../stats';
 
 export const HostTC = schemaComposer.createObjectTC({
@@ -32,11 +35,14 @@ export const HostTC = schemaComposer.createObjectTC({
       },
     },
     channels,
+    discoverQueues,
     histogram,
     lastStatsSnapshot,
     percentileDistribution,
+    ping,
     redis,
     stats,
+    statsAggregate,
     statsDateRange,
   },
 });

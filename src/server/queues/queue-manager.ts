@@ -14,6 +14,7 @@ import {
   QueueConfig,
   QueueWorker,
   RepeatableJob,
+  RuleAlert,
   RuleConfigOptions,
 } from '../../types';
 import { isEmpty } from 'lodash';
@@ -222,6 +223,19 @@ export class QueueManager {
     return this.ruleManager.loadRules();
   }
 
+  async getAlertCount(): Promise<number> {
+    return this.ruleManager.getRuleAlertCount();
+  }
+
+  async getAlerts(
+    start: any = '-',
+    end: any = '+',
+    asc = true,
+    limit?: number,
+  ): Promise<RuleAlert[]> {
+    return this.ruleManager.storage.getAlerts(start, end, asc, limit);
+  }
+
   async listen(): Promise<void> {
     await Promise.all([
       this.loadRules(),
@@ -231,9 +245,7 @@ export class QueueManager {
   }
 
   async isPaused(): Promise<boolean> {
-    const client = await this.queue.client;
-    const meta = await client.hgetall(this.queue.keys.meta);
-    return meta?.paused ? !!+meta.paused : false;
+    return this.queue.isPaused();
   }
 
   pause(): Promise<void> {

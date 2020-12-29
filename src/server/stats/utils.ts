@@ -81,9 +81,14 @@ export function aggregateSnapshots(
 ): StatisticalSnapshot {
   let completed = 0;
   let failed = 0;
+  let startTime = recs.length ? recs[0].startTime : 0;
+  let endTime = startTime;
+
   recs.forEach((rec) => {
     completed = completed + (rec.completed || 0);
     failed = failed + (rec.failed || 0);
+    startTime = Math.min(startTime, rec.startTime);
+    endTime = Math.max(endTime, rec.endTime);
   });
 
   const hist = aggregate(recs);
@@ -91,25 +96,7 @@ export function aggregateSnapshots(
     ...hist,
     completed,
     failed,
+    startTime,
+    endTime,
   };
-}
-
-export async function deserializeResults<T>(
-  pipeline: Pipeline,
-  defaultValue: T | null = null,
-): Promise<(T | null)[]> {
-  const response = await pipeline.exec().then(checkMultiErrors);
-  const result: (T | null)[] = [];
-  response.forEach((value) => {
-    try {
-      if (value) {
-        result.push(JSON.parse(value.toString()) as T);
-      } else {
-        result.push(defaultValue);
-      }
-    } catch {
-      result.push(defaultValue);
-    }
-  });
-  return result;
 }

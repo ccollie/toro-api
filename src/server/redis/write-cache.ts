@@ -2,13 +2,9 @@ import IORedis, { Redis, Pipeline } from 'ioredis';
 import { isObject, isEmpty } from 'lodash';
 
 import logger from '../lib/logger';
-import * as streams from './streams';
-import { systemClock } from '../lib';
 import { LockManager } from './lock-manager';
 import { parseDuration } from '../lib/datetime';
 
-const LAST_CALL = Symbol('last call');
-const DEREGISTER_TIMEOUT = 10 * 1000;
 const DEFAULT_FLUSH_INTERVAL = 1000;
 
 function incrementValues(
@@ -24,7 +20,7 @@ function incrementValues(
 
 /**
  * This class exists to buffer calls to redis made within a
- * given interval and sendMail them within a single pipeline. It
+ * given interval and send them within a single pipeline. It
  * also collapses certain calls (e.g. hincr) to further reduce
  * bandwidth
  */
@@ -39,7 +35,6 @@ export class WriteCache {
     zset: Map<string, any[]>;
     set: Record<string, any>;
     incr: Record<string, number>;
-    tsAdd: Record<string, any>;
     hincr: Record<string, Record<string, number>>;
     del: string[];
     hset: Record<symbol, any>;
@@ -60,13 +55,11 @@ export class WriteCache {
       zset: new Map<string, any[]>(),
       set: {},
       incr: {},
-      tsAdd: {},
       hincr: {},
       hset: {},
       del: [],
     };
     this.flush.bind(this);
-    this[LAST_CALL] = systemClock.getTime();
     this.lock = lockMgr;
     this.flushInterval = parseDuration(
       process.env.FLUSH_INTERVAL,
@@ -143,17 +136,6 @@ export class WriteCache {
       }
     }
 
-    function handleTsAdd(data = {}): void {
-      Object.keys(data).forEach((key) => {
-        const items = data[key];
-        // todo: sort by timestamp
-        items.forEach((val) => {
-          const { key, data, _ts } = val;
-          streams.add(multi, key, _ts, data);
-        });
-      });
-    }
-
     function handleSet(data = {}): void {
       const args = Object.entries(data).reduce((res, [key, val]) => {
         res.push(key, val);
@@ -171,7 +153,6 @@ export class WriteCache {
     if (this._changed) {
       handleDel(this.buffer.del);
       handleIncr(this.buffer.incr);
-      handleTsAdd(this.buffer.tsAdd);
       handleSet(this.buffer.set);
       handleZSet(this.buffer.zset);
       handleHSet(this.buffer.hset);
@@ -183,7 +164,6 @@ export class WriteCache {
     this.buffer.hincr = Object.create(null);
     this.buffer.hset = Object.create(null);
     this.buffer.incr = Object.create(null);
-    this.buffer.tsAdd = Object.create(null);
     this.buffer.set = Object.create(null);
     this.buffer.del = [];
     if (!this.buffer.zset) {
@@ -218,12 +198,6 @@ export class WriteCache {
     this._changed = true;
   }
 
-  tsAdd(key: string, timestamp: string | number, data): void {
-    this.buffer.tsAdd[key] = this.buffer.tsAdd[key] || [];
-    const temp = this.buffer.tsAdd[key];
-    temp.push({ key, timestamp, data });
-    this._changed = true;
-  }
   set(key: string, value: any): void {
     this.buffer.set[key] = value;
     this._changed = true;
@@ -242,7 +216,7 @@ export class WriteCache {
     this._changed = true;
   }
 
-  discardBuffer(): void {
+  private discardBuffer(): void {
     this.pendingMulti = null;
     this._clearBuffer();
   }
@@ -281,11 +255,6 @@ export class WriteCache {
       logger.error('Error flushing pending updates ', { err });
     } finally {
       this._isFlushing = false;
-      const now = systemClock.getTime();
-      if (now - this[LAST_CALL] > DEREGISTER_TIMEOUT) {
-        // this.unpoll();
-      }
-      this[LAST_CALL] = now;
     }
   }
 }

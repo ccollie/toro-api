@@ -80,12 +80,6 @@ export async function getQueueMeta(queue: Queue): Promise<Record<string, any>> {
   return client.hgetall(key);
 }
 
-export async function getExists(queue: Queue): Promise<Record<string, any>> {
-  const key = getQueueMetaKey(queue);
-  const client = await queue.client;
-  return client.hgetall(key);
-}
-
 export async function setQueueMeta(
   queue: Queue,
   meta: Record<string, any>,

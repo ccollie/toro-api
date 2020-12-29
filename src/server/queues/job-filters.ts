@@ -2,8 +2,9 @@ import boom from '@hapi/boom';
 import { getJobFiltersKey, getUniqueId, safeParse } from '../lib';
 import { Queue } from 'bullmq';
 import { JobFilter, JobStatusEnum } from '../../types';
-import { accepts as isValid, parse } from 'mongodb-language-model';
+import { accepts as isValid } from 'mongodb-language-model';
 import { FilteredJobsResult, Scripts } from '../commands/scripts';
+import { checkMultiErrors } from '../redis';
 
 function unserialize(data: string): JobFilter {
   const value = safeParse(data);
@@ -169,10 +170,10 @@ export async function deleteAllJobFilters(queue: Queue): Promise<number> {
   const pipeline = client.multi();
   pipeline.hkeys(key);
   pipeline.del(key);
-  const response = await pipeline.exec();
-  const items = response[0][1];
+  const response = await pipeline.exec().then(checkMultiErrors);
+  const items = response[0];
   const count = items ? items.length : 0;
-  const deleted = !!response[1][1];
+  const deleted = !!response[1];
   return deleted ? count : 0;
 }
 

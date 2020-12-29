@@ -5,7 +5,7 @@ import isNumber from 'lodash/isNumber';
 import isDate from 'lodash/isDate';
 import { Timespan } from '../../types';
 import { systemClock } from '../lib';
-import { checkMultiErrors } from '../redis';
+import { deserializePipeline } from '../redis';
 
 export type PossibleTimestamp = string | DateLike;
 
@@ -214,20 +214,7 @@ export class TimeSeries {
     ids.forEach((ts) => {
       (pipeline as any).timeseries(key, 'get', stringifyTimestamp(ts));
     });
-    const response = pipeline.exec().then(checkMultiErrors);
-    const result: (T | null)[] = [];
-    response.forEach((value) => {
-      try {
-        if (value) {
-          result.push(JSON.parse(value.toString()) as T);
-        } else {
-          result.push(null);
-        }
-      } catch {
-        result.push(null);
-      }
-    });
-    return result;
+    return deserializePipeline<T>(pipeline);
   }
 
   static async pop<T = any>(
