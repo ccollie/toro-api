@@ -1,6 +1,6 @@
--- UNIVARIATE TIMESERIES IN REDIS
+-- TIMESERIES IN REDIS
 --
--- Stand-alone Lua script for managing an univariate timeseries in Redis based on lexicographically sorted sets
+-- Stand-alone Lua script for managing an timeseries in Redis based on lexicographically sorted sets
 --
 -- A timeseries is an
 --  1) ordered (with respect to timestamps)
@@ -11,8 +11,6 @@
 --
 --  EVALSHA sha1 1 key add 100000 key value
 --  EVALSHA sha1 1 key range 100000 100500 0 25
-
-local MAX_INTEGER = 4503599627370495  --- 2^52 - 1
 
 local function ts_debug(msg)
   redis.call('rpush', 'ts-debug', msg)

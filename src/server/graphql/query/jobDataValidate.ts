@@ -17,7 +17,7 @@ export const jobDataValidate: FieldConfig = {
     },
   }).NonNull,
   description:
-    'Validate job data against a schema previoudly defined on a queue',
+    'Validate job data against a schema previously defined on a queue',
   args: {
     input: schemaComposer.createInputTC({
       name: 'JobDataValidateInput',

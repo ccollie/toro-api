@@ -1,4 +1,4 @@
-import IORedis from 'ioredis';
+import IORedis, { Pipeline } from 'ioredis';
 import url, { Url } from 'url';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate } from '../lib/datetime';
@@ -14,7 +14,6 @@ export interface RedisStreamItem {
 export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
   let client;
   if (isNil(redisOpts)) {
-    // @ts-ignore
     client = new IORedis({ enableAutoPipelining: true }); // supported in 4.19.0
   } else if (isString(redisOpts)) {
     client = new IORedis(redisOpts as string);
@@ -267,6 +266,26 @@ export function toKeyValueList(hash: any): any[] {
   } else {
     return ['value', hash];
   }
+}
+
+export async function deserializePipeline<T>(
+  pipeline: Pipeline,
+  defaultValue: T | null = null,
+): Promise<(T | null)[]> {
+  const response = await pipeline.exec().then(checkMultiErrors);
+  const result: (T | null)[] = [];
+  response.forEach((value) => {
+    try {
+      if (value) {
+        result.push(JSON.parse(value.toString()) as T);
+      } else {
+        result.push(defaultValue);
+      }
+    } catch {
+      result.push(defaultValue);
+    }
+  });
+  return result;
 }
 
 type MetricName = keyof RedisMetrics;

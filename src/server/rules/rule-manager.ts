@@ -372,7 +372,10 @@ export class RuleManager {
     return this.storage.getRuleAlerts(rule, start, end, asc);
   }
 
-  async getRuleAlertCount(rule: Rule | string): Promise<number> {
+  async getRuleAlertCount(rule?: Rule | string): Promise<number> {
+    if (rule === undefined) {
+      return this.storage.getQueueAlertCount();
+    }
     return this.storage.getRuleAlertCount(rule);
   }
 

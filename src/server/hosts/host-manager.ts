@@ -30,8 +30,7 @@ import {
   removeQueueConfig,
 } from './host-config';
 import { getHostBusKey, getHostKey, getLockKey } from '../lib/keys';
-import { Channel } from '../notifications';
-import { NotificationManager } from '../notifications';
+import { Channel, NotificationManager } from '../notifications';
 import { getHostUri } from '../lib';
 
 const queueConfigKey = (prefix: string, name: string): string => {

@@ -1,12 +1,7 @@
 import boom from '@hapi/boom';
-import {
-  toKeyValueList,
-  parseMessageResponse,
-  parseXinfoResponse,
-  RedisStreamItem,
-} from './utils';
+import { toKeyValueList, parseXinfoResponse, RedisStreamItem } from './utils';
 import { toDate } from 'date-fns';
-import { isString, isDate } from 'lodash';
+import { isDate } from 'lodash';
 import { isNumber } from '../lib';
 import IORedis from 'ioredis';
 
@@ -75,36 +70,6 @@ export function getDeserializer(key: string) {
   return fn;
 }
 
-export async function getStreamRange(
-  client: IORedis.Redis,
-  key: string,
-  start,
-  end,
-  asc = true,
-): Promise<RedisStreamItem[]> {
-  start = convertTsForStream(start);
-  end = convertTsForStream(end);
-  let reply;
-
-  if (asc) {
-    reply = await client.xrange(key, start, end);
-  } else {
-    reply = await client.xrevrange(key, start, end);
-  }
-
-  let response = parseMessageResponse(reply);
-  const deserializer = getDeserializer(key);
-  if (deserializer) {
-    response = response.map(({ id, data }) => {
-      return {
-        id,
-        data: deserializer(data),
-      };
-    });
-  }
-  return response;
-}
-
 export async function getInfo(
   client: IORedis.Redis,
   stream: string,
@@ -118,19 +83,6 @@ export async function getInfo(
     }
     throw err;
   }
-}
-
-export async function getSpan(client: IORedis.Redis, key: string) {
-  const info = await getInfo(client, key);
-
-  function getTs(key: string): string {
-    return info && info[key] && info[key].id;
-  }
-
-  return {
-    start: getTs('first-entry'),
-    end: getTs('last-entry'),
-  };
 }
 
 export function parseStreamId(ts: unknown): string {
@@ -155,12 +107,4 @@ export function timestampFromStreamId(id: string): Date {
   if (!id) return undefined;
   const [timestamp] = id.split('-');
   return new Date(parseInt(timestamp));
-}
-export function registerDeserializer(key: string | RegExp, fn): void {
-  if (isString(key)) {
-    deserializerCache.set(key, fn);
-  } else {
-    // regex
-    deserializerMap.set(key, fn);
-  }
 }

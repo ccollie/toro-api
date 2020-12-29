@@ -37,10 +37,13 @@ export const statsLatest: FieldConfig = {
   type: StatsSnapshotTC,
   description: 'Gets the last recorded queue stats snapshot for a metric',
   args: {
-    input: StatsLatestInputTC.NonNull,
+    input: StatsLatestInputTC,
   },
   async resolve(_, { input }) {
-    const { jobName, granularity, metric } = input;
+    const { jobName, granularity, metric } = input || {
+      granularity: StatsGranularity.Minute,
+      metric: 'latency',
+    };
     const client = getClient(_);
     const unit = normalizeGranularity(granularity);
     if (_ instanceof HostManager) {

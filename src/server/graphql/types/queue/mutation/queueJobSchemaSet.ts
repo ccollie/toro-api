@@ -10,7 +10,7 @@ const JobSchemaInputTC = schemaComposer.createInputTC({
   fields: {
     queueId: 'ID!',
     jobName: 'String!',
-    schema: 'JSONSchema',
+    schema: 'JSONSchema!',
     defaultOpts: JobOptionsInputTC,
   },
 });

@@ -1,4 +1,4 @@
-import { EventBus } from '../redis';
+import { deserializePipeline, EventBus } from '../redis';
 import { DateLike, endOf, parseTimestamp, startOf } from '../lib/datetime';
 import {
   StatisticalSnapshot,
@@ -10,12 +10,7 @@ import { StatsClient } from './stats-client';
 import QueueStats from './queue-stats';
 import { QueueManager } from '../queues';
 import { TimeSeries } from '../commands/timeseries';
-import {
-  aggregateSnapshots,
-  CONFIG,
-  deserializeResults,
-  EmptyStatsSnapshot,
-} from './utils';
+import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
 import { HostManager } from '../hosts';
 import random from 'lodash/random';
 import isNil from 'lodash/isNil';
@@ -173,7 +168,7 @@ export class StatsWriter extends StatsClient {
       TimeSeries.multi.get(pipeline, key, start);
     });
 
-    return deserializeResults<StatisticalSnapshot>(
+    return deserializePipeline<StatisticalSnapshot>(
       pipeline,
       EmptyStatsSnapshot,
     );
@@ -221,7 +216,7 @@ export class StatsWriter extends StatsClient {
       TimeSeries.multi.get(pipeline, srcKey, start);
     });
 
-    const sources = await deserializeResults<StatisticalSnapshot>(
+    const sources = await deserializePipeline<StatisticalSnapshot>(
       pipeline,
       EmptyStatsSnapshot,
     );

@@ -2,9 +2,9 @@ import { QueueTC, FieldConfig } from '../types';
 import { Supervisor } from '../../supervisor';
 import { Queue } from 'bullmq';
 
-export const getQueueById: FieldConfig = {
+export const findQueue: FieldConfig = {
   type: QueueTC,
-  description: 'Delete a queue and all associated data',
+  description: 'Find a queue by name',
   args: {
     hostName: {
       type: 'String!',

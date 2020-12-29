@@ -14,7 +14,6 @@ import {
   EventBus,
   parseMessageResponse,
 } from '../redis';
-import { parseBool } from '../lib';
 import { getAlertsKey, getRuleKey } from '../lib/keys';
 
 import { Rule } from './rule';
@@ -26,7 +25,7 @@ import {
   Severity,
 } from '../../types';
 import IORedis from 'ioredis';
-import { getUniqueId, systemClock } from '../lib';
+import { getUniqueId, parseBool, systemClock } from '../lib';
 import { PossibleTimestamp, TimeSeries } from '../commands/timeseries';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
@@ -421,8 +420,8 @@ export class RuleStorage {
    * @return {Promise<[RuleAlert]>}
    */
   async getAlerts(
-    start,
-    end,
+    start: any = '-',
+    end: any = '+',
     asc = true,
     limit?: number,
   ): Promise<RuleAlert[]> {
@@ -481,8 +480,10 @@ export class RuleStorage {
   }
 
   async getQueueAlertCount(): Promise<number> {
-    const ruleIds = await this.getRuleIds();
-    const client = await this.getClient();
+    const [client, ruleIds] = await Promise.all([
+      this.getClient(),
+      this.getRuleIds(),
+    ]);
     const pipeline = client.pipeline();
     ruleIds.forEach((ruleId) => {
       TimeSeries.multi.size(pipeline, this.getAlertsKey(ruleId));
@@ -529,19 +530,6 @@ export class RuleStorage {
       result.push(elements[i + 1]);
     }
     return result;
-  }
-  /**
-   * Internal method to call lua timeseries library.
-   * @private
-   */
-  private async _alertsStorageMethod(
-    rule: Rule | string,
-    method: string,
-    ...args: any[]
-  ): Promise<any> {
-    const alertsKey = this.getAlertsKey(rule);
-    const client = await this.getClient();
-    return (client as any).timeseries(alertsKey, method, ...args);
   }
 }
 

@@ -5,6 +5,11 @@ import { JobSchemaTC } from '../../job/model/Job.schema';
 
 export const queueJobSchemas: FieldConfig = {
   type: JobSchemaTC.NonNull.List.NonNull,
+  args: {
+    jobNames: '[String!]',
+  },
+  description:
+    'Get JSONSchema documents previously set for a job names on a queue',
   async resolve(
     queue: Queue,
     { jobNames }: { jobNames: string[] },

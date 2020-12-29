@@ -38,6 +38,7 @@ export const OperatorNames = {
     [RuleOperator.gte]: 'is greater than or equal to',
   },
 };
+
 export function compare(operator: RuleOperator, a: number, b: number): boolean {
   switch (operator) {
     case RuleOperator.eq:

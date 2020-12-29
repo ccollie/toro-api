@@ -2,6 +2,7 @@ import { clearDb, createClient } from '../utils';
 import { createQueue } from '../factories';
 import { Job, Queue } from 'bullmq';
 import { Scripts } from '../../../src/server/commands/scripts';
+import nanoid = require("nanoid");
 
 
 const Person = {
@@ -861,6 +862,74 @@ describe('getJobsByFilter', () => {
       ];
       testExpressionCases('$concat', cases)
     });
+
+    describe('$indexOfBytes', () => {
+      const cases = [
+        [['cafeteria', 'e'], 3],
+        [['cafétéria', 'é'], 3],
+        [['cafétéria', 'e'], -1],
+        [['cafétéria', 't'], 4], // "5" is an error in MongoDB docs.
+        [['foo.bar.fi', '.', 5], 7],
+        [['vanilla', 'll', 0, 2], -1],
+        [['vanilla', 'll', 12], -1],
+        [['vanilla', 'll', 5, 2], -1],
+        [['vanilla', 'nilla', 3], -1],
+        [[null, 'foo'], null]
+      ];
+      testExpressionCases('$indexOfBytes', cases)
+    })
+
+    describe('$indexOfBytes: invalid parameters', () => {
+
+      async function runTest(
+          haystack: string | number,
+          needle: string | number,
+          start: string | number,
+          end: string | number,
+          expected?: RegExp | string) {
+        const data = {
+          haystack: nanoid(),
+        };
+        const conditional = {$indexOfBytes: [haystack, needle, start, end]};
+        const criteria = {$expr: {$eq: [5, conditional]}};
+        await queue.add('default', data);
+        if (expected) {
+          expect(() => checkExpression(criteria, 0))
+              .toThrow(expected)
+        } else {
+          expect(() => checkExpression(criteria, 0))
+              .toThrow()
+        }
+      }
+
+      async function testIndices(start: string | number, end: string | number, expected: string | RegExp) {
+        return runTest('$data.haystack', 'ignored', start, end, expected)
+      }
+
+      it('throws if the haystack is not a string', async () => {
+        await runTest(18, '', 0, 1000, /expected a string as the first argument/)
+      });
+
+      it('throws if the needle is not a string', async () => {
+        await runTest('$data.haystack', 99, 0, 1000, /expected a string as the second argument/)
+      });
+
+      it('throws if the start index is not a number', async () => {
+        await testIndices('fudge', 1000, /start index should be a number/);
+      });
+
+      it('throws if the start index is negative', async () => {
+        await testIndices(-5, 1000, /start index should be a positive number/);
+      });
+
+      it('throws if the end index is not a number', async () => {
+        await testIndices(1, 'cherry', /end index should be a number/);
+      });
+
+      it('throws if the end index is negative', async () => {
+        await testIndices(5, -10, /end index should be a positive number/);
+      });
+    })
 
     describe('$split', () => {
       const cases = [

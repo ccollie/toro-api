@@ -18,12 +18,17 @@ import { queueRules as rules } from './Queue.rules';
 import { pendingJobCount } from './Queue.pendingJobCount';
 import { queueJobFilters as jobFilters } from './Queue.jobFilters';
 import { getRatesResolver } from './rates';
+import { jobSearch } from './Queue.jobSearch';
+import { jobsByFilter } from './Queue.jobsByFilter';
+import { ruleAlertCount } from './Queue.ruleAlertCount';
+import { ruleAlerts } from './Queue.ruleAlerts';
 import {
   histogram,
   percentileDistribution,
   stats,
   statsLatest as lastStatsSnapshot,
   statsDateRange,
+  statsAggregate,
 } from '../../stats';
 
 const throughput = getRatesResolver('completed');
@@ -48,6 +53,8 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobNames,
     jobFilters,
     jobSchemas,
+    jobSearch,
+    jobsByFilter,
     jobDurationAvg,
     jobMemoryAvg,
     waitTimeAvg,
@@ -56,9 +63,12 @@ export const QueueTC = schemaComposer.createObjectTC({
     percentileDistribution,
     repeatableJobs,
     repeatableJobCount,
+    ruleAlertCount,
+    ruleAlerts,
     jobs,
     rules,
     stats,
+    statsAggregate,
     statsDateRange,
     throughput,
     errorRate,
