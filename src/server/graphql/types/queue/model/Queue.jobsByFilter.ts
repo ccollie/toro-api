@@ -1,16 +1,13 @@
-import { FieldConfig, JobTC } from '../types';
-import { getQueueById } from '../helpers';
+import { FieldConfig } from '../../../types';
 import { schemaComposer } from 'graphql-compose';
-import { FilteredJobsResult } from '../../commands/scripts';
-import { getJobsByFilterId } from '../../queues';
+import { FilteredJobsResult } from '../../../../commands/scripts';
+import { getJobsByFilterId } from '../../../../queues';
+import { Queue } from 'bullmq';
+import { JobSearchPayload } from './Queue.jobSearch';
 
 const JobsByFilterIdInput = schemaComposer.createInputTC({
   name: 'JobsByFilterIdInput',
   fields: {
-    queueId: {
-      type: 'ID!',
-      description: 'The id of the queue to search',
-    },
     filterId: {
       type: 'ID!',
       description: 'The id of the filter',
@@ -30,25 +27,14 @@ const JobsByFilterIdInput = schemaComposer.createInputTC({
   },
 });
 
-// Todo: share this result type with jobSearch
-export const jobsByFilterId: FieldConfig = {
+export const jobsByFilter: FieldConfig = {
   description: 'Fetch jobs based on a previously stored filter',
-  type: schemaComposer.createObjectTC({
-    name: 'JobsByFilterPayload',
-    fields: {
-      nextCursor: {
-        type: 'Int!',
-      },
-      jobs: JobTC.NonNull.List.NonNull,
-    },
-  }).NonNull,
+  type: JobSearchPayload.NonNull,
   args: {
     filter: JobsByFilterIdInput.NonNull,
   },
-  async resolve(_, { filter }): Promise<FilteredJobsResult> {
-    const { queueId, filterId, cursor, count } = filter;
-
-    const queue = getQueueById(queueId);
+  async resolve(queue: Queue, { filter }): Promise<FilteredJobsResult> {
+    const { filterId, cursor, count } = filter;
 
     const { jobs, nextCursor } = await getJobsByFilterId(
       queue,

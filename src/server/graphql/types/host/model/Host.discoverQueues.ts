@@ -1,7 +1,10 @@
-import { schemaComposer } from 'graphql-compose';
-import { FieldConfig } from '../types';
-import { DiscoveredQueue } from '../../../types';
+import {
+  ObjectTypeComposerFieldConfigDefinition,
+  schemaComposer,
+} from 'graphql-compose';
 import boom from '@hapi/boom';
+import { HostManager } from '../../../../hosts';
+import { DiscoveredQueue } from '../../../../../types';
 
 const DiscoverQueuesPayloadTC = schemaComposer.createObjectTC({
   name: 'DiscoverQueuesPayload',
@@ -17,14 +20,13 @@ const DiscoverQueuesPayloadTC = schemaComposer.createObjectTC({
   },
 });
 
-export const discoverQueues: FieldConfig = {
+export const discoverQueues: ObjectTypeComposerFieldConfigDefinition<
+  any,
+  any
+> = {
   type: DiscoverQueuesPayloadTC.NonNull.List.NonNull,
   description: 'Discover Bull queues on the given host',
   args: {
-    hostId: {
-      type: 'ID!',
-      description: 'Host Id',
-    },
     prefix: {
       type: 'String',
       description: 'Optional prefix filter',
@@ -39,14 +41,8 @@ export const discoverQueues: FieldConfig = {
         'they are tracked or not',
     },
   },
-  async resolve(
-    _: unknown,
-    args,
-    context: unknown,
-  ): Promise<DiscoveredQueue[]> {
-    const { supervisor } = context as any;
+  async resolve(host: HostManager, args): Promise<DiscoveredQueue[]> {
     const { hostId, prefix, unregisteredOnly = true } = args;
-    const host = supervisor.getHostById(hostId) || supervisor.getHost(hostId);
     if (!host) {
       throw boom.notFound(`Host with id "${hostId}"`);
     }

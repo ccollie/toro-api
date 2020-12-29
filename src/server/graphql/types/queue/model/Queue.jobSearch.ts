@@ -1,15 +1,11 @@
-import { FieldConfig, JobStatusEnumType, JobTC } from '../types';
-import { getQueueById } from '../helpers';
+import { FieldConfig, JobStatusEnumType } from '../../../types';
 import { GraphQLJSONObject, schemaComposer } from 'graphql-compose';
-import { Scripts, FilteredJobsResult } from '../../commands/scripts';
+import { Scripts, FilteredJobsResult } from '../../../../commands/scripts';
+import { Queue } from 'bullmq';
 
 const JobSearchInput = schemaComposer.createInputTC({
   name: 'JobSearchInput',
   fields: {
-    queueId: {
-      type: 'ID!',
-      description: 'The id of the queue to search',
-    },
     status: {
       type: JobStatusEnumType,
       makeRequired: true,
@@ -37,25 +33,25 @@ const JobSearchInput = schemaComposer.createInputTC({
   },
 });
 
+export const JobSearchPayload = schemaComposer.createObjectTC({
+  name: 'JobSearchPayload',
+  fields: {
+    nextCursor: {
+      type: 'Int!',
+    },
+    jobs: '[Job!]!',
+  },
+});
+
 export const jobSearch: FieldConfig = {
   description:
     'Incrementally iterate over a list of jobs filtered by mongo-compatible query criteria',
-  type: schemaComposer.createObjectTC({
-    name: 'JobSearchPayload',
-    fields: {
-      nextCursor: {
-        type: 'Int!',
-      },
-      jobs: JobTC.NonNull.List.NonNull,
-    },
-  }).NonNull,
+  type: JobSearchPayload.NonNull,
   args: {
     filter: JobSearchInput.NonNull,
   },
-  async resolve(_, { filter }): Promise<FilteredJobsResult> {
-    const { queueId, status, criteria, cursor, count } = filter;
-
-    const queue = getQueueById(queueId);
+  async resolve(queue: Queue, { filter }): Promise<FilteredJobsResult> {
+    const { status, criteria, cursor, count } = filter;
 
     const { jobs, nextCursor } = await Scripts.getJobsByFilter(
       queue,
