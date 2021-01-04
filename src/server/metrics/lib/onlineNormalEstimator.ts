@@ -135,8 +135,8 @@
  * @since   Lingpipe3.8
  */
 export default class OnlineNormalEstimator {
-  private _count: number;
-  private mS: number;
+  private _count = 0;
+  private mS = 0;
   private _mean = 0.0;
 
   /**
@@ -190,7 +190,7 @@ export default class OnlineNormalEstimator {
       this._count = 0;
       this._mean = 0.0;
       this.mS = 0.0;
-      return;
+      return this;
     }
     const oldMean = (this._count * this._mean - x) / (this._count - 1);
     this.mS -= (x - this._mean) * (x - oldMean);
