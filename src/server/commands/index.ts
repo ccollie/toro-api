@@ -1,63 +1,39 @@
-'use strict';
+/**
+ * Load redis lua scripts.
+ * The name of the script must have the following format:
+ *
+ * cmdName-numKeys.lua
+ *
+ * cmdName must be in camel case format.
+ *
+ * For example:
+ * moveToFinish-3.lua
+ *
+ */
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
-import { promisify } from 'util';
-import pMap from 'p-map';
 import IORedis from 'ioredis';
+import * as util from 'util';
 
-// TODO node >= 10 could be used require('fs').promises()
-const readFileAsync = promisify(fs.readFile);
+const readdir = util.promisify(fs.readdir);
+const readFile = util.promisify(fs.readFile);
 
-const FILES = [
-  { path: './getJobState-6.lua', numberOfKeys: 6, name: 'getJobState' },
-  { path: './getJobNames-8.lua', numberOfKeys: 8, name: 'getJobNames' },
-  { path: './getJobsByFilter-1.lua', numberOfKeys: 1, name: 'getJobsByFilter' },
-  { path: './timeseries-lex.lua', numberOfKeys: 1, name: 'timeseries' },
-  {
-    path: './getAvgJobMemoryUsage-1.lua',
-    numberOfKeys: 1,
-    name: 'getAvgJobMemoryUsage',
-  },
-  {
-    path: './getDurationAverage-1.lua',
-    numberOfKeys: 1,
-    name: 'getDurationAverage',
-  },
-  {
-    path: './getWaitTimeAverage-1.lua',
-    numberOfKeys: 1,
-    name: 'getWaitTimeAverage',
-  },
-];
+interface Command {
+  name: string;
+  sha: string;
+  options: {
+    numberOfKeys: number;
+    lua: string;
+  };
+}
 
-let scripts;
+let scripts: Command[];
 
 const initClients = new WeakSet();
 
 function calcSha1(str: string): string {
   return createHash('sha1').update(str, 'utf8').digest('hex');
-}
-
-async function loadFile(file: string): Promise<string> {
-  const fullPath = path.resolve(__dirname, file);
-  const lua = await readFileAsync(fullPath);
-  return lua.toString();
-}
-
-async function loadFiles() {
-  return pMap(FILES, async (file) => {
-    const { name, numberOfKeys, path } = file;
-
-    const content = await loadFile(path);
-    const sha = calcSha1(content);
-
-    return {
-      name,
-      sha,
-      options: { numberOfKeys, lua: content },
-    };
-  });
 }
 
 export async function loadScripts(
@@ -72,4 +48,29 @@ export async function loadScripts(
     });
   }
   return client;
+}
+
+async function loadFiles(dir?: string): Promise<Command[]> {
+  dir = dir || __dirname;
+  const files = await readdir(dir);
+
+  async function loadFile(file: string): Promise<Command> {
+    const longName = path.basename(file, '.lua');
+    const name = longName.split('-')[0];
+    const numberOfKeys = parseInt(longName.split('-')[1]);
+
+    const lua = await readFile(path.join(dir, file));
+    const content = lua.toString();
+    const sha = calcSha1(content);
+
+    return {
+      name,
+      sha,
+      options: { numberOfKeys, lua: content },
+    };
+  }
+
+  return Promise.all<Command>(
+    files.filter((file: string) => path.extname(file) === '.lua').map(loadFile),
+  );
 }
