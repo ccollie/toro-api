@@ -490,7 +490,7 @@ export class RuleStorage {
     });
     const reply = await pipeline.exec().then(checkMultiErrors);
 
-    return reply.reduce((count, resp) => count + resp);
+    return reply.reduce((count, resp) => count + resp, 0);
   }
 
   async clearAlerts(rule: Rule | string): Promise<number> {
