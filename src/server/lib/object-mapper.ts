@@ -47,7 +47,7 @@ export function compile(
     for (; i < handlers.length; i++) {
       const [dest, fn] = handlers[i];
       const val = fn(data);
-      // todo: have option no to include null values
+      // todo: have option not to include null values
       if (val === undefined && options.ignoreUndefined) {
         continue;
       }
