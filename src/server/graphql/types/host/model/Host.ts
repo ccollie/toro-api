@@ -1,7 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { QueueTC } from '../../queue/model/Queue';
-import { Queue } from 'bullmq';
-import { HostManager } from '../../../../hosts';
+import { hostQueues as queues } from './Host.queues';
 import { hostRedisFC as redis } from './Host.redis';
 import { hostChannelsFC as channels } from './Host.channels';
 import { discoverQueues } from './Host.discoverQueues';
@@ -27,13 +25,7 @@ export const HostTC = schemaComposer.createObjectTC({
       type: 'String',
       description: 'An optional description of the host',
     },
-    queues: {
-      type: QueueTC.NonNull.List.NonNull,
-      description: 'The queues registered for this host',
-      resolve: (host: HostManager): Queue[] => {
-        return host.getQueues();
-      },
-    },
+    queues,
     channels,
     discoverQueues,
     histogram,

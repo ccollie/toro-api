@@ -224,3 +224,7 @@ export function ordinal(number: number): string {
   const suffix = suffixes[EnglishOrdinalRules.select(number)];
   return number + suffix;
 }
+
+export const escapeRegExp = (text: string) => {
+  return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+};
