@@ -1,7 +1,6 @@
 import { ObjectTypeComposerFieldConfigDefinition } from 'graphql-compose';
 import { Queue } from 'bullmq';
 import { Scripts } from '../../../../commands/scripts';
-import { JobStatusEnum } from '../../../../../types';
 
 export const waitTimeAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   type: 'Int!',
@@ -19,11 +18,6 @@ export const waitTimeAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
     },
   },
   resolve: async (queue: Queue, { limit, jobName }) => {
-    return Scripts.getAvgWaitTime(
-      queue,
-      jobName,
-      JobStatusEnum.COMPLETED,
-      limit,
-    );
+    return Scripts.getInQueueAvgWaitTime(queue, jobName, limit);
   },
 };

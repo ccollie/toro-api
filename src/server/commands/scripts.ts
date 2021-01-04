@@ -138,6 +138,18 @@ export class Scripts {
     return (client as any).getWaitTimeAverage(...args);
   }
 
+  static async getInQueueAvgWaitTime(
+    queue: Queue,
+    jobName: string = null,
+    limit = 1000,
+  ): Promise<number> {
+    const client = await queue.client;
+    const prefix = queue.toKey('');
+    const key = queue.keys.waiting;
+    const args = [key, prefix, Date.now().toString(), jobName, limit];
+    return (client as any).getInQueueWaitTimeAverage(...args);
+  }
+
   static async getJobsByFilter(
     queue: Queue,
     type: string,
