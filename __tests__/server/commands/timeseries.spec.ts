@@ -31,7 +31,7 @@ describe('timeseries', () => {
     } else {
       values = '' + data;
     }
-    return callMethod(key,'add', timestamp, values);
+    return callMethod(key, 'add', timestamp, values);
   }
 
   async function getValue(key: string, timestamp): Promise<string> {
@@ -48,38 +48,36 @@ describe('timeseries', () => {
 
     it('should add a value to the set', async () => {
       const data = { beers: 30 };
-      await insertData(KEY, 3000, data ) ;
+      await insertData(KEY, 3000, data);
 
-      const size = await callMethod(KEY,'size');
+      const size = await callMethod(KEY, 'size');
       expect(size).toEqual(1);
 
-      const response = await callMethod(KEY, 'get', 3000)
-        .then(JSON.parse);
+      const response = await callMethod(KEY, 'get', 3000).then(JSON.parse);
 
       expect(response).toEqual(data);
     });
 
     it('returns the timestamp', async () => {
       const data = { beers: 30 };
-      const ts = await insertData(KEY, 3000, data ) ;
+      const ts = await insertData(KEY, 3000, data);
 
       expect(parseInt(ts)).toEqual(3000);
     });
 
     it('interprets "*" as the current server TIME', async () => {
-      const ts = await insertData(KEY, '*', 'data' );
+      const ts = await insertData(KEY, '*', 'data');
       const time = await client.time();
       const timestamp = time[0];
       expect(ts).toEqual(timestamp);
     });
 
     it('allows arbitrary data to be associated with a timestamp', async () => {
-
       const data = {
         bool: true,
         int: 12345,
         string: 'bazinga',
-        float: 123.456
+        float: 123.456,
       };
       await insertData(KEY, 1000, data);
 
@@ -96,21 +94,22 @@ describe('timeseries', () => {
     });
 
     it('throws on mismatched key/value count', async () => {
-      await callMethod(KEY,'add', 1000, "last_name")
-        .catch(e => expect(e.message).toMatch(/Number of arguments must be even/));
+      await callMethod(KEY, 'add', 1000, 'last_name').catch((e) =>
+        expect(e.message).toMatch(/Number of arguments must be even/),
+      );
     });
 
     it('disallows non-numeric timestamps', async () => {
-      await callMethod(KEY,'add', 'not-a-number', "value", 10)
-        .catch(e => expect(e.message).toMatch(/timestamp must be a number/));
+      await callMethod(KEY, 'add', 'not-a-number', 'value', 10).catch((e) =>
+        expect(e.message).toMatch(/timestamp must be a number/),
+      );
     });
 
     it('allows bigint/snowflake timestamps', async () => {
       const id = getUniqueId();
       const data = { rand: getUniqueId() };
       await insertData(KEY, id, data);
-      const response = await callMethod(KEY, 'get', id)
-        .then(JSON.parse);
+      const response = await callMethod(KEY, 'get', id).then(JSON.parse);
 
       expect(response).toEqual(data);
     });
@@ -123,10 +122,10 @@ describe('timeseries', () => {
     const states = ['ready', 'active', 'waiting', 'complete'];
 
     function generateRecord() {
-      return  {
+      return {
         name: sample(names),
         state: sample(states),
-        age: random(18, 65)
+        age: random(18, 65),
       };
     }
 
@@ -134,20 +133,23 @@ describe('timeseries', () => {
       const start_ts = 1488823384;
       const data = [];
 
-      for(let i = 0; i < 20; i++) {
+      for (let i = 0; i < 20; i++) {
         data.push(start_ts + i, generateRecord());
       }
 
       const args = data.map((x, index) => {
-        return (typeof x === 'object') ? JSON.stringify(x) : x
-      })
+        return typeof x === 'object' ? JSON.stringify(x) : x;
+      });
       const added = await client.timeseries(KEY, 'bulkAdd', ...args);
 
       const size = await callMethod(KEY, 'size');
       expect(size).toEqual(20);
 
-      const response = await getRange(client, KEY,'-', '+');
-      const actual = response.reduce((res, x) => res.concat([x.id, JSON.parse(x.data)]), []);
+      const response = await getRange(client, KEY, '-', '+');
+      const actual = response.reduce(
+        (res, x) => res.concat([x.id, JSON.parse(x.data)]),
+        [],
+      );
       expect(actual).toEqual(data);
     });
   });
@@ -157,46 +159,47 @@ describe('timeseries', () => {
 
     it('returns the value associated with a timestamp', async () => {
       const data = nanoid();
-      await insertData(KEY,1005, data);
+      await insertData(KEY, 1005, data);
 
-      const value = await getValue(KEY,1005);
+      const value = await getValue(KEY, 1005);
 
       expect(value).toEqual(data);
     });
 
     it('substitutes "*" for the current server time"', async () => {
       const data = nanoid();
-      await insertData(KEY,'*', data);
+      await insertData(KEY, '*', data);
 
-      const value = await getValue(KEY,'*');
+      const value = await getValue(KEY, '*');
 
       expect(value).toEqual(data);
     });
 
     it('substitutes "-" for the first timestamp"', async () => {
       const expected = nanoid();
-      await insertData(KEY,'100', expected);
-      await insertData(KEY,'200', nanoid());
+      await insertData(KEY, '100', expected);
+      await insertData(KEY, '200', nanoid());
 
-      const actual = await getValue(KEY,'-');
+      const actual = await getValue(KEY, '-');
 
       expect(actual).toEqual(expected);
     });
 
     it('substitutes "+" for the last timestamp"', async () => {
       const expected = nanoid();
-      await insertData(KEY,'100', nanoid());
-      await insertData(KEY,'150', nanoid());
-      await insertData(KEY,'200', expected);
+      await insertData(KEY, '100', nanoid());
+      await insertData(KEY, '150', nanoid());
+      await insertData(KEY, '200', expected);
 
-      const actual = await getValue(KEY,'+');
+      const actual = await getValue(KEY, '+');
 
       expect(actual).toEqual(expected);
     });
 
     it('disallows non-numeric timestamps', async () => {
-      await getValue(KEY, 'not-a-number')
-        .catch(e => expect(e.message).toMatch(/timestamp must be a number/));
+      await getValue(KEY, 'not-a-number').catch((e) =>
+        expect(e.message).toMatch(/timestamp must be a number/),
+      );
     });
   });
 
@@ -210,7 +213,7 @@ describe('timeseries', () => {
     it('returns and removes the value associated with a timestamp', async () => {
       const data = nanoid();
       const timestamp = 1005;
-      await insertData(KEY,timestamp, data);
+      await insertData(KEY, timestamp, data);
 
       let value = await popValue(timestamp);
       expect(value).toEqual(data);
@@ -221,7 +224,7 @@ describe('timeseries', () => {
 
     it('substitutes "*" for the current server time"', async () => {
       const data = nanoid();
-      await insertData(KEY,'*', data);
+      await insertData(KEY, '*', data);
 
       const value = await popValue('*');
 
@@ -229,8 +232,9 @@ describe('timeseries', () => {
     });
 
     it('disallows non-numeric timestamps', async () => {
-      await popValue('not-a-number')
-        .catch(e => expect(e.message).toMatch(/timestamp must be a number/));
+      await popValue('not-a-number').catch((e) =>
+        expect(e.message).toMatch(/timestamp must be a number/),
+      );
     });
   });
 
@@ -252,7 +256,6 @@ describe('timeseries', () => {
 
       expect(exists).toBe(0);
     });
-
   });
 
   describe('set', () => {
@@ -268,11 +271,10 @@ describe('timeseries', () => {
         data = `${value}`;
       }
 
-      return callMethod(KEY,'set', timestamp, data);
+      return callMethod(KEY, 'set', timestamp, data);
     }
 
-    it('should create the value if it does not exist' , async () => {
-
+    it('should create the value if it does not exist', async () => {
       const data = {
         active: 1,
         waiting: 2,
@@ -283,9 +285,7 @@ describe('timeseries', () => {
       expect(actual).toEqual(data);
     });
 
-
-    it('should set the values' , async () => {
-
+    it('should set the values', async () => {
       const data = {
         active: 1,
         waiting: 2,
@@ -293,11 +293,11 @@ describe('timeseries', () => {
         failed: 4,
       };
 
-      const newValues  = {
-        active:  4,
+      const newValues = {
+        active: 4,
         waiting: 3,
         completed: 2,
-        failed: 1
+        failed: 1,
       };
 
       await insertData(KEY, start_ts, data);
@@ -309,8 +309,9 @@ describe('timeseries', () => {
     });
 
     it('should disallow non-numeric timestamps', async () => {
-      await set('not-a-number', "value")
-        .catch(e => expect(e.message).toMatch(/timestamp must be a number/));
+      await set('not-a-number', 'value').catch((e) =>
+        expect(e.message).toMatch(/timestamp must be a number/),
+      );
     });
   });
 
@@ -327,11 +328,10 @@ describe('timeseries', () => {
         data = `${value}`;
       }
 
-      return callMethod(KEY,'updateJson', timestamp, data).then(JSON.parse);
+      return callMethod(KEY, 'updateJson', timestamp, data).then(JSON.parse);
     }
 
-    it('should create the value if it does not exist' , async () => {
-
+    it('should create the value if it does not exist', async () => {
       const data = {
         number: 10,
         string: nanoid(),
@@ -339,17 +339,15 @@ describe('timeseries', () => {
         float: 3.5,
         obj: {
           id: getUniqueId(),
-          items: [2, 'a', 1.25, false]
-        }
+          items: [2, 'a', 1.25, false],
+        },
       };
 
       const actual = await update(start_ts, data);
       expect(actual).toEqual(data);
     });
 
-
-    it('updates the value' , async () => {
-
+    it('updates the value', async () => {
       const original = {
         number: 10,
         string: nanoid(),
@@ -357,8 +355,8 @@ describe('timeseries', () => {
         float: 3.5,
         obj: {
           id: getUniqueId(),
-          items: [2, 'a', 1.25, false]
-        }
+          items: [2, 'a', 1.25, false],
+        },
       };
 
       await insertData(KEY, start_ts, original);
@@ -366,17 +364,16 @@ describe('timeseries', () => {
       const updated = {
         number: 40,
         obj: { id: getUniqueId(), other: { thing: 20 } },
-        float: 509.10
-      }
+        float: 509.1,
+      };
 
-      await update(start_ts, updated)
+      await update(start_ts, updated);
 
       const actual = await getObjectValue(KEY, start_ts);
       expect(actual.number).toBe(updated.number);
       expect(actual.float).toBe(updated.float);
       expect(actual.obj).toEqual(updated.obj);
     });
-
   });
 
   describe('del', () => {
@@ -384,19 +381,19 @@ describe('timeseries', () => {
 
     function del(...keys) {
       const args = [].concat(...keys);
-      return callMethod(TIMESERIES_KEY, 'del', ...args)
+      return callMethod(TIMESERIES_KEY, 'del', ...args);
     }
 
     it('deletes a value from the set', async () => {
-      const id = await callMethod(TIMESERIES_KEY, 'add', 1000, "beer");
+      const id = await callMethod(TIMESERIES_KEY, 'add', 1000, 'beer');
       const count = await del(id);
       expect(count).toBe(1);
     });
 
     it('handles "-" for the first item"', async () => {
       const expected = nanoid();
-      await insertData(TIMESERIES_KEY,'100', expected);
-      await insertData(TIMESERIES_KEY,'200', nanoid());
+      await insertData(TIMESERIES_KEY, '100', expected);
+      await insertData(TIMESERIES_KEY, '200', nanoid());
 
       const actual = await del('-');
       expect(actual).toBe(1);
@@ -407,9 +404,9 @@ describe('timeseries', () => {
 
     it('substitutes "+" for the last item"', async () => {
       const expected = nanoid();
-      await insertData(TIMESERIES_KEY,'100', nanoid());
-      await insertData(TIMESERIES_KEY,'150', nanoid());
-      await insertData(TIMESERIES_KEY,'200', expected);
+      await insertData(TIMESERIES_KEY, '100', nanoid());
+      await insertData(TIMESERIES_KEY, '150', nanoid());
+      await insertData(TIMESERIES_KEY, '200', expected);
 
       const actual = await del('+');
       expect(actual).toBe(1);
@@ -425,32 +422,63 @@ describe('timeseries', () => {
       const data = [];
 
       for (let i = 0; i < samples_count; i++) {
-        data.push( i );
+        data.push(i);
       }
 
       await insertMany(client, TIMESERIES_KEY, start_ts, samples_count, data);
       const items = await getRange(client, TIMESERIES_KEY, '-', '+');
-      const ids = items.map(x => x.data);
+      const ids = items.map((x) => x.data);
 
       const count = await del(ids);
       expect(count).toEqual(ids.length);
     });
-
   });
 
   describe('count', () => {
     const KEY = 'ts:count';
 
     it('returns the count of elements between 2 timestamps', async () => {
-      await addValues(client, KEY, 1000, 10, 2000, 20, 3000, 30, 4000, 40, 5000, 50, 6000, 60);
-      const count = await callMethod(KEY,'count', 2000, 5000);
+      await addValues(
+        client,
+        KEY,
+        1000,
+        10,
+        2000,
+        20,
+        3000,
+        30,
+        4000,
+        40,
+        5000,
+        50,
+        6000,
+        60,
+      );
+      const count = await callMethod(KEY, 'count', 2000, 5000);
       expect(count).toEqual(4);
     });
 
     it('supports special range characters', async () => {
-      await addValues( client, KEY, 1000, 10, 2000, 20, 3000, 30, 4000, 40, 5000, 50, 6000, 60, 7000, 60);
+      await addValues(
+        client,
+        KEY,
+        1000,
+        10,
+        2000,
+        20,
+        3000,
+        30,
+        4000,
+        40,
+        5000,
+        50,
+        6000,
+        60,
+        7000,
+        60,
+      );
 
-      let count = await callMethod(KEY,'count', '-', '+');
+      let count = await callMethod(KEY, 'count', '-', '+');
       expect(count).toEqual(7);
 
       count = await callMethod(KEY, 'count', 3000, '+');
@@ -459,7 +487,6 @@ describe('timeseries', () => {
       count = await callMethod(KEY, 'count', '-', 4000);
       expect(count).toEqual(4);
     });
-
   });
 
   describe('size', () => {
@@ -470,16 +497,15 @@ describe('timeseries', () => {
       const pipeline = client.pipeline();
       for (let i = 0; i < values.length; i += 2) {
         const ts = values[i];
-        const val = values[i+1];
+        const val = values[i + 1];
         pipeline.timeseries(KEY, 'add', ts, val);
       }
 
       await pipeline.exec();
     }
 
-
     it('returns the correct list size', async () => {
-      let size = await callMethod(KEY,'size');
+      let size = await callMethod(KEY, 'size');
       expect(size).toEqual(0);
 
       await addValues(1005, 200);
@@ -507,12 +533,12 @@ describe('timeseries', () => {
       const data = [];
 
       for (let i = 0; i < samples_count; i++) {
-        data.push( (i + 1) * 5 )
+        data.push((i + 1) * 5);
       }
 
       await _insert_data(start_ts, samples_count, data);
       let response = await range('-', '+');
-      const actual = response.map(x => parseInt(x.data, 10));
+      const actual = response.map((x) => parseInt(x.data, 10));
 
       expect(actual.length).toEqual(data.length);
       expect(actual[0]).toEqual(data[0]);
@@ -523,12 +549,18 @@ describe('timeseries', () => {
       const data = [];
 
       for (let i = 0; i < samples_count; i++) {
-        data.push( (i + 1) * 5 )
+        data.push((i + 1) * 5);
       }
 
       await _insert_data(start_ts, samples_count, data);
-      const response = await range(start_ts, start_ts + samples_count, 'LIMIT', 1, 4);
-      const actual = response.map(x => parseInt(x.data, 10));
+      const response = await range(
+        start_ts,
+        start_ts + samples_count,
+        'LIMIT',
+        1,
+        4,
+      );
+      const actual = response.map((x) => parseInt(x.data, 10));
       expect(actual.length).toEqual(4);
       expect(actual[0]).toEqual(data[1]);
       expect(actual[3]).toEqual(data[4]);
@@ -539,15 +571,15 @@ describe('timeseries', () => {
 
       const calls = [];
       for (let i = 1000; i < 10000; i += 1000) {
-        data.push( i );
-        calls.push(() => (client as any).timeseries(KEY, 'add', i, i))
+        data.push(i);
+        calls.push(() => (client as any).timeseries(KEY, 'add', i, i));
       }
 
       await pAll(calls, { concurrency: 4 });
 
       const checkRange = async (min, max, expected) => {
         const response = await range(min, max);
-        const actual = response.map(x => parseInt(x.data));
+        const actual = response.map((x) => parseInt(x.data));
         try {
           expect(actual).toEqual(expected);
         } catch (e) {
@@ -557,12 +589,19 @@ describe('timeseries', () => {
       };
 
       await checkRange('-', '+', data);
-      await checkRange(3000, '+', data.filter(x => x >= 3000));
-      await checkRange('-', 4000, data.filter(x => x < 4000));
+      await checkRange(
+        3000,
+        '+',
+        data.filter((x) => x >= 3000),
+      );
+      await checkRange(
+        '-',
+        4000,
+        data.filter((x) => x < 4000),
+      );
 
       // todo ( and [
     });
-
   });
 
   describe('revrange', () => {
@@ -583,12 +622,12 @@ describe('timeseries', () => {
       const data = [];
 
       for (let i = 0; i < samples_count; i++) {
-        data.push( (i + 1) * 5 )
+        data.push((i + 1) * 5);
       }
 
       await _insert_data(start_ts, samples_count, data);
       let response = await get_range('+', '-');
-      const actual = response.map(x => parseInt(x.data, 10));
+      const actual = response.map((x) => parseInt(x.data, 10));
       const reversed = reverse(data);
 
       expect(actual).toEqual(reversed);
@@ -598,7 +637,7 @@ describe('timeseries', () => {
       const data = [];
 
       for (let i = 0; i < samples_count; i++) {
-        data.push( (i + 1) * 5 )
+        data.push((i + 1) * 5);
       }
 
       await _insert_data(start_ts, samples_count, data);
@@ -609,7 +648,7 @@ describe('timeseries', () => {
       const COUNT = 4;
 
       const response = await get_range(max, min, 'LIMIT', OFFSET, COUNT);
-      const actual = response.map(x => parseInt(x.data, 10));
+      const actual = response.map((x) => parseInt(x.data, 10));
       expect(actual.length).toEqual(COUNT);
       const reversed = reverse(data).slice(OFFSET, OFFSET + COUNT);
       expect(actual).toEqual(reversed);
@@ -619,24 +658,26 @@ describe('timeseries', () => {
       const data = [];
 
       for (let i = 1000; i < 10000; i += 1000) {
-        data.push( i )
+        data.push(i);
       }
 
       const cases = [
         ['+', '-', data],
-        ['+', 3000, data.filter(x => x <= 3000)],
-        [4000, '-', data.filter(x => x >= 4000)],
+        ['+', 3000, data.filter((x) => x <= 3000)],
+        [4000, '-', data.filter((x) => x >= 4000)],
       ];
-      test.each(cases)('revrange[%p .. %p]',async (max, min, expected: any[]) => {
-        await _insert_data(start_ts, data.length, data);
-        const range = await get_range(max, min);
-        const actual = range.map(x => parseInt(x.data));
-        expect(actual).toEqual( reverse(expected) );
-      });
+      test.each(cases)(
+        'revrange[%p .. %p]',
+        async (max, min, expected: any[]) => {
+          await _insert_data(start_ts, data.length, data);
+          const range = await get_range(max, min);
+          const actual = range.map((x) => parseInt(x.data));
+          expect(actual).toEqual(reverse(expected));
+        },
+      );
 
       // todo ( and [
     });
-
   });
 
   describe('remrange', () => {
@@ -645,18 +686,17 @@ describe('timeseries', () => {
     const KEY = 'ts:remrange';
 
     function getSize() {
-      return callMethod(KEY,'size')
+      return callMethod(KEY, 'size');
     }
 
     async function getSpan() {
       const response = await callMethod(KEY, 'span');
-      return [ parseInt(response[0], 10), parseInt(response[1], 10) ]
+      return [parseInt(response[0], 10), parseInt(response[1], 10)];
     }
 
     it('should remove data based on range', async () => {
-
       const data = [];
-      for (let i = 0; i < samples_count; i ++) {
+      for (let i = 0; i < samples_count; i++) {
         data.push(i);
       }
 
@@ -666,7 +706,7 @@ describe('timeseries', () => {
       const mid_ts = start_ts + mid;
       const end_ts = start_ts + data.length;
 
-      const count = await callMethod(KEY,'remrange', mid_ts, end_ts);
+      const count = await callMethod(KEY, 'remrange', mid_ts, end_ts);
 
       const remaining = await getSize();
       expect(remaining).toEqual(count);
@@ -678,9 +718,8 @@ describe('timeseries', () => {
     });
 
     it('should handle the LIMIT option', async () => {
-
       const data = [];
-      for (let i = 0; i < samples_count; i ++) {
+      for (let i = 0; i < samples_count; i++) {
         data.push(i);
       }
 
@@ -690,13 +729,20 @@ describe('timeseries', () => {
       const mid_ts = start_ts + mid;
       const end_ts = start_ts + data.length;
 
-      const count = await callMethod(KEY,'remrange', mid_ts, end_ts, 'LIMIT', 0, 10);
+      const count = await callMethod(
+        KEY,
+        'remrange',
+        mid_ts,
+        end_ts,
+        'LIMIT',
+        0,
+        10,
+      );
       expect(count).toEqual(10);
 
       const size = await getSize();
       expect(size).toEqual(data.length - count);
     });
-
   });
 
   describe('span', () => {
@@ -707,7 +753,7 @@ describe('timeseries', () => {
       const pipeline = client.pipeline();
       for (let i = 0; i < values.length; i += 2) {
         const ts = values[i];
-        const val = values[i+1];
+        const val = values[i + 1];
         pipeline.timeseries(KEY, 'add', ts, val);
       }
 
@@ -715,23 +761,20 @@ describe('timeseries', () => {
     }
 
     it('should return the first and last timestamp', async () => {
-
       await addValues(1005, 200);
-      await addValues( 1000, 10, 2000, 20, 7500, 30);
+      await addValues(1000, 10, 2000, 20, 7500, 30);
       await addValues(6007, 400);
 
-      const actual = await callMethod(KEY,'span');
-      expect(actual).toStrictEqual([1000, 7500]);
+      const actual = await callMethod(KEY, 'span');
+      expect(actual).toStrictEqual(['1000', '7500']);
     });
 
     it('should return the same timestamp for start and end if there is only one entry', async () => {
+      await callMethod(KEY, 'add', 6007, 400);
 
-      await callMethod(KEY,'add', 6007, 400);
-
-      const actual = await callMethod(KEY,'span');
-      expect(actual).toStrictEqual([6007, 6007]);
+      const actual = await callMethod(KEY, 'span');
+      expect(actual).toStrictEqual(['6007', '6007']);
     });
-
   });
 
   describe('truncate', () => {
@@ -744,7 +787,7 @@ describe('timeseries', () => {
 
       const pipeline = client.pipeline();
       for (let i = 0; i < sampleCount; i++) {
-        const ts = startTs + (i * interval);
+        const ts = startTs + i * interval;
         data.push(ts);
         pipeline.timeseries(KEY, 'add', ts, ts);
       }
@@ -762,7 +805,7 @@ describe('timeseries', () => {
       const INTERVAL = 50;
       const COUNT = 3;
       const data = await insertValues(INTERVAL);
-      const retention = (INTERVAL * COUNT);
+      const retention = INTERVAL * COUNT;
 
       const removed = await truncate(retention);
       expect(removed).toBe(data.length - COUNT);
@@ -774,7 +817,6 @@ describe('timeseries', () => {
       expect(scores[scores.length - 1] - scores[0]).toBe(retention);
     });
   });
-
 });
 
 function reverse(data: any[]): any[] {
@@ -799,8 +841,9 @@ async function insertMany(client, key, start_ts, samples_count, data) {
   const pipeline = client.pipeline();
   for (let i = 0; i < samples_count; i++) {
     let value = Array.isArray(data) ? data[i] : data;
-    const serialized = typeof value === 'object' ? JSON.stringify(value) : value;
-    pipeline.timeseries(key, 'add', start_ts + i, serialized)
+    const serialized =
+      typeof value === 'object' ? JSON.stringify(value) : value;
+    pipeline.timeseries(key, 'add', start_ts + i, serialized);
   }
 
   await pipeline.exec();
@@ -812,7 +855,7 @@ async function addValues(client, key, ...args) {
   const pipeline = client.pipeline();
   for (let i = 0; i < values.length; i += 2) {
     const ts = values[i];
-    const val = values[i+1];
+    const val = values[i + 1];
     pipeline.timeseries(key, 'add', ts, val);
   }
 
