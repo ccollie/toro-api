@@ -220,9 +220,9 @@ export interface MeterSummary {
   count: number;
   meanRate: number;
   currentRate: number;
-  avg1Minute: number;
-  avg5Minute: number;
-  avg15Minute: number;
+  m1Rate: number;
+  m5Rate: number;
+  m15Rate: number;
 }
 
 const DefaultMeterProperties: MeterProperties = {
@@ -288,7 +288,7 @@ export class Meter extends BaseMeter {
   }
 
   /**
-   * Updates the 5 minutes average if needed and returns the rate per second.
+   * Updates the 5 minutes average if needed and returns the rate per unit.
    *
    * @returns {number}
    */
@@ -298,7 +298,7 @@ export class Meter extends BaseMeter {
   }
 
   /**
-   * Updates the 1 minute average if needed and returns the rate per second.
+   * Updates the 1 minute average if needed and returns the rate per unit.
    *
    * @returns {number}
    */
@@ -312,9 +312,9 @@ export class Meter extends BaseMeter {
       count: this.count,
       currentRate: this.currentRate,
       meanRate: this.meanRate,
-      avg1Minute: this.get1MinuteRate(),
-      avg5Minute: this.get5MinuteRate(),
-      avg15Minute: this.get15MinuteRate(),
+      m1Rate: this.get1MinuteRate(),
+      m5Rate: this.get5MinuteRate(),
+      m15Rate: this.get15MinuteRate(),
     };
   }
 
@@ -323,9 +323,9 @@ export class Meter extends BaseMeter {
       ...super.toJSON(),
       count: this.count,
       currentRate: this.currentRate,
-      avg1Minute: this.get1MinuteRate(),
-      avg5Minute: this.get5MinuteRate(),
-      avg15Minute: this.get15MinuteRate(),
+      m1Rate: this.get1MinuteRate(),
+      m5Rate: this.get5MinuteRate(),
+      m15Rate: this.get15MinuteRate(),
     };
   }
 }
