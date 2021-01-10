@@ -1,4 +1,4 @@
-import { Clock } from '../../lib';
+import { Clock } from './clock';
 
 export class TimeTicker {
   private _lastTick: number;

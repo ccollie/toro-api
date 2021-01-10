@@ -1,8 +1,7 @@
 import { Meter } from './meter';
-import { Clock } from '../../lib';
+import { Clock } from '../lib';
 import { Histogram } from 'hdr-histogram-js';
-import { getHistogramSnapshot } from './histUtils';
-import { createHistogram } from './histUtils';
+import { getHistogramSnapshot, createHistogram } from './utils';
 
 /**
  * A convenience wrapper class for a {@link Timer} to measure durations.

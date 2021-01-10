@@ -1,4 +1,4 @@
-import { StreamingStats } from '../lib';
+import { StreamingStats } from '../../stats';
 import { BaseAggregator } from './aggregator';
 import { Clock } from '../../lib';
 import { SlidingWindowOptions } from '../../../types';

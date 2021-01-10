@@ -1,6 +1,6 @@
-import OnlineNormalEstimator from './onlineNormalEstimator';
-import { SlidingWindow, TickEventData } from './slidingWindow';
-import { Clock, systemClock } from '../../lib';
+import OnlineNormalEstimator from './online-normal-estimator';
+import { SlidingTimeWindow, TickEventData } from './sliding-time-window';
+import { Clock, systemClock } from '../lib';
 import Denque from 'denque';
 
 export type SummaryStatsField =
@@ -12,7 +12,7 @@ export type SummaryStatsField =
   | 'sampleStdDev';
 
 export class StreamingStats {
-  private readonly window: SlidingWindow<Denque<number>>;
+  private readonly window: SlidingTimeWindow<Denque<number>>;
   private readonly _estimator: OnlineNormalEstimator;
   private readonly clock: Clock;
   private _currentWindow: Denque<number>;
@@ -20,7 +20,7 @@ export class StreamingStats {
   constructor(clock?: Clock, windowSize?: number) {
     this.clock = clock || systemClock;
     if (windowSize !== undefined && windowSize > 0) {
-      this.window = new SlidingWindow(
+      this.window = new SlidingTimeWindow(
         this.clock,
         windowSize,
         () => new Denque<number>(),

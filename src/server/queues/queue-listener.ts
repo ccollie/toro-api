@@ -162,7 +162,7 @@ export class QueueListener extends Emittery {
       (this.eventRefCounts[eventName] || 0) - 1);
     if (refs <= 0) {
       delete this.eventRefCounts[eventName];
-      this.clearListeners([eventName]);
+      this.clearListeners(eventName);
     }
   }
 

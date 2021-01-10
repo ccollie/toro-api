@@ -1,5 +1,5 @@
-import OnlineNormalEstimator from './onlineNormalEstimator';
-import { Clock } from '../../lib';
+import OnlineNormalEstimator from './online-normal-estimator';
+import { Clock } from '../lib';
 
 export enum PeakSignal {
   NONE,
@@ -20,7 +20,7 @@ export enum PeakSignal {
  * deviation (how much a peak (or signal) should affect other values near it)
  * @return - The signal
  */
-export class RealTimePeakDetector {
+export class StreamingPeakDetector {
   public readonly lag: number;
   public readonly threshold: number;
   public readonly influence: number;

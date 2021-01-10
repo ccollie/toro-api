@@ -23,7 +23,7 @@ export const process = async (job: Job): Promise<any> => {
 
   let progress = 10;
 
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const update = (): number => {
       job.updateProgress(progress);
       return (progress += 25);
@@ -38,7 +38,7 @@ export const process = async (job: Job): Promise<any> => {
 
     const wake = (): void => {
       console.log(`${queue} #${orderNumber}: ${protein}, ${salsa} served`);
-      return resolve();
+      resolve();
     };
 
     setTimeout(update, cookTime / 5);

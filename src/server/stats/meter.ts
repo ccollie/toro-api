@@ -1,8 +1,7 @@
-import { Clock } from '../../lib';
+import { Clock, TimeTicker } from '../lib';
 import * as units from './units';
 // eslint-disable-next-line max-len
-import { ExponentiallyMovingWeightedAverage as EWMA } from './exponentiallyMovingWeightedAverage';
-import { TimeTicker } from './timeTicker';
+import { ExponentiallyMovingWeightedAverage as EWMA } from './exponentially-moving-weighted-average';
 
 const RATE_UNIT = units.MINUTES;
 const TICK_INTERVAL = 5 * units.SECONDS;

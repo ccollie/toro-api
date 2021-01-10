@@ -1,4 +1,4 @@
-// https://github.com/eoinmurray/histogram/blob/master/histogram.js
+// modified from https://github.com/eoinmurray/histogram/blob/master/histogram.js
 'use strict';
 import { decodeFromCompressedBase64, JsHistogram } from 'hdr-histogram-js';
 import RecordedValuesIterator from 'hdr-histogram-js/dist/RecordedValuesIterator';

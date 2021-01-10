@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { SlidingWindow } from './slidingWindow';
-import { Clock } from '../../lib';
+import { SlidingTimeWindow } from '../stats';
+import { Clock } from '../lib';
 
 class Bucket {
   private values: Record<string, number> = Object.create(null);
@@ -58,14 +58,14 @@ export interface CounterInterface {
 export class SlidingWindowCounter
   extends EventEmitter
   implements CounterInterface {
-  private readonly _windows: SlidingWindow<Bucket>;
+  private readonly _windows: SlidingTimeWindow<Bucket>;
   private _currentWindow: Bucket;
   private _accumulator: Bucket;
 
   constructor(clock: Clock, duration: number) {
     super();
 
-    this._windows = new SlidingWindow<Bucket>(
+    this._windows = new SlidingTimeWindow<Bucket>(
       clock,
       duration,
       () => new Bucket(),

@@ -2,8 +2,7 @@ import { EventEmitter } from 'events';
 import { isFunction } from 'lodash';
 import { calculateInterval } from './utils';
 import { UnsubscribeFn } from 'emittery';
-import { Clock } from '../../lib';
-import { TimeTicker } from './timeTicker';
+import { Clock, TimeTicker } from '../lib';
 import ms from 'ms';
 
 function getDefaultValue(defaultValue): any {
@@ -21,7 +20,7 @@ export interface TickEventData<T> {
   ts: number;
 }
 
-export class SlidingWindow<T> extends EventEmitter {
+export class SlidingTimeWindow<T> extends EventEmitter {
   private _ptr: number;
   private _rotated = false;
   private readonly _ticker: TimeTicker;

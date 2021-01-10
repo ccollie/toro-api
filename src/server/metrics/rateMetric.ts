@@ -1,13 +1,13 @@
 import Joi, { ObjectSchema } from 'joi';
 import boom from '@hapi/boom';
-import { SimpleMeter } from './lib';
+import { SimpleMeter } from '../stats';
 import {
   PollingMetric,
   PollingMetricOptions,
   pollingMetricSchema,
 } from './baseMetric';
 import { Events } from './constants';
-import * as units from './lib/units';
+import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metricsListener';
 import { MetricType } from '../../types';

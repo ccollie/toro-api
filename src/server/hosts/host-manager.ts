@@ -76,7 +76,7 @@ export class HostManager {
 
     this.writer = new WriteCache(client, this.lock);
 
-    new Emittery().bindMethods(this);
+    new Emittery().bindMethods(this as Record<string, any>);
 
     this._initialized = this.init();
   }

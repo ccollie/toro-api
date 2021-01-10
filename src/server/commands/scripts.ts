@@ -165,7 +165,7 @@ export class Scripts {
     // $$NOW -> Date.now()
     const criteria = JSON.stringify(filter);
 
-    const response = await client.getJobsByFilter(
+    const response = await (client as any).getJobsByFilter(
       key,
       prefix,
       criteria,

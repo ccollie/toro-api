@@ -1,7 +1,7 @@
 import { BaseAggregator } from './aggregator';
-import { ExponentiallyMovingWeightedAverage } from '../lib';
-import { SECONDS, MINUTES, TimeTicker } from '../lib';
-import { Clock, getStaticProp } from '../../lib';
+import { ExponentiallyMovingWeightedAverage } from '../../stats';
+import { SECONDS, MINUTES } from '../../stats';
+import { Clock, getStaticProp, TimeTicker } from '../../lib';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../../validation/schemas';
 import { BaseMetric } from '../baseMetric';

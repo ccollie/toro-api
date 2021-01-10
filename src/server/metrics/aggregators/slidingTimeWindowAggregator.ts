@@ -1,4 +1,4 @@
-import { InfiniteWindow, SlidingWindow, TickEventData } from '../lib';
+import { InfiniteWindow, SlidingTimeWindow, TickEventData } from '../../stats';
 import { Clock } from '../../lib';
 import { BaseAggregator } from './aggregator';
 import { SlidingWindowOptions } from '../../../types';
@@ -6,7 +6,7 @@ import { SlidingWindowOptions } from '../../../types';
 export class SlidingTimeWindowAggregator<
   TSlice = number
 > extends BaseAggregator {
-  protected readonly slidingWindow: SlidingWindow<TSlice>;
+  protected readonly slidingWindow: SlidingTimeWindow<TSlice>;
   protected _value: number | undefined;
   protected readonly options: SlidingWindowOptions;
   protected clock: Clock;
@@ -19,7 +19,7 @@ export class SlidingTimeWindowAggregator<
     super();
     this.clock = clock;
     this.options = options;
-    this.slidingWindow = new SlidingWindow<TSlice>(
+    this.slidingWindow = new SlidingTimeWindow<TSlice>(
       clock,
       options.duration,
       defaultValue,

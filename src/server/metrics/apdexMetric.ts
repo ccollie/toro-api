@@ -3,7 +3,7 @@ import { ObjectSchema } from 'joi';
 import { Events } from './constants';
 import { DurationSchema } from '../validation/schemas';
 import { JobFinishedEventData } from '../queues';
-import { ApdexCalculator } from './lib';
+import { ApdexCalculator } from '../stats';
 
 export interface ApdexMetricOptions extends MetricOptions {
   threshold: number;

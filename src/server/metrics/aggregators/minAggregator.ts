@@ -1,7 +1,7 @@
 'use strict';
 import { Clock, getStaticProp } from '../../lib';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
-import { TickEventData } from '../lib';
+import { TickEventData } from '../../stats';
 import { BaseMetric } from '../baseMetric';
 import { SlidingWindowOptions } from '../../../types';
 

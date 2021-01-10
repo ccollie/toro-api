@@ -1,8 +1,8 @@
-import { TickEventData } from '../lib';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
 import { SlidingWindowOptions } from '../../../types';
+import { TickEventData } from '../../stats';
 
 const DEFAULT_VALUE = Number.NEGATIVE_INFINITY;
 
