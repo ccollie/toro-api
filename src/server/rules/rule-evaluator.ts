@@ -1,4 +1,4 @@
-import { RealTimePeakDetector } from '../metrics/lib';
+import { StreamingPeakDetector } from '../stats';
 import { Clock, getStaticProp, isNumber, logger } from '../lib';
 import {
   BaseMetric,
@@ -140,8 +140,8 @@ const DefaultPeakDetectorOptions: PeakCondition = {
 };
 
 export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
-  private readonly detector: RealTimePeakDetector;
-  private readonly warningDetector: RealTimePeakDetector;
+  private readonly detector: StreamingPeakDetector;
+  private readonly warningDetector: StreamingPeakDetector;
   private readonly direction: PeakSignalDirection;
 
   constructor(metric: BaseMetric, options: PeakCondition) {
@@ -151,7 +151,7 @@ export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
       ...options,
     };
     const clock = this.clock;
-    this.detector = new RealTimePeakDetector(
+    this.detector = new StreamingPeakDetector(
       clock,
       opts.lag,
       opts.errorThreshold,
@@ -159,7 +159,7 @@ export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
     );
 
     if (typeof opts.warningThreshold === 'number') {
-      this.warningDetector = new RealTimePeakDetector(
+      this.warningDetector = new StreamingPeakDetector(
         clock,
         opts.lag,
         opts.warningThreshold,

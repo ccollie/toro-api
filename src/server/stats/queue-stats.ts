@@ -1,7 +1,8 @@
-import { createHistogram, getHistogramSnapshot, Meter } from '../metrics/lib';
+import { Meter } from './meter';
 import { Histogram } from 'hdr-histogram-js';
 import { Clock } from '../lib';
 import { StatisticalSnapshot } from '@src/types';
+import { createHistogram, getHistogramSnapshot } from './utils';
 
 /**
  * Class to hold statistics aggregated from a queue over
@@ -72,7 +73,8 @@ export default class QueueStats {
 
   /* Register a FAILED job */
   markFailed(runTime: number): this {
-    this.latency.recordValue(runTime);
+    // do we need to account for runtime of failed jobs ?
+    // this.latency.recordValue(runTime);
     this.counts.failed++;
     this.errorMeter.mark();
     return this;

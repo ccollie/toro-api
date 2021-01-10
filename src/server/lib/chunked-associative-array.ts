@@ -1,4 +1,4 @@
-import { binarySearch } from './binarySearch';
+import { binarySearch } from './binary-search';
 import Denque from 'denque';
 
 class Chunk<TKey = number, TValue = any> {

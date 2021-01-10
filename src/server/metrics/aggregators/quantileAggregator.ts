@@ -1,6 +1,6 @@
 import Joi, { ObjectSchema } from 'joi';
 import { Clock, getStaticProp, ordinal } from '../../lib';
-import { QuantileEstimator, TickEventData } from '../lib';
+import { QuantileEstimator, TickEventData } from '../../stats';
 import baseSchema from '../slidingWindowBaseSchema';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import { BaseMetric } from '../baseMetric';

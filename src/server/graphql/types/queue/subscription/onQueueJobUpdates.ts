@@ -6,7 +6,7 @@ import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../../helpers';
 import { JobStatusEnum } from '../../../imports';
-import { createJobNameFilter } from '../../../../metrics/lib/utils';
+import { createJobNameFilter } from '../../../../metrics/utils';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 

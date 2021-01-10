@@ -1,20 +1,15 @@
 import boom from '@hapi/boom';
-import Emittery, { UnsubscribeFn } from 'emittery';
+import Emittery from 'emittery';
 import crypto from 'crypto';
 import Joi, { ObjectSchema } from 'joi';
 import { JobEventData } from '../queues';
-import { createJobNameFilter } from './lib/utils';
 import { BaseAggregator, NullAggregator } from './aggregators';
 import { Events } from './constants';
-import {
-  systemClock,
-  Clock,
-  AsyncIterationBuffer,
-  createAsyncIterator,
-} from '../lib';
+import { systemClock, Clock, createAsyncIterator } from '../lib';
 import { MetricsListener } from './metricsListener';
 import { DurationSchema } from '../validation/schemas';
 import { MetricType, Predicate } from '../../types';
+import { createJobNameFilter } from './utils';
 
 export enum MetricCategory {
   Redis = 'redis',

@@ -153,12 +153,10 @@ export class StatsClient extends Emittery {
     return client.hgetall(key);
   }
 
-  private async updateMeta(
-    pipeline: Pipeline,
-    data: Record<string, any>,
-  ): Promise<void> {
+  private updateMeta(pipeline: Pipeline, data: Record<string, any>): Pipeline {
     const key = getQueueMetaKey(this.queue);
-    await pipeline.hmset(key, data);
+    pipeline.hmset(key, data);
+    return pipeline;
   }
 
   async setMeta(data: Record<string, any>): Promise<void> {

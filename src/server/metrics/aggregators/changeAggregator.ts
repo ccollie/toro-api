@@ -1,18 +1,21 @@
 import ms from 'ms';
-import { Clock, getStaticProp } from '../../lib';
 import { BaseAggregator } from './aggregator';
-import { ChunkedAssociativeArray, TimeTicker } from '../lib';
+import {
+  Clock,
+  getStaticProp,
+  ChunkedAssociativeArray,
+  TimeTicker,
+} from '../../lib';
 import { BaseMetric } from '../baseMetric';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../../validation/schemas';
 import { DDSketch } from 'sketches-js';
-import { clearDDSketch } from './utils';
+import { clearDDSketch, calculateInterval } from '../../stats/utils';
 import {
   ChangeAggregationType,
   ThresholdCondition,
   ChangeConditionOptions,
 } from '../../../types';
-import { calculateInterval } from '../lib/utils';
 
 const TRIM_THRESHOLD = 4;
 

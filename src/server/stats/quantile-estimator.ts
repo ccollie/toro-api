@@ -1,5 +1,5 @@
 import { DDSketch } from 'sketches-js';
-import { clearDDSketch } from '../aggregators/utils';
+import { clearDDSketch } from './utils';
 
 const DefaultMaxBins = 1024;
 

@@ -4,7 +4,6 @@ import { BaseMetric, PollingMetric } from './baseMetric';
 import Emittery, { UnsubscribeFn } from 'emittery';
 import { Clock, logger } from '../lib';
 import IORedis from 'ioredis';
-import { GCF } from './lib/utils';
 import { Queue } from 'bullmq';
 import { AccurateInterval, createAccurateInterval } from '../lib';
 
@@ -12,6 +11,10 @@ const DEFAULT_CONCURRENCY = 16;
 const UPDATE_EVENT_NAME = 'metrics.updated';
 
 const isPollingMetric = (metric: BaseMetric) => metric instanceof PollingMetric;
+
+function GCF(a: number, b: number): number {
+  return b === 0 ? a : GCF(b, a % b);
+}
 
 interface PollingMetricMetadata {
   lastTick: number;

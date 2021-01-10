@@ -1,6 +1,19 @@
-import { aggregateHistograms, getHistogramSnapshot } from '../metrics/lib';
-import { StatisticalSnapshot, StatsGranularity } from '../../types';
+import {
+  HistogramSnapshot,
+  StatisticalSnapshot,
+  StatisticalSnapshotOptions,
+  StatsGranularity,
+} from '../../types';
+import {
+  build,
+  decodeFromCompressedBase64,
+  encodeIntoCompressedBase64,
+  Histogram,
+  initWebAssemblySync,
+} from 'hdr-histogram-js';
 import ms from 'ms';
+import { DDSketch } from 'sketches-js';
+import * as units from './units';
 
 export const CONFIG = {
   units: [
@@ -74,6 +87,117 @@ export const EmptyStatsSnapshot: StatisticalSnapshot = {
   failed: 0,
 };
 
+const defaultPercentiles = [90, 95, 99, 99.5];
+
+const defaultStatisticalSnapshotOptions: StatisticalSnapshotOptions = {
+  includePercentiles: true,
+  includeData: true,
+  percentiles: defaultPercentiles,
+};
+
+const emptyHistogramSnapshot: HistogramSnapshot = {
+  count: 0,
+  mean: 0,
+  min: 0,
+  max: 0,
+  stddev: 0,
+  median: 0,
+  p90: 0,
+  p95: 0,
+  p99: 0,
+  p995: 0,
+  data: null,
+};
+
+let wasmLoaded = false;
+
+function ensureWasmLoaded(): void {
+  if (!wasmLoaded) {
+    wasmLoaded = true;
+    initWebAssemblySync();
+  }
+}
+
+export function createHistogram(packed = true): Histogram {
+  ensureWasmLoaded();
+  // this.histogram = new Histogram(1, MAX_DURATION_IN_MS, 2);
+  return build({
+    numberOfSignificantValueDigits: 2,
+    bitBucketSize: packed ? 'packed' : 32,
+    autoResize: true,
+    useWebAssembly: true,
+  });
+}
+
+export function encodeHistogram(hist: Histogram): string {
+  ensureWasmLoaded();
+  return encodeIntoCompressedBase64(hist);
+}
+
+export function decodeHistogram(value: string): Histogram {
+  ensureWasmLoaded();
+  return decodeFromCompressedBase64(value, 'packed', true);
+}
+
+function getMin(hist: Histogram): number {
+  const result = hist.minNonZeroValue;
+  return result === Number.MAX_SAFE_INTEGER ? 0 : result;
+}
+
+function getMax(hist: Histogram): number {
+  const result = hist.maxValue;
+  return result === Number.MIN_SAFE_INTEGER ? 0 : result;
+}
+
+export function getHistogramSnapshot(
+  hist: Histogram,
+  opts: StatisticalSnapshotOptions = defaultStatisticalSnapshotOptions,
+): HistogramSnapshot {
+  opts.percentiles = opts.percentiles || defaultPercentiles;
+
+  const count = hist.totalCount;
+  const mean = Math.ceil(hist.mean * 100) / 100;
+  const median = Math.ceil(hist.getValueAtPercentile(0.5) * 100) / 100;
+
+  const result: HistogramSnapshot = {
+    ...emptyHistogramSnapshot,
+    count,
+    mean,
+    median,
+    stddev: Math.ceil(hist.stdDeviation * 100) / 100,
+    min: getMin(hist),
+    max: getMax(hist),
+    data: encodeHistogram(hist),
+  };
+
+  if (opts.includePercentiles) {
+    opts.percentiles.forEach((percent) => {
+      const key = `p${percent}`.replace('.', '');
+      result[key] = hist.getValueAtPercentile(percent);
+    });
+  }
+
+  return result;
+}
+
+export function aggregateHistograms(recs: HistogramSnapshot[]): Histogram {
+  let hist: Histogram = null;
+  recs.forEach((rec) => {
+    if (rec.data) {
+      if (!hist) {
+        hist = decodeHistogram(rec.data);
+        hist.autoResize = true;
+      } else {
+        const src = decodeHistogram(rec.data);
+        hist.add(src);
+      }
+    }
+  });
+
+  hist = hist || createHistogram();
+  return hist;
+}
+
 export function aggregateSnapshots(
   recs: StatisticalSnapshot[],
 ): StatisticalSnapshot {
@@ -100,4 +224,38 @@ export function aggregateSnapshots(
     startTime,
     endTime,
   };
+}
+
+export function clearDDSketch(sketch: DDSketch): void {
+  sketch.bins = {};
+  sketch.n = 0;
+  sketch.numBins = 0;
+}
+
+export function calculateInterval(duration: number): number {
+  const asString = ms(duration, { long: true });
+  const [, unit] = asString.split(' ');
+
+  switch (unit) {
+    case 'millisecond':
+    case 'milliseconds':
+      return units.MILLISECONDS;
+    case 'second':
+    case 'seconds':
+      return 100 * units.MILLISECONDS;
+    case 'minute':
+    case 'minutes':
+      return 5 * units.SECONDS;
+    case 'hour':
+    case 'hours':
+      return 30 * units.SECONDS;
+    case 'day':
+    case 'days':
+      return 15 * units.MINUTES;
+    case 'month':
+    case 'months':
+      return units.HOURS;
+  }
+
+  return units.SECONDS;
 }
