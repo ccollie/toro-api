@@ -1,5 +1,4 @@
 import boom from '@hapi/boom';
-import nanoid from 'nanoid';
 import { Job, Queue } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
@@ -23,6 +22,7 @@ export const JobFields = [
 ];
 
 async function processJobInternal(
+  queue: Queue,
   cmd: string,
   job: Job,
   state: JobStatusEnum,
@@ -45,9 +45,8 @@ async function processJobInternal(
       break;
     case 'remove':
       if (state === JobStatusEnum.ACTIVE) {
-        const token = nanoid(10);
         await job.discard();
-        await job.moveToFailed(new Error('Aborted by user'), token);
+        await job.moveToFailed(new Error('Aborted by user'), queue.token);
       } else {
         await job.remove();
       }
@@ -76,7 +75,7 @@ export async function processJobCommand(
     (job as any).state = state;
   }
 
-  return processJobInternal(cmd, job, state);
+  return processJobInternal(queue, cmd, job, state);
 }
 
 export async function removeJob(queue: Queue, id: string): Promise<Job> {
@@ -127,7 +126,7 @@ export async function bulkJobHandler(
     const states = await Scripts.multiGetJobState(queue, jids);
     const promises = jobs.map((job, index) => {
       const state = states[index] as JobStatusEnum;
-      return processJobInternal(action, job, state);
+      return processJobInternal(queue, action, job, state);
     });
     const settled = await pSettle(promises, { concurrency: 4 });
     settled.forEach((info, index) => {

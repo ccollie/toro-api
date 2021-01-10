@@ -1,6 +1,6 @@
 import pMap from 'p-map';
 import { clearDb, createClient } from '../utils';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { Queue } from 'bullmq';
 import {
   addJobFilter,
@@ -37,7 +37,7 @@ describe('Job Filters', function () {
     return client.hget(key, name);
   }
 
-  const SAMPLE_EXPR = { returnvalue: { $exists: true }};
+  const SAMPLE_EXPR = { returnvalue: { $exists: true } };
 
   async function createFilter(expr?: Record<string, any>): Promise<JobFilter> {
     expr = expr || SAMPLE_EXPR;
@@ -46,9 +46,13 @@ describe('Job Filters', function () {
 
   describe('addJobFilter', function () {
     it('it can create a job filter', async () => {
-
       const now = Date.now();
-      const saved = await addJobFilter(queue, 'test', JobStatusEnum.FAILED, SAMPLE_EXPR);
+      const saved = await addJobFilter(
+        queue,
+        'test',
+        JobStatusEnum.FAILED,
+        SAMPLE_EXPR,
+      );
       expect(saved).toBeDefined();
       expect(saved.name).toBe('test');
       expect(saved.expression).toEqual(SAMPLE_EXPR);
@@ -65,18 +69,24 @@ describe('Job Filters', function () {
       expect(saved.status).toEqual(null);
     });
 
-    it ('It validates the filter before saving', async () => {
-      await expect(addJobFilter(queue, 'test', JobStatusEnum.COMPLETED, { $geoWithin: [100, 100] }))
-          .rejects
-          .toThrow();
-    })
+    it('It validates the filter before saving', async () => {
+      await expect(
+        addJobFilter(queue, 'test', JobStatusEnum.COMPLETED, {
+          $geoWithin: [100, 100],
+        }),
+      ).rejects.toThrow();
+    });
   });
 
   describe('getJobFilter', () => {
-
     it('it can retrieve stored filters', async () => {
-      const expr = { returnvalue: { $exists: true }};
-      const saved = await addJobFilter(queue, 'Simple', JobStatusEnum.COMPLETED, expr);
+      const expr = { returnvalue: { $exists: true } };
+      const saved = await addJobFilter(
+        queue,
+        'Simple',
+        JobStatusEnum.COMPLETED,
+        expr,
+      );
       const retrieved = await getJobFilter(queue, saved.id);
 
       expect(retrieved).toBeDefined();
@@ -95,21 +105,25 @@ describe('Job Filters', function () {
   });
 
   describe('getJobFilters', () => {
-
     const FilterNames = ['lorem', 'ipsum', 'dolor', 'sit', 'amet'];
     let filters: JobFilter[];
 
     async function createFilters() {
-      filters = await pMap(FilterNames, name => addJobFilter(queue, name, JobStatusEnum.COMPLETED, SAMPLE_EXPR));
+      filters = await pMap(FilterNames, (name) =>
+        addJobFilter(queue, name, JobStatusEnum.COMPLETED, SAMPLE_EXPR),
+      );
       filters = sortBy(filters, 'id');
     }
 
     it('it can get multiple filters at once', async () => {
       await createFilters();
       const keys = await client.hkeys(getKey());
-      const subset = sampleSize(keys, 3)
+      const subset = sampleSize(keys, 3);
       const actual = sortBy(await getJobFilters(queue, subset), 'id');
-      const expected = sortBy(filters.filter((x) => subset.includes(x.id)), 'id');
+      const expected = sortBy(
+        filters.filter((x) => subset.includes(x.id)),
+        'id',
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -121,8 +135,7 @@ describe('Job Filters', function () {
   });
 
   describe('deleteJobFilter', () => {
-
-    it('it can delete an existing filter', async() => {
+    it('it can delete an existing filter', async () => {
       const saved = await createFilter();
       expect(saved).toBeDefined();
       const deleted = await deleteJobFilter(queue, saved.id);
@@ -131,7 +144,7 @@ describe('Job Filters', function () {
       expect(data).toBeNull();
     });
 
-    it('it returns false for an non-existent filter', async() => {
+    it('it returns false for an non-existent filter', async () => {
       const nonExistent = nanoid(10);
       const deleted = await deleteJobFilter(queue, nonExistent);
       expect(deleted).toBe(false);
@@ -139,10 +152,11 @@ describe('Job Filters', function () {
   });
 
   describe('deleteAllFilters', () => {
-
     it('it should delete all filters for a queue', async () => {
       const names = ['lorem', 'ipsum', 'dolor', 'sit', 'amet'];
-      await pMap(names, name => addJobFilter(queue, name, JobStatusEnum.FAILED, SAMPLE_EXPR));
+      await pMap(names, (name) =>
+        addJobFilter(queue, name, JobStatusEnum.FAILED, SAMPLE_EXPR),
+      );
       // ensure we've stored our values
       const items = await client.hkeys(getKey());
       expect(items.length).toBe(names.length);
@@ -151,5 +165,4 @@ describe('Job Filters', function () {
       expect(deleteCount).toBe(names.length);
     });
   });
-
 });

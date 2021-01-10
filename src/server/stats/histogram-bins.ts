@@ -94,7 +94,7 @@ export type BinnedHistogramValues = {
   min: number;
   max: number;
   total: number;
-  binWidth: number;
+  width: number;
   bins: HistogramBin[];
 };
 
@@ -110,7 +110,7 @@ export function computeHistogramBins(
       min: histogram.minNonZeroValue,
       max: histogram.maxValue,
       total: 0,
-      binWidth: 0,
+      width: 0,
       bins: [],
     };
   }
@@ -183,9 +183,9 @@ export function computeHistogramBins(
   if (opts.pretty) {
     binCount = prettify(binCount);
   }
-  const binWidth = (max - min) / n;
+  const width = (max - min) / n;
 
-  const bins = makeBins(min, binWidth, binCount);
+  const bins = makeBins(min, width, binCount);
   const m = bins.length - 1;
   let total = 0;
 
@@ -202,7 +202,7 @@ export function computeHistogramBins(
   }
 
   return {
-    binWidth,
+    width,
     min,
     max,
     total,

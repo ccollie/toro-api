@@ -2,13 +2,12 @@ import { HostConfig } from '../../../src/types';
 import { getUniqueId } from '../../../src/server/lib';
 import { HostManager } from '../../../src/server/hosts';
 import { clearDb, DEFAULT_CLIENT_OPTIONS } from '../utils';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 
 describe('HostManager', () => {
-
   beforeEach(async () => {
     process.env.HOST_URL_TEMPLATE = 'localhost:8000/hosts/{{host.id}}';
-    await clearDb()
+    await clearDb();
   });
 
   function createConfig(defaults?: Partial<HostConfig>): HostConfig {
@@ -20,7 +19,7 @@ describe('HostManager', () => {
       channels: [],
       id: getUniqueId(),
       name: 'host-' + getUniqueId(),
-      ...(defaults || {})
+      ...(defaults || {}),
     };
   }
 
@@ -33,8 +32,8 @@ describe('HostManager', () => {
         queues: [],
         id: getUniqueId(),
         name: 'host-' + getUniqueId(),
-        description: nanoid()
-      }
+        description: nanoid(),
+      };
 
       const sut = new HostManager(config);
       try {
@@ -55,22 +54,22 @@ describe('HostManager', () => {
 
     it('adds configured queues', async () => {
       const config = createConfig({
-        queues:[
+        queues: [
           {
-            "name": "bb_queue",
-            "prefix": "bbq",
-            "jobTypes": []
+            name: 'bb_queue',
+            prefix: 'bbq',
+            jobTypes: [],
           },
           {
-            "name": "suzy_queue"
+            name: 'suzy_queue',
           },
           {
-            "name": "widgets"
+            name: 'widgets',
           },
           {
-            "name": "tacos"
+            name: 'tacos',
           },
-        ]
+        ],
       });
 
       // normall
@@ -79,7 +78,9 @@ describe('HostManager', () => {
         await sut.waitUntilReady();
         expect(sut.queueManagers.length).toBe(config.queues.length);
         config.queues.forEach((queueConfig) => {
-          const found = sut.queueManagers.find((q) => q.name === queueConfig.name);
+          const found = sut.queueManagers.find(
+            (q) => q.name === queueConfig.name,
+          );
           expect(found).toBeDefined();
         });
         const first = config.queues[0];
@@ -88,10 +89,9 @@ describe('HostManager', () => {
       } finally {
         await sut.destroy();
       }
-    })
+    });
 
-    it('adds configured channels', async () => {
-    })
+    it('adds configured channels', async () => {});
 
     it('gets uri', async () => {
       const config: HostConfig = {
@@ -101,10 +101,10 @@ describe('HostManager', () => {
         queues: [],
         id: getUniqueId(),
         name: 'host-' + getUniqueId(),
-      }
+      };
 
       process.env = Object.assign(process.env, {
-        HOST_URI_TEMPLATE: 'localhost/h/{{host.id}}'
+        HOST_URI_TEMPLATE: 'localhost/h/{{host.id}}',
       });
 
       const expected = `localhost/h/${config.id}`;
@@ -115,7 +115,6 @@ describe('HostManager', () => {
       } finally {
         await sut.destroy();
       }
-    })
-
-  })
+    });
+  });
 });

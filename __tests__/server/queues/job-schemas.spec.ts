@@ -1,6 +1,6 @@
 import pMap from 'p-map';
 import { clearDb, createClient } from '../utils';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { Queue, JobsOptions } from 'bullmq';
 import {
   compileSchema,
@@ -62,8 +62,8 @@ describe('jobSchema', function () {
     timeout: 5000,
     removeOnFail: true,
     lifo: true,
-    attempts: 5
-  }
+    attempts: 5,
+  };
 
   // Typescript catches dev errors, but
   // we'll be getting this info as a JSON
@@ -71,8 +71,8 @@ describe('jobSchema', function () {
   const invalidJobOption = {
     timeout: 5000,
     removeOnFail: 'hell naw',
-    attempts: 'twenty two'
-  }
+    attempts: 'twenty two',
+  };
 
   describe('validateJobOptions', () => {
     it('it should pass validation for valid options', () => {
@@ -87,7 +87,7 @@ describe('jobSchema', function () {
     it('it should throw for invalid options', () => {
       // Typescript catches dev errors, but we'll be getting this info as a JSON
       // blob from the client, so we force the cast to test
-      const opts = invalidJobOption as any as JobsOptions;
+      const opts = (invalidJobOption as any) as JobsOptions;
       expect(() => validateJobOptions(opts)).toThrow();
     });
   });
@@ -104,14 +104,15 @@ describe('jobSchema', function () {
     });
 
     it('it should throw if no names is provided', () => {
-      expect(() => compileSchema(null, simpleSchema)).toThrow(/job names is required/)
+      expect(() => compileSchema(null, simpleSchema)).toThrow(
+        /job names is required/,
+      );
     });
 
     it('it should throw if an empty json schema is provided', () => {
-      expect(() => compileSchema('test', null)).toThrow(/missing json schema/)
-      expect(() => compileSchema('test', {})).toThrow(/missing json schema/)
+      expect(() => compileSchema('test', null)).toThrow(/missing json schema/);
+      expect(() => compileSchema('test', {})).toThrow(/missing json schema/);
     });
-
   });
 
   describe('addJobSchema', function () {
@@ -133,8 +134,12 @@ describe('jobSchema', function () {
     };
 
     it('it can create a job schema', async () => {
-
-      const saved = await addJobSchema(queue, 'test', jsonSchema, validJobOptions);
+      const saved = await addJobSchema(
+        queue,
+        'test',
+        jsonSchema,
+        validJobOptions,
+      );
       expect(saved).toBeDefined();
       expect(saved.hash).toBeDefined();
       expect(typeof saved.validate).toBe('function');
@@ -145,21 +150,25 @@ describe('jobSchema', function () {
       expect(data).toBeDefined();
     });
 
-    it ('It validates the schema before saving', async () => {
-      await expect(addJobSchema(queue, 'test', invalidSchema))
-          .rejects
-          .toThrow();
-    })
+    it('It validates the schema before saving', async () => {
+      await expect(
+        addJobSchema(queue, 'test', invalidSchema),
+      ).rejects.toThrow();
+    });
 
-    it ('It validates the default options on creation', async () => {
+    it('It validates the default options on creation', async () => {
       throw new Error('Not Implemented');
-    })
+    });
   });
 
   describe('getJobSchema', () => {
-
     it('it can retrieve stored schemas', async () => {
-      const saved = await addJobSchema(queue, 'getJobSchema', simpleSchema, validJobOptions);
+      const saved = await addJobSchema(
+        queue,
+        'getJobSchema',
+        simpleSchema,
+        validJobOptions,
+      );
       const retrieved = await getJobSchema(queue, 'getJobSchema');
 
       expect(retrieved).toBeDefined();
@@ -175,15 +184,13 @@ describe('jobSchema', function () {
 
       expect(retrieved).toBeNull();
     });
-
   });
 
   describe('getJobSchemas', () => {
-
     const JobNames = ['lorem', 'ipsum', 'dolor', 'sit', 'amet'];
 
     async function createSchemas() {
-      await pMap(JobNames, name => addJobSchema(queue, name, simpleSchema));
+      await pMap(JobNames, (name) => addJobSchema(queue, name, simpleSchema));
     }
 
     function validateSchema(schema) {
@@ -200,9 +207,9 @@ describe('jobSchema', function () {
       const keys = Object.keys(schemas).sort();
       expect(keys).toEqual(['dolor', 'lorem', 'sit']);
 
-      keys.forEach(key => {
+      keys.forEach((key) => {
         validateSchema(schemas[key]);
-      })
+      });
     });
 
     it('it gets all schemas if no job names are specified', async () => {
@@ -211,18 +218,17 @@ describe('jobSchema', function () {
       expect(typeof schemas).toEqual('object');
       const keys = Object.keys(schemas).sort();
       expect(keys).toEqual(JobNames.sort());
-      keys.forEach(key => {
+      keys.forEach((key) => {
         validateSchema(schemas[key]);
-      })
+      });
     });
   });
 
   describe('getJobNamesWithSchemas', () => {
-
     const JobNames = ['lorem', 'ipsum', 'dolor', 'sit', 'amet'];
 
     async function createSchemas() {
-      await pMap(JobNames, name => addJobSchema(queue, name, simpleSchema));
+      await pMap(JobNames, (name) => addJobSchema(queue, name, simpleSchema));
     }
 
     it('it can get the names of jobs containing schemas', async () => {
@@ -236,8 +242,7 @@ describe('jobSchema', function () {
   });
 
   describe('deleteJobSchema', () => {
-
-    it('it can delete an existing schema', async() => {
+    it('it can delete an existing schema', async () => {
       const saved = await addJobSchema(queue, 'test', simpleSchema);
       expect(saved).toBeDefined();
       const deleted = await deleteJobSchema(queue, 'test');
@@ -246,7 +251,7 @@ describe('jobSchema', function () {
       expect(data).toBeNull();
     });
 
-    it('it returns false for an non-existent schema', async() => {
+    it('it returns false for an non-existent schema', async () => {
       const nonExistent = nanoid(10);
       const deleted = await deleteJobSchema(queue, nonExistent);
       expect(deleted).toBe(false);
@@ -254,10 +259,9 @@ describe('jobSchema', function () {
   });
 
   describe('deleteAllSchemas', () => {
-
     it('it should delete all schemas for a queue', async () => {
       const names = ['lorem', 'ipsum', 'dolor', 'sit', 'amet'];
-      await pMap(names, name => addJobSchema(queue, name, simpleSchema));
+      await pMap(names, (name) => addJobSchema(queue, name, simpleSchema));
       // ensure we've stored our values
       const items = await client.hgetall(getKey());
       expect(Object.keys(items).length).toBe(names.length);
@@ -265,7 +269,6 @@ describe('jobSchema', function () {
       const deleteCount = await deleteAllSchemas(queue);
       expect(deleteCount).toBe(names.length);
     });
-
   });
 
   describe('validateBySchema', () => {
@@ -285,9 +288,9 @@ describe('jobSchema', function () {
       const input = {
         name: 'sparkle',
         intAsString: '10',
-        value: nanoid(6)
+        value: nanoid(6),
       };
-      const schema = compileSchema('test', schemaWithDefaults)
+      const schema = compileSchema('test', schemaWithDefaults);
       const { data } = validateBySchema('test', schema, input);
 
       expect(data.name).toBe(input.name);
@@ -300,22 +303,22 @@ describe('jobSchema', function () {
       const input = {
         name: 'sparkle',
         intAsString: '10',
-        value: nanoid(6)
+        value: nanoid(6),
       };
 
       const defaultOptions: Partial<JobsOptions> = {
         timestamp: Date.now(),
         attempts: 20,
         repeat: {
-          cron: '*/5 * * * *'
-        }
+          cron: '*/5 * * * *',
+        },
       };
 
       const opts: Partial<JobsOptions> = {
         lifo: true,
         stackTraceLimit: 10,
-        timestamp: defaultOptions.timestamp + 2000
-      }
+        timestamp: defaultOptions.timestamp + 2000,
+      };
 
       const mergedOptions = Object.assign({}, defaultOptions, opts);
 
@@ -328,35 +331,30 @@ describe('jobSchema', function () {
     it('fails validation on invalid data', () => {
       const schema = compileSchema('test', simpleSchema);
       const input = { name: 'test' }; // value is required
-      expect( () => validateBySchema('test', schema, input)).toThrow();
-    })
+      expect(() => validateBySchema('test', schema, input)).toThrow();
+    });
 
     it('fails validation on invalid options', () => {
       const schema = compileSchema('test', simpleSchema);
       const input = { name: 'valid_name', value: 'valid value' };
       // Typescript catches dev errors, but we'll be getting this info as a JSON
       // blob from the client, so we force the cast to test
-      const opts = invalidJobOption as any as JobsOptions;
-      expect( () => validateBySchema('test', schema, input, opts)).toThrow();
-    })
-
+      const opts = (invalidJobOption as any) as JobsOptions;
+      expect(() => validateBySchema('test', schema, input, opts)).toThrow();
+    });
   });
 
   describe('validateJobData', () => {
     it('can validate job data', async () => {
       await addJobSchema(queue, 'test', simpleSchema, validJobOptions);
       const data = { name: 'test_name', value: 'test_value' };
-      await expect(validateJobData(queue, 'test', data))
-          .resolves
-          .not.toThrow();
+      await expect(validateJobData(queue, 'test', data)).resolves.not.toThrow();
     });
 
     it('throws on invalid data', async () => {
       await addJobSchema(queue, 'test', simpleSchema, validJobOptions);
       const data = { value: 'test_value' };
-      await expect(validateJobData(queue, 'test', data))
-          .rejects
-          .toThrow();
+      await expect(validateJobData(queue, 'test', data)).rejects.toThrow();
     });
 
     it('throws on invalid options', async () => {
@@ -364,10 +362,10 @@ describe('jobSchema', function () {
       const data = { name: 'name', value: 'test_value' };
       // Typescript catches dev errors, but we'll be getting this info as a JSON
       // blob from the client, so we force the cast to test
-      const opts = invalidJobOption as any as JobsOptions;
-      await expect(validateJobData(queue, 'test', data, opts))
-          .rejects
-          .toThrow();
+      const opts = (invalidJobOption as any) as JobsOptions;
+      await expect(
+        validateJobData(queue, 'test', data, opts),
+      ).rejects.toThrow();
     });
-  })
+  });
 });

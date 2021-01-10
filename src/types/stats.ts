@@ -56,3 +56,14 @@ export interface StatisticalSnapshot extends HistogramSnapshot {
   startTime?: number;
   endTime?: number;
 }
+
+export interface StatsTimer extends StatisticalSnapshot {
+  m1Rate: number;
+  m5Rate: number;
+  m15Rate: number;
+  meanRate: number;
+  errorM1Rate: number;
+  errorM5Rate: number;
+  errorM15Rate: number;
+  errorMeanRate: number;
+}

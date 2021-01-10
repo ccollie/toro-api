@@ -27,7 +27,7 @@ const JobSearchInput = schemaComposer.createInputTC({
     },
     count: {
       type: 'Int!',
-      default: 100,
+      default: 10,
       description: 'The maximum number of jobs to return per iteration',
     },
   },

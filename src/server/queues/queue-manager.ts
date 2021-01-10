@@ -289,7 +289,7 @@ export class QueueManager {
   }
 
   /**
-   * Fetch a number of getJobs of certain type
+   * Fetch a number of jobs of certain type
    * @param {String} state Job states: {WAITING|ACTIVE|DELAYED|COMPLETED|FAILED}
    * @param {Number} offset Index offset (optional)
    * @param {Number} limit Limit of the number of getJobs returned (optional)

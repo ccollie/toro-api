@@ -79,7 +79,7 @@ export function getHistogramSnapshot(
     data: encodeHistogram(hist),
   };
 
-  if (opts.includePercentiles && opts.percentiles && opts.percentiles.length) {
+  if (opts.includePercentiles) {
     opts.percentiles.forEach((percent) => {
       const key = `p${percent}`.replace('.', '');
       result[key] = hist.getValueAtPercentile(percent);
@@ -100,9 +100,7 @@ export function createHistogram(packed = true): Histogram {
   });
 }
 
-export function aggregateHistograms(
-  recs: HistogramSnapshot[],
-): HistogramSnapshot {
+export function aggregateHistograms(recs: HistogramSnapshot[]): Histogram {
   let hist: Histogram = null;
   recs.forEach((rec) => {
     if (rec.data) {
@@ -117,9 +115,5 @@ export function aggregateHistograms(
   });
 
   hist = hist || createHistogram();
-
-  const snapshot = getHistogramSnapshot(hist);
-
-  hist.destroy();
-  return snapshot;
+  return hist;
 }

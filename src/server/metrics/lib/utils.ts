@@ -1,4 +1,3 @@
-//import { Predicate } from 'index';
 import { isString } from 'lodash';
 import * as units from './units';
 import ms from 'ms';

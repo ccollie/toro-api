@@ -4,9 +4,7 @@ import { deleteAllQueueData, discoverQueues } from '../../../src/server/queues';
 import { Queue } from 'bullmq';
 import pMap from 'p-map';
 
-
 describe('utils', () => {
-
   describe('discoverQueues', () => {
     let queues: any[], client;
 
@@ -20,27 +18,34 @@ describe('utils', () => {
         await pMap(queues, deleteAllQueueData);
         // await pMap(queues, queue => queue.close());
       }
-      client.disconnect();
+      await client.disconnect();
     });
 
-    const QueueNames = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur'];
+    const QueueNames = [
+      'lorem',
+      'ipsum',
+      'dolor',
+      'sit',
+      'amet',
+      'consectetur',
+    ];
     const Prefixes = ['bully', 'toroidal', 'vachery'];
 
     async function createQueues() {
       const result = new Map<string, Queue[]>();
       Prefixes.forEach((prefix) => {
-        result.set(prefix, [])
+        result.set(prefix, []);
       });
       const init = [];
       queues = queues || [];
-      QueueNames.forEach(name => {
+      QueueNames.forEach((name) => {
         const prefix = sample(Prefixes);
-        const queue = new Queue(name, {connection: client, prefix});
+        const queue = new Queue(name, { connection: client, prefix });
         const queueList = result.get(prefix);
         queueList.push(queue);
         queues.push(queue);
-        init.push(queue.waitUntilReady())
-      })
+        init.push(queue.waitUntilReady());
+      });
       await Promise.all(init);
       return result;
     }
@@ -53,7 +58,7 @@ describe('utils', () => {
       for (let [prefix, list] of queues) {
         expectedCount += list.length;
         prefixes.push(prefix);
-        names[prefix] = list.map(x => x.name).sort();
+        names[prefix] = list.map((x) => x.name).sort();
       }
       prefixes = prefixes.sort();
 
@@ -67,17 +72,17 @@ describe('utils', () => {
 
       expect(discoveredPrefixes).toBe(prefixes);
 
-      discoveredPrefixes.forEach(prefix => {
+      discoveredPrefixes.forEach((prefix) => {
         const discovered = byPrefix[prefix];
         const created = names[prefix];
         expect(discovered).toEqual(created);
-      })
+      });
     });
 
     it('it can discover queues by prefix', async () => {
       const queues = await createQueues();
       const prefixes = Array.from(queues.keys());
-      const prefix = prefixes.find(x => queues.get(x).length);
+      const prefix = prefixes.find((x) => queues.get(x).length);
       const expectedCount = queues.get(prefix).length;
 
       const discovered = await discoverQueues(client, prefix);
@@ -85,10 +90,9 @@ describe('utils', () => {
       expect(Array.isArray(discovered)).toBe(true);
       expect(discovered.length).toBe(expectedCount);
 
-      discovered.forEach(data => {
+      discovered.forEach((data) => {
         expect(data.prefix).toBe(prefix);
-      })
+      });
     });
   });
-
 });

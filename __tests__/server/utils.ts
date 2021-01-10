@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { Queue } from 'bullmq';
 
 import { createClient as _createClient } from '@src/server/redis/utils';
@@ -11,10 +11,12 @@ import { loadScripts } from '../../src/server/commands';
 export const TEST_DB = 13;
 export const DEFAULT_CLIENT_OPTIONS: ConnectionOptions = {
   db: TEST_DB,
-  lazyConnect: false
-}
+  lazyConnect: false,
+};
 
-export async function createClient(options?: ConnectionOptions): Promise<IORedis.Redis> {
+export async function createClient(
+  options?: ConnectionOptions,
+): Promise<IORedis.Redis> {
   options = options || DEFAULT_CLIENT_OPTIONS;
   const client = _createClient(options);
   await loadScripts(client);
@@ -44,7 +46,8 @@ export function randomId(len = 8): string {
 }
 
 export function flushPromises() {
-  const scheduler = typeof setImmediate === 'function' ? setImmediate : setTimeout;
+  const scheduler =
+    typeof setImmediate === 'function' ? setImmediate : setTimeout;
   return new Promise((resolve) => {
     scheduler(resolve, 0);
   });
@@ -56,12 +59,16 @@ export function delay(ms): Promise<void> {
   });
 }
 
-export function getRandomIntArray(count: number, max?: number, min?: number): number[] {
+export function getRandomIntArray(
+  count: number,
+  max?: number,
+  min?: number,
+): number[] {
   if (!min && !max) {
     min = 0;
     max = 1000;
   } else if (!max) {
-    max = min + Math.max(20, random(min, min + 1000))
+    max = min + Math.max(20, random(min, min + 1000));
   } else {
     min = 0;
   }
