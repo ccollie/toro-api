@@ -1,10 +1,12 @@
 import boom from '@hapi/boom';
-import { getJobFiltersKey, getUniqueId, safeParse } from '../lib';
-import { Queue } from 'bullmq';
+import ms from 'ms';
+import { getJobFiltersKey, getUniqueId, nanoid, safeParse } from '../lib';
+import { Job, Queue } from 'bullmq';
 import { JobFilter, JobStatusEnum } from '../../types';
 import { accepts as isValid } from 'mongodb-language-model';
 import { FilteredJobsResult, Scripts } from '../commands/scripts';
 import { checkMultiErrors } from '../redis';
+import { isObject, isEmpty } from 'lodash';
 
 function unserialize(data: string): JobFilter {
   const value = safeParse(data);
@@ -196,4 +198,117 @@ export async function getJobsByFilterId(
     cursor,
     count,
   );
+}
+
+const FilterCursorPrefix = 'FILTER_CURSOR';
+
+function getCursorKey(queue: Queue, cursor: string): string {
+  return queue.toKey(`${FilterCursorPrefix}:${cursor}`);
+}
+
+function splitArray<T = any>(source: T[], count: number): [T[], T[]] {
+  const len = source.length;
+  if (count >= len) {
+    return [source, []];
+  }
+  const toTake = Math.max(len, count);
+  const slice = source.slice(0, toTake - 1);
+  const remainder = toTake < len ? source.slice(toTake) : [];
+  return [slice, remainder];
+}
+
+const CursorExpiration = ms('5 mins');
+
+interface SearchCursorMeta {
+  cursor: number;
+  timestamp: number;
+  filter: Record<string, any>;
+  jobData: Record<string, any>[];
+}
+
+async function processSearch(
+  queue: Queue,
+  status: JobStatusEnum,
+  filter: Record<string, any>,
+  cursor: string,
+  count = 10,
+): Promise<{ cursor: string; jobs: Job[] }> {
+  const jobs: Job[] = [];
+  const client = await queue.client;
+  let key: string;
+  let meta: SearchCursorMeta;
+
+  if (!cursor) {
+    if (isEmpty(filter)) {
+      throw boom.badRequest('A filter must be specified if no cursor is given');
+    }
+    cursor = nanoid();
+    meta = {
+      filter,
+      cursor: 0,
+      jobData: [],
+      timestamp: Date.now(),
+    };
+  } else {
+    key = getCursorKey(queue, cursor);
+    const cursorStr = await client.get(key);
+    meta = safeParse(cursorStr) as SearchCursorMeta;
+    if (!isObject(meta)) {
+      // invalid or expired cursor
+      throw boom.badRequest(`Invalid or expired cursor "${cursor}"`);
+    }
+  }
+
+  filter = filter || meta.filter;
+
+  count = count || 10;
+  if (meta.jobData && meta.jobData.length) {
+    const [slice, remainder] = splitArray(meta.jobData, count);
+    meta.jobData = remainder;
+    slice.forEach((json) => {
+      const job = Job.fromJSON(queue, json);
+      jobs.push(job);
+    });
+  }
+
+  if (jobs.length < count) {
+    let requestCount = count;
+    let nullCount = 0;
+    while (meta.cursor && jobs.length < count) {
+      const { nextCursor, jobs: _jobs } = await Scripts.getJobsByFilter(
+        queue,
+        status,
+        filter,
+        meta.cursor,
+        requestCount,
+      );
+
+      meta.cursor = nextCursor;
+
+      if (!_jobs.length) {
+        nullCount++;
+        if (nullCount >= 2) {
+          nullCount = 0;
+          requestCount = Math.max(requestCount * 2, 500);
+        }
+        continue;
+      }
+      const [slice, remainder] = splitArray(_jobs, count - jobs.length);
+      jobs.push(...slice);
+      if (remainder.length) {
+        // store remainder to cursor
+        meta.jobData = remainder.map((job) => job.asJSON());
+        break;
+      }
+    }
+  }
+
+  key = getCursorKey(queue, cursor);
+  meta.timestamp = Date.now();
+  client.setex(key, CursorExpiration / 1000, JSON.stringify(meta));
+
+  return {
+    cursor,
+    jobs,
+  };
 }

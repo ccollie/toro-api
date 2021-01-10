@@ -4,7 +4,7 @@ import { createQueue } from '../factories';
 import { QueueConfig } from '../../../src/types';
 import { clearDb } from '../utils';
 import { createHostManager } from '../../fixtures/host-manager';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 
 describe('QueueManager', () => {
   let hostManager: HostManager;
@@ -19,17 +19,16 @@ describe('QueueManager', () => {
     await hostManager.destroy();
   });
 
-
   describe('constructor', () => {
     it('constructs an instance', async () => {
       const queue = createQueue(null, {
-        client: hostManager.client
+        client: hostManager.client,
       });
       const config: QueueConfig = {
         id: nanoid(),
         name: queue.name,
-        prefix: queue.opts.prefix
-      }
+        prefix: queue.opts.prefix,
+      };
       const sut = new QueueManager(hostManager, queue, config);
       try {
         expect(sut).toBeDefined();
@@ -58,7 +57,7 @@ describe('QueueManager', () => {
       const expected = `localhost/q/${config.id}`;
 
       const queue = createQueue(null, {
-        client: hostManager.client
+        client: hostManager.client,
       });
       const sut = new QueueManager(hostManager, queue, config);
 
@@ -67,9 +66,8 @@ describe('QueueManager', () => {
       } finally {
         await sut.destroy();
       }
-    })
+    });
   });
-
 
   // todo: uri
 });

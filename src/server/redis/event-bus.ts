@@ -5,8 +5,7 @@ import {
   toKeyValueList,
 } from '../redis';
 import IORedis, { Pipeline } from 'ioredis';
-import nanoid from 'nanoid';
-import { IteratorOptions, createAsyncIterator } from '../lib';
+import { IteratorOptions, createAsyncIterator, nanoid } from '../lib';
 
 const SENDER_ID_KEY = '__sid';
 const EVENT_KEY = '__evt';
@@ -34,7 +33,7 @@ export class EventBus {
   private readonly aggregator: RedisStreamAggregator;
   private readonly _key: string;
   private readonly _emitter: Emittery;
-  private readonly _senderId = nanoid(5);
+  private readonly _senderId = nanoid();
   private _lastEventId: string;
   private _subscriptionInfo: SubscriberInfo;
 

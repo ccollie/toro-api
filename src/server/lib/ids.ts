@@ -1,5 +1,11 @@
 import { random } from 'lodash';
 import { UniqueID } from 'nodejs-snowflake';
+import { customAlphabet } from 'nanoid';
+
+const nanoid = customAlphabet(
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_',
+  6,
+);
 
 const Epoch = +new Date(2020, 1, 1);
 
@@ -30,3 +36,5 @@ export function getTimestampFromId(id: string): number {
 export function getSnowflakeId(): string {
   return getUniqueId();
 }
+
+export { nanoid };

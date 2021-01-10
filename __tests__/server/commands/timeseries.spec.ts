@@ -3,7 +3,7 @@ import { parseMessageResponse } from '../../../src/server/redis';
 import sample from 'lodash/sample';
 import random from 'lodash/random';
 import isEmpty from 'lodash/isEmpty';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import pAll from 'p-all';
 import { getUniqueId } from '../../../src/server/lib';
 

@@ -1,7 +1,5 @@
-import { aggregateHistograms as aggregate } from '../metrics/lib';
+import { aggregateHistograms, getHistogramSnapshot } from '../metrics/lib';
 import { StatisticalSnapshot, StatsGranularity } from '../../types';
-import { Pipeline } from 'ioredis';
-import { checkMultiErrors } from '../redis';
 import ms from 'ms';
 
 export const CONFIG = {
@@ -91,9 +89,12 @@ export function aggregateSnapshots(
     endTime = Math.max(endTime, rec.endTime);
   });
 
-  const hist = aggregate(recs);
+  const hist = aggregateHistograms(recs);
+  const snapshot = getHistogramSnapshot(hist);
+  hist.destroy();
+
   return {
-    ...hist,
+    ...snapshot,
     completed,
     failed,
     startTime,

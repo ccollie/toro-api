@@ -6,14 +6,13 @@ import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
 
 describe('CurrentWaitingCountMetric', () => {
-
   describe('constructor', () => {
     it('constructs a CurrentWaitingCountMetric', () => {
       const options: PollingMetricOptions = {
         id: randomString(),
         name: randomString(),
-        interval: 250
-      }
+        interval: 250,
+      };
       const sut = new CurrentWaitingCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.id).toBe(options.id);
@@ -23,11 +22,9 @@ describe('CurrentWaitingCountMetric', () => {
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
-
   });
 
   describe('.checkUpdate', () => {
-
     afterEach(async () => {
       await clearDb();
     });
@@ -36,22 +33,19 @@ describe('CurrentWaitingCountMetric', () => {
       const datas = [];
       const count = random(1, 10);
       const name = 'names-' + randomString(3);
-      for (let i = 0; i < count; i++) datas.push(
-        { name, data: random(0, 99) }
-      );
+      for (let i = 0; i < count; i++) datas.push({ name, data: random(0, 99) });
 
       return queue.addBulk(datas);
     }
 
     it('should get the correct number of WAITING jobs', async () => {
-
-      const queue = createQueue();
+      const queue = await createQueue();
       const jobs = await generateJobs(queue);
       const count = jobs.length;
 
       const options: PollingMetricOptions = {
-        interval: 1000
-      }
+        interval: 1000,
+      };
       const sut = new CurrentWaitingCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);
 
@@ -64,5 +58,4 @@ describe('CurrentWaitingCountMetric', () => {
       }
     });
   });
-
-})
+});

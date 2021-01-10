@@ -1,8 +1,8 @@
 import { loadScripts } from './index';
 import { Job, Queue } from 'bullmq';
 import isEmpty from 'lodash/isEmpty';
-import nanoid from 'nanoid';
 import { JobFinishedState, JobStatusEnum } from '../../types';
+import { nanoid } from '../lib';
 
 export interface FilteredJobsResult {
   nextCursor: number;
@@ -81,7 +81,7 @@ export class Scripts {
     const client = await queue.client;
     const destKey = queue.toKey('jobTypes');
 
-    const scratchKey = queue.toKey(`scratch:${nanoid(10)}`);
+    const scratchKey = queue.toKey(`scratch:${nanoid()}`);
     const keyPrefix = queue.toKey('');
     const queueKeys = queue.keys;
 
@@ -155,7 +155,7 @@ export class Scripts {
     type: string,
     filter: Record<string, any>,
     cursor: number,
-    count = 100,
+    count = 10,
   ): Promise<FilteredJobsResult> {
     const client = await loadScripts(await queue.client);
     type = type === 'waiting' ? 'wait' : type; // alias
@@ -165,7 +165,6 @@ export class Scripts {
     // $$NOW -> Date.now()
     const criteria = JSON.stringify(filter);
 
-    // @ts-ignore
     const response = await client.getJobsByFilter(
       key,
       prefix,

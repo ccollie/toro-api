@@ -32,7 +32,7 @@ export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
 
 /**
  * Waits for a redis client to be ready.
- * @param {Redis} redis client
+ * @param {IORedis.Redis} redis client
  */
 export async function waitUntilReady(client: IORedis.Redis): Promise<void> {
   return new Promise(function (resolve, reject) {
@@ -131,15 +131,15 @@ export async function deleteByPattern(
   await scanKeys(client, { match: pattern }, async (keys) => {
     totalCount += keys.length;
 
-    const chunked = chunk(keys, 50);
+    const chunked = chunk(keys, 250);
     count += chunked.length;
 
     chunked.forEach((items: string[]) => {
       shouldFlush = true;
-      pipeline.del(...items);
+      pipeline.unlink(...items);
     });
 
-    if (count >= 50) {
+    if (count >= 250) {
       shouldFlush = false;
       await pipeline.exec();
       pipeline = client.pipeline();
