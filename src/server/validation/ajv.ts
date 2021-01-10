@@ -8,7 +8,6 @@ const ajv = new Ajv({
   coerceTypes: true,
   useDefaults: true,
   verbose: true,
-  jsonPointers: true,
 });
 
 ajv.addFormat('identifier', {
