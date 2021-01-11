@@ -5,6 +5,8 @@ import { hostRedisFC as redis } from './Host.redis';
 import { hostChannelsFC as channels } from './Host.channels';
 import { discoverQueues } from './Host.discoverQueues';
 import { ping } from './Host.ping';
+import { hostUri as uri } from './Host.uri';
+
 import {
   histogram,
   percentileDistribution,
@@ -38,5 +40,6 @@ export const HostTC = schemaComposer.createObjectTC({
     stats,
     statsAggregate,
     statsDateRange,
+    uri,
   },
 });
