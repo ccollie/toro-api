@@ -1,5 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { hostQueues as queues } from './Host.queues';
+import { queueCount } from './Host.queueCount';
 import { hostRedisFC as redis } from './Host.redis';
 import { hostChannelsFC as channels } from './Host.channels';
 import { discoverQueues } from './Host.discoverQueues';
@@ -26,6 +27,7 @@ export const HostTC = schemaComposer.createObjectTC({
       description: 'An optional description of the host',
     },
     queues,
+    queueCount,
     channels,
     discoverQueues,
     histogram,
