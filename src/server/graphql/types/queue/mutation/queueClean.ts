@@ -35,6 +35,7 @@ export const queueClean: FieldConfig = {
         grace: {
           type: Duration,
           makeRequired: true,
+          defaultValue: 0,
           description:
             'Grace period interval (ms). Jobs older this this will be removed. ',
         },
@@ -53,7 +54,7 @@ export const queueClean: FieldConfig = {
       },
     }).NonNull,
   },
-  resolve: async (_, { id, filter: { grace, status, limit } }) => {
+  resolve: async (_, { input: { id, grace, status, limit } }) => {
     const queue = await getQueueById(id);
     const gracePeriod = parseDuration(grace);
 
