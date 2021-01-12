@@ -1,5 +1,4 @@
 import IORedis, { Pipeline } from 'ioredis';
-import url, { Url } from 'url';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate } from '../lib/datetime';
 import { isNumber, logger } from '../lib';
@@ -32,7 +31,7 @@ export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
 
 /**
  * Waits for a redis client to be ready.
- * @param {IORedis.Redis} redis client
+ * @param {IORedis.Redis} client redis client
  */
 export async function waitUntilReady(client: IORedis.Redis): Promise<void> {
   return new Promise(function (resolve, reject) {
@@ -176,13 +175,14 @@ export function normalizePrefixGlob(prefixGlob: string): string {
 export function parseRedisURI(urlString: string): Record<string, any> {
   const redisOpts = Object.create(null) as Record<string, any>;
   try {
-    const redisUrl: Url = url.parse(urlString);
+    const redisUrl: URL = new URL(urlString);
     redisOpts.port = redisUrl.port || 6379;
     redisOpts.host = redisUrl.hostname;
     redisOpts.db = redisUrl.pathname ? redisUrl.pathname.split('/')[1] : 0;
-    if (redisUrl.auth) {
-      redisOpts.password = redisUrl.auth.split(':')[1];
-    }
+    redisOpts.protocol = redisUrl.protocol;
+    redisOpts.hash = redisUrl.hash;
+    redisOpts.username = redisUrl.username;
+    redisOpts.password = redisUrl.password;
   } catch (e) {
     throw new Error(e.message);
   }
