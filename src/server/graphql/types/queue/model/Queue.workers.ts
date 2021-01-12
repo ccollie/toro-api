@@ -46,7 +46,9 @@ export const QueueWorkerTC = schemaComposer.createObjectTC({
 });
 
 export const queueWorkers: FieldConfig = {
-  args: {},
+  args: {
+    limit: 'Int',
+  },
   type: QueueWorkerTC.NonNull.List.NonNull,
   async resolve(queue: Queue, args: any): Promise<QueueWorker[]> {
     const manager = getQueueManager(queue);
@@ -57,7 +59,8 @@ export const queueWorkers: FieldConfig = {
     });
     workers = workers.sort((a, b) => a.idle - b.idle);
     if (args.limit) {
-      workers = workers.slice(0, args.limit - 1);
+      const limit = parseInt(args.limit);
+      workers = workers.slice(0, limit - 1);
     }
     return workers;
   },

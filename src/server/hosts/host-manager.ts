@@ -4,8 +4,16 @@ import IORedis from 'ioredis';
 import pSettle from 'p-settle';
 import pAll from 'p-all';
 import { sortBy, uniqBy } from 'lodash';
-import { QueueManager, discoverQueues } from '../queues';
 import {
+  QueueManager,
+  discoverQueues,
+  convertWorker,
+  getPipelinedCounts,
+} from '../queues';
+import {
+  checkMultiErrors,
+  createClient,
+  getRedisInfo,
   EventBus,
   LockManager,
   RedisStreamAggregator,
@@ -18,8 +26,10 @@ import {
   RedisMetrics,
   QueueConfig,
   ConnectionOptions,
-} from '@src/types';
-import { createClient, getRedisInfo } from '../redis';
+  QueueWorker,
+  JobCounts,
+  JobStatusEnum,
+} from '../../types';
 
 import config, { getValue } from '../config';
 import logger from '../lib/logger';
@@ -32,6 +42,8 @@ import {
 import { getHostBusKey, getHostKey, getLockKey } from '../lib/keys';
 import { Channel, NotificationManager } from '../notifications';
 import { getHostUri } from '../lib';
+
+const JOB_STATES = Object.values(JobStatusEnum);
 
 const queueConfigKey = (prefix: string, name: string): string => {
   return `${prefix}:${name}`;
@@ -305,6 +317,64 @@ export class HostManager {
 
   getChannels(): Promise<Channel[]> {
     return this.notifications.getChannels();
+  }
+
+  async getWorkers(): Promise<QueueWorker[]> {
+    const queues = this.getQueues();
+    const clientNames = queues.map((queue) => {
+      // hack
+      return (queue as any).clientName();
+    });
+
+    function parseClientList(list: string): QueueWorker[] {
+      const lines = list.split('\n');
+      const workers: QueueWorker[] = [];
+
+      lines.forEach((line: string) => {
+        const client: { [index: string]: string } = {};
+        const keyValues = line.split(' ');
+        keyValues.forEach(function (keyValue) {
+          const index = keyValue.indexOf('=');
+          const key = keyValue.substring(0, index);
+          client[key] = keyValue.substring(index + 1);
+        });
+        const name = client['name'];
+        if (!name) return;
+        // only consider queues we're managing
+        for (let i = 0; i < queues.length; i++) {
+          if (name.startsWith(clientNames[i])) {
+            client['name'] = queues[i].name;
+            workers.push(convertWorker(client));
+          }
+        }
+      });
+
+      return workers;
+    }
+
+    const clients = await this.client.client('list');
+    return parseClientList(clients);
+  }
+
+  async getJobCounts(states?: JobStatusEnum[]): Promise<JobCounts> {
+    states = (!states || states.length) === 0 ? JOB_STATES : states;
+    const counts: JobCounts = Object.create(null);
+    states.forEach((state) => {
+      counts[state] = 0;
+    });
+    const pipeline = this.client.pipeline();
+    const queues = this.getQueues();
+    queues.forEach((queue) => {
+      getPipelinedCounts(pipeline, queue, states);
+    });
+    const responses = await pipeline.exec().then(checkMultiErrors);
+    let stateIndex = 0;
+    for (let i = 0; i < responses.length; i++) {
+      const state = states[stateIndex];
+      counts[state] = counts[state] + (responses[i] || 0);
+      stateIndex = (stateIndex + 1) % states.length;
+    }
+    return counts;
   }
 
   async waitUntilReady(): Promise<void> {

@@ -14,9 +14,10 @@ import {
   DiscoveredQueue,
   JobCreationOptions,
   JobStatusEnum,
+  QueueWorker,
   StatsGranularity,
 } from '../../types';
-import IORedis from 'ioredis';
+import IORedis, { Pipeline } from 'ioredis';
 import logger from '../lib/logger';
 import { Scripts } from '../commands/scripts';
 
@@ -210,4 +211,86 @@ export async function deleteAllQueueData(queue: Queue): Promise<number> {
   const client = await queue.client;
   // todo: need to delete data at the host level
   return deleteByPattern(client, pattern);
+}
+
+export function convertWorker(worker: Record<string, string>): QueueWorker {
+  const now = systemClock.getTime();
+  const {
+    age,
+    id,
+    cmd,
+    db,
+    events,
+    flags,
+    idle,
+    multi,
+    name,
+    obl,
+    oll,
+    omem,
+    psub,
+    qbuf,
+    role,
+    sub,
+    addr: address,
+  } = worker;
+  const [addr, port] = address.split(':');
+  const qbufFree = worker['qbuf-free'];
+
+  function toInt(val: string | undefined, defaultVal: number = 0): number {
+    if (val === undefined) return defaultVal;
+    const res = parseInt(val ?? '0', 10);
+    return isNaN(res) ? defaultVal : res;
+  }
+
+  const _age = toInt(age) * 1000;
+  return {
+    id,
+    addr,
+    age: _age,
+    cmd,
+    db: toInt(db),
+    events,
+    flags,
+    idle: toInt(idle) * 1000,
+    multi: toInt(multi),
+    name,
+    obl: toInt(obl),
+    oll: toInt(oll),
+    omem: toInt(omem),
+    psub: toInt(psub),
+    qbuf: toInt(qbuf),
+    qbufFree: toInt(qbufFree),
+    port: toInt(port, 6379),
+    role,
+    started: now - _age,
+    sub: toInt(sub),
+  };
+}
+
+export function getPipelinedCounts(
+  pipeline: Pipeline,
+  queue: Queue,
+  types: string[],
+): Pipeline {
+  types.forEach((type: string) => {
+    type = type === 'waiting' ? 'wait' : type; // alias
+
+    const key = queue.toKey(type);
+    switch (type) {
+      case 'completed':
+      case 'failed':
+      case 'delayed':
+      case 'repeat':
+        pipeline.zcard(key);
+        break;
+      case 'active':
+      case 'wait':
+      case 'paused':
+        pipeline.llen(key);
+        break;
+    }
+  });
+
+  return pipeline;
 }
