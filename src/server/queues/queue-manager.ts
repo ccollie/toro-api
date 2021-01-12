@@ -6,9 +6,9 @@ import { StatsClient, StatsListener } from '../stats';
 import { Rule, RuleManager } from '../rules';
 import { EventBus, LockManager } from '../redis';
 import { QueueListener } from './queue-listener';
-import { deleteAllQueueData, getJobTypes } from './queue';
+import { convertWorker, deleteAllQueueData, getJobTypes } from './queue';
 import { HostManager } from '../hosts';
-import { getQueueUri, logger, systemClock } from '../lib';
+import { getQueueUri, logger } from '../lib';
 import {
   JobStatus,
   QueueConfig,
@@ -378,42 +378,8 @@ export class QueueManager {
   }
 
   async getWorkers(): Promise<QueueWorker[]> {
-    const INT_FIELDS = [
-      'id',
-      'age',
-      'idle',
-      'db',
-      'qbuf',
-      'qbuf-free',
-      'sub',
-      'obl',
-      'omem',
-    ];
     const workers = await this.queue.getWorkers();
-    const now = systemClock.getTime();
-    const list = [];
-    workers.forEach((worker) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { fd, psub, multi, addr: address, ...res } = worker;
-      const [addr, port] = address.split(':');
-
-      const result: Record<string, any> = {
-        ...res,
-      };
-      result.addr = addr;
-      if (port) {
-        result.port = parseInt(port);
-      }
-      const id = parseInt(res.id);
-      if (!isNaN(id)) result.id = id;
-      INT_FIELDS.forEach((field) => {
-        result[field] = parseInt(res[field]);
-      });
-      result.started = now - result.age * 1000;
-      list.push(result as QueueWorker);
-    });
-
-    return list as QueueWorker[];
+    return workers.map(convertWorker);
   }
 
   async getWorkerCount(): Promise<number> {

@@ -1,5 +1,8 @@
 import { schemaComposer } from 'graphql-compose';
 import { hostQueues as queues } from './Host.queues';
+import { hostWorkerCount as workerCount } from './Host.worker-count';
+import { hostWorkers as workers } from './Host.workers';
+import { jobCounts } from './Host.job-counts';
 import { queueCount } from './Host.queueCount';
 import { hostRedisFC as redis } from './Host.redis';
 import { hostChannelsFC as channels } from './Host.channels';
@@ -33,6 +36,7 @@ export const HostTC = schemaComposer.createObjectTC({
     channels,
     discoverQueues,
     histogram,
+    jobCounts,
     lastStatsSnapshot,
     percentileDistribution,
     ping,
@@ -41,5 +45,7 @@ export const HostTC = schemaComposer.createObjectTC({
     statsAggregate,
     statsDateRange,
     uri,
+    workerCount,
+    workers,
   },
 });
