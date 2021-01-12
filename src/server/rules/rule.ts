@@ -54,7 +54,6 @@ export type RuleStateChangeHandler = (
  * @property {Object} [payload] optional alert data
  * @property {string[]} channels channels for alert notifications.
  * @property {Boolean} [ACTIVE=true] true if the {@link Rule} is ACTIVE (will generate alerts).
- * @property {Boolean} [persist=true] true if alerts are preserved in Redis.
  */
 export class Rule extends Emittery {
   public readonly id: string;
