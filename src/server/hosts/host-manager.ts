@@ -370,9 +370,9 @@ export class HostManager {
     const responses = await pipeline.exec().then(checkMultiErrors);
     let stateIndex = 0;
     for (let i = 0; i < responses.length; i++) {
-      const state = states[stateIndex];
+      const state = states[stateIndex++];
       counts[state] = counts[state] + (responses[i] || 0);
-      stateIndex = (stateIndex + 1) % states.length;
+      stateIndex = stateIndex % states.length;
     }
     return counts;
   }
