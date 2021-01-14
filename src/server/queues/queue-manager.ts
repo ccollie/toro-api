@@ -343,11 +343,11 @@ export class QueueManager {
   }
 
   /**
-   * Fetch a number of repeatable getJobs
+   * Fetch a number of repeatable jobs
    * @param {Number} [offset] Index offset (optional)
-   * @param {Number} limit Limit of the number of getJobs returned (optional)
+   * @param {Number} limit Limit of the number of jobs returned (optional)
    * @param asc {Boolean} asc/desc
-   * @returns {Promise} A promise that resolves to an array of repeatable getJobs
+   * @returns {Promise} A promise that resolves to an array of repeatable jobs
    */
   async getRepeatableJobs(
     offset = 0,
@@ -365,7 +365,7 @@ export class QueueManager {
   }
 
   /**
-   * Returns a promise that resolves to the quantity of repeatable getJobs.
+   * Returns a promise that resolves to the quantity of repeatable jobs.
    */
   async getRepeatableCount(): Promise<number> {
     const repeat = await this.queue.repeat;
