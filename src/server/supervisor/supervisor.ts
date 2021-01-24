@@ -279,7 +279,7 @@ export class Supervisor {
 
     await this.removeQueue(queue);
 
-    // TODO: sendMail notification as well as subscription event
+    // TODO: send mail notification as well as subscription event
     const count = await manager.removeAllQueueData();
     await manager.destroy();
     return count;
