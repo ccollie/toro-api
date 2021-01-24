@@ -32,7 +32,7 @@ export const queueJobs: FieldConfig = {
     }),
   },
   async resolve(queue: Queue, { input }): Promise<any> {
-    const { offset = 0, limit = 10, status, sortOrder = SortOrderEnum.ASC } =
+    const { offset = 0, limit = 10, status, sortOrder = SortOrderEnum.DESC } =
       input || {};
     const asc = sortOrder.toLowerCase() === 'asc';
     const manager = getQueueManager(queue);
