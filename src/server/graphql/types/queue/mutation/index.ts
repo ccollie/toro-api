@@ -9,6 +9,4 @@ export { queueJobFilterCreate } from './queueJobFilterCreate';
 export { queueJobSchemaSet } from './queueJobSchemaSet';
 export { queueJobSchemaDelete } from './queueJobSchemaDelete';
 export { queueJobFilterDelete } from './queueJobFilterDelete';
-export { queueRepeatableRemove } from './queueRepeatableRemove';
-export { queueRepeatableRemoveByKey } from './queueRemoveRepeatableByKey';
 export { queueStatsDelete } from './queueStatsDelete';

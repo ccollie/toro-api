@@ -2,7 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { getQueueById } from '../../../helpers';
 import { FieldConfig, QueueTC } from '../../index';
 
-export const queueRepeatableRemove: FieldConfig = {
+export const repeatableJobRemove: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'QueueRemoveRepeatablePayload',
     fields: {
