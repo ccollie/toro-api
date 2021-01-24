@@ -19,6 +19,10 @@ export const queueClean: FieldConfig = {
         type: 'ID!',
         description: 'The queue id',
       },
+      count: {
+        type: 'Int!',
+        description: 'Returns the number of affected jobs',
+      },
       jobIds: {
         type: '[ID!]',
         description: 'Returns a list of cleared job ids',
@@ -64,6 +68,7 @@ export const queueClean: FieldConfig = {
     const jobIds = await queue.clean(gracePeriod, limit, status);
     return {
       id,
+      count: jobIds.length,
       jobIds,
     };
   },
