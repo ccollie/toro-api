@@ -17,7 +17,7 @@ export const repeatableJob = schemaComposer.createObjectTC({
     endDate: {
       type: 'Date',
       description:
-        'Start date when the repeat job should start repeating (only with cron).',
+        'Date when the repeat job should stop repeating (only with cron).',
     },
     tz: {
       type: 'String',
