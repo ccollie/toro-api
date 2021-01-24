@@ -14,3 +14,5 @@ export { jobMoveToDelayed } from './jobMoveToDelayed';
 export { jobMoveToFailed } from './jobMoveToFailed';
 export { jobPromoteBulk } from './jobPromoteBulk';
 export { jobRetryBulk } from './jobRetryBulk';
+export { repeatableJobRemoveByKey } from './repeatableJobRemoveByKey';
+export { repeatableJobRemove } from './repeatableJobRemove';
