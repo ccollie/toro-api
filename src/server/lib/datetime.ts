@@ -350,8 +350,8 @@ export function roundInterval(interval: number): number {
   return Math.floor(interval / precision) * precision;
 }
 
-const NumericalRangeRegex = /(\d+)\s*-\s*(\d+)/g;
-const DurationRegex = /(\d*)([a-zA-Z]+)/g;
+const NumericalRangeRegex = /(\d+)\s*-\s*(\d+)/;
+const DurationRegex = /(\d*)([a-zA-Z]+)/;
 
 export function parseRange(expr: string, reference?: Date | number): Timespan {
   reference = reference || Date.now();
@@ -380,7 +380,7 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
     };
   }
 
-  const m = NumericalRangeRegex.exec(expr);
+  const m = expr.match(NumericalRangeRegex);
   if (m?.length) {
     return {
       start: parseInt(m[1]),
@@ -401,7 +401,7 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
       // handle cases like "this_week"
       if (!isNumber(durationSpec[0])) {
         const unit = normalizeUnit(durationSpec);
-        return getPrevRange(unit);
+        return getRange(unit);
       }
       raiseError();
     } else {
@@ -411,7 +411,7 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
         return getPrevRange(unit);
       }
       // handle cases like last_6hrs
-      const m = DurationRegex.exec(durationSpec);
+      const m = durationSpec.match(DurationRegex);
       assert(m.length > 1);
 
       const count = parseInt(m[1]);
