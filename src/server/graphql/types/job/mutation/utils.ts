@@ -3,7 +3,6 @@ import {
   bulkJobHandler,
   createJob,
   JobCreationOptions,
-  processJobCommand,
 } from '../../../imports';
 import { isString } from 'lodash';
 import { getQueueById } from '../../../helpers';
