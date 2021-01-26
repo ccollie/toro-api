@@ -9,7 +9,7 @@ import { getRandDistArray, getRandomString, sleep } from '../utils';
 const options = {
   min: ms('5 secs'),
   max: ms('2 mins'),
-  mean: ms('1.5 mins'),
+  mean: ms('0.5 mins'),
 };
 
 const latencies = getLatencies(options);
@@ -54,8 +54,12 @@ export const process = async (job: Job): Promise<any> => {
   }
 
   // periodically throw in an outlier
-  if (Math.random() < 0.15) {
+  if (Math.random() < 0.05) {
     await sleep(makeTime * Math.random());
+  }
+
+  if (progress < 100) {
+    await job.updateProgress(100);
   }
 
   console.log(`${queue} #${orderNumber}: ${product} done.`);
