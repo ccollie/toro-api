@@ -190,7 +190,6 @@ export class StatsListener extends StatsWriter {
     const opts: StatisticalSnapshotOptions = {
       startTime,
       endTime,
-      includePercentiles: true,
       includeData: true,
     };
 

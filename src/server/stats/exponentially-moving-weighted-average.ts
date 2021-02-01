@@ -65,14 +65,21 @@ export class ExponentiallyMovingWeightedAverage {
    *
    * @returns {this}
    */
-  tick(): this {
-    const instantRate = this.instantRate;
+  tick(n = 1, lowerBound = 0): this {
+    if (n < 1) throw new RangeError('value must be a positive integer');
+    let avg = this.avg;
+    const alpha = this.alpha;
+    let instantRate = this.instantRate;
     this.count = 0;
-    if (this.avg === -1.0) {
-      this.avg = instantRate;
-    } else {
-      this.avg += this.alpha * (instantRate - this.avg);
+    while (n-- && avg > lowerBound) {
+      if (avg === -1.0) {
+        avg = instantRate;
+      } else {
+        avg += alpha * (instantRate - avg);
+      }
+      instantRate = 0;
     }
+    this.avg = avg;
     return this;
   }
 

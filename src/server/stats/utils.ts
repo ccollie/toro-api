@@ -1,7 +1,7 @@
 import {
   HistogramSnapshot,
+  MeterSummary,
   StatisticalSnapshot,
-  StatisticalSnapshotOptions,
   StatsGranularity,
 } from '../../types';
 import {
@@ -14,6 +14,8 @@ import {
 import ms from 'ms';
 import { DDSketch } from 'sketches-js';
 import * as units from './units';
+import { ManualClock } from '../lib';
+import { IrregularMeter } from './irregular-meter';
 
 export const CONFIG = {
   units: [
@@ -72,6 +74,10 @@ export function getDefaultRange(unit: StatsGranularity): number {
 export const DefaultPercentiles = [0.5, 0.9, 0.95, 0.99, 0.995];
 
 export const EmptyStatsSnapshot: StatisticalSnapshot = {
+  m15Rate: 0,
+  m1Rate: 0,
+  m5Rate: 0,
+  meanRate: 0,
   count: 0,
   mean: 0,
   min: 0,
@@ -85,14 +91,6 @@ export const EmptyStatsSnapshot: StatisticalSnapshot = {
   data: null,
   completed: 0,
   failed: 0,
-};
-
-const defaultPercentiles = [90, 95, 99, 99.5];
-
-const defaultStatisticalSnapshotOptions: StatisticalSnapshotOptions = {
-  includePercentiles: true,
-  includeData: true,
-  percentiles: defaultPercentiles,
 };
 
 const emptyHistogramSnapshot: HistogramSnapshot = {
@@ -149,12 +147,7 @@ function getMax(hist: Histogram): number {
   return result === Number.MIN_SAFE_INTEGER ? 0 : result;
 }
 
-export function getHistogramSnapshot(
-  hist: Histogram,
-  opts: StatisticalSnapshotOptions = defaultStatisticalSnapshotOptions,
-): HistogramSnapshot {
-  opts.percentiles = opts.percentiles || defaultPercentiles;
-
+export function getHistogramSnapshot(hist: Histogram): HistogramSnapshot {
   const count = hist.totalCount;
   const mean = Math.ceil(hist.mean * 100) / 100;
   const median = Math.ceil(hist.getValueAtPercentile(0.5) * 100) / 100;
@@ -170,12 +163,10 @@ export function getHistogramSnapshot(
     data: encodeHistogram(hist),
   };
 
-  if (opts.includePercentiles) {
-    opts.percentiles.forEach((percent) => {
-      const key = `p${percent}`.replace('.', '');
-      result[key] = hist.getValueAtPercentile(percent);
-    });
-  }
+  result.p90 = hist.getValueAtPercentile(90);
+  result.p95 = hist.getValueAtPercentile(95);
+  result.p99 = hist.getValueAtPercentile(99);
+  result.p995 = hist.getValueAtPercentile(99.5);
 
   return result;
 }
@@ -198,6 +189,50 @@ export function aggregateHistograms(recs: HistogramSnapshot[]): Histogram {
   return hist;
 }
 
+function aggregateMeter(
+  recs: StatisticalSnapshot[],
+  type: 'completed' | 'failed' | 'error-percentage',
+): MeterSummary {
+  const clock = new ManualClock();
+  const meter = new IrregularMeter(clock);
+  recs.forEach((rec) => {
+    let value = 0;
+    switch (type) {
+      case 'completed':
+        value = rec.completed;
+        break;
+      case 'failed':
+        value = rec.failed;
+        break;
+      case 'error-percentage': {
+        const total = rec.completed + rec.failed;
+        value = total > 0 ? rec.failed / total : 0;
+        break;
+      }
+    }
+    clock.set(rec.endTime);
+    meter.mark(value);
+  });
+
+  return meter.getSummary();
+}
+
+export function aggregateCompletedRates(
+  recs: StatisticalSnapshot[],
+): MeterSummary {
+  return aggregateMeter(recs, 'completed');
+}
+
+export function aggregateErrorRates(recs: StatisticalSnapshot[]): MeterSummary {
+  return aggregateMeter(recs, 'failed');
+}
+
+export function aggregateErrorPercentageRates(
+  recs: StatisticalSnapshot[],
+): MeterSummary {
+  return aggregateMeter(recs, 'error-percentage');
+}
+
 export function aggregateSnapshots(
   recs: StatisticalSnapshot[],
 ): StatisticalSnapshot {
@@ -205,6 +240,7 @@ export function aggregateSnapshots(
   let failed = 0;
   let startTime = recs.length ? recs[0].startTime : 0;
   let endTime = startTime;
+  const rates = aggregateCompletedRates(recs);
 
   recs.forEach((rec) => {
     completed = completed + (rec.completed || 0);
@@ -218,6 +254,7 @@ export function aggregateSnapshots(
   hist.destroy();
 
   return {
+    ...rates,
     ...snapshot,
     completed,
     failed,

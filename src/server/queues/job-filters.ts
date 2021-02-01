@@ -305,7 +305,7 @@ async function processSearch(
 
   key = getCursorKey(queue, cursor);
   meta.timestamp = Date.now();
-  client.setex(key, CursorExpiration / 1000, JSON.stringify(meta));
+  await client.setex(key, CursorExpiration / 1000, JSON.stringify(meta));
 
   return {
     cursor,
