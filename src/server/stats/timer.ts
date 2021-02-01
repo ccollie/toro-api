@@ -2,6 +2,8 @@ import { Meter } from './meter';
 import { Clock } from '../lib';
 import { Histogram } from 'hdr-histogram-js';
 import { getHistogramSnapshot, createHistogram } from './utils';
+import { MeteredRates, MeterSummary, TimerSnapshot } from '../../types';
+import { subMilliseconds, toDate } from 'date-fns';
 
 /**
  * A convenience wrapper class for a {@link Timer} to measure durations.
@@ -153,8 +155,10 @@ export class Timer {
    * Getter method for rates 'snapshot'
    *
    * @readonly
+   * @type {MeteredRates}
+   * @memberof Timer
    */
-  public get rates(): Record<number, number> {
+  public get rates(): MeteredRates {
     return {
       15: this.get15MinuteRate(),
       5: this.get5MinuteRate(),
@@ -173,6 +177,19 @@ export class Timer {
       this.histogram.recordValue(duration);
       this.meter.mark(1);
     }
+    return this;
+  }
+
+  // Record the duration of an event that started at a time and ends now.
+  updateSince(t: Date | number): this {
+    const now = this.clock.getTime();
+    const then = toDate(t).getTime();
+    return this.addDuration(now - then);
+  }
+
+  public add(other: Timer): this {
+    this.histogram.add(other.histogram);
+    this.meter.mark(other.meter.count);
     return this;
   }
 
@@ -219,6 +236,16 @@ export class Timer {
    */
   public getMeanRate(): number {
     return this.meter.meanRate;
+  }
+
+  getPercentile(p: number): number {
+    return this.histogram.getValueAtPercentile(p);
+  }
+
+  reset(resetMeter = true): this {
+    this.histogram.reset();
+    resetMeter && this.meter.reset();
+    return this;
   }
 
   // /**
@@ -289,5 +316,13 @@ export class Timer {
       ...meterJson,
       ...histogramJson,
     };
+  }
+
+  public getSnapshot(): TimerSnapshot {
+    return this.toJSON();
+  }
+
+  getRateSummary(): MeterSummary {
+    return this.meter.getSummary();
   }
 }

@@ -24,8 +24,10 @@ export function getRatesResolver(type: 'completed' | 'error'): FieldConfig {
         }
         throw boom.notFound(msg);
       }
-      const meter = type === 'completed' ? stats.meter : stats.errorMeter;
-      return meter.getSummary();
+      if (type === 'error') {
+        return stats.errors.getSummary();
+      }
+      return stats.getThroughputRateSummary();
     },
   };
 }

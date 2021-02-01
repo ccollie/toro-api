@@ -28,12 +28,55 @@ export interface StatsWindow {
 }
 
 export interface StatisticalSnapshotOptions {
-  includePercentiles: boolean;
-  percentiles?: number[];
   startTime?: number;
   endTime?: number;
   includeData: boolean;
   counts?: Record<string, number>;
+}
+
+/**
+ * Helper interface for serialized {@link Meter} metrics - represents a snapshot of the rates of a {@link Meter}.
+ *
+ * @export
+ * @interface MeteredRates
+ */
+export interface MeteredRates {
+  [rate: number]: number;
+}
+
+/**
+ * Serializable version of a {@link Meter}.
+ *
+ * @export
+ * @interface MeterSnapshot
+ */
+export interface MeterSnapshot {
+  /**
+   * Total count of events reported.
+   *
+   * @type {number}
+   */
+  count: number;
+  /**
+   * mean rate - the meaning of the mean-rate depends on the actual implementation.
+   *
+   * @type {number}
+   */
+  meanRate: number;
+  /**
+   * Mapping of time-frame to rate values - time-unit and meaning depend on the actual implementation.
+   *
+   * @type {MeteredRates}
+   */
+  rates: MeteredRates;
+}
+
+export interface MeterSummary {
+  count: number;
+  meanRate: number;
+  m1Rate: number;
+  m5Rate: number;
+  m15Rate: number;
 }
 
 export interface HistogramSnapshot {
@@ -50,20 +93,11 @@ export interface HistogramSnapshot {
   data?: string; // encoded data
 }
 
-export interface StatisticalSnapshot extends HistogramSnapshot {
+export interface TimerSnapshot extends HistogramSnapshot, MeterSummary {}
+
+export interface StatisticalSnapshot extends TimerSnapshot {
   failed?: number;
   completed?: number;
   startTime?: number;
   endTime?: number;
-}
-
-export interface StatsTimer extends StatisticalSnapshot {
-  m1Rate: number;
-  m5Rate: number;
-  m15Rate: number;
-  meanRate: number;
-  errorM1Rate: number;
-  errorM5Rate: number;
-  errorM15Rate: number;
-  errorMeanRate: number;
 }

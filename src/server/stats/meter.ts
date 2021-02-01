@@ -2,6 +2,7 @@ import { Clock, TimeTicker } from '../lib';
 import * as units from './units';
 // eslint-disable-next-line max-len
 import { ExponentiallyMovingWeightedAverage as EWMA } from './exponentially-moving-weighted-average';
+import { MeteredRates, MeterSummary } from '@src/types';
 
 const RATE_UNIT = units.MINUTES;
 const TICK_INTERVAL = 5 * units.SECONDS;
@@ -39,7 +40,6 @@ export class BaseMeter {
   private _startTime: number;
   private _count = 0;
   private _currentSum = 0;
-  protected _ewma: EWMA;
   private readonly _ticker: TimeTicker;
   private readonly clock: Clock;
 
@@ -108,12 +108,13 @@ export class BaseMeter {
   }
 
   /**
-   * Calls the {@link SimpleMeter#tick} for each tick.
+   * Calls the {@link BaseMeter#tick} for each tick.
    *
    * @protected
    */
-  tick(): void {
+  tick(n = 1): this {
     // abstract
+    return this;
   }
 
   /**
@@ -156,10 +157,12 @@ export class BaseMeter {
 
   /**
    * Checks whether an update of the averages is needed and if so updates
-   * the {@link SimpleMeter#lastTime}.
+   * the {@link BaseMeter#lastTime}.
    */
   tickIfNeeded(): boolean {
-    return !!this._ticker.tickIfNeeded(() => this.tick());
+    const ticksNeeded = this._ticker.tickIfNeeded();
+    this.tick(ticksNeeded);
+    return !!ticksNeeded;
   }
 }
 
@@ -185,8 +188,9 @@ export class SimpleMeter extends BaseMeter {
    *
    * @protected
    */
-  tick(): void {
-    this._ewma.tick();
+  tick(n = 1): this {
+    this._ewma.tick(n);
+    return this;
   }
 
   get timePeriod(): number {
@@ -213,15 +217,6 @@ export class SimpleMeter extends BaseMeter {
       rate: this.rate,
     };
   }
-}
-
-export interface MeterSummary {
-  count: number;
-  meanRate: number;
-  currentRate: number;
-  m1Rate: number;
-  m5Rate: number;
-  m15Rate: number;
 }
 
 const DefaultMeterProperties: MeterProperties = {
@@ -270,10 +265,13 @@ export class Meter extends BaseMeter {
     return this;
   }
 
-  tick(): void {
-    this._m1Rate.tick();
-    this._m5Rate.tick();
-    this._m15Rate.tick();
+  tick(n = 1): this {
+    if (n) {
+      this._m1Rate.tick(n);
+      this._m5Rate.tick(n);
+      this._m15Rate.tick(n);
+    }
+    return this;
   }
 
   /**
@@ -297,6 +295,21 @@ export class Meter extends BaseMeter {
   }
 
   /**
+   * Getter method for rates 'snapshot'
+   *
+   * @readonly
+   * @type {MeteredRates}
+   * @memberof Meter
+   */
+  public get rates(): MeteredRates {
+    return {
+      15: this.get15MinuteRate(),
+      5: this.get5MinuteRate(),
+      1: this.get1MinuteRate(),
+    };
+  }
+
+  /**
    * Updates the 1 minute average if needed and returns the rate per unit.
    *
    * @returns {number}
@@ -309,7 +322,6 @@ export class Meter extends BaseMeter {
   getSummary(): MeterSummary {
     return {
       count: this.count,
-      currentRate: this.currentRate,
       meanRate: this.meanRate,
       m1Rate: this.get1MinuteRate(),
       m5Rate: this.get5MinuteRate(),
@@ -321,10 +333,8 @@ export class Meter extends BaseMeter {
     return {
       ...super.toJSON(),
       count: this.count,
-      currentRate: this.currentRate,
-      m1Rate: this.get1MinuteRate(),
-      m5Rate: this.get5MinuteRate(),
-      m15Rate: this.get15MinuteRate(),
+      meanRate: this.meanRate,
+      rates: this.rates,
     };
   }
 }

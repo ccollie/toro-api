@@ -1,8 +1,7 @@
 import { Meter } from './meter';
-import { Histogram } from 'hdr-histogram-js';
 import { Clock } from '../lib';
-import { StatisticalSnapshot } from '@src/types';
-import { createHistogram, getHistogramSnapshot } from './utils';
+import { MeterSummary, StatisticalSnapshot } from '@src/types';
+import { Timer } from './timer';
 
 /**
  * Class to hold statistics aggregated from a queue over
@@ -10,18 +9,16 @@ import { createHistogram, getHistogramSnapshot } from './utils';
  */
 export default class QueueStats {
   public readonly jobType: string = null;
-  private readonly wait: Histogram;
-  private readonly latency: Histogram;
-  public readonly meter: Meter;
-  public readonly errorMeter: Meter;
+  private readonly wait: Timer;
+  private readonly latency: Timer;
+  public readonly errors: Meter;
   private counts: { waiting: number; completed: number; failed: number };
 
   constructor(clock: Clock, jobType: string = null) {
     this.jobType = jobType;
-    this.wait = createHistogram();
-    this.latency = createHistogram();
-    this.meter = new Meter(clock);
-    this.errorMeter = new Meter(clock);
+    this.wait = new Timer(clock);
+    this.latency = new Timer(clock);
+    this.errors = new Meter(clock);
     this.counts = {
       completed: 0,
       failed: 0,
@@ -32,14 +29,15 @@ export default class QueueStats {
   destroy(): void {
     this.wait.destroy();
     this.latency.destroy();
+    this.errors.destroy();
   }
 
   get hasData(): boolean {
-    return this.counts.completed + this.counts.failed > 0;
+    return this.count > 0;
   }
 
   get count(): number {
-    return this.meter.count;
+    return this.counts.completed + this.counts.failed;
   }
 
   clearCounts(): QueueStats {
@@ -54,19 +52,19 @@ export default class QueueStats {
   /**
    * @param {QueueStats} other
    */
-  add(other: QueueStats): QueueStats {
+  add(other: QueueStats): this {
     this.wait.add(other.wait);
     this.latency.add(other.latency);
     Object.keys(this.counts).forEach((key) => {
       this.counts[key] = (this.counts[key] || 0) + parseInt(other.counts[key]);
     });
+    this.errors.mark(this.errors.count);
     return this;
   }
 
-  reset(): QueueStats {
-    this.latency.reset();
-    this.wait.reset();
-    // this.meter.reset();
+  reset(): this {
+    this.latency.reset(false);
+    this.wait.reset(false);
     this.clearCounts();
     return this;
   }
@@ -76,49 +74,21 @@ export default class QueueStats {
     // do we need to account for runtime of failed jobs ?
     // this.latency.recordValue(runTime);
     this.counts.failed++;
-    this.errorMeter.mark();
+    this.errors.mark();
     return this;
   }
 
   /* Register a COMPLETED job */
   markCompleted(runTime: number): this {
-    this.latency.recordValue(runTime);
+    this.latency.addDuration(runTime);
     this.counts.completed++;
-    this.meter.mark();
     return this;
   }
 
   markWaiting(value: number): this {
-    this.wait.recordValue(value);
+    this.wait.addDuration(value);
     this.counts.waiting++;
     return this;
-  }
-
-  /**
-   * Gets the average rate per second of last 15 minutes.
-   *
-   * @returns {number}
-   */
-  public get15MinuteRate(): number {
-    return this.meter.get15MinuteRate();
-  }
-
-  /**
-   * Gets the average rate per second of last 5 minutes.
-   *
-   * @returns {number}
-   */
-  public get5MinuteRate(): number {
-    return this.meter.get5MinuteRate();
-  }
-
-  /**
-   * Gets the average rate per second of last minute.
-   *
-   * @returns {number}
-   */
-  public get1MinuteRate(): number {
-    return this.meter.get1MinuteRate();
   }
 
   /**
@@ -127,11 +97,15 @@ export default class QueueStats {
    * @returns {number}
    */
   public getMeanRate(): number {
-    return this.meter.meanRate;
+    return this.latency.meanRate;
+  }
+
+  getThroughputRateSummary(): MeterSummary {
+    return this.latency.getRateSummary();
   }
 
   getLatencySnapshot(): StatisticalSnapshot {
-    const latencyData = getHistogramSnapshot(this.latency);
+    const latencyData = this.latency.toJSON();
     return {
       ...latencyData,
       ...this.counts,
@@ -139,7 +113,7 @@ export default class QueueStats {
   }
 
   getWaitTimeSnapshot(): StatisticalSnapshot {
-    const latencyData = getHistogramSnapshot(this.wait);
+    const latencyData = this.wait.toJSON();
     return {
       ...latencyData,
       ...this.counts,
@@ -147,14 +121,15 @@ export default class QueueStats {
   }
 
   getSnapshot(): Record<string, any> {
-    const { latency, wait, counts, jobType } = this;
-    const latencyData = getHistogramSnapshot(latency);
-    const waitData = getHistogramSnapshot(wait);
+    const { latency, wait, counts, errors, jobType } = this;
+    const latencyData = latency.toJSON();
+    const waitData = wait.toJSON();
     return {
       latency: latencyData,
       wait: waitData,
       counts,
       jobType,
+      errors: errors.toJSON(),
     };
   }
 }
