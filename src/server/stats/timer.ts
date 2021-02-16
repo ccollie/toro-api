@@ -3,7 +3,7 @@ import { Clock } from '../lib';
 import { Histogram } from 'hdr-histogram-js';
 import { getHistogramSnapshot, createHistogram } from './utils';
 import { MeteredRates, MeterSummary, TimerSnapshot } from '../../types';
-import { subMilliseconds, toDate } from 'date-fns';
+import { toDate } from 'date-fns';
 
 /**
  * A convenience wrapper class for a {@link Timer} to measure durations.

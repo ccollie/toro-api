@@ -1,5 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { StatsMetricsTypeEnum } from '../scalars';
+import { GraphQLEnumType } from 'graphql';
+import { StatsRateType } from '../../../../types';
 
 const BaseFields = {
   count: {
@@ -82,6 +84,23 @@ export const StatsSnapshotTC = schemaComposer.createObjectTC({
       type: 'Float!',
       description: 'The 99.5th percentile',
     },
+    meanRate: {
+      type: 'Float!',
+      description:
+        'The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled, divided by the number of seconds the process has been running), it doesn’t offer a sense of recency.',
+    },
+    m1Rate: {
+      type: 'Float!',
+      description: 'One minute exponentially weighted moving average',
+    },
+    m5Rate: {
+      type: 'Float!',
+      description: 'Five minute exponentially weighted moving average',
+    },
+    m15Rate: {
+      type: 'Float!',
+      description: 'Fifteen minute exponentially weighted moving average',
+    },
   },
 });
 
@@ -98,6 +117,35 @@ export const StatsQueryInputTC = schemaComposer.createInputTC({
       makeRequired: true,
       defaultValue: 'latency',
       description: 'The metric requested',
+    },
+    granularity: {
+      type: 'StatsGranularity!',
+      description: 'Stats snapshot granularity',
+    },
+    range: {
+      type: 'String!',
+      description:
+        'An expression specifying the range to query e.g. yesterday, last_7days',
+    },
+  },
+});
+
+export const StatsRateTypeEnum = new GraphQLEnumType({
+  name: 'StatsRateType',
+  values: {
+    [StatsRateType.Throughput]: { value: StatsRateType.Throughput },
+    [StatsRateType.Errors]: { value: StatsRateType.Errors },
+    [StatsRateType.ErrorPercentage]: { value: StatsRateType.ErrorPercentage },
+  },
+});
+
+export const StatsRateQueryInputTC = schemaComposer.createInputTC({
+  name: 'StatsRateQueryInput',
+  description: 'Queue stats rates filter.',
+  fields: {
+    jobName: {
+      type: 'String',
+      description: 'An optional job name to filter on',
     },
     granularity: {
       type: 'StatsGranularity!',

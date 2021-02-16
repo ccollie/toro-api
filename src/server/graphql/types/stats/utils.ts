@@ -4,6 +4,8 @@ import {
   StatsMetricType,
   StatisticalSnapshot,
   StatsGranularity,
+  MeterSummary,
+  StatsRateType,
 } from '../../../../types';
 import { StatsClient } from '../../../stats';
 import { HostManager } from '../../../hosts';
@@ -52,7 +54,7 @@ export async function aggregateStats(
   const { start, end } = parseRange(range);
 
   if (model instanceof HostManager) {
-    snapshot = await client.aggregateHostStats(
+    snapshot = await client.getAggregateHostStats(
       jobName,
       metric,
       unit,
@@ -60,8 +62,33 @@ export async function aggregateStats(
       end,
     );
   } else {
-    snapshot = await client.aggregateStats(jobName, metric, unit, start, end);
+    snapshot = await client.getAggregateStats(
+      jobName,
+      metric,
+      unit,
+      start,
+      end,
+    );
   }
 
   return snapshot;
+}
+
+export async function aggregateRates(
+  model: Queue | HostManager,
+  jobName: string,
+  range: string,
+  granularity: StatsGranularity,
+  type: StatsRateType,
+): Promise<MeterSummary> {
+  const client = getClient(model);
+
+  const unit = normalizeGranularity(granularity);
+  const { start, end } = parseRange(range);
+
+  if (model instanceof HostManager) {
+    return client.getHostAggregateRates(jobName, unit, type, start, end);
+  } else {
+    return client.getAggregateRates(jobName, unit, type, start, end);
+  }
 }

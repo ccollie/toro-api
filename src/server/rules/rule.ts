@@ -33,11 +33,16 @@ export interface EvaluationResult {
   state: Record<string, any>;
 }
 
-export interface RuleStateChangeEvent {
-  state: RuleState;
+export interface RuleEvent {
   ts: number;
   rule: Rule;
 }
+
+export interface RuleStateChangeEvent extends RuleEvent {
+  state: RuleState;
+}
+
+export type RuleEventHandler = (event: RuleEvent) => void | Promise<void>;
 
 export type RuleStateChangeHandler = (
   event: RuleStateChangeEvent,
@@ -341,6 +346,8 @@ export class Rule extends Emittery {
       channels: [...this.channels],
       severity: this.severity,
       lastAlertAt: this._lastAlertAt,
+      _alertCount: this.alertCount,
+      _violations: this.violations,
     };
   }
 
@@ -379,8 +386,23 @@ export class Rule extends Emittery {
     }
   }
 
+  public onRuleEvent(
+    name: RuleEventsEnum,
+    handler: RuleEventHandler,
+  ): UnsubscribeFn {
+    return this.on(name, handler);
+  }
+
+  public offRuleEvent(name: RuleEventsEnum, handler: RuleEventHandler): void {
+    this.off(name, handler);
+  }
+
   public onStateChange(handler: RuleStateChangeHandler): UnsubscribeFn {
     return this.on(RuleEventsEnum.STATE_CHANGED, handler);
+  }
+
+  public offStateChange(handler: RuleStateChangeHandler): void {
+    this.off(RuleEventsEnum.STATE_CHANGED, handler);
   }
 
   protected notifyAlert(result: EvaluationResult): Promise<void> {
@@ -393,11 +415,12 @@ export class Rule extends Emittery {
   }
 
   private async trigger(state: EvaluationResult): Promise<void> {
+    const ts = this.getTime();
     if (!this.isTriggered) {
       this.alertCount = 0;
       this.violations = 0;
       this.startAlertTimeout();
-      this.alertStart = this.getTime();
+      this.alertStart = ts;
       this.updateRuleState(RuleState.ERROR);
     }
     this.clearResetTimer();
@@ -405,8 +428,13 @@ export class Rule extends Emittery {
     this.violations = this.violations + 1;
 
     if (this.shouldRaiseAlert()) {
-      return this.notifyAlert(state);
+      await this.notifyAlert(state);
     }
+
+    this.emit(RuleEventsEnum.RULE_TRIGGERED, {
+      ts,
+      rule: this,
+    }).catch(this.onError);
   }
 
   private clearResetTimer(): void {
@@ -425,6 +453,10 @@ export class Rule extends Emittery {
       this.alertCount = 0;
       this.violations = 0;
       this.updateRuleState(RuleState.NORMAL);
+      this.emit(RuleEventsEnum.RULE_RESET, {
+        ts: this.getTime(),
+        rule: this,
+      }).catch(this.onError);
     };
 
     const run = (): void => {

@@ -13,10 +13,6 @@ export const MeterTC = schemaComposer.createObjectTC({
       type: 'Float!',
       description: 'The average rate since the meter was started.',
     },
-    currentRate: {
-      type: 'Float!',
-      description: 'the rate of the meter since the meter was started',
-    },
     m1Rate: {
       type: 'Float!',
       description: 'The 1 minute average',
