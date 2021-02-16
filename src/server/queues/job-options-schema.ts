@@ -4,7 +4,6 @@ const RepeatOptionsSchema = {
   properties: {
     cron: {
       type: 'string',
-      format: 'cron',
       description: 'Cron expression',
     },
     tz: {
