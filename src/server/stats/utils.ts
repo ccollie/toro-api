@@ -3,6 +3,7 @@ import {
   MeterSummary,
   StatisticalSnapshot,
   StatsGranularity,
+  StatsRateType,
 } from '../../types';
 import {
   build,
@@ -54,10 +55,6 @@ export const CONFIG = {
   },
   snapshotInterval: ms(`1 ${StatsGranularity.Minute}`),
 };
-
-export function getPrevUnit(unit: StatsGranularity): StatsGranularity {
-  return CONFIG.prevUnit[unit];
-}
 
 export function getSnapshotInterval(): number {
   return CONFIG.snapshotInterval;
@@ -189,22 +186,22 @@ export function aggregateHistograms(recs: HistogramSnapshot[]): Histogram {
   return hist;
 }
 
-function aggregateMeter(
+export function aggregateMeter(
   recs: StatisticalSnapshot[],
-  type: 'completed' | 'failed' | 'error-percentage',
+  type: StatsRateType,
 ): MeterSummary {
   const clock = new ManualClock();
   const meter = new IrregularMeter(clock);
   recs.forEach((rec) => {
     let value = 0;
     switch (type) {
-      case 'completed':
+      case StatsRateType.Throughput:
         value = rec.completed;
         break;
-      case 'failed':
+      case StatsRateType.Errors:
         value = rec.failed;
         break;
-      case 'error-percentage': {
+      case StatsRateType.ErrorPercentage: {
         const total = rec.completed + rec.failed;
         value = total > 0 ? rec.failed / total : 0;
         break;
@@ -217,20 +214,20 @@ function aggregateMeter(
   return meter.getSummary();
 }
 
-export function aggregateCompletedRates(
+export function aggregateThroughputRates(
   recs: StatisticalSnapshot[],
 ): MeterSummary {
-  return aggregateMeter(recs, 'completed');
+  return aggregateMeter(recs, StatsRateType.Throughput);
 }
 
 export function aggregateErrorRates(recs: StatisticalSnapshot[]): MeterSummary {
-  return aggregateMeter(recs, 'failed');
+  return aggregateMeter(recs, StatsRateType.Errors);
 }
 
 export function aggregateErrorPercentageRates(
   recs: StatisticalSnapshot[],
 ): MeterSummary {
-  return aggregateMeter(recs, 'error-percentage');
+  return aggregateMeter(recs, StatsRateType.ErrorPercentage);
 }
 
 export function aggregateSnapshots(
@@ -240,7 +237,7 @@ export function aggregateSnapshots(
   let failed = 0;
   let startTime = recs.length ? recs[0].startTime : 0;
   let endTime = startTime;
-  const rates = aggregateCompletedRates(recs);
+  const rates = aggregateThroughputRates(recs);
 
   recs.forEach((rec) => {
     completed = completed + (rec.completed || 0);

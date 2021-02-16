@@ -17,7 +17,6 @@ import { queueJobSchemas as jobSchemas } from './Queue.jobSchemas';
 import { queueRules as rules } from './Queue.rules';
 import { pendingJobCount } from './Queue.pendingJobCount';
 import { queueJobFilters as jobFilters } from './Queue.jobFilters';
-import { getRatesResolver } from './rates';
 import { jobSearch } from './Queue.jobSearch';
 import { jobsByFilter } from './Queue.jobsByFilter';
 import { ruleAlertCount } from './Queue.ruleAlertCount';
@@ -26,13 +25,18 @@ import {
   histogram,
   percentileDistribution,
   stats,
-  statsLatest as lastStatsSnapshot,
-  statsDateRange,
   statsAggregate,
+  statsDateRange,
+  statsLatest as lastStatsSnapshot,
+  getQueueRatesResolver,
 } from '../../stats';
+import { StatsRateType } from '../../../../../types';
 
-const throughput = getRatesResolver('completed');
-const errorRate = getRatesResolver('error');
+const throughput = getQueueRatesResolver(StatsRateType.Throughput);
+const errorRate = getQueueRatesResolver(StatsRateType.Errors);
+const errorPercentageRate = getQueueRatesResolver(
+  StatsRateType.ErrorPercentage,
+);
 
 export const QueueTC = schemaComposer.createObjectTC({
   name: 'Queue',
@@ -57,7 +61,6 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobsByFilter,
     jobDurationAvg,
     jobMemoryAvg,
-    waitTimeAvg,
     lastStatsSnapshot,
     pendingJobCount,
     percentileDistribution,
@@ -72,6 +75,8 @@ export const QueueTC = schemaComposer.createObjectTC({
     statsDateRange,
     throughput,
     errorRate,
+    errorPercentageRate,
+    waitTimeAvg,
     workers,
     workerCount,
   },

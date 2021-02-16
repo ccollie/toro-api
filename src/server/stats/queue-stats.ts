@@ -12,6 +12,7 @@ export default class QueueStats {
   private readonly wait: Timer;
   private readonly latency: Timer;
   public readonly errors: Meter;
+  public readonly errorPercentage: Meter;
   private counts: { waiting: number; completed: number; failed: number };
 
   constructor(clock: Clock, jobType: string = null) {
@@ -19,6 +20,7 @@ export default class QueueStats {
     this.wait = new Timer(clock);
     this.latency = new Timer(clock);
     this.errors = new Meter(clock);
+    this.errorPercentage = new Meter(clock);
     this.counts = {
       completed: 0,
       failed: 0,
@@ -75,6 +77,7 @@ export default class QueueStats {
     // this.latency.recordValue(runTime);
     this.counts.failed++;
     this.errors.mark();
+    this.errorPercentage.mark();
     return this;
   }
 

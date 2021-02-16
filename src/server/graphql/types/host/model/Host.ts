@@ -17,7 +17,14 @@ import {
   statsLatest as lastStatsSnapshot,
   statsDateRange,
   statsAggregate,
+  getHostRatesResolver,
 } from '../../stats';
+
+import { StatsRateType } from '../../../../../types';
+
+const throughput = getHostRatesResolver(StatsRateType.Throughput);
+const errorRate = getHostRatesResolver(StatsRateType.Errors);
+const errorPercentageRate = getHostRatesResolver(StatsRateType.ErrorPercentage);
 
 export const HostTC = schemaComposer.createObjectTC({
   name: 'QueueHost',
@@ -35,6 +42,8 @@ export const HostTC = schemaComposer.createObjectTC({
     queueCount,
     channels,
     discoverQueues,
+    errorPercentageRate,
+    errorRate,
     histogram,
     jobCounts,
     lastStatsSnapshot,
@@ -44,6 +53,7 @@ export const HostTC = schemaComposer.createObjectTC({
     stats,
     statsAggregate,
     statsDateRange,
+    throughput,
     uri,
     workerCount,
     workers,

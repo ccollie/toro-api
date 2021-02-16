@@ -126,21 +126,12 @@ export class IrregularMeter {
     this._initializeState();
   }
 
-  get meanRate(): number {
-    const elapsed = this.elapsedTime;
-    return elapsed === 0 ? 0 : (this._sum / this.elapsedTime) * this._rateUnit;
-  }
-
   /**
    * the rate of the meter since the meter was started
    */
-  get currentRate(): number {
-    const duration = this.getTime() - this._timestamp;
-    const currentRate =
-      duration === 0 ? 0 : (this._sum / duration) * this._rateUnit;
-
-    // currentRate could be NaN if duration was 0, so fix that
-    return currentRate || 0;
+  get meanRate(): number {
+    const elapsed = this.elapsedTime;
+    return elapsed === 0 ? 0 : (this._sum / elapsed) * this._rateUnit;
   }
 
   /**

@@ -132,26 +132,10 @@ export class BaseMeter {
     return (this._count / this.elapsedTime) * this._rateUnit;
   }
 
-  /**
-   * the rate of the meter since the meter was started
-   */
-  get currentRate(): number {
-    const currentSum = this._currentSum;
-    const duration = this.getTime() - this._lastToJSON;
-    const currentRate = (currentSum / duration) * this._rateUnit;
-
-    this._currentSum = 0;
-    this._lastToJSON = this.getTime();
-
-    // currentRate could be NaN if duration was 0, so fix that
-    return currentRate || 0;
-  }
-
   toJSON(): Record<string, any> {
     return {
       meanRate: this.meanRate,
       count: this.count,
-      currentRate: this.currentRate,
     };
   }
 

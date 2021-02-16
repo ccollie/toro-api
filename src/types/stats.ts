@@ -1,5 +1,11 @@
 export type StatsMetricType = 'latency' | 'wait' | 'counts';
 
+export enum StatsRateType {
+  Throughput = 'Throughput',
+  Errors = 'Errors',
+  ErrorPercentage = 'ErrorPercentage',
+}
+
 export enum StatsGranularity {
   Minute = 'minute',
   Hour = 'hour',
