@@ -134,6 +134,8 @@ export enum RuleEventsEnum {
   RULE_ALERTS_CLEARED = 'rule.alerts-cleared',
   RULE_ACTIVATED = 'rule.activated',
   RULE_DEACTIVATED = 'rule.deactivated',
+  RULE_TRIGGERED = 'rule.triggered',
+  RULE_RESET = 'rule.reset',
   STATE_CHANGED = 'rule.state-changed',
 }
 

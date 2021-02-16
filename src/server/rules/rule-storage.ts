@@ -162,6 +162,40 @@ export class RuleStorage {
   }
 
   /**
+   * Update a rule
+   * @param {Rule} rule
+   * @returns {Promise<Rule>}
+   */
+  async partialUpdateRule(rule: Partial<Rule>): Promise<void> {
+    const id = rule.id;
+    if (!id) {
+      throw boom.badRequest('Rule should have an id');
+    }
+    const key = this.getRuleKey(id);
+    const client = await this.queue.client;
+
+    const existing = await client.exists(key);
+    if (!existing) {
+      throw boom.notFound('No rule found with id: ' + id);
+    }
+    const data = serializeRule(rule) as Record<string, any>;
+    delete data.id;
+
+    data.updatedAt = systemClock.getTime();
+    const pipeline = client.pipeline();
+    pipeline.hmset(key, data);
+    rule.updatedAt = data.updatedAt;
+
+    await Promise.all([
+      pipeline.exec(),
+      this.bus.emit(RuleEventsEnum.RULE_UPDATED, {
+        ruleId: id,
+        data,
+      }),
+    ]);
+  }
+
+  /**
    * Change a {@link Rule}'s ACTIVE status
    * @param {Rule|string} rule
    * @param {Boolean} isActive
@@ -320,7 +354,6 @@ export class RuleStorage {
     }
 
     if (data.event === RuleEventsEnum.ALERT_TRIGGERED) {
-      const client = await this.getClient();
       const key = this.getRuleKey(ruleId);
       const timestamp = data.end || data.start;
 
