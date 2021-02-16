@@ -1330,19 +1330,44 @@ ExprOperators['$sqrt'] = function(expr)
   return parseSingleParamMathFn('$sqrt', expr, math.sqrt)
 end
 
+ExprOperators['$log'] = function(expr)
+  return parseSingleParamMathFn('$log', expr, math.log)
+end
+
+ExprOperators['$log10'] = function(expr)
+  return parseSingleParamMathFn('$log10', expr, math.log)
+end
+
+function sumValues(name, args)
+  assert(isArray(args), name .. ' expects an array')
+  local total = 0
+  for _, val in ipairs(args) do
+    if isNumber(val) then
+      total = total + val
+    end
+  end
+  return total
+end
+
 ExprOperators['$add'] = function(expr)
   local exec = parseExpression(expr)
 
   return function(obj)
     local args = exec(obj)
-    assert(isArray(args), '$add expects an array')
-    local total = 0
-    for _, val in ipairs(args) do
-      if isNumber(val) then
-        total = total + val
-      end
-    end
-    return total
+    return sumValues('$add', args)
+  end
+end
+
+ExprOperators['$sum'] = ExprOperators['$add'];
+
+ExprOperators['$avg'] = function(expr)
+  local exec = parseExpression(expr)
+
+  return function(obj)
+    local args = exec(obj)
+    local total = sumValues('$avg', args)
+    if total == 0 then return 0 end
+    return total / #args
   end
 end
 
