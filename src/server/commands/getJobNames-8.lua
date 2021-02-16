@@ -20,7 +20,7 @@ local keyPrefix = ARGV[1]
 local scratchKey = KEYS[7]
 local destination = KEYS[8]
 
-local MAX_ITEMS = 110
+local MAX_ITEMS = 160
 local function add_from_list (key, result, dedupe)
     local items = {}
 
@@ -57,7 +57,9 @@ result = {}
 
 
 for i = 1, 6 do
-    add_from_list(KEYS[i], result, dedup)
+    if (#result < MAX_ITEMS) then
+        add_from_list(KEYS[i], result, dedup)
+    end
 end
 
 if #result > 0 then
