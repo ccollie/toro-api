@@ -9,7 +9,7 @@ export const queueJobSchemas: FieldConfig = {
     jobNames: '[String!]',
   },
   description:
-    'Get JSONSchema documents previously set for a job names on a queue',
+    'Get JSONSchema documents and job defaults previously set for a job names on a queue',
   async resolve(
     queue: Queue,
     { jobNames }: { jobNames: string[] },
