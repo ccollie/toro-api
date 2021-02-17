@@ -433,7 +433,7 @@ export class QueueListener extends Emittery {
 
     this.queueEvents = new QueueEvents(this.queue.name, {
       lastEventId: eventId,
-      client: client.duplicate(),
+      connection: client.duplicate(),
     });
 
     Object.keys(this._handlerMap).forEach((event) => {
