@@ -7,7 +7,11 @@ import {
   StatsMetricsTypeEnum,
 } from '../../types/scalars';
 import { schemaComposer } from 'graphql-compose';
-import { StatsMetricType, StatsGranularity } from '../../../../types';
+import {
+  StatsMetricType,
+  StatsGranularity,
+  StatisticalSnapshot,
+} from '../../../../types';
 import { StatsSnapshotTC } from './types';
 
 export const StatsLatestInputTC = schemaComposer.createInputTC({
@@ -44,11 +48,24 @@ export const statsLatest: FieldConfig = {
       granularity: StatsGranularity.Minute,
       metric: 'latency',
     };
+    let snapshot: StatisticalSnapshot;
     const client = getClient(_);
     const unit = normalizeGranularity(granularity);
     if (_ instanceof HostManager) {
-      return client.getHostLast(jobName, metric as StatsMetricType, unit);
+      snapshot = await client.getHostLast(
+        jobName,
+        metric as StatsMetricType,
+        unit,
+      );
+    } else {
+      snapshot = await client.getLast(jobName, metric as StatsMetricType, unit);
     }
-    return client.getLast(jobName, metric as StatsMetricType, unit);
+    // HACK!!!
+    if (snapshot) {
+      snapshot.m1Rate = snapshot.m1Rate || 0;
+      snapshot.m5Rate = snapshot.m5Rate || 0;
+      snapshot.m15Rate = snapshot.m15Rate || 0;
+    }
+    return snapshot;
   },
 };
