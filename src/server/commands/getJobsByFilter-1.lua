@@ -46,7 +46,6 @@ local JS_SIMPLE_TYPES = {
   ['nil'] = true,
   ['boolean'] = true,
   ['number'] = true,
-  ['string'] = true,
 }
 
 local POSITIVE_INFINITY = 1e309;
