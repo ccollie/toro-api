@@ -174,7 +174,7 @@ export class StatsWriter extends StatsClient {
     );
   }
 
-  async rollupInternal(
+  private async rollupInternal(
     source: StatisticalSnapshot,
     jobName: string,
     metric: StatsMetricType,
