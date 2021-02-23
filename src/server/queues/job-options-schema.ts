@@ -82,7 +82,7 @@ export const JobsOptionsSchema = {
     lifo: {
       type: 'boolean',
       description:
-        'if true, adds the job to the right of the queue instead of the left (default false)',
+        'if true, adds the job to the end of the queue instead of the left (default false)',
     },
     timeout: {
       type: 'integer',
