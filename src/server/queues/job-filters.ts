@@ -226,7 +226,7 @@ interface SearchCursorMeta {
   jobData: Record<string, any>[];
 }
 
-async function processSearch(
+export async function processSearch(
   queue: Queue,
   status: JobStatusEnum,
   filter: Record<string, any>,
@@ -261,7 +261,6 @@ async function processSearch(
 
   filter = filter || meta.filter;
 
-  count = count || 10;
   if (meta.jobData && meta.jobData.length) {
     const [slice, remainder] = splitArray(meta.jobData, count);
     meta.jobData = remainder;
@@ -285,6 +284,10 @@ async function processSearch(
 
       meta.cursor = nextCursor;
 
+      if (!nextCursor) {
+        break;
+      }
+
       if (!_jobs.length) {
         nullCount++;
         if (nullCount >= 2) {
@@ -303,9 +306,13 @@ async function processSearch(
     }
   }
 
-  key = getCursorKey(queue, cursor);
-  meta.timestamp = Date.now();
-  await client.setex(key, CursorExpiration / 1000, JSON.stringify(meta));
+  if (meta.cursor) {
+    key = getCursorKey(queue, cursor);
+    meta.timestamp = Date.now();
+    await client.setex(key, CursorExpiration / 1000, JSON.stringify(meta));
+  } else {
+    cursor = null;
+  }
 
   return {
     cursor,
