@@ -1,9 +1,9 @@
 import { FieldConfig } from '../../../types';
 import { schemaComposer } from 'graphql-compose';
-import { FilteredJobsResult } from '../../../../commands/scripts';
 import { getJobsByFilterId } from '../../../../queues';
 import { Queue } from 'bullmq';
 import { JobSearchPayload } from './Queue.jobSearch';
+import { FilteredJobsResult } from '@src/types';
 
 const JobsByFilterIdInput = schemaComposer.createInputTC({
   name: 'JobsByFilterIdInput',
@@ -21,7 +21,7 @@ const JobsByFilterIdInput = schemaComposer.createInputTC({
     },
     count: {
       type: 'Int!',
-      default: 100,
+      default: 20,
       description: 'The maximum number of jobs to return per iteration',
     },
   },
@@ -36,7 +36,7 @@ export const jobsByFilter: FieldConfig = {
   async resolve(queue: Queue, { filter }): Promise<FilteredJobsResult> {
     const { filterId, cursor, count } = filter;
 
-    const { jobs, nextCursor } = await getJobsByFilterId(
+    const { jobs, cursor: nextCursor } = await getJobsByFilterId(
       queue,
       filterId,
       cursor,
@@ -44,7 +44,7 @@ export const jobsByFilter: FieldConfig = {
     );
 
     return {
-      nextCursor,
+      cursor: nextCursor,
       jobs,
     };
   },

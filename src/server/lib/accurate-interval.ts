@@ -82,6 +82,8 @@ export function createAccurateInterval(
       }
 
       const delay = Math.max(0, nextAt - now);
+
+      // @ts-ignore
       timeout = setTimeout(tick, delay);
       if (timeout.unref) timeout.unref();
       nextAt += interval;

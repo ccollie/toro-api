@@ -86,7 +86,9 @@ export class WriteCache {
   poll(): void {
     if (!this.timer) {
       const pollTimer = setInterval(() => this.flush(), this.flushInterval);
+      // @ts-ignore
       pollTimer.unref();
+      // @ts-ignore
       this.timer = pollTimer;
     }
   }

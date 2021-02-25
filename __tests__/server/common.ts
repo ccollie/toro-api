@@ -5,5 +5,4 @@ export * from '../../src/server/queues';
 export * from '../../src/server/redis';
 export * from '../../src/server/rules';
 export * from '../../src/server/metrics';
-export * from '../../src/server/metrics/lib';
 export * from '../../src/server/notifications';

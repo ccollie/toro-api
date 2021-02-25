@@ -1,5 +1,5 @@
 import { FieldConfig, JobStatusEnumType } from '../../../types';
-import { GraphQLJSONObject, schemaComposer } from 'graphql-compose';
+import { schemaComposer } from 'graphql-compose';
 import { processSearch } from '../../../../queues';
 import { Queue } from 'bullmq';
 import { JobStatusEnum } from '../../../../../types';
@@ -15,10 +15,10 @@ const JobSearchInput = schemaComposer.createInputTC({
       description: 'Search for jobs having this status',
     },
     criteria: {
-      type: GraphQLJSONObject,
+      type: 'String',
       makeRequired: true,
       makeFieldNonNull: true,
-      description: 'A mongo-compatible filter job filter',
+      description: 'The job filter expression',
     },
     cursor: {
       type: 'String',
@@ -47,7 +47,7 @@ export const JobSearchPayload = schemaComposer.createObjectTC({
 
 export const jobSearch: FieldConfig = {
   description:
-    'Incrementally iterate over a list of jobs filtered by mongo-compatible query criteria',
+    'Incrementally iterate over a list of jobs filtered by query criteria',
   type: JobSearchPayload.NonNull,
   args: {
     filter: JobSearchInput.NonNull,
@@ -59,6 +59,7 @@ export const jobSearch: FieldConfig = {
       queue,
       status,
       criteria,
+      null, // hash
       cursor,
       count,
     );

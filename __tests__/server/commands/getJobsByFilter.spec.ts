@@ -354,6 +354,56 @@ describe('getJobsByFilter', () => {
       });
     });
 
+    describe('$xor', () => {
+      test('can use conjunction true XOR true', async () => {
+        await attempt(
+          {
+            $xor: [
+              { 'data.firstName': 'Francis' },
+              { 'data.lastName': { $matches: '^%a.+e' } },
+            ],
+          },
+          false,
+        );
+      });
+
+      test('can use conjunction true XOR false', async () => {
+        await attempt(
+          {
+            $xor: [
+              { 'data.firstName': 'Francis' },
+              { 'data.lastName': 'Amoah' },
+            ],
+          },
+          true,
+        );
+      });
+
+      test('can use conjunction false XOR true', async () => {
+        await attempt(
+          {
+            $xor: [
+              { 'data.firstName': 'Enoch' },
+              { 'data.lastName': 'Asante' },
+            ],
+          },
+          true,
+        );
+      });
+
+      test('can use conjunction false XOR false', async () => {
+        await attempt(
+          {
+            $or: [
+              { 'data.firstName': 'Enoch' },
+              { 'data.age': { $exists: true } },
+            ],
+          },
+          false,
+        );
+      });
+    });
+
     describe('$nor', () => {
       test('can use conjunction true NOR true', async () => {
         await attempt(
@@ -497,6 +547,21 @@ describe('getJobsByFilter', () => {
         inventory,
         condition,
         (data) => data.qty > 250 || data.qty < 200,
+        '_id',
+      );
+    });
+
+    it('$xor', async () => {
+      const condition = {
+        $xor: [{ $gt: ['$data.qty', 250] }, { $lt: ['$data.qty', 200] }],
+      };
+
+      const xor = (a: boolean, b: boolean) => a !== b;
+
+      await checkExpressionByList(
+        inventory,
+        condition,
+        (data) => xor(data.qty > 250, data.qty < 200),
         '_id',
       );
     });
@@ -864,6 +929,16 @@ describe('getJobsByFilter', () => {
       testExpressionCases('$endsWith', cases);
     });
 
+    describe('$contains', () => {
+      const cases = [
+        [[null, null], false],
+        [['super hyperactive', 'hyper'], true],
+        [['should not', 'be found'], false],
+        [['source', 4], false],
+      ];
+      testExpressionCases('$startsWith', cases);
+    });
+
     describe('$strcasecmp', () => {
       const cases = [
         [[null, null], 0],
@@ -1063,6 +1138,58 @@ describe('getJobsByFilter', () => {
     });
   });
 
+  describe('Date Operators', () => {
+    const SAMPLE_DATE_STRING = '2014-01-01T08:15:39.736Z';
+    const SampleDate = new Date(SAMPLE_DATE_STRING);
+
+    function testDateParts(operator, cases) {
+      test.each(cases)(
+        `{${operator}: {input: "%p"}}`,
+        async (input, expected) => {
+          const data = {
+            value: input,
+          };
+          const expression = {
+            [operator]: '$data.value',
+          };
+          await queue.add('default', data);
+          await checkExpression(expression, expected);
+        },
+      );
+    }
+
+    async function addJob(data: Record<string, any>) {
+      const job = await queue.add('default', data);
+    }
+
+    describe('$toDate', () => {
+      it('converts an RFC-3339 date string', async () => {
+        const dateValue = SampleDate.getTime();
+        await addJob({ date: SAMPLE_DATE_STRING, dateValue });
+        const condition = {
+          $eq: [{ $toDate: '$data.date' }, dateValue],
+        };
+        await attempt(condition);
+      });
+    });
+
+    it('returns the $year of a date', async () => {
+      await addJob({ date: SAMPLE_DATE_STRING });
+      const condition = {
+        $eq: [{ $year: '$data.date' }, SampleDate.getFullYear()],
+      };
+      await attempt(condition);
+    });
+
+    it('returns the $month of a date', async () => {
+      await addJob({ date: SAMPLE_DATE_STRING });
+      const condition = {
+        $eq: [{ $year: '$data.date' }, SampleDate.getFullYear()],
+      };
+      await attempt(condition);
+    });
+  });
+
   describe('Type Operators', () => {
     describe('$type', () => {
       let job: Job;
@@ -1110,6 +1237,16 @@ describe('getJobsByFilter', () => {
       testExpressionCases('$toString', cases);
     });
 
+    describe('$isString', () => {
+      const cases = [
+        [true, false],
+        [2.5, false],
+        ['string', true],
+        [null, false],
+      ];
+      testExpressionCases('$isString', cases);
+    });
+
     describe('$toBool', () => {
       const cases = [
         [true, true],
@@ -1148,6 +1285,17 @@ describe('getJobsByFilter', () => {
       testExpressionCases('$toLong', cases);
     });
 
+    describe('$isNumber', () => {
+      const cases = [
+        [true, false],
+        [2.5, true],
+        [0, true],
+        ['string', false],
+        [null, false],
+      ];
+      testExpressionCases('$isNumber', cases);
+    });
+
     describe('$toDecimal', () => {
       it('converts values to decimal', async () => {
         const data = [
@@ -1164,6 +1312,21 @@ describe('getJobsByFilter', () => {
         };
         await checkExpressionByList(data, expr, () => true, '_id');
       });
+    });
+
+    test('$isArray', async () => {
+      const query = {
+        $expr: {
+          $isArray: '$data.grades',
+        },
+      };
+      await attempt(query);
+      const query1 = {
+        $expr: {
+          $isArray: '$data.date',
+        },
+      };
+      await attempt(query1);
     });
   });
 

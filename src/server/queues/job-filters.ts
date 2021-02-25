@@ -1,66 +1,98 @@
 import boom from '@hapi/boom';
 import ms from 'ms';
+import LRUCache from 'lru-cache';
 import { getJobFiltersKey, getUniqueId, nanoid, safeParse } from '../lib';
 import { Job, Queue } from 'bullmq';
-import { JobFilter, JobStatusEnum } from '../../types';
-import { accepts as isValid } from 'mongodb-language-model';
-import { FilteredJobsResult, Scripts } from '../commands/scripts';
+import { FilteredJobsResult, JobFilter, JobStatusEnum } from '../../types';
+import { Scripts } from '../commands/scripts';
 import { checkMultiErrors } from '../redis';
-import { isObject, isEmpty } from 'lodash';
+import { isEmpty, isObject } from 'lodash';
+import { getMultipleJobsById } from './queue';
+import {
+  convertToRPN,
+  parse as parseExpression,
+  KeywordValueFn,
+  RpnNode,
+  ValueKeyword,
+  ValueKeywordNode,
+  LiteralNode,
+} from '../lib/expressions';
+import fnv from 'fnv-plus';
+
+type FilterMeta = {
+  rpn: RpnNode[];
+  filter: string;
+  hash: string;
+  preprocessor: () => RpnNode[];
+};
+
+// map filter expression to rpn
+const filterCache = new LRUCache({
+  max: 40,
+  maxAge: 60000,
+});
+
+const KeywordValues: Record<ValueKeyword, KeywordValueFn> = {
+  $NOW: () => Date.now(),
+};
+
+function getExpressionHash(expr: string): string {
+  return fnv.hash(expr).hex();
+}
+
+function getCompiled(filter: string, hash?: string): RpnNode[] {
+  hash = hash ?? getExpressionHash(filter);
+  let filterMeta = filterCache.get(hash) as FilterMeta;
+  if (!filterMeta) {
+    const rpn = convertToRPN(filter);
+    // search node list for keywords to replace at runtime
+    const substitutions: Array<[number, KeywordValueFn]> = [];
+    rpn.forEach((node, i) => {
+      if (node.type === 'keyword') {
+        const name = (node as ValueKeywordNode).name;
+        substitutions.push([i, KeywordValues[name]]);
+      }
+    });
+    let preprocessor: () => RpnNode[] = () => rpn;
+    if (substitutions.length) {
+      preprocessor = () => {
+        const result = [...rpn];
+        substitutions.forEach((substitution) => {
+          const [index, fn] = substitution;
+          result[index] = {
+            type: 'literal',
+            value: fn(),
+          } as LiteralNode;
+        });
+        return result;
+      };
+    }
+    filterMeta = {
+      filter,
+      hash,
+      rpn,
+      preprocessor,
+    };
+    filterCache.set(hash, filterMeta);
+  }
+
+  return filterMeta.preprocessor();
+}
 
 function unserialize(data: string): JobFilter {
   const value = safeParse(data);
   if (!value || typeof value !== 'object') return null;
-  return value as JobFilter;
+  const filter = value as JobFilter;
+  filter.hash = filter.hash || getExpressionHash(filter.expression);
+  return filter;
 }
 
 function serialize(jobFilter: JobFilter): string {
   return JSON.stringify(jobFilter);
 }
 
-const UnsupportedOperators = new Set<string>([
-  '$box',
-  '$comment',
-  '$day',
-  '$mergeObjects',
-  '$maxDistance',
-  '$minDistance',
-  '$minute',
-  '$millisecond',
-  '$objectToArray',
-  '$polygon',
-  '$uniqueDocs',
-  '$week',
-  '$where',
-  '$year',
-]);
-
-const InvalidPrefixes = [
-  '$bit',
-  '$day',
-  '$geo',
-  '$near',
-  '$iso',
-  '$set',
-  '$std',
-];
-
-function isSupported(op: string): boolean {
-  for (let i = 0; i < InvalidPrefixes.length; i++) {
-    if (op.startsWith(InvalidPrefixes[i])) return false;
-  }
-  return !UnsupportedOperators.has(op);
-}
-
-export function validateFilterExpression(expr: Record<string, any>): void {
-  // todo: substitute our special ops for standard ones
-  // ($match, $startsWith, $endsWith and $toBoolEx)
-  // convert dates to int, $numberlong etc to equivalents
-  // also flag non-supported (i.e. geo, bit, date, etc)
-  const asString = JSON.stringify(expr);
-  if (!isValid(asString)) {
-    throw boom.badData('Invalid query filter', expr);
-  }
+export function validateFilterExpression(expr: string): void {
+  parseExpression(expr);
 }
 
 function validateFilter(filter: JobFilter) {
@@ -84,13 +116,15 @@ export async function addJobFilter(
   queue: Queue,
   name: string,
   status: JobStatusEnum | null,
-  expression: Record<string, any>,
+  expression: string,
 ): Promise<JobFilter> {
+  const hash = fnv.hash(expression).hex();
   const filter: JobFilter = {
     id: getUniqueId(),
     name,
     status,
     expression,
+    hash,
     createdAt: Date.now(),
   };
 
@@ -121,10 +155,11 @@ export async function updateJobFilter(
     oldFilter &&
     oldFilter.name === filter.name &&
     oldFilter.status === filter.status &&
-    oldFilter.expression === filter.expression
+    oldFilter.hash === filter.hash
   ) {
     return false;
   }
+  filter.hash = getExpressionHash(filter.expression);
   await storeFilter(queue, filter);
   return true;
 }
@@ -182,7 +217,7 @@ export async function deleteAllJobFilters(queue: Queue): Promise<number> {
 export async function getJobsByFilterId(
   queue: Queue,
   id: string,
-  cursor: number,
+  cursor: string,
   count?: number,
 ): Promise<FilteredJobsResult> {
   const filter = await getJobFilter(queue, id);
@@ -191,10 +226,11 @@ export async function getJobsByFilterId(
       `No job filter with id "${id}" found for queue "${queue.name}"`,
     );
 
-  return Scripts.getJobsByFilter(
+  return processSearch(
     queue,
     filter.status,
     filter.expression,
+    filter.hash,
     cursor,
     count,
   );
@@ -222,17 +258,19 @@ const CursorExpiration = ms('5 mins');
 interface SearchCursorMeta {
   cursor: number;
   timestamp: number;
-  filter: Record<string, any>;
-  jobData: Record<string, any>[];
+  filter: string;
+  hash: string;
+  ids: string[];
 }
 
 export async function processSearch(
   queue: Queue,
   status: JobStatusEnum,
-  filter: Record<string, any>,
+  filter: string,
+  hash: string = null,
   cursor: string,
   count = 10,
-): Promise<{ cursor: string; jobs: Job[] }> {
+): Promise<FilteredJobsResult> {
   const jobs: Job[] = [];
   const client = await queue.client;
   let key: string;
@@ -246,8 +284,9 @@ export async function processSearch(
     meta = {
       filter,
       cursor: 0,
-      jobData: [],
+      ids: [],
       timestamp: Date.now(),
+      hash: getExpressionHash(filter),
     };
   } else {
     key = getCursorKey(queue, cursor);
@@ -260,11 +299,13 @@ export async function processSearch(
   }
 
   filter = filter || meta.filter;
+  hash = hash || meta.hash || getExpressionHash(filter);
 
-  if (meta.jobData && meta.jobData.length) {
-    const [slice, remainder] = splitArray(meta.jobData, count);
-    meta.jobData = remainder;
-    slice.forEach((json) => {
+  if (meta.ids?.length) {
+    const [slice, remainder] = splitArray(meta.ids, count);
+    const fromCache = await getMultipleJobsById(queue, slice);
+    meta.ids = remainder;
+    fromCache.forEach((json) => {
       const job = Job.fromJSON(queue, json);
       jobs.push(job);
     });
@@ -273,11 +314,12 @@ export async function processSearch(
   if (jobs.length < count) {
     let requestCount = count;
     let nullCount = 0;
+    const compiled = getCompiled(filter, hash);
     while (meta.cursor && jobs.length < count) {
-      const { nextCursor, jobs: _jobs } = await Scripts.getJobsByFilter(
+      const { cursor: nextCursor, jobs: _jobs } = await Scripts.getJobsByFilter(
         queue,
         status,
-        filter,
+        compiled,
         meta.cursor,
         requestCount,
       );
@@ -300,7 +342,7 @@ export async function processSearch(
       jobs.push(...slice);
       if (remainder.length) {
         // store remainder to cursor
-        meta.jobData = remainder.map((job) => job.asJSON());
+        meta.ids = remainder.map((job) => job.id);
         break;
       }
     }
