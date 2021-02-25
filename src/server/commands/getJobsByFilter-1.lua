@@ -54,6 +54,7 @@ local POSITIVE_INFINITY = 1e309;
 --- https://lua.programmingpedia.net/en/tutorial/5829/pattern-matching
 local IDENTIFIER_PATTERN = "[%a_]+[%a%d_]*"
 local OPERATOR_NAME_PATTERN = "^$" .. IDENTIFIER_PATTERN
+local floor = math.floor
 
 -- Check whether the given name passes for an operator. We assume any field name
 -- starting with '$' is an operator. This is cheap and safe to do since keys beginning
@@ -236,7 +237,110 @@ local function slice(array, start, stop)
     return t
 end
 
+-- returns the modulo n % d;
+local function mod(n,d) return n - d * floor(n/d) end
+
 ---- Casting --------------------------------------------------
+--- https://stackoverflow.com/questions/95492/how-do-i-convert-a-date-time-to-epoch-time-unix-time-seconds-since-1970-in-per
+--- https://github.com/Tieske/date/blob/master/src/date.lua
+local DATE_EPOCH = 0 -- we're matching javascript
+
+local HOURSPERDAY  = 24
+local MINSPERHOUR  = 60
+local MINPERDAY    = 1440  -- 24*60
+local SECSPERMIN   = 60
+local SECSPERHOUR  = 3600  -- 60*60
+local SECSPERDAY   = 86400 -- 24*60*60
+local TICKSPERSEC = 1000
+local TICKSPERHOUR = 3600000
+local TICKSPERDAY = 86400000
+local TICKSPERMIN = 60000
+local DAYNUM_MAX =  365242500 -- Sat Jan 01 1000000 00:00:00
+local DAYNUM_MIN = -365242500 -- Mon Jan 01 1000000 BCE 00:00:00
+local DAYNUM_DEF =  0 -- Mon Jan 01 1970 00:00:00
+
+local MONTH_OFFSETS = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 }
+
+-- is year y leap year?
+local function isleapyear(y) -- y must be int!
+    return (mod(y, 4) == 0 and (mod(y, 100) ~= 0 or mod(y, 400) == 0))
+end
+
+-- day since year 0
+local function dayFromYear(y) -- y must be int!
+    y = y - 1970
+    return 365*y + floor(y/4) - floor(y/100) + floor(y/400)
+end
+
+-- day number from date, month is zero base
+local function makeDayNumber(y, m, d)
+    local mm = mod(mod(m,12) + 10, 12)
+    return dayFromYear(y + floor(m/12) - floor(mm/10)) + floor((mm*306 + 5)/10) + d - 307
+    --local yy = y + floor(m/12) - floor(mm/10)
+    --return dayfromyear(yy) + floor((mm*306 + 5)/10) + (d - 1)
+end
+
+-- date from day number, month is zero base
+local function breakDayNumber(g)
+    local g = g + 306
+    local y = floor((10000*g + 14780)/3652425)
+    local d = g - dayFromYear(y)
+    if d < 0 then y = y - 1; d = g - dayFromYear(y) end
+    local mi = floor((100*d + 52)/3060)
+    return (floor((mi + 2)/12) + y), mod(mi + 2,12), (d - floor((mi*306 + 5)/10) + 1)
+end
+
+-- day fraction from time
+local function makeDayFractional(hour, min, sec, millis)
+    return ((hour * 60 + min) * 60 + sec) * TICKSPERSEC + millis
+end
+
+-- time from day fraction
+local function breakDayFractional(df)
+    return
+    mod(floor(df/TICKSPERHOUR), HOURSPERDAY),
+    mod(floor(df/TICKSPERMIN ), MINSPERHOUR),
+    mod(floor(df/TICKSPERSEC ), SECSPERMIN),
+    mod(df, TICKSPERSEC)
+end
+
+-- weekday sunday = 0, monday = 1 ...
+local function weekday(dn) return mod(dn + 1, 7) end
+
+-- Get epoch millis
+local function getEpochDate(year, month, day, hour, min, sec, ms)
+    ms = ms or 0
+    if (year <= 30) then
+        year = 2000 + year
+    elseif (year < 100) then
+        year = 1900 + year
+    end
+    local whole = (makeDayNumber(year, month - 1, day) - DATE_EPOCH) * TICKSPERDAY
+    local fractional = makeDayFractional(hour, min, sec, ms)
+    return whole + fractional
+end
+
+local DATETIME_REGEX = "(%d+)%-(%d+)%-(%d+)%a(%d+)%:(%d+)%:([%d%.]+)([Z%+%- ])(%d?%d?)%:?(%d?%d?)"
+
+local function parseJsonDate(json_date)
+    local year, month, day, hour, minute, xSeconds, offsetSign, offsetHour, offsetMin = json_date:match(DATETIME_REGEX)
+    year = tonumber(year)
+    month = tonumber(month)
+    day = tonumber(day)
+    hour = tonumber(hour)
+    minute = tonumber(minute)
+    local seconds, millis = split(xSeconds)
+    seconds = tonumber(seconds)
+    millis = tonumber(seconds or 0)
+    local timestamp = getEpochDate(year, month, day, hour, minute, seconds, millis)
+    local offset = 0
+    if offsetSign ~= 'Z' then
+        offset = tonumber(offsetHour) * 60 + tonumber(offsetMin)
+        if offsetSign == "-" then offset = -offset end
+    end
+    local value = (timestamp - (offset * 1000))
+    return value
+end
 
 local function tonum(value, ...)
     local num = 0
@@ -256,6 +360,24 @@ local function tonum(value, ...)
         num = tonum(value(...))
     end
     return num
+end
+
+local function toDate(value, ...)
+    local num = nil
+    local t = type(value)
+    if t == 'string' then
+        local ok = pcall(function()
+            num = parseJsonDate(value)
+        end)
+        if not ok then
+            num = nil
+        end
+    elseif (t == 'number') then
+        num = trunc(value)
+    elseif (t == 'function') then
+        num = tonum(value(...))
+    end
+    assert(isNumber(num), 'Invalid date value: "' .. tostring(value) ..'"')
 end
 
 local function tobool(value, ...)
@@ -323,7 +445,6 @@ local function to_hash(value)
     end
     return result
 end
-
 
 --
 -- Resolve the value of the field (dot separated) on the given object
@@ -717,6 +838,16 @@ Predicates['$type'] = function(a, b)
         end
     end
     return false
+end
+
+Predicates['$contains'] = function(haystack, needle)
+    if type(haystack) ~= 'string' or type(needle) ~= 'string' then return false end
+    local plen = #needle
+    if  (#haystack >= plen) and haystack:find(needle, 1, true) then
+        return true
+    else
+        return false
+    end
 end
 
 Predicates['$startsWith'] = function(haystack, needle)
@@ -1332,17 +1463,6 @@ ExprOperators['$split'] = function(expr)
     end
 end
 
-local starts_with = function(str, prefix)
-    if type(str) ~= 'string' or type(prefix) ~= 'string' then return false end
-    local plen = #prefix
-    return (#str >= plen) and (str:sub(1, plen) == prefix)
-end
-
-local ends_with = function(str, suffix)
-    if type(str) ~= 'string' or type(suffix) ~= 'string' then return false end
-    local slen = #suffix
-    return slen == 0 or ((#str >= slen) and (str:sub(-slen, -1) == suffix))
-end
 
 ExprOperators['$and'] = function(expr)
     local compute = parseExpression(expr)
@@ -1637,6 +1757,14 @@ ExprOperators['$toString'] = function(expr)
     end
 end
 
+ExprOperators['$isString'] = function(expr)
+    local exec = parseExpression(expr)
+    return function(obj)
+        local expression = exec(obj)
+        return isString(expression)
+    end
+end
+
 ExprOperators['$toBool'] = function(expr)
     local exec = parseExpression(expr)
     return function(obj)
@@ -1723,8 +1851,24 @@ ExprOperators['$toInt'] = function(expr)
     end
 end
 
+ExprOperators['$isNumber'] = function(expr)
+    local exec = parseExpression(expr)
+    return function(obj)
+        return isNumber(exec(obj))
+    end
+end
+
 ExprOperators['$toDecimal'] = ExprOperators['$toDouble']
 ExprOperators['$toLong'] = ExprOperators['$toInt']
+
+ExprOperators['$isArray'] = function(expr)
+    local exec = parseExpression(expr)
+    return function(obj)
+        local expression = exec(obj)
+        return isArray(expression)
+    end
+end
+
 ExprOperators['$arrayElemAt'] = function(expr)
     local exec = parseExpression(expr)
 
@@ -1746,6 +1890,97 @@ ExprOperators['$arrayElemAt'] = function(expr)
             return arr[idx]
         end
         return nil
+    end
+end
+
+--- [ Date/Time ] ---------------------------------------------------------------------------------------------------
+
+local function createDatePartFunction(name, index)
+    ExprOperators[name] = function(expr)
+        local exec = parseExpression(expr)
+        return function(obj)
+            local date = toDate(exec(obj))
+            -- https://github.com/Tieske/date/blob/cd8f6d40e9f232564da4191c8c10f49e70a5aa61/src/date.lua#L415
+            local dayNumber = floor(date/TICKSPERDAY)
+            local arr = breakDayNumber(dayNumber)
+            return arr[index]
+        end
+    end
+end
+
+local function createTimePartFunction(name, fracDivisor, modDivisor)
+    ExprOperators[name] = function(expr)
+        local exec = parseExpression(expr)
+        return function(obj)
+            local date = toDate(exec(obj))
+            -- https://github.com/Tieske/date/blob/cd8f6d40e9f232564da4191c8c10f49e70a5aa61/src/date.lua#L415
+            local fraction = mod(date, TICKSPERDAY)
+            return mod(floor(fraction/fracDivisor), modDivisor)
+        end
+    end
+end
+
+createDatePartFunction('$year', 1)
+createDatePartFunction('$month', 2)
+createDatePartFunction('$dayOfMonth', 3)
+createTimePartFunction('$hour', TICKSPERHOUR, HOURSPERDAY)
+createTimePartFunction('$minutes', TICKSPERMIN, MINSPERHOUR)
+createTimePartFunction('$seconds', TICKSPERSEC, SECSPERMIN)
+
+ExprOperators['$dayOfWeek'] = function(expr)
+    local exec = parseExpression(expr)
+    return function(obj)
+        local date = toDate(exec(obj))
+        local dayNumber = floor(date/TICKSPERDAY)
+        return weekday(dayNumber)
+    end
+end
+
+ExprOperators['$dateFromParts'] = function(expr)
+    assert(isObject(expr), '$dateFromParts: expecting an object');
+
+    local function parse(name, defaultValue)
+        local val = expr[name]
+        if (val == nil) then
+            if (defaultValue == nil) then
+                assert(false, '$dateFromParts: expected value for ' .. name)
+            end
+            return constant(defaultValue)
+        end
+        return parseExpression(val)
+    end
+
+    local function getParam(name, val, min, max)
+        assert(isNumber(val), 'Number expected for ' .. name .. ' parameter ')
+        assert(val >= min and val <= max, name .. ' should be between ' .. tostr(min) .. ' and ' .. tostr(max))
+        return val
+    end
+
+    local xYear = parse('year')
+    local xMonth = parse('month', 1)
+    local xDay = parse('day', 1)
+    local xHour = parse('hour', 0)
+    local xMinute = parse('minute', 0)
+    local xSecond = parse('day', 0)
+    local xMs = parse('millisecond', 0)
+
+    return function(obj)
+        local year = getParam('year', xYear(obj), 1, 6000)
+        local month = getParam('month', xMonth(obj), 1, 12)
+        local day = getParam('day', xDay(obj), 1, 31)
+        local hour = getParam('hour', xHour(obj), 0, 23)
+        local minute = getParam('minute', xMinute(obj), 0, 59)
+        local second = getParam('second', xSecond(obj), 0, 59)
+        local ms = getParam('millisecond', xMs(obj), 0, 59)
+        return getEpochDate(year, month, day, hour, minute, second, ms)
+    end
+end
+
+ExprOperators['$toDate'] = function(expr)
+    local exec = parseExpression(expr)
+    return function(obj)
+        local val = exec(obj)
+        return toDate(val)
     end
 end
 
@@ -1785,6 +2020,7 @@ local function initOperators()
     createComparison('$ne')
     createComparison('$type')
     createComparison('$elemMatch')
+    createComparison('$contains')
     createComparison('$matches')
     createComparison('$startsWith')
     createComparison('$endsWith')

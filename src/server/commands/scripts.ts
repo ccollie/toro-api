@@ -4,9 +4,16 @@ import isEmpty from 'lodash/isEmpty';
 import { JobFinishedState, JobStatusEnum } from '../../types';
 import { nanoid } from '../lib';
 
-export interface FilteredJobsResult {
-  nextCursor: number;
+export interface ScriptFilteredJobsResult {
+  cursor: number;
   jobs: Job[];
+}
+
+function parseScriptError(err: string): string {
+  const errorRegex = /@user_script\:[0-9]+\:\s+user_script\:[0-9]+\:\s*(.*)/g;
+  const matches = err.match(errorRegex);
+  // TODO
+  return err;
 }
 
 export class Scripts {
@@ -153,19 +160,17 @@ export class Scripts {
   static async getJobsByFilter(
     queue: Queue,
     type: string,
-    filter: Record<string, any>,
+    filter: any,
     cursor: number,
     count = 10,
-  ): Promise<FilteredJobsResult> {
+  ): Promise<ScriptFilteredJobsResult> {
     const client = await loadScripts(await queue.client);
     type = type === 'waiting' ? 'wait' : type; // alias
     const key = type ? queue.toKey(type) : '';
     const prefix = queue.toKey('');
-    // todo: substitutions
-    // $$NOW -> Date.now()
     const criteria = JSON.stringify(filter);
 
-    const response = await (client as any).getJobsByFilter(
+    const response = await (client as any).filterJobs(
       key,
       prefix,
       criteria,
@@ -204,7 +209,7 @@ export class Scripts {
     addJobIfNeeded();
 
     return {
-      nextCursor: newCursor,
+      cursor: newCursor,
       jobs,
     };
   }

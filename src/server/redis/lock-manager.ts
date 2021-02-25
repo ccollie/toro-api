@@ -134,7 +134,7 @@ export class LockManager extends EventEmitter {
 
       console.log('Lock acquired: ' + this.key);
       this.clearTimers();
-      this.renewId = setInterval(() => this.renew(), this.renewTime);
+      this.renewId = setInterval(() => this.renew(), this.renewTime) as Timeout;
       this.emit(LockManager.ACQUIRED, this);
     } catch (error) {
       this.lock = null;

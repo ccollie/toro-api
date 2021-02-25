@@ -55,6 +55,12 @@ export type JobFilter = {
   id: string;
   name: string;
   status?: JobStatusEnum;
-  expression: Record<string, any>;
+  hash: string;
+  expression: string;
   createdAt: number;
 };
+
+export interface FilteredJobsResult {
+  cursor: string;
+  jobs: Job[];
+}

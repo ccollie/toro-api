@@ -55,7 +55,7 @@ export type RuleStateChangeHandler = (
  * @property {string} [description] description for the {@link Rule}
  * @property {Date|Number} createdAt created date.
  * @property {Date|Number} updatedAt last updated date.
- * @property {Object} condition the mongo-like condition which should trigger an alert
+ * @property {Object} condition the condition which should trigger an alert
  * @property {Object} [payload] optional alert data
  * @property {string[]} channels channels for alert notifications.
  * @property {Boolean} [ACTIVE=true] true if the {@link Rule} is ACTIVE (will generate alerts).
