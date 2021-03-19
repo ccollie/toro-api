@@ -1,12 +1,15 @@
 import boom from '@hapi/boom';
 import { BaseAggregator } from './aggregator';
-import { ChangeAggregator, ChangeAggregatorOptions } from './changeAggregator';
 import { NullAggregator } from './nullAggregator';
 import { MinAggregator } from './minAggregator';
 import { MaxAggregator } from './maxAggregator';
 import { SumAggregator } from './sumAggregator';
 import { MeanAggregator } from './meanAggregator';
-import { EWMAAggregator, EWMAAggregatorOptions } from './ewmaAggregator';
+import {
+  EWMA1MinAggregator,
+  EWMA5MinAggregator,
+  EWMA15MinAggregator,
+} from './ewmaAggregator';
 import { StandardDeviationAggregator } from './standardDeviationAggregator';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import {
@@ -25,8 +28,9 @@ export type AggregatorClass = Constructor<BaseAggregator>;
 
 export const aggregateMap: Record<string, AggregatorClass> = {
   none: NullAggregator,
-  change: ChangeAggregator,
-  ewma: EWMAAggregator,
+  ewma1min: EWMA1MinAggregator,
+  ewma5min: EWMA5MinAggregator,
+  ewma15Min: EWMA15MinAggregator,
   min: MinAggregator,
   max: MaxAggregator,
   mean: MeanAggregator,
@@ -73,11 +77,11 @@ export function createAggregator(
 
 export {
   BaseAggregator,
-  ChangeAggregator,
-  ChangeAggregatorOptions,
+  EWMA1MinAggregator,
+  EWMA5MinAggregator,
+  EWMA15MinAggregator,
   NullAggregator,
   MinAggregator,
-  EWMAAggregatorOptions,
   P75Aggregator,
   P90Aggregator,
   P99Aggregator,

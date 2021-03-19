@@ -3,7 +3,7 @@ import {
   Events,
   MaxAggregator,
   MetricOptions,
-  NullAggregator
+  NullAggregator,
 } from '../../../src/server/metrics';
 import { delay, randomString } from '../utils';
 import { createJobEvent } from '../../fixtures';
@@ -28,7 +28,6 @@ function getKey(metric: BaseMetric): string {
 
 describe('BaseMetric', () => {
   describe('constructor', () => {
-
     it('can construct an object with empty parameters', () => {
       const metric = new BaseMetric({});
       expect(metric).toBeDefined();
@@ -41,8 +40,8 @@ describe('BaseMetric', () => {
       const options: MetricOptions = {
         id: randomString(),
         name: randomString(),
-        jobNames: getRandomStringArray()
-      }
+        jobNames: getRandomStringArray(),
+      };
       const metric = new BaseMetric(options);
       expect(metric.id).toBe(options.id);
       expect(metric.jobNames).toStrictEqual(options.jobNames);
@@ -51,7 +50,6 @@ describe('BaseMetric', () => {
   });
 
   describe('accept', () => {
-
     it('allows all jobs if no job names is specified', () => {
       const event = createJobEvent(Events.FAILED);
       const metric = new BaseMetric({});
@@ -63,24 +61,25 @@ describe('BaseMetric', () => {
       const options: MetricOptions = {
         id: randomString(),
         name: randomString(),
-        jobNames: validJobNames
-      }
+        jobNames: validJobNames,
+      };
       const metric = new BaseMetric(options);
 
       const validateName = (name: string, shouldAccept: boolean) => {
         const event = createJobEvent(Events.COMPLETED, {
           job: {
-            name
-          }
+            name,
+          },
         });
         expect(metric.accept(event)).toBe(shouldAccept);
       };
 
-      options.jobNames.forEach((name ) => validateName(name, true));
+      options.jobNames.forEach((name) => validateName(name, true));
 
-      ['stupendous', 'fungal', 'tiddly-bop'].forEach((name) => validateName(name, false));
-
-    })
+      ['stupendous', 'fungal', 'tiddly-bop'].forEach((name) =>
+        validateName(name, false),
+      );
+    });
   });
 
   describe('aggregator', () => {
@@ -99,7 +98,7 @@ describe('BaseMetric', () => {
     });
 
     it('can be set', () => {
-      metric.aggregator = new MaxAggregator();
+      metric.aggregator = new MaxAggregator(systemClock);
       expect(metric.aggregator).toBeInstanceOf(MaxAggregator);
     });
 
@@ -110,7 +109,7 @@ describe('BaseMetric', () => {
 
     it('modifies the metric value on update', () => {
       const count = random(5, 20);
-      metric.aggregator = new MaxAggregator();
+      metric.aggregator = new MaxAggregator(systemClock);
       let max = -1;
       for (let i = 0; i < count; i++) {
         const value = random(0, 1000);
@@ -176,7 +175,6 @@ describe('BaseMetric', () => {
       expect(now - ts).toBeLessThan(50);
       expect(metric.value).toBe(value);
     });
-
   });
 
   describe('serialization', () => {
@@ -184,8 +182,8 @@ describe('BaseMetric', () => {
       const options: MetricOptions = {
         id: randomString(),
         name: randomString(),
-        jobNames: getRandomStringArray()
-      }
+        jobNames: getRandomStringArray(),
+      };
       const metric = new BaseMetric(options);
       const key = getKey(metric);
       const json = metric.toJSON();
@@ -194,5 +192,4 @@ describe('BaseMetric', () => {
       expect(json.options).toStrictEqual(options);
     });
   });
-
-})
+});

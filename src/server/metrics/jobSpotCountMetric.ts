@@ -1,7 +1,7 @@
 import { Queue } from 'bullmq';
-import { PollingMetric, PollingMetricOptions } from './baseMetric';
+import { PollingMetric } from './baseMetric';
 import { MetricsListener } from './metricsListener';
-import { JobStatusEnum, MetricType } from '../../types';
+import { JobStatusEnum, MetricType, PollingMetricOptions } from '../../types';
 
 export interface JobSpotCountMetricOptions extends PollingMetricOptions {
   status: JobStatusEnum;

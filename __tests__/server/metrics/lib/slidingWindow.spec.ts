@@ -1,15 +1,14 @@
 /* global test, expect */
 import { random } from 'lodash';
-import { SlidingWindow } from '../../../../src/server/metrics/lib';
 import { systemClock, ManualClock } from '../../../../src/server/lib';
-import { rand } from '../../../../src/example/processors/utils';
+import { SlidingTimeWindow } from '../../../../src/server/stats';
 
 const defaultWindowSize = 30000;
 
 describe('SlidingWindow', () => {
   describe('constructor', () => {
     test('should construct with a window spec', () => {
-      const subject = new SlidingWindow(systemClock, defaultWindowSize);
+      const subject = new SlidingTimeWindow(systemClock, defaultWindowSize);
 
       expect(subject.interval).toBeDefined();
       expect(subject.duration).toBeDefined();
@@ -18,7 +17,11 @@ describe('SlidingWindow', () => {
 
     test('it accepts a default value', () => {
       const value = random(1, 99);
-      const subject = new SlidingWindow(systemClock, defaultWindowSize, value);
+      const subject = new SlidingTimeWindow(
+        systemClock,
+        defaultWindowSize,
+        value,
+      );
 
       subject.forEach((val) => {
         expect(val).toBe(value);
@@ -29,7 +32,11 @@ describe('SlidingWindow', () => {
       const value = random(10, 100);
       const defaultValue = () => value;
 
-      const subject = new SlidingWindow(systemClock, defaultWindowSize, defaultValue);
+      const subject = new SlidingTimeWindow(
+        systemClock,
+        defaultWindowSize,
+        defaultValue,
+      );
 
       subject.forEach((val) => {
         expect(val).toBe(value);
@@ -39,13 +46,13 @@ describe('SlidingWindow', () => {
 
   describe('get', () => {
     let clock;
-    let subject: SlidingWindow<number>;
+    let subject: SlidingTimeWindow<number>;
 
     beforeEach(() => {
       clock = new ManualClock(0);
       let index = 0;
-      const defaultValue = () => (index++) * 10;
-      subject = new SlidingWindow<number>(clock, 30000, defaultValue);
+      const defaultValue = () => index++ * 10;
+      subject = new SlidingTimeWindow<number>(clock, 30000, defaultValue);
     });
 
     it('can get items by index', () => {
@@ -80,19 +87,18 @@ describe('SlidingWindow', () => {
       const index = subject.length + 1;
       expect(subject.get(index)).toBeUndefined();
       expect(subject.get(-index)).toBeUndefined();
-    })
-
+    });
   });
 
   describe('set', () => {
     let clock;
-    let subject: SlidingWindow<number>;
+    let subject: SlidingTimeWindow<number>;
 
     beforeEach(() => {
       clock = new ManualClock(0);
       let index = 0;
       const defaultValue = () => index++;
-      subject = new SlidingWindow<number>(clock, 20000, defaultValue);
+      subject = new SlidingTimeWindow<number>(clock, 20000, defaultValue);
     });
 
     it('should set the value at an index', () => {
@@ -113,12 +119,11 @@ describe('SlidingWindow', () => {
   });
 
   describe('windowing', () => {
-
     test('it raises a "tick" event on window rotation', () => {
       let index = 0;
       const clock = new ManualClock(0);
       const defaultValue = () => index++;
-      const subject = new SlidingWindow<number>(clock, 30000, defaultValue);
+      const subject = new SlidingTimeWindow<number>(clock, 30000, defaultValue);
 
       let tickCount = 0;
       const tickHandler = (data) => {
@@ -137,7 +142,7 @@ describe('SlidingWindow', () => {
       let index = 0;
       const defaultValue = () => index++;
       const clock = new ManualClock(0);
-      const subject = new SlidingWindow<number>(clock, 30000, defaultValue);
+      const subject = new SlidingTimeWindow<number>(clock, 30000, defaultValue);
 
       for (let i = 0; i < 30; i++) {
         const val = subject.current;
@@ -148,17 +153,20 @@ describe('SlidingWindow', () => {
   });
 
   describe('iterator', () => {
-
     it('can iterate slices in the window', () => {
       const clock = new ManualClock(0);
       let val = 0;
       const values = [];
       for (let i = 0; i < 20; i++) {
-        val = val + rand(1, 50);
+        val = val + random(1, 50);
         values.push(val);
       }
       let index = 0;
-      const subject = new SlidingWindow<number>(clock, 20000,() => values[index++]);
+      const subject = new SlidingTimeWindow<number>(
+        clock,
+        20000,
+        () => values[index++],
+      );
 
       let count = 0;
       // don't assume order of iteration, check using a set instead
@@ -171,24 +179,27 @@ describe('SlidingWindow', () => {
       expect(count).toBe(subject.length);
       expect(used.size).toBe(0);
     });
-
   });
 
   describe('forEach', () => {
     let clock;
     let values: number[];
-    let subject: SlidingWindow<number>;
+    let subject: SlidingTimeWindow<number>;
 
     beforeEach(() => {
       clock = new ManualClock(0);
       let val = 0;
       values = [];
       for (let i = 0; i < 20; i++) {
-        val = val + rand(1, 50);
+        val = val + random(1, 50);
         values.push(val);
       }
       let index = 0;
-      subject = new SlidingWindow<number>(clock, 20000, () => values[index++]);
+      subject = new SlidingTimeWindow<number>(
+        clock,
+        20000,
+        () => values[index++],
+      );
     });
 
     it('can iterate slices in the window', () => {
@@ -213,19 +224,18 @@ describe('SlidingWindow', () => {
       });
       expect(count).toBe(1);
     });
-
   });
 
   describe('current', () => {
     let clock: ManualClock;
     let start: number;
-    let subject: SlidingWindow<number>;
+    let subject: SlidingTimeWindow<number>;
 
     beforeEach(() => {
       clock = new ManualClock(0);
-      start = rand(10, 1000);
+      start = random(10, 1000);
       let index = start;
-      subject = new SlidingWindow<number>(clock, 10000, () => index++);
+      subject = new SlidingTimeWindow<number>(clock, 10000, () => index++);
     });
 
     it('can get the current slice', () => {
@@ -234,7 +244,7 @@ describe('SlidingWindow', () => {
     });
 
     it('can set the current slice', () => {
-      const expected = rand(10, 1000);
+      const expected = random(10, 1000);
       subject.current = expected;
       expect(subject.current).toBe(expected);
     });
@@ -253,6 +263,5 @@ describe('SlidingWindow', () => {
       const val = subject.current;
       expect(val).toBe(expected);
     });
-
   });
 });

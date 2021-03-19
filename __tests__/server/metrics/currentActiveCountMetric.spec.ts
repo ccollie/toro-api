@@ -1,21 +1,20 @@
 import { CurrentActiveCountMetric } from '../../../src/server/metrics';
 import { clearDb, createQueue, delay, randomString } from '../utils';
-import { PollingMetricOptions } from '../../../src/server/metrics/baseMetric';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
 import { createWorker } from '../factories';
+import { PollingMetricOptions } from '../../../src/types';
 
 describe('CurrentActiveCountMetric', () => {
-
   describe('constructor', () => {
     it('constructs a CurrentActiveCountMetric', () => {
       const options: PollingMetricOptions = {
         id: randomString(),
         name: randomString(),
         jobNames: [randomString()],
-        interval: 250
-      }
+        interval: 250,
+      };
       const sut = new CurrentActiveCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.id).toBe(options.id);
@@ -26,23 +25,18 @@ describe('CurrentActiveCountMetric', () => {
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
-
   });
 
   describe('.checkUpdate', () => {
-
     beforeEach(async () => {
       await clearDb();
     });
-
 
     function generateJobs(queue: Queue, options = {}): Promise<Job[]> {
       const datas = [];
       const count = random(1, 10);
       const name = 'names-' + randomString(3);
-      for(let i = 0; i < count; i++) datas.push(
-        { name, data: random(0, 99) }
-      );
+      for (let i = 0; i < count; i++) datas.push({ name, data: random(0, 99) });
 
       return queue.addBulk(datas);
     }
@@ -52,8 +46,8 @@ describe('CurrentActiveCountMetric', () => {
 
       const interval = 25000;
       const options: PollingMetricOptions = {
-        interval
-      }
+        interval,
+      };
       const sut = new CurrentActiveCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);
 
@@ -71,7 +65,7 @@ describe('CurrentActiveCountMetric', () => {
       await queue.pause();
 
       const jobs = await generateJobs(queue);
-      const count = jobCount = jobs.length;
+      const count = (jobCount = jobs.length);
 
       await queue.resume();
       await processing;
@@ -86,5 +80,4 @@ describe('CurrentActiveCountMetric', () => {
       }
     });
   });
-
-})
+});

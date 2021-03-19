@@ -4,15 +4,14 @@ import {
   RuleConfigOptions,
   RuleMetric,
   RuleOperator,
-  RuleType
+  RuleType,
 } from '../../../src/types';
 import { Rule, RuleManager } from '../../../src/server/rules';
-import { HostManager, QueueManager } from '../common';
+import { HostManager, nanoid, QueueManager } from '../common';
 import { clearDb, delay } from '../utils';
 import { createRuleOptions } from './utils';
 import { QueueListenerHelper } from '../../fixtures';
 import { createHostManager } from '../../fixtures/host-manager';
-import nanoid from 'nanoid';
 
 describe('Rule Message Interpolation', () => {
   // jest.setTimeout(5000);
@@ -26,25 +25,24 @@ describe('Rule Message Interpolation', () => {
     type: RuleType.THRESHOLD,
     errorThreshold: 1000,
     operator: RuleOperator.gt,
-  }
+  };
 
   const metric: RuleMetric = {
     type: 'latency',
-    options: {}
-  }
+    options: {},
+  };
 
   const SuccessData = { latency: 2000 };
   const FailureData = { latency: 500 };
 
-
   beforeEach(async function () {
     const queueConfig: QueueConfig = {
       name: `queue-${nanoid()}`,
-      prefix: 'bull'
+      prefix: 'bull',
     };
 
     hostManager = createHostManager({
-      queues: [ queueConfig ]
+      queues: [queueConfig],
     });
     await hostManager.waitUntilReady();
 
@@ -56,13 +54,13 @@ describe('Rule Message Interpolation', () => {
 
   afterEach(async function () {
     await clearDb(hostManager.client);
-    await Promise.all([
-      queueManager.destroy(),
-      hostManager.destroy()
-    ]);
-  })
+    await Promise.all([queueManager.destroy(), hostManager.destroy()]);
+  });
 
-  async function postJob(options?: Record<string, any>, needDelay = true): Promise<void> {
+  async function postJob(
+    options?: Record<string, any>,
+    needDelay = true,
+  ): Promise<void> {
     await listenerHelper.postCompletedEvent(options);
     if (needDelay) {
       await delay(40);
@@ -77,15 +75,18 @@ describe('Rule Message Interpolation', () => {
       condition,
       channels,
       options: {
-        alertOnReset: true
+        alertOnReset: true,
       },
-      message: template
+      message: template,
     });
 
     return ruleManager.addRule(opts);
   }
 
-  async function triggerRule(rule: Rule, success = true): Promise<Record<string, any>> {
+  async function triggerRule(
+    rule: Rule,
+    success = true,
+  ): Promise<Record<string, any>> {
     const data = success ? SuccessData : FailureData;
 
     if (!success) {
@@ -101,8 +102,8 @@ describe('Rule Message Interpolation', () => {
     return {
       event: _event,
       data: _data,
-      channels
-    }
+      channels,
+    };
   }
 
   describe('Basic substitution', () => {
@@ -114,7 +115,6 @@ describe('Rule Message Interpolation', () => {
       const rule = await addRule(template);
       const args = await triggerRule(rule);
       expect(typeof args.data).toBe('object');
-    })
+    });
   });
-
 });

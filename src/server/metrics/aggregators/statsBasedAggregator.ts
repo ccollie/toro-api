@@ -1,7 +1,7 @@
 import { StreamingStats } from '../../stats';
 import { BaseAggregator } from './aggregator';
 import { Clock } from '../../lib';
-import { SlidingWindowOptions } from '../../../types';
+import { SerializedAggregator, SlidingWindowOptions } from '../../../types';
 
 export class StatsBasedAggregator extends BaseAggregator {
   protected readonly stats: StreamingStats;
@@ -33,7 +33,7 @@ export class StatsBasedAggregator extends BaseAggregator {
     return this.value;
   }
 
-  toJSON(): Record<string, any> {
+  toJSON(): SerializedAggregator {
     const type = (this.constructor as any).key;
     return {
       type,

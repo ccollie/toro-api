@@ -22,6 +22,8 @@ import {
   aggregateMeter,
 } from '../stats/utils';
 import { WriteCache } from '../redis';
+import { doc } from 'prettier';
+import isEmpty = doc.utils.isEmpty;
 
 /**
  * Base class for manipulating and querying collected queue stats in redis
@@ -153,7 +155,12 @@ export class StatsClient extends Emittery {
     end: DateLike,
   ): Promise<StatisticalSnapshot[]> {
     const key = this.getKey(jobName, metric, unit);
-    return this.cachedFetchMany<StatisticalSnapshot>(key, start, end);
+    const stats = await this.cachedFetchMany<StatisticalSnapshot>(
+      key,
+      start,
+      end,
+    );
+    return stats.map(this.fixRates); //hacky
   }
 
   async getAggregateStats(
@@ -191,7 +198,19 @@ export class StatsClient extends Emittery {
     );
   }
 
-  getHostStats(
+  // HACK.
+  private fixRates(stats: StatisticalSnapshot): StatisticalSnapshot {
+    const { rates, ...rest } = stats as any;
+    if (!isEmpty(rates)) {
+      stats = { ...rest };
+      stats.m1Rate = rest['1'] ?? 0;
+      stats.m5Rate = rest['5'] ?? 0;
+      stats.m15Rate = rest['15'] ?? 0;
+    }
+    return stats;
+  }
+
+  async getHostStats(
     jobName: string,
     metric: StatsMetricType,
     unit: StatsGranularity,
@@ -199,7 +218,12 @@ export class StatsClient extends Emittery {
     end: DateLike,
   ): Promise<StatisticalSnapshot[]> {
     const key = this.getHostKey(jobName, metric, unit);
-    return this.cachedFetchMany<StatisticalSnapshot>(key, start, end);
+    const stats = await this.cachedFetchMany<StatisticalSnapshot>(
+      key,
+      start,
+      end,
+    );
+    return stats.map(this.fixRates);
   }
 
   async getAggregateHostStats(

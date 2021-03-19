@@ -6,9 +6,8 @@ import {
   JobRateMetric,
   RateMetricOptions,
   DefaultRateMetricOptions,
-  Events
+  Events,
 } from '../../../src/server/metrics';
-import { QueueListener } from '../../../src/server/queues';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRandomNumberArray } from './helpers';
 
@@ -77,11 +76,10 @@ describe('JobRateMetric', () => {
     let metric: JobRateMetric;
     let helper: MetricTestHelper;
 
-
     beforeEach(() => {
       metric = new JobRateMetric({
         timePeriod: 5000,
-        interval: 500
+        interval: 500,
       });
       helper = MetricTestHelper.forMetric(metric);
     });
@@ -95,7 +93,7 @@ describe('JobRateMetric', () => {
     function setCompletion(success: boolean): Promise<void> {
       return helper.emitFinishedEvent(success, {
         ts: Date.now(),
-        latency: random(10, 5000)
+        latency: random(10, 5000),
       });
     }
 
@@ -117,6 +115,5 @@ describe('JobRateMetric', () => {
         // expect(b.failure(job)).toBeTruthy();
       }
     });
-
   });
 });

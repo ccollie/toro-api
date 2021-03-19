@@ -9,7 +9,7 @@ import { ErrorPercentageMetric } from './errorPercentageMetric';
 import { JobRateMetric } from './jobRateMetric';
 import { WaitTimeMetric } from './waitTimeMetric';
 import { LatencyMetric } from './latencyMetric';
-import { BaseMetric, MetricOptions, PollingMetric } from './baseMetric';
+import { BaseMetric, PollingMetric } from './baseMetric';
 import { UsedMemoryMetric, ConnectedClientsMetric } from './redisMetrics';
 import {
   CurrentActiveCountMetric,
@@ -18,13 +18,14 @@ import {
   CurrentFailedCountMetric,
   CurrentWaitingCountMetric,
 } from './jobSpotCountMetric';
-import { Constructor, RuleType } from '@src/types';
+import { Constructor, RuleType, MetricOptions } from '@src/types';
 import { createAggregator } from './aggregators';
 import { Clock, hashObject, titleCase } from '../lib';
 import { ApdexMetric, ApdexMetricOptions } from './apdexMetric';
 
 export * from './constants';
 export * from './metricsListener';
+export * from './sliding-window-counter';
 
 const metrics = [
   ApdexMetric,

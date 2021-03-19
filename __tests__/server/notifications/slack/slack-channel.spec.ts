@@ -1,12 +1,13 @@
 import { SlackChannelConfig } from '../../../../src/types';
 import { SlackChannel } from '../../../../src/server/notifications';
 import { createNotificationContext } from '../helpers';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { POST_MESSAGE_URL } from '../../../../src/server/notifications/slack/slack-channel';
 import nock = require('nock');
 
 describe('SlackChannel', () => {
-  const URL = 'https://hooks.slack.com/services/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';
+  const URL =
+    'https://hooks.slack.com/services/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';
 
   const WEBHOOK_ENDPOINT = 'https://hooks.slack.com';
 
@@ -37,13 +38,13 @@ describe('SlackChannel', () => {
   }
 
   interface DispatchResult {
-    instance: SlackChannel,
-    received: Record<string, any>
+    instance: SlackChannel;
+    received: Record<string, any>;
   }
 
   async function dispatch(
     message: Record<string, any>,
-    config: Partial<SlackChannelConfig>
+    config: Partial<SlackChannelConfig>,
   ): Promise<DispatchResult> {
     const instance = createChannel(config);
     const context = createNotificationContext();
@@ -54,12 +55,11 @@ describe('SlackChannel', () => {
     const baseUrl = isWebhook ? WEBHOOK_ENDPOINT : POST_MESSAGE_URL;
     const scope = nock(baseUrl)
       .post(/.*/)
-      .reply(function (uri, requestBody){
+      .reply(function (uri, requestBody) {
         actualUri = baseUrl + (isWebhook ? uri : '');
         received = requestBody;
-        return [200]
+        return [200];
       });
-
 
     await instance.dispatch(context, message, 'test');
     scope.done();
@@ -69,11 +69,9 @@ describe('SlackChannel', () => {
   }
 
   describe('.fetch', () => {
-
     jest.setTimeout(8000);
 
     it('can send using chat.postMessage', async () => {
-
       let config = {
         token: nanoid(),
         channel: '89V5MPZX',
@@ -83,8 +81,8 @@ describe('SlackChannel', () => {
         str: 'string',
         num: 10,
         bool: true,
-        fl: 10.29
-      }
+        fl: 10.29,
+      };
 
       const { received } = await dispatch(message, config);
       expect(received.text).toBeDefined();
@@ -93,18 +91,17 @@ describe('SlackChannel', () => {
     });
 
     it('can send using Incoming Webhooks', async () => {
-
       let config = {
         webhook: URL,
-        channel: nanoid()
+        channel: nanoid(),
       };
 
       const message = {
         str: 'string',
         num: 10,
         bool: true,
-        fl: 10.29
-      }
+        fl: 10.29,
+      };
 
       const { received } = await dispatch(message, config);
       expect(received.text).toBeDefined();
@@ -112,5 +109,4 @@ describe('SlackChannel', () => {
       expect(received.channel).toBe(config.channel);
     });
   });
-
 });

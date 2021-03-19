@@ -1,3 +1,5 @@
+import { SerializedAggregator } from '@src/types/metrics';
+
 export enum RuleType {
   THRESHOLD = 'threshold',
   PEAK = 'peak',
@@ -92,17 +94,18 @@ export enum ChangeAggregationType {
 }
 
 export interface ChangeConditionOptions extends RuleConditionThresholds {
+  readonly changeType: 'CHANGE' | 'PCT';
   /**
   The sliding window for metric measurement
    */
-  timeWindow: number;
+  windowSize: number;
   /**
    * Lookback period (ms). How far back are we going to compare
    * eg 1 hour means we're comparing now vs 1 hour ago
    */
   timeShift?: number;
   aggregationType: ChangeAggregationType;
-  readonly changeType: 'CHANGE' | 'PCT';
+  sampleInterval?: number;
 }
 
 /**
@@ -118,6 +121,13 @@ export type RuleMetric = {
   options: Record<string, any>;
   [propName: string]: any;
 };
+
+export interface SerializedRuleMetric {
+  id: string;
+  type: string;
+  aggregator: SerializedAggregator;
+  options: Record<string, any>;
+}
 
 export type RuleCondition =
   | PeakCondition

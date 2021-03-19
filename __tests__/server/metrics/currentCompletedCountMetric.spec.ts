@@ -1,20 +1,19 @@
 import { CurrentCompletedCountMetric } from '../../../src/server/metrics';
 import { clearDb, createQueue, randomString } from '../utils';
-import { PollingMetricOptions } from '../../../src/server/metrics/baseMetric';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
 import { createWorker } from '../factories';
+import { PollingMetricOptions } from '../../../src/types';
 
 describe('CurrentCompletedCountMetric', () => {
-
   describe('constructor', () => {
     it('constructs a CurrentCompletedCountMetric', () => {
       const options: PollingMetricOptions = {
         id: randomString(),
         name: randomString(),
-        interval: 250
-      }
+        interval: 250,
+      };
       const sut = new CurrentCompletedCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.id).toBe(options.id);
@@ -24,11 +23,9 @@ describe('CurrentCompletedCountMetric', () => {
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
-
   });
 
   describe('.checkUpdate', () => {
-
     beforeEach(async () => {
       await clearDb();
     });
@@ -37,21 +34,18 @@ describe('CurrentCompletedCountMetric', () => {
       const datas = [];
       const count = random(5, 10);
       const name = 'names-' + randomString(3);
-      for(let i = 0; i < count; i++) datas.push(
-        { name, data: random(0, 99) }
-      );
+      for (let i = 0; i < count; i++) datas.push({ name, data: random(0, 99) });
 
       return queue.addBulk(datas);
     }
 
     it('should get the correct number of COMPLETED jobs', async () => {
-
       const queue = await createQueue();
 
       const interval = 25000;
       const options: PollingMetricOptions = {
-        interval
-      }
+        interval,
+      };
       const sut = new CurrentCompletedCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);
 
@@ -70,7 +64,7 @@ describe('CurrentCompletedCountMetric', () => {
       await queue.pause();
 
       const jobs = await generateJobs(queue);
-      const count = jobCount = jobs.length;
+      const count = (jobCount = jobs.length);
 
       await queue.resume();
       await processing;
@@ -85,5 +79,4 @@ describe('CurrentCompletedCountMetric', () => {
       }
     });
   });
-
-})
+});

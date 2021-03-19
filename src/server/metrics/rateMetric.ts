@@ -1,16 +1,12 @@
 import Joi, { ObjectSchema } from 'joi';
 import boom from '@hapi/boom';
-import { SimpleMeter } from '../stats';
-import {
-  PollingMetric,
-  PollingMetricOptions,
-  pollingMetricSchema,
-} from './baseMetric';
+import { SimpleMeter, TimeUnit } from '../stats';
+import { PollingMetric, pollingMetricSchema } from './baseMetric';
 import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metricsListener';
-import { MetricType } from '../../types';
+import { MetricType, PollingMetricOptions } from '../../types';
 
 /**
  * @interface RateMetricOptions
@@ -24,13 +20,13 @@ import { MetricType } from '../../types';
  */
 export interface RateMetricOptions extends PollingMetricOptions {
   timePeriod: number;
-  rateUnit?: number;
+  rateUnit?: TimeUnit;
 }
 
 export const DefaultRateMetricOptions: RateMetricOptions = {
   jobNames: [],
   timePeriod: units.MINUTES, // 1 minute
-  rateUnit: units.MINUTES,
+  rateUnit: TimeUnit.MINUTES,
   interval: 5 * units.SECONDS,
 };
 

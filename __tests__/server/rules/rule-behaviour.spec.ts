@@ -10,7 +10,7 @@ import {
   RuleEventsEnum,
   RuleOperator,
   RuleState,
-  RuleType
+  RuleType,
 } from '../../../src/types';
 import { createRule, randomString } from './utils';
 import { QueueListener } from '../../../src/server/queues';
@@ -29,7 +29,7 @@ describe('Rule Behaviour', () => {
     clock = queueListener.clock as ManualClock;
     listenerHelper = new QueueListenerHelper(queueListener);
     metricsListener = new MetricsListener(queueListener);
-  })
+  });
 
   afterEach(async () => {
     const bus = ruleManager.bus;
@@ -42,10 +42,13 @@ describe('Rule Behaviour', () => {
   const LatencyThresholdCondition: RuleCondition = {
     type: RuleType.THRESHOLD,
     errorThreshold: 1000,
-    operator: RuleOperator.gt
-  }
+    operator: RuleOperator.gt,
+  };
 
-  async function postJob(options?: Record<string, any>, needDelay = true): Promise<void> {
+  async function postJob(
+    options?: Record<string, any>,
+    needDelay = true,
+  ): Promise<void> {
     await listenerHelper.postCompletedEvent(options);
     if (needDelay) {
       await delay(20);
@@ -53,18 +56,17 @@ describe('Rule Behaviour', () => {
   }
 
   function createEvaluator(
-    options?: Partial<RuleConfigOptions>
+    options?: Partial<RuleConfigOptions>,
   ): RuleEvaluator {
     const rule = createRule(options);
     return new RuleEvaluator(rule, metricsListener);
   }
 
   describe('Events', () => {
-
-    test('emits states change event when condition evaluates to truthy', async () => {
+    test('emits state change event when condition evaluates to truthy', async () => {
       const evaluator = createEvaluator({
-        condition: LatencyThresholdCondition
-      })
+        condition: LatencyThresholdCondition,
+      });
 
       const rule = evaluator.rule;
 
@@ -78,10 +80,10 @@ describe('Rule Behaviour', () => {
       expect(count).toBe(1);
     });
 
-    test('emits states change event when condition resets', async () => {
+    test('emits state change event when condition resets', async () => {
       const evaluator = createEvaluator({
-        condition: LatencyThresholdCondition
-      })
+        condition: LatencyThresholdCondition,
+      });
       const rule = evaluator.rule;
 
       let count = 0;
@@ -98,16 +100,16 @@ describe('Rule Behaviour', () => {
       expect(count).toBe(1);
     });
 
-    test('emits states change event on warning', async () => {
+    test('emits state change event on warning', async () => {
       const condition: RuleCondition = {
         type: RuleType.THRESHOLD,
         errorThreshold: 1000,
         warningThreshold: 500,
-        operator: RuleOperator.gt
-      }
+        operator: RuleOperator.gt,
+      };
       const evaluator = createEvaluator({
-        condition
-      })
+        condition,
+      });
       const rule = evaluator.rule;
 
       let count = 0;
@@ -125,15 +127,14 @@ describe('Rule Behaviour', () => {
   const failureData = { latency: 500 };
 
   describe('Alerts', () => {
-
     it('can raise an alert', async () => {
       const evaluator = createEvaluator({
         condition: {
           type: RuleType.THRESHOLD,
           errorThreshold: 200,
-          operator: RuleOperator.gt
-        }
-      })
+          operator: RuleOperator.gt,
+        },
+      });
       const rule = evaluator.rule;
       let alert: RuleAlert;
       const triggerSpy = jest.fn();
@@ -151,13 +152,12 @@ describe('Rule Behaviour', () => {
       expect(alert.message).toBeDefined();
       expect(rule.alertCount).toBe(1);
       expect(rule.isTriggered).toBe(true);
-
     });
 
     it('does not trigger an alert on a FAILED condition', async () => {
       const evaluator = createEvaluator({
-        condition: LatencyThresholdCondition
-      })
+        condition: LatencyThresholdCondition,
+      });
       const rule = evaluator.rule;
       const triggerSpy = jest.fn();
 
@@ -171,7 +171,7 @@ describe('Rule Behaviour', () => {
     it('does not raise an alert if the rule is not ACTIVE', async () => {
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
-        active: false
+        active: false,
       });
       const rule = evaluator.rule;
       const triggerSpy = jest.fn();
@@ -212,7 +212,7 @@ describe('Rule Behaviour', () => {
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
         options: {
-          triggerWindow: ALERT_DELAY
+          triggerWindow: ALERT_DELAY,
         },
       });
       const rule = evaluator.rule;
@@ -236,9 +236,9 @@ describe('Rule Behaviour', () => {
         condition: {
           type: RuleType.THRESHOLD,
           errorThreshold: 200,
-          operator: RuleOperator.gt
-        }
-      })
+          operator: RuleOperator.gt,
+        },
+      });
       const rule = evaluator.rule;
 
       await postJob({ latency: 300 });
@@ -255,9 +255,9 @@ describe('Rule Behaviour', () => {
         condition: {
           type: RuleType.THRESHOLD,
           errorThreshold: 500,
-          operator: RuleOperator.gt
-        }
-      })
+          operator: RuleOperator.gt,
+        },
+      });
       const rule = evaluator.rule;
 
       await postJob({ latency: 1000 });
@@ -275,7 +275,7 @@ describe('Rule Behaviour', () => {
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
         options: {
-          minViolations: MIN_VIOLATIONS
+          minViolations: MIN_VIOLATIONS,
         },
       });
       const rule = evaluator.rule;
@@ -283,8 +283,8 @@ describe('Rule Behaviour', () => {
 
       rule.on(RuleEventsEnum.ALERT_TRIGGERED, triggerSpy);
 
-      for(let i = 0; i < MIN_VIOLATIONS - 1; i++) {
-        await postJob( { latency: 1500 + i });
+      for (let i = 0; i < MIN_VIOLATIONS - 1; i++) {
+        await postJob({ latency: 1500 + i });
       }
 
       expect(triggerSpy).toHaveBeenCalledTimes(0);
@@ -303,7 +303,7 @@ describe('Rule Behaviour', () => {
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
         options: {
-          maxAlertsPerEvent: MAX_ALERTS
+          maxAlertsPerEvent: MAX_ALERTS,
         },
       });
       const rule = evaluator.rule;
@@ -311,8 +311,8 @@ describe('Rule Behaviour', () => {
 
       rule.on(RuleEventsEnum.ALERT_TRIGGERED, triggerSpy);
 
-      for(let i = 0; i < MAX_ALERTS + 2; i++) {
-        await postJob( { latency: 1500 + i });
+      for (let i = 0; i < MAX_ALERTS + 2; i++) {
+        await postJob({ latency: 1500 + i });
       }
 
       expect(triggerSpy).toHaveBeenCalledTimes(MAX_ALERTS);
@@ -321,12 +321,12 @@ describe('Rule Behaviour', () => {
 
     it('waits a specified amount of time between alerts', async () => {
       const options = {
-        renotifyInterval: 100
+        renotifyInterval: 100,
       };
 
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
-        options
+        options,
       });
       const rule = evaluator.rule;
       const triggerSpy = jest.fn();
@@ -351,18 +351,18 @@ describe('Rule Behaviour', () => {
       expect(triggerSpy).toHaveBeenCalledTimes(2);
     });
 
-    it ('resets the states after the condition evaluates falsy', async () => {
+    it('resets the states after the condition evaluates falsy', async () => {
       const payload = {
         num: random(10, 1000),
-        str: randomString()
+        str: randomString(),
       };
       const options = {
-        alertOnReset: true
+        alertOnReset: true,
       };
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
         options,
-        payload
+        payload,
       });
       const rule = evaluator.rule;
       const triggerSpy = jest.fn();
@@ -393,20 +393,20 @@ describe('Rule Behaviour', () => {
       expect(alert.payload).toStrictEqual(payload);
     });
 
-    it ('waits a specified amount of time before resetting', async () => {
-     // jest.useFakeTimers();
+    it('waits a specified amount of time before resetting', async () => {
+      // jest.useFakeTimers();
       const payload = {
         num: random(0, 99),
-        str: randomString()
+        str: randomString(),
       };
       const options = {
         alertOnReset: true,
-        recoveryWindow: 5000
+        recoveryWindow: 5000,
       };
       const evaluator = createEvaluator({
         condition: LatencyThresholdCondition,
         options,
-        payload
+        payload,
       });
       const rule = evaluator.rule;
       rule.start(clock);

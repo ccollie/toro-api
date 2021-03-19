@@ -2,7 +2,7 @@ import { WebhookChannelConfig } from '../../../../src/types';
 import { WebhookChannel } from '../../../../src/server/notifications';
 import createTestServer from 'create-test-server';
 import { createNotificationContext } from '../helpers';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { registerHelpers } from '../../../../src/server/lib/hbs';
 
 describe('WebhookChannel', () => {
@@ -19,7 +19,7 @@ describe('WebhookChannel', () => {
         type: 'webhook',
         url: URL,
         method: 'GET',
-        responseType: 'json'
+        responseType: 'json',
       };
 
       const instance = new WebhookChannel(config);
@@ -28,7 +28,10 @@ describe('WebhookChannel', () => {
   });
 
   describe('.fetch', () => {
-    function createChannel(url: string, opts?: Partial<WebhookChannelConfig>): WebhookChannel {
+    function createChannel(
+      url: string,
+      opts?: Partial<WebhookChannelConfig>,
+    ): WebhookChannel {
       let config: WebhookChannelConfig = {
         id: 'hook-' + nanoid(),
         name: 'names-' + nanoid(),
@@ -45,12 +48,13 @@ describe('WebhookChannel', () => {
     }
 
     interface DispatchResult {
-      instance: WebhookChannel,
-      received: Record<string, any>
+      instance: WebhookChannel;
+      received: Record<string, any>;
     }
+
     async function dispatch(
       message: Record<string, any>,
-      config: Partial<WebhookChannelConfig>
+      config: Partial<WebhookChannelConfig>,
     ): Promise<DispatchResult> {
       const server = await createTestServer();
       const url = `${server.url}/webhook`;
@@ -63,11 +67,11 @@ describe('WebhookChannel', () => {
         const requestHandler = (req, res) => {
           const source = isPost ? req.body : req.query;
           const result = {
-            ...(source || {})
-          }
+            ...(source || {}),
+          };
           res.status(200);
           resolve(result);
-        }
+        };
         if (isPost) {
           server.post('/webhook', requestHandler);
         } else {
@@ -75,7 +79,7 @@ describe('WebhookChannel', () => {
         }
 
         await instance.dispatch(context, message, 'test');
-      })
+      });
 
       await server.close();
 
@@ -83,13 +87,12 @@ describe('WebhookChannel', () => {
     }
 
     it('can make a GET client', async () => {
-
       const message = {
         str: 'string',
         num: 10,
         bool: true,
-        fl: 10.29
-      }
+        fl: 10.29,
+      };
 
       const { received } = await dispatch(message, { method: 'GET' });
 
@@ -101,7 +104,6 @@ describe('WebhookChannel', () => {
     });
 
     it('can make a POST client', async () => {
-
       const message = {
         str: 'string',
         num: 10,
@@ -111,68 +113,65 @@ describe('WebhookChannel', () => {
           level: {
             one: 1,
             two: {
-              three: 4
-            }
-          }
-        }
-      }
+              three: 4,
+            },
+          },
+        },
+      };
 
       const { received } = await dispatch(message, {
         method: 'POST',
-        timeout: 2000
+        timeout: 2000,
       });
 
       expect(received).toStrictEqual(message);
     });
 
     it('supports an additional payload', async () => {
-
       const message = {
         str: 'string',
         num: 10,
         bool: true,
         fl: 10.29,
-      }
-
-      const payload = {
-        'here': nanoid(),
-        'is': false,
-        'some': 41,
-        'data': {
-          num: 1,
-          str: 'two'
-        }
       };
 
-      const expected = { ...message, ... payload };
+      const payload = {
+        here: nanoid(),
+        is: false,
+        some: 41,
+        data: {
+          num: 1,
+          str: 'two',
+        },
+      };
+
+      const expected = { ...message, ...payload };
 
       const { received } = await dispatch(message, { method: 'POST', payload });
 
       expect(received).toStrictEqual(expected);
-
     });
 
     it('supports an output object mapper', async () => {
-
       const message = {
         id: 1000,
         name: 'cheetos',
         tax: 10,
         price: 1000,
-        count: 3
+        count: 3,
       };
 
       const payload = {
-        'here': nanoid(),
-        'meta': {
+        here: nanoid(),
+        meta: {
           createdAt: new Date(),
-          serialNumber: nanoid()
-        }
+          serialNumber: nanoid(),
+        },
       };
 
       const mapper = {
-        'id': 'id',
-        'serialNumber': 'meta.serialNumber',
+        id: 'id',
+        serialNumber: 'meta.serialNumber',
         'items[0].name': 'name',
         'items[0].count': 'count',
         'items[0].price': 'price',
@@ -187,10 +186,10 @@ describe('WebhookChannel', () => {
             name: message.name,
             count: message.count,
             price: message.price,
-            total: (message.price * message.count).toString()
-          }
-        ]
-      }
+            total: (message.price * message.count).toString(),
+          },
+        ],
+      };
 
       const { received } = await dispatch(message, {
         method: 'POST',
@@ -199,8 +198,6 @@ describe('WebhookChannel', () => {
       });
 
       expect(received).toStrictEqual(expected);
-
-    }, 7000 );
+    }, 7000);
   });
-
 });

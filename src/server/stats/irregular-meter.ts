@@ -1,7 +1,7 @@
 import { Clock } from '../lib';
 import * as units from './units';
 import { MeteredRates, MeterSnapshot, MeterSummary } from '../../types';
-import { IrregularEwma } from './irregular-ewma';
+import { IMovingAverage, MovingAverage } from './moving-average';
 
 const TICK_INTERVAL = 5 * units.SECONDS;
 const ONE_MINUTE = 1 * units.MINUTES;
@@ -37,15 +37,14 @@ const DefaultMeterProperties: MeterProperties = {
  */
 export class IrregularMeter {
   private readonly clock: Clock;
-  private readonly _interval: number;
   private readonly _rateUnit: number;
   private _timestamp: number;
   private _startTime: number;
   private _count = 0;
   private _sum = 0;
-  private _m1Rate: IrregularEwma;
-  private _m5Rate: IrregularEwma;
-  private _m15Rate: IrregularEwma;
+  private _m1Rate: IMovingAverage;
+  private _m5Rate: IMovingAverage;
+  private _m15Rate: IMovingAverage;
 
   /**
    * @param clock
@@ -56,7 +55,6 @@ export class IrregularMeter {
     properties: MeterProperties = DefaultMeterProperties,
   ) {
     this._rateUnit = properties.rateUnit || RATE_UNIT;
-    this._interval = properties.interval || TICK_INTERVAL;
     this.clock = clock;
     this._initializeState();
   }
@@ -70,9 +68,9 @@ export class IrregularMeter {
     this._sum = 0;
     this._startTime = now;
     this._timestamp = now;
-    this._m1Rate = new IrregularEwma(this.clock, ONE_MINUTE);
-    this._m5Rate = new IrregularEwma(this.clock, FIVE_MINUTES);
-    this._m15Rate = new IrregularEwma(this.clock, FIFTEEN_MINUTES);
+    this._m1Rate = MovingAverage(ONE_MINUTE, this.clock);
+    this._m5Rate = MovingAverage(FIVE_MINUTES, this.clock);
+    this._m15Rate = MovingAverage(FIFTEEN_MINUTES, this.clock);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -140,7 +138,7 @@ export class IrregularMeter {
    * @returns {number}
    */
   public get15MinuteRate(): number {
-    return this._m15Rate.rate * this.rateUnit;
+    return this._m15Rate.value * this.rateUnit;
   }
 
   /**
@@ -149,7 +147,7 @@ export class IrregularMeter {
    * @returns {number}
    */
   public get5MinuteRate(): number {
-    return this._m5Rate.rate * this.rateUnit;
+    return this._m5Rate.value * this.rateUnit;
   }
 
   /**
@@ -173,7 +171,7 @@ export class IrregularMeter {
    * @returns {number}
    */
   public get1MinuteRate(): number {
-    return this._m1Rate.rate * this.rateUnit;
+    return this._m1Rate.value * this.rateUnit;
   }
 
   getSummary(): MeterSummary {

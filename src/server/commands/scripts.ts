@@ -6,6 +6,8 @@ import { nanoid } from '../lib';
 
 export interface ScriptFilteredJobsResult {
   cursor: number;
+  total: number;
+  count: number;
   jobs: Job[];
 }
 
@@ -183,6 +185,8 @@ export class Scripts {
 
     let currentJob: Record<string, string> = {};
     let jobId: string = null;
+    const iterCount = Number(response[1]);
+    const totalCount = Number(response[2]);
 
     function addJobIfNeeded() {
       if (!isEmpty(currentJob) && jobId) {
@@ -193,7 +197,7 @@ export class Scripts {
       }
     }
 
-    for (let i = 1; i < response.length; i += 2) {
+    for (let i = 3; i < response.length; i += 2) {
       const key = response[i];
       const value = response[i + 1];
 
@@ -210,6 +214,8 @@ export class Scripts {
 
     return {
       cursor: newCursor,
+      total: totalCount,
+      count: iterCount,
       jobs,
     };
   }

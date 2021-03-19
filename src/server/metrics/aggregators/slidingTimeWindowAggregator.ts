@@ -1,7 +1,7 @@
 import { InfiniteWindow, SlidingTimeWindow, TickEventData } from '../../stats';
 import { Clock } from '../../lib';
 import { BaseAggregator } from './aggregator';
-import { SlidingWindowOptions } from '../../../types';
+import { SerializedAggregator, SlidingWindowOptions } from '../../../types';
 
 export class SlidingTimeWindowAggregator<
   TSlice = number
@@ -67,7 +67,7 @@ export class SlidingTimeWindowAggregator<
     return this.handleUpdate(value);
   }
 
-  toJSON(): Record<string, any> {
+  toJSON(): SerializedAggregator {
     const type = (this.constructor as any).key;
     return {
       type,

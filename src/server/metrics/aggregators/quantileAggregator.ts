@@ -4,7 +4,7 @@ import { QuantileEstimator, TickEventData } from '../../stats';
 import baseSchema from '../slidingWindowBaseSchema';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import { BaseMetric } from '../baseMetric';
-import { SlidingWindowOptions } from '../../../types';
+import { SerializedAggregator, SlidingWindowOptions } from '../../../types';
 import { round } from 'lodash';
 
 function quantileToString(q: number): string {
@@ -105,7 +105,7 @@ export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEsti
     return this.accumulator.quantile(this.quantile);
   }
 
-  toJSON(): Record<string, any> {
+  toJSON(): SerializedAggregator {
     const type = (this.constructor as any).key;
     const options = { ...this.options };
     return {

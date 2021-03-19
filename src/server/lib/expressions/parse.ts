@@ -1,4 +1,4 @@
-import jsep from 'jsep';
+import jsep, { CallExpression } from 'jsep';
 import {
   BinaryOpNode,
   FunctionCallNode,
@@ -27,6 +27,10 @@ jsep.removeBinaryOp('>>>');
 jsep.addUnaryOp('!!');
 jsep.addUnaryOp('typeof');
 jsep.addBinaryOp('instanceof', 11);
+jsep.addBinaryOp('matches', 11);
+jsep.addBinaryOp('=~', 11);
+jsep.addBinaryOp('!~', 11);
+jsep.addBinaryOp('??', 1);
 
 export function parse(str: string): jsep.Expression {
   return jsep(str);
@@ -62,58 +66,32 @@ function toRpn(_node: jsep.Expression, context: any[]) {
     }
   }
 
-  // consolidate consecutive property paths
-  function visitMethodCall(callee: jsep.MemberExpression, argc: number): void {
-    let parts = [];
-
-    function flushId(memberType = 'identifier') {
-      if (parts.length) {
-        push({ type: memberType, name: parts.join('.') });
-        parts = [];
-      }
-    }
-
-    let propertyStack: jsep.Expression[] = [];
-
-    let node: jsep.Expression = callee;
-    while (node.type === 'MemberExpression') {
-      const { object, property } = node as jsep.MemberExpression;
-      if (object.type === 'Identifier') {
-        parts.push(getIdentifierName(object as jsep.Identifier));
-        parts.push(getIdentifierName(property as jsep.Identifier));
-      } else {
-        propertyStack.push(property);
-      }
-      node = object;
-    }
-    let tokenType = 'member';
-    let name;
-    if (propertyStack.length) {
-      name = getIdentifierName(propertyStack.shift());
-      let prop: jsep.Expression;
-      while ((prop = propertyStack.pop())) {
-        const type = prop.type;
-        if (type === 'Identifier') {
-          parts.push(getIdentifierName(prop as jsep.Identifier));
-        } else {
-          // calculated
-          flushId();
-          toRpn(prop, context);
-          push({ type: 'member' });
-        }
-      }
+  function visitCallExpression(node: jsep.CallExpression) {
+    const argc = node.arguments.length;
+    evaluateArray(node.arguments, context);
+    let callee = node.callee;
+    if (callee.type === 'MemberExpression') {
+      const member = callee as jsep.MemberExpression;
+      const { property } = member;
+      const newNode = {
+        argc,
+        type: 'methodCall',
+        name: getIdentifierName(property as jsep.Identifier),
+      };
+      visitMemberExpression(member, context);
+      push(newNode);
     } else {
-      // something like Math.abs(x)
-      name = parts.pop();
-      tokenType = 'identifier';
+      const newNode = { type: 'functionCall', argc, name: undefined };
+      if (callee.type === 'Identifier') {
+        newNode.name = getIdentifierName(callee);
+      } else {
+        toRpn(node.callee, context);
+      }
+      push(newNode);
     }
-
-    flushId(tokenType);
-
-    push({ type: 'methodCall', name, argc });
   }
 
-  function evaluateMember(node: jsep.MemberExpression, context: any[]) {
+  function visitMemberExpression(node: jsep.MemberExpression, context: any[]) {
     toRpn(node.object, context);
     if (node.computed) {
       toRpn(node.property, context);
@@ -145,21 +123,7 @@ function toRpn(_node: jsep.Expression, context: any[]) {
       return binop(node);
 
     case 'CallExpression':
-      const argc = node.arguments.length;
-      evaluateArray(node.arguments, context);
-      if (node.callee.type === 'MemberExpression') {
-        const callee = node.callee as jsep.MemberExpression;
-        visitMethodCall(callee, argc);
-      } else {
-        const newNode = { type: 'functionCall', argc, name: undefined };
-        if (node.callee.type === 'Identifier') {
-          newNode.name = getIdentifierName(node.callee);
-        } else {
-          toRpn(node.callee, context);
-        }
-        push(newNode);
-      }
-      break;
+      return visitCallExpression(node);
 
     case 'ConditionalExpression':
       return conditional(node);
@@ -174,7 +138,7 @@ function toRpn(_node: jsep.Expression, context: any[]) {
       return binop(node);
 
     case 'MemberExpression':
-      return evaluateMember(node, context);
+      return visitMemberExpression(node, context);
 
     case 'ThisExpression':
       return context;
@@ -273,5 +237,85 @@ export function toInfix(tokens: RpnNode[]): string {
 
 function optimizeRPN(rpn: RpnNode[]): RpnNode[] {
   // todo: collapse multiple member calls to single identifier node
+  rpn = optimizeIdentifiers(rpn);
+  // fold unary ops with literals e.g  { type: 'unary', value: '-' }
+  rpn = optimizeUnary(rpn);
   return rpn;
+}
+
+function optimizeIdentifiers(rpn: RpnNode[]): RpnNode[] {
+  let result: RpnNode[] = [];
+
+  let i = 0;
+  while (i < rpn.length) {
+    const node = rpn[i];
+
+    if (node.type === 'identifier') {
+      let j = i + 1;
+      let idParts = [(node as IdentifierNode).name];
+      while (j < rpn.length && rpn[j].type === 'member') {
+        if (j + 1 < rpn.length && rpn[j + 1].type === 'methodCall') {
+          i++;
+          break;
+        }
+        idParts.push((rpn[j] as MemberNode).name);
+        j++;
+        i++;
+      }
+      const idNode = {
+        type: 'identifier',
+        name: idParts.join('.'),
+      } as IdentifierNode;
+      result.push(idNode);
+    } else {
+      result.push(node);
+    }
+    i++;
+  }
+  return result;
+}
+
+function optimizeUnary(rpn: RpnNode[]): RpnNode[] {
+  let result: RpnNode[] = [];
+
+  function replace(value: string | boolean | number | null) {
+    result.pop(); // replace old value
+    result.push({ type: 'literal', value } as LiteralNode);
+  }
+
+  let i = 0;
+  let prev: RpnNode;
+  while (i < rpn.length) {
+    const node = rpn[i];
+    prev = i && rpn[i - 1];
+
+    if (node.type === 'unary' && prev?.type === 'literal') {
+      const op = (node as UnaryOpNode).op;
+      const val = (prev as LiteralNode).value;
+      const type = typeof val;
+      if (op === 'typeof') {
+        replace(type);
+      } else if (op === '!!') {
+        replace(!!val);
+      } else if (op === '-') {
+        if (type === 'number') {
+          replace(-1 * (val as number));
+        } else {
+          result.push(node);
+        }
+      } else if (op === '+') {
+        // skip adding this node
+      } else if (op === '!') {
+        if (type === 'boolean') {
+          replace(!val);
+        } else {
+          result.push(node);
+        }
+      }
+    } else {
+      result.push(node);
+    }
+    i++;
+  }
+  return result;
 }

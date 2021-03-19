@@ -1,10 +1,8 @@
-
 import { RedisMetric } from '../../../src/server/metrics/redisMetrics';
 import { createQueue } from '../utils';
-import { Queue } from 'bullmq';
-import { PollingMetricOptions } from '../../../src/server/metrics/baseMetric';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../../src/server/redis';
+import { PollingMetricOptions } from '../../../src/types';
 
 describe('RedisMetric', () => {
   describe('constructor', () => {
@@ -14,16 +12,14 @@ describe('RedisMetric', () => {
   });
 
   describe('.checkUpdate', () => {
-
     it('should get a value from redis', async () => {
-
-      const queue = createQueue();
+      const queue = await createQueue();
       const client = await queue.client;
 
       const interval = 8000;
       const options: PollingMetricOptions = {
-        interval
-      }
+        interval,
+      };
       const sut = new RedisMetric(options, 'total_system_memory');
       const helper = MetricTestHelper.forMetric(sut, queue);
       const info = await getRedisInfo(client);
@@ -37,4 +33,4 @@ describe('RedisMetric', () => {
       }
     });
   });
-})
+});

@@ -62,5 +62,7 @@ export type JobFilter = {
 
 export interface FilteredJobsResult {
   cursor: string;
+  total: number;
+  current: number;
   jobs: Job[];
 }

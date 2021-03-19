@@ -72,7 +72,7 @@ describe('HostManager', () => {
         ],
       });
 
-      // normall
+      // normal
       const sut = new HostManager(config);
       try {
         await sut.waitUntilReady();

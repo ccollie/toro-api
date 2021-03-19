@@ -1,9 +1,10 @@
-import { BaseMetric, baseMetricSchema, MetricOptions } from './baseMetric';
+import { BaseMetric, baseMetricSchema } from './baseMetric';
 import { ObjectSchema } from 'joi';
 import { Events } from './constants';
 import { DurationSchema } from '../validation/schemas';
 import { JobFinishedEventData } from '../queues';
 import { ApdexCalculator } from '../stats';
+import { MetricOptions } from '@src/types';
 
 export interface ApdexMetricOptions extends MetricOptions {
   threshold: number;

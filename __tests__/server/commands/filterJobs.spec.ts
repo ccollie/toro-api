@@ -2,8 +2,8 @@ import { clearDb, createClient } from '../utils';
 import { createQueue } from '../factories';
 import { Job, Queue } from 'bullmq';
 import { Scripts } from '../../../src/server/commands/scripts';
-import { nanoid } from 'nanoid';
 import { convertToRPN } from '../../../src/server/lib/expressions';
+import ms from 'ms';
 
 const Person = {
   _id: '100',
@@ -53,6 +53,10 @@ const Person = {
   today: '1970-01-01',
 };
 
+function quote(source: string): string {
+  return "'" + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, "$1\\'") + "'";
+}
+
 describe('filterJobs', () => {
   let client;
   let queue: Queue;
@@ -64,7 +68,7 @@ describe('filterJobs', () => {
   });
 
   afterEach(async () => {
-    // await clearDb(client);
+    await clearDb(client);
     return client.quit();
   });
 
@@ -108,15 +112,7 @@ describe('filterJobs', () => {
     expect(result).toStrictEqual(expected);
   }
 
-  async function findFirst(
-    arr: Record<string, any>[],
-    criteria: string,
-  ): Promise<Record<string, any>> {
-    const data = await find(arr, criteria);
-    return data?.length ? data[0] : null;
-  }
-
-  async function attempt(criteria: string, expectMatch = true): Promise<void> {
+  async function check(criteria: string, expectMatch = true): Promise<void> {
     const compiled = convertToRPN(criteria);
     const { jobs } = await Scripts.getJobsByFilter(
       queue,
@@ -133,20 +129,22 @@ describe('filterJobs', () => {
     expectMatch = true,
   ) {
     const criteria = `(${expression}) == ${expectedValue}`;
-    await attempt(criteria, expectMatch);
+    await check(criteria, expectMatch);
   }
 
   function testOperator(operator, cases) {
-    test.each(cases)(`${operator}: %p`, async (args, expected) => {
+    test.each(cases)(`${operator}: %p`, async (left, right, expected) => {
       const data = {};
       let filter: string;
-      if (Array.isArray(args) && args.length == 2) {
-        filter = `job.data.first ${operator} job.data.second`;
-        data['first'] = args[0];
-        data['second'] = args[1];
+
+      if (expected === undefined) {
+        expected = right;
+        data['value'] = left;
+        filter = `${operator} job.data.value`;
       } else {
-        data['value'] = args;
-        filter = `${operator} ${args}`;
+        data['left'] = left;
+        data['right'] = right;
+        filter = `job.data.left ${operator} job.data.right`;
       }
 
       await queue.add('default', data);
@@ -154,77 +152,121 @@ describe('filterJobs', () => {
     });
   }
 
-  function formatFunction(name: string, args: string[] | undefined): string {
+  function quoteValue(x): string {
+    if (x === null) return 'null';
+    return typeof x === 'string' ? quote(x) : JSON.stringify(x);
+  }
+
+  function formatFunction(
+    name: string,
+    args: any | any[] | undefined | number,
+  ): string {
     let argStr = '';
     if (args !== undefined) {
-      argStr = Array.isArray(args) ? args.join(', ') : args;
+      let _args = Array.isArray(args) ? args : [args];
+      argStr = _args.map(quoteValue).join(', ');
     }
     return `${name}(${argStr})`;
   }
 
+  async function testMethodOnce(name, value, args, expected?: any) {
+    if (expected === undefined) {
+      expected = args;
+      args = undefined;
+    }
+    const data = {
+      value,
+      expected,
+    };
+    const filter = `job.data.value.${formatFunction(
+      name,
+      args,
+    )} == job.data.expected`;
+
+    await queue.add('default', data);
+    await check(filter, true);
+  }
+
+  async function testFunctionOnce(name, args, expected) {
+    const data = {
+      expected,
+    };
+    const filter = `${formatFunction(name, args)} == job.data.expected`;
+
+    await queue.add('default', data);
+    await check(filter, true);
+  }
+
   function testMethod(name, cases) {
     test.each(cases)(`${name}: %p`, async (value, args, expected) => {
-      if (expected === undefined) {
-        expected = args;
-        args = undefined;
-      }
-      const data = {
-        value,
-        expected,
-      };
-      const filter = `job.data.value.${formatFunction(
-        name,
-        args,
-      )} == job.data.expected`;
-
-      await queue.add('default', data);
-      await attempt(filter, true);
+      await testMethodOnce(name, value, args, expected);
     });
   }
 
   function testFunction(name, cases) {
     test.each(cases)(`${name}: %p`, async (args, expected) => {
-      const data = {
-        expected,
-      };
-      const filter = `${formatFunction(name, args)} == job.data.expected`;
-
-      await queue.add('default', data);
-      await attempt(filter, true);
-    });
-  }
-
-  function testExpressionCases(operator, cases) {
-    test.each(cases)(`${operator}: %p`, async (args, expected) => {
-      const data = {};
-      let filter: string;
-      if (Array.isArray(args) && args.length == 2) {
-        filter = `${args[0]} ${operator} ${args[1]}`;
-        data['first'] = args[0];
-        data['second'] = args[1];
-      } else {
-        data['value'] = args;
-        filter = `${operator} ${args}`;
-      }
-
-      await queue.add('default', data);
-      await checkExpression(filter, expected);
+      await testFunctionOnce(name, args, expected);
     });
   }
 
   describe('Basic field access', () => {
-    let job;
+    it('can access basic job fields', async () => {
+      await queue.add('default', Person);
+      await check('job.id != null');
+      await check('job.name != null');
+      await check('job.timestamp != null');
+      await check('job.data != null');
+      await check('job.opts != null');
+    });
+  });
+
+  describe('Computed Job Fields', () => {
+    let job: Job;
+
+    async function updateJob(data: Record<string, any>) {
+      const key = queue.toKey(job.id);
+      return client.hmset(key, data);
+    }
 
     beforeEach(async () => {
       job = await queue.add('default', Person);
     });
 
-    it('can access basic job fields', async () => {
-      await attempt('job.id != null');
-      await attempt('job.name != null');
-      await attempt('job.timestamp != null');
-      await attempt('job.data != null');
-      await attempt('job.opts != null');
+    describe('latency', () => {
+      it('returns null if the job has not started', async () => {
+        expect(job.processedOn).not.toBeDefined();
+        const filter = 'job.latency == null';
+        await checkExpression(filter, true);
+      });
+
+      it('returns null if the job has not finished', async () => {
+        await updateJob({ processedOn: Date.now() });
+        const filter = 'job.latency == null';
+        await check(filter, true);
+      });
+
+      it('returns the correct job duration', async () => {
+        const finishedOn = Date.now();
+        const processedOn = finishedOn - 60000;
+        await updateJob({ finishedOn, processedOn });
+        const filter = `job.latency == ${finishedOn - processedOn}`;
+        await check(filter, true);
+      });
+    });
+
+    describe('waitTime', () => {
+      // Question: is there ay circumstance in which a job's timestamp is not set ??
+      it('returns null if the job has not started', async () => {
+        expect(job.processedOn).not.toBeDefined();
+        const filter = 'job.waitTime == null';
+        await check(filter, true);
+      });
+
+      it('returns the correct value', async () => {
+        await updateJob({ processedOn: Date.now() + 1000 });
+        const filter = `job.waitTime == (job.processedOn - job.timestamp)`;
+        await check(filter, true);
+      });
     });
   });
 
@@ -236,7 +278,7 @@ describe('filterJobs', () => {
     });
 
     test('==', async () => {
-      await attempt('job.data.firstName == "Francis"');
+      await check('job.data.firstName == "Francis"');
     });
 
     // test('$eq with object values', async () => {
@@ -244,59 +286,62 @@ describe('filterJobs', () => {
     // });
 
     test('== with objects in a given position in an array with dot notation', async () => {
-      await attempt('job.data.grades[0].grade == 92');
+      await check('job.data.grades[0].grade == 92');
     });
 
-    test('== with nested elements in array', async () => {
-      await attempt('job.data.projects.Python == "Flaskapp"');
+    test('=~', async () => {
+      await check('job.data.lastName =~ "a.+e"');
     });
 
-    test('matches', async () => {
-      await attempt('job.data.lastName matches "a.+e"');
-    });
-
-    test('!= with direct values', async () => {
-      await attempt('job.data.username != "mufasa"');
+    test('!=', async () => {
+      await check('job.data.username != "mufasa"');
     });
 
     test('>', async () => {
-      await attempt('job.data.jobs > 1', false);
+      await check('job.data.jobs > 1');
     });
 
     test('>=', async () => {
-      await attempt('job.data.jobs >= 6');
+      await check('job.data.jobs >= 6');
     });
 
     test('<', async () => {
-      await attempt('job.data.jobs < 10', true);
+      await check('job.data.jobs < 10', true);
     });
 
     test('<=', async () => {
-      await attempt('job.data.jobs <= 6');
+      await check('job.data.jobs <= 6');
     });
 
     test('can compare value inside array at a given index', async () => {
-      await attempt('job.data.projects.C[1] == "student_record"');
+      await check('job.data.projects.C[1] == "student_record"');
     });
 
     test('in', async () => {
-      await attempt('job.data.circles.school in ["Henry"]');
+      await check('job.data.circles.school in ["Henry"]');
     });
 
     test('in (false)', async () => {
-      await attempt('job.data.middlename in [null, "David"]');
+      await check('job.data.middlename in [null, "David"]');
     });
 
-    test('Array.length', async () => {
-      await attempt('job.data.languages.programming.length == 7');
+    test('%', async () => {
+      await check('job.data.date.month % 8 == 1');
+    });
+  });
+
+  describe('Unary operators', () => {
+    beforeEach(async () => {
+      await queue.add('default', Person);
     });
 
-    test('modulo', async () => {
-      await attempt('job.data.date.month % 8 == 1');
+    test('!', async () => {
+      await check('!job.data.isActive == false');
     });
 
-    test('can match fields for all objects within an array with dot notation', async () => {
-      await attempt('job.data.grades.mean > 70');
+    test('!!', async () => {
+      await check('!!job.data.languages.programming');
+      await check('!!job.data.missing_value == false');
     });
   });
 
@@ -309,83 +354,95 @@ describe('filterJobs', () => {
 
     describe('&&', () => {
       test('can use conjunction true && true', async () => {
-        await attempt(
-          'job.data.firstName == "Francis" && job.name == "default"',
-        );
+        await check('job.data.firstName == "Francis" && job.name == "default"');
       });
 
       test('true && false', async () => {
-        await attempt(
+        await check(
           'job.data.firstName == "Francis" && job.data.lastName == "Amoah"',
           false,
         );
       });
 
       test('false && true', async () => {
-        await attempt(
+        await check(
           'job.data.firstName ==  "Enoch" && job.data.lastName == "Asante"',
           false,
         );
       });
 
       test('false && false', async () => {
-        await attempt('job.data.firstName == "Enoch" && !!job.data.age', false);
+        await check('job.data.firstName == "Enoch" && !!job.data.age', false);
       });
     });
 
     describe('||', () => {
       test('true OR true', async () => {
-        await attempt(
-          'job.data.firstName == "Francis" || job.data.lastName matches "^%a.+e"',
+        await check(
+          'job.data.firstName == "Francis" || job.data.lastName =~ "^%a.+e"',
         );
       });
 
       test('true || false', async () => {
-        await attempt(
+        await check(
           'job.data.firstName == "Francis" || job.data.lastName == "Amoah"',
         );
       });
 
       test('false OR true', async () => {
-        await attempt(
+        await check(
           'job.data.firstName == "Enoch" || job.data.lastName == "Asante"',
         );
       });
     });
 
     test('false OR false', async () => {
-      await attempt(
+      await check(
         'job.data.firstName == "Enoch" || job.data.age != null',
         false,
       );
+    });
+
+    describe('??', () => {
+      test('returns alternate when lvalue is null', async () => {
+        await check('(job.data.missing_value ?? 100) == 100');
+      });
+
+      test('returns falsey non-null values', async () => {
+        const cases = [
+          [0, 2, 0],
+          ['', 5, ''],
+        ];
+        testOperator('??', cases);
+      });
     });
   });
 
   describe('xor', () => {
     test('true XOR true', async () => {
-      await attempt(
-        'job.data.firstName == "Francis" xor job.data.lastName "^%a.+e"',
+      await check(
+        'job.data.firstName == "Francis" ^ job.data.lastName "^%a.+e"',
         false,
       );
     });
 
     test('true XOR false', async () => {
-      await attempt(
-        'job.data.firstName == "Francis" xor job.data.lastName == "Amoah"',
+      await check(
+        'job.data.firstName == "Francis" ^ job.data.lastName == "Amoah"',
         true,
       );
     });
 
     test('false XOR true', async () => {
-      await attempt(
-        'job.data.firstName == "Enoch" xor job.data.lastName = "Asante"',
+      await check(
+        'job.data.firstName == "Enoch" ^ job.data.lastName == "Asante"',
         true,
       );
     });
 
     test('false XOR false', async () => {
-      await attempt(
-        'job.data.firstName == "Enoch" xor data.age != null',
+      await check(
+        'job.data.firstName == "Enoch" ^ job.data.age != null',
         false,
       );
     });
@@ -393,65 +450,36 @@ describe('filterJobs', () => {
 
   describe('Query array operators', function () {
     describe('selector tests', () => {
-      const data = [
-        {
-          key0: [
-            {
-              key1: [
-                [
-                  [
-                    {
-                      key2: [{ a: 'value2' }, { a: 'dummy' }, { b: 20 }],
-                    },
-                  ],
-                ],
-                { key2: 'value' },
-              ],
-              key1a: { key2a: 'value2a' },
-            },
+      const data = {
+        key0: {
+          key1: [
+            [
+              {
+                key2: [{ a: 'value2' }, { a: 'dummy' }, { b: 20 }],
+              },
+            ],
+            { key2: 'value' },
           ],
+          key1a: { key2a: 'value2a' },
         },
-      ];
+      };
 
-      async function attempt(query, expected): Promise<void> {
-        const result = await find(data, query);
-        expect(result).toStrictEqual(expected);
+      async function testAccessor(query, expected = true): Promise<void> {
+        await queue.add('default', data);
+        return check(query, expected);
       }
 
-      test('should not match without array index selector to nested value ', async () => {
-        await attempt({ 'job.data.key0.key1.key2.a': 'value2' }, []);
-      });
-
       test('should not match without enough depth for array index selector to nested value', async () => {
-        await attempt('job.data.key0.key1[0].key2.a == "value2"', []);
-      });
-
-      test('should match with full array index selector to deeply nested value', async () => {
-        await attempt({ 'job.data.key0.key1[0][0].key2.a': 'value2' }, data);
-      });
-
-      test('should match with array index selector to nested value at depth 1', async () => {
-        await attempt({ 'job.data.key0.key1[0][0].key2': { b: 20 } }, data);
+        await testAccessor('job.data.key0.key1[0].key2.a == "value2"', false);
       });
 
       test('should match with full array index selector to nested value', async () => {
-        await attempt('job.data.key0.key1[1].key2 == "value"', data);
-      });
-
-      test('should match without array index selector to nested value at depth 1', async () => {
-        await attempt({ 'job.data.key0.key1.key2': 'value' }, data);
+        await testAccessor('job.data.key0.key1[1].key2 == "value"');
       });
 
       test('should match shallow nested value with array index selector', async () => {
-        await attempt({ 'job.data.key0.key1[1].key2': 'value' }, data);
+        await testAccessor('job.data.key0.key1[1].key2 == "value"');
       });
-    });
-
-    test('should match nested array of objects without indices', async () => {
-      // https://github.com/kofrasa/mingo/issues/51
-      const data = [{ key0: [{ key1: ['value'] }, { key1: ['value1'] }] }];
-      const result = await findFirst(data, 'job.data.key0.key1 == "value"');
-      expect(result).toStrictEqual(data[0]);
     });
   });
 
@@ -531,16 +559,6 @@ describe('filterJobs', () => {
       job = await queue.add('default', data);
     });
 
-    async function check(criteria, expectMatch = true): Promise<void> {
-      const { jobs } = await Scripts.getJobsByFilter(
-        queue,
-        'waiting',
-        criteria,
-        0,
-      );
-      expect(!!jobs.length).toEqual(expectMatch);
-    }
-
     describe('ternary', () => {
       test('supports ternary operator', async () => {
         const conditional = '(job.data.lowScore < job.data.highScore) ? 5 : 25';
@@ -575,13 +593,14 @@ describe('filterJobs', () => {
 
     describe('ifNull', () => {
       test('uses default value if null is found', async () => {
-        const conditional = 'ifNull(null, "default")';
-        await checkExpression(conditional, 'default');
+        const conditional =
+          'ifNull(job.data.missing_value, "default") == "default"';
+        await check(conditional);
       });
 
       test('uses non null value', async () => {
-        const conditional = 'ifNull(5, "default") == 5';
-        await checkExpression(conditional, 5);
+        const conditional = 'ifNull(job.data.score, -1) == job.data.score';
+        await check(conditional);
       });
     });
   });
@@ -589,84 +608,65 @@ describe('filterJobs', () => {
   describe('Arithmetic Operators', () => {
     describe('+', () => {
       const cases = [
-        [[10, 2], 12],
-        [[-1, 5], 4],
-        [[-3, -7], -10],
+        [10, 2, 12],
+        [-1, 5, 4],
+        [-3, -7, -10],
       ];
       testOperator('+', cases);
     });
 
     describe('-', () => {
       const cases = [
-        [[-1, -1], 0],
-        [[-1, 2], -3],
-        [[2, -1], 3],
+        [-1, -1, 0],
+        [-1, 2, -3],
+        [2, -1, 3],
       ];
       testOperator('-', cases);
     });
 
     describe('*', () => {
       const cases = [
-        [[5, 10], 50],
-        [[-2, 4], -8],
-        [[-3, -3], 9],
+        [5, 10, 50],
+        [-2, 4, -8],
+        [-3, -3, 9],
       ];
       testOperator('*', cases);
     });
 
     describe('/', () => {
       const cases = [
-        [[80, 4], 20],
-        [[1.5, 3], 0.5],
-        [[40, 8], 5],
+        [80, 4, 20],
+        [1.5, 3, 0.5],
+        [40, 8, 5],
       ];
       testOperator('/', cases);
     });
 
     describe('%', () => {
       const cases = [
-        [[80, 7], 3],
-        [[40, 4], 0],
+        [80, 7, 3],
+        [40, 4, 0],
       ];
       testOperator('%', cases);
     });
   });
 
-  describe('String Methods', () => {
-    function testTrim(method, cases) {
-      test.each(cases)(
-        `{${method}: input: "%p", chars: %p`,
-        async (input, chars, expected) => {
-          const data = {
-            value: input,
-          };
-          const expression =
-            `${method}(job.data.value` + chars ? `, "${chars}"` : '' + ')';
-          await queue.add('default', data);
-          await checkExpression(expression, expected);
-        },
-      );
-    }
-
-    describe('toLowerCase', () => {
-      const cases = [
-        [null, null],
-        ['hEl1O', 'hel1o'],
-      ];
-      testMethod('toLowerCase', cases);
+  describe('Strings', () => {
+    test('length', async () => {
+      await check('job.data.title.length == ' + Person.title.length);
     });
 
-    describe('toUpperCase', () => {
-      const cases = [
-        [null, null],
-        ['This is lOwer', 'THIS IS LOWER'],
-      ];
-      testMethod('toUpperCase', cases);
+    test('toLowerCase', async () => {
+      await testMethodOnce('toLowerCase', 'PE1KIeT$', 'pe1kiet$');
+    });
+
+    test('toUpperCase', async () => {
+      await queue.add('default', Person);
+      await check('job.data.firstName.toUpperCase() == "FRANCIS"');
     });
 
     describe('startsWith', () => {
       const cases = [
-        [null, null, false],
         ['hyperactive', 'hyper', true],
         ['milliseconds', 'not-prefix', false],
       ];
@@ -675,7 +675,6 @@ describe('filterJobs', () => {
 
     describe('endsWith', () => {
       const cases = [
-        [null, null, false],
         ['hyperactive', 'active', true],
         ['milliseconds', 'minutes', false],
       ];
@@ -684,9 +683,8 @@ describe('filterJobs', () => {
 
     describe('includes', () => {
       const cases = [
-        [null, null, false],
         ['super hyperactive', 'hyper', true],
-        ['should not', 'be found', false],
+        ['should not', 'be found"', false],
         ['source', 4, false],
       ];
       testMethod('includes', cases);
@@ -694,7 +692,6 @@ describe('filterJobs', () => {
 
     describe('strcasecmp', () => {
       const cases = [
-        [null, null, 0],
         ['13Q1', '13q4', -1],
         ['13Q4', '13q4', 0],
         ['14Q2', '13q4', 1],
@@ -704,9 +701,9 @@ describe('filterJobs', () => {
 
     describe('substr', () => {
       const cases = [
-        [null, 2, null],
-        ['hello', -1, ''],
-        ['hello', [1, -2], 'ello'],
+        ['hello', [0, 1], 'h'],
+        ['hello', -1, 'o'],
+        ['hello', [1, -2], ''],
         ['abcde', [1, 2], 'bc'],
         ['Hello World!', [6, 5], 'World'],
         ['cafeteria', [0, 5], 'cafet'],
@@ -719,7 +716,6 @@ describe('filterJobs', () => {
 
     describe('substring', () => {
       const cases = [
-        [null, 2, null],
         ['hello', -1, ''],
         ['hello', [1, -2], 'ello'],
         ['abcde', [1, 2], 'bc'],
@@ -733,97 +729,41 @@ describe('filterJobs', () => {
     });
 
     describe('concat', () => {
-      const cases = [
-        [null, 'abc', null],
-        ['b-', ['a', '-', 'c'], 'b-a-c'],
-      ];
+      const cases = [['b-', ['a', '-', 'c'], 'b-a-c']];
       testMethod('concat', cases);
     });
 
     describe('indexOf', () => {
       const cases = [
+        ['finding substring in string', 'str', 11],
+        ['test case sensitivity', 'CASE', -1],
         ['cafeteria', 'e', 3],
         ['cafétéria', 'é', 3],
         ['cafétéria', 'e', -1],
-        ['cafétéria', 't', 4], // "5" is an error in MongoDB docs.
         ['foo.bar.fi', ['.', 5], 7],
-        ['vanilla', ['ll', 0, 2], -1],
+        ['foo.bar.fi', ['.', -3], 7],
         ['vanilla', ['ll', 12], -1],
-        ['vanilla', ['ll', 5, 2], -1],
-        ['vanilla', ['nilla', 3], -1],
-        [null, 'foo', null],
+        ['vanilla', ['ll', 5], -1],
       ];
       testMethod('indexOf', cases);
     });
 
-    describe('string.indexOf: invalid parameters', () => {
-      async function runTest(
-        haystack: string | number,
-        needle: string | number,
-        start: string | number,
-        end: string | number,
-        expected?: RegExp | string,
-      ) {
-        const data = {
-          haystack: nanoid(),
-        };
-        const criteria = 'job.data.haystack.indexOf(needle, start, end) == 5';
-        await queue.add('default', data);
-        if (expected) {
-          expect(() => checkExpression(criteria, 0)).toThrow(expected);
-        } else {
-          expect(() => checkExpression(criteria, 0)).toThrow();
-        }
-      }
-
-      async function testIndices(
-        start: string | number,
-        end: string | number,
-        expected: string | RegExp,
-      ) {
-        return runTest('job.data.haystack', 'ignored', start, end, expected);
-      }
-
-      it('throws if the haystack is not a string', async () => {
-        await runTest(
-          18,
-          '',
-          0,
-          1000,
-          /expected a string as the first argument/,
-        );
+    describe('lastIndexOf', () => {
+      it('locates the last occurrence', async () => {
+        await testMethodOnce('lastIndexOf', 'Javascript', 'a', 3);
       });
 
-      it('throws if the needle is not a string', async () => {
-        await runTest(
-          '$data.haystack',
-          99,
-          0,
-          1000,
-          /expected a string as the second argument/,
-        );
+      it('locates the last occurrence using a start index', async () => {
+        await testMethodOnce('lastIndexOf', 'Javascript', ['a', 2], 3);
       });
 
-      it('throws if the start index is not a number', async () => {
-        await testIndices('fudge', 1000, /start index should be a number/);
-      });
-
-      it('throws if the start index is negative', async () => {
-        await testIndices(-5, 1000, /start index should be a positive number/);
-      });
-
-      it('throws if the end index is not a number', async () => {
-        await testIndices(1, 'cherry', /end index should be a number/);
-      });
-
-      it('throws if the end index is negative', async () => {
-        await testIndices(5, -10, /end index should be a positive number/);
+      it('is case-sensitive', async () => {
+        await testMethodOnce('lastIndexOf', 'Hello World!', 'L', -1);
       });
     });
 
     describe('split', () => {
       const cases = [
-        [null, '/', null],
         ['June-15-2013', '-', ['June', '15', '2013']],
         ['banana split', 'a', ['b', 'n', 'n', ' split']],
         ['Hello World', ' ', ['Hello', 'World']],
@@ -835,76 +775,90 @@ describe('filterJobs', () => {
 
     describe('trim', () => {
       const cases = [
-        ['  \n good  bye \t  ', null, 'good  bye'],
+        ['  \n good  bye \t  ', 'good  bye'],
         [' ggggoodbyeeeee', 'ge', ' ggggoodby'],
-        ['    ggggoodbyeeeee', ' ge', 'oodby'],
-        [null, null, null],
+        ['    ggggoodbyeeeee"', ' ge', 'oodby'],
       ];
-      testTrim('trim', cases);
+      testMethod('trim', cases);
     });
 
     describe('trimStart', () => {
       const cases = [
-        ['  \n good  bye \t  ', null, 'good  bye \t  '],
+        ['  \n good  bye \t  ', 'good  bye \t  '],
         [' ggggoodbyeeeee', 'ge', ' ggggoodbyeeeee'],
         ['    ggggoodbyeeeee ', ' gd', 'oodbyeeeee '],
-        [null, null, null],
       ];
-      testTrim('trimStart', cases);
+      testMethod('trimStart', cases);
     });
 
     describe('trimEnd', () => {
       const cases = [
-        ['  \n good  bye \t  ', null, '  \n good  bye'],
+        ['  \n good  bye \t  ', '  \n good  bye'],
         [' ggggoodbyeeeee', 'ge', ' ggggoodby'],
         [' ggggoodbyeeeee    ', 'e ', ' ggggoodby'],
-        [null, null, null],
       ];
-      testTrim('trimEnd', cases);
+      testMethod('trimEnd', cases);
     });
   });
 
-  describe('Date Operators', () => {
+  describe('Date', () => {
     const SAMPLE_DATE_STRING = '2014-01-01T08:15:39.736Z';
     const SampleDate = new Date(SAMPLE_DATE_STRING);
 
-    function testDateParts(operator, cases) {
-      test.each(cases)(
-        `{${operator}: {input: "%p"}}`,
-        async (input, expected) => {
-          const data = {
-            value: input,
-          };
-          const expr = `parseDate(job.data.value).${operator}()`;
-          await queue.add('default', data);
-          await checkExpression(expr, expected);
-        },
-      );
-    }
-
     async function addJob(data: Record<string, any>) {
-      const job = await queue.add('default', data);
+      await queue.add('default', data);
     }
 
-    describe('parseDate', () => {
+    async function checkDateMethod(method, date = SampleDate) {
+      const expected = date[method]();
+      await queue.add('default', { date, expected });
+      const condition = `Date.parse(job.data.date).${method}() == job.data.expected`;
+      await check(condition);
+    }
+
+    describe('parse', () => {
       it('converts an RFC-3339 date string', async () => {
         const dateValue = SampleDate.getTime();
         await addJob({ date: SAMPLE_DATE_STRING, dateValue });
-        const condition = 'toDate(job.data.date) == job.data.dateValue';
-        await attempt(condition);
+        const condition = 'Date.parse(job.data.date) != null';
+        await check(condition);
       });
     });
 
-    it('returns the year of a date', async () => {
-      await addJob({ date: SAMPLE_DATE_STRING });
-      const condition = `year(job.data.date) == ${SampleDate.getFullYear()}`;
-      await attempt(condition);
+    it('getFullYear', async () => {
+      await checkDateMethod('getFullYear');
     });
 
-    it('returns the month of a date', async () => {
-      await addJob({ date: SAMPLE_DATE_STRING });
-      const condition = `month(job.data.date) == ${SampleDate.getMonth()}`;
-      await attempt(condition);
+    it('getMonth', async () => {
+      await checkDateMethod('getMonth');
+    });
+
+    it('getDate', async () => {
+      await checkDateMethod('getDate');
+    });
+
+    it('getDay', async () => {
+      await checkDateMethod('getDay');
+    });
+
+    it('getHours', async () => {
+      await checkDateMethod('getHours');
+    });
+
+    it('getMinutes', async () => {
+      await checkDateMethod('getMinutes');
+    });
+
+    it('getSeconds', async () => {
+      await checkDateMethod('getSeconds');
+    });
+
+    it('getMilliseconds', async () => {
+      await checkDateMethod('getMilliseconds');
+    });
+
+    it('getTime', async () => {
+      await checkDateMethod('getTime');
     });
   });
 
@@ -917,27 +871,27 @@ describe('filterJobs', () => {
       });
 
       test('"object"', async () => {
-        await attempt('typeof job.data == "object"');
+        await check('typeof job.data == "object"');
       });
 
       test('"number"', async () => {
-        await attempt('typeof job.data.jobs == "number"');
+        await check('typeof job.data.jobs == "number"');
       });
 
       test('"array"', async () => {
-        await attempt('typeof job.data.grades == "array"');
+        await check('typeof job.data.grades == "array"');
       });
 
       test('"boolean"', async () => {
-        await attempt('typeof job.data.isActive == "boolean"');
+        await check('typeof job.data.isActive == "boolean"');
       });
 
       test('"string"', async () => {
-        await attempt('typeof job.name == "string"');
+        await check('typeof job.name == "string"');
       });
 
       test('"null"', async () => {
-        await attempt('typeof job.data.retirement == "null"');
+        await check('typeof job.data.retirement == "null"');
       });
     });
 
@@ -949,27 +903,27 @@ describe('filterJobs', () => {
       });
 
       test('"object"', async () => {
-        await attempt('job.data instanceof "object"');
+        await check('job.data instanceof "object"');
       });
 
       test('"number"', async () => {
-        await attempt('job.data.jobs instanceof "number"');
+        await check('job.data.jobs instanceof "number"');
       });
 
       test('"array"', async () => {
-        await attempt('job.data.grades instanceof "array"');
+        await check('job.data.grades instanceof "array"');
       });
 
       test('"boolean"', async () => {
-        await attempt('job.data.isActive instanceof "boolean"');
+        await check('job.data.isActive instanceof "boolean"');
       });
 
       test('"string"', async () => {
-        await attempt('job.name instanceof "string"');
+        await check('job.name instanceof "string"');
       });
 
       test('"null"', async () => {
-        await attempt('job.data.missing instanceof "null"');
+        await check('job.data.missing instanceof "null"');
       });
     });
 
@@ -980,7 +934,7 @@ describe('filterJobs', () => {
         [2.5, '2.5'],
         [12345, '12345'],
       ];
-      testExpressionCases('toString', cases);
+      testFunction('toString', cases);
     });
 
     describe('isString', () => {
@@ -1045,16 +999,20 @@ describe('filterJobs', () => {
     });
 
     test('isArray', async () => {
-      await attempt('isArray(job.data.grades)');
-      await attempt('isArray(job.data.date)');
+      await check('isArray(job.data.grades) == true');
+      await check('isArray(job.data.date) == true');
     });
   });
 
-  describe('Array methods', () => {
+  describe('Array', () => {
     let job: Job;
 
     beforeEach(async () => {
       job = await queue.add('default', Person);
+    });
+
+    test('length', async () => {
+      await check('job.data.languages.programming.length == 7');
     });
 
     describe('max', () => {
@@ -1067,7 +1025,7 @@ describe('filterJobs', () => {
         [[-67, 1], 1],
         [[0, 1, 19, -45], 19],
       ];
-      testMethod('max', cases);
+      testFunction('Math.max', cases);
     });
 
     describe('min', () => {
@@ -1080,22 +1038,22 @@ describe('filterJobs', () => {
         [[-20, 71], -20],
         [[0, 1, 3, 19, -45], -45],
       ];
-      testMethod('min', cases);
+      testFunction('Math.min', cases);
     });
 
     test('includes', async () => {
-      await attempt('job.data.languages.programming.includes("Python")');
+      await check('job.data.languages.programming.includes("Python")');
     });
 
     test('includesAll', async () => {
-      await attempt(
+      await check(
         'job.data.languages.spoken.includesAll(["french", "english"])',
       );
     });
 
     test('reverse', async () => {
-      const expected = [...Person.languages.programming].reverse();
-      await attempt(
+      const expected = [...Person.languages.programming].reverse().map(quote);
+      await check(
         'job.data.languages.programming.reverse == [' +
           expected.join(',') +
           ']',
@@ -1124,7 +1082,6 @@ describe('filterJobs', () => {
 
     describe('ceil', () => {
       const cases = [
-        [null, null],
         [1, 1],
         [7.8, 8],
         [-2.8, -2],
@@ -1134,7 +1091,6 @@ describe('filterJobs', () => {
 
     describe('floor', () => {
       const cases = [
-        [null, null],
         [1, 1],
         [7.8, 7],
         [-2.8, -3],
@@ -1144,7 +1100,6 @@ describe('filterJobs', () => {
 
     describe('sqrt', () => {
       const cases = [
-        [null, null],
         [NaN, NaN],
         [25, 5],
         [30, 5.477225575051661],
@@ -1189,7 +1144,6 @@ describe('filterJobs', () => {
 
     describe('trunc', () => {
       const cases = [
-        [[null, 0], null],
         [[0, 0], 0],
         // truncate to the first decimal place
         [[19.25, 1], 19.2],
@@ -1207,11 +1161,94 @@ describe('filterJobs', () => {
         [[34.32, 0], 34],
         [[-45.39, 0], -45],
       ];
-      testExpressionCases('trunc', cases);
+      testFunction('Math.trunc', cases);
+    });
+  });
+
+  describe('JSON', () => {
+    describe('parse', () => {
+      it('handles a valid JSON encoded string', async () => {
+        const data = {
+          str: 'string',
+          num: 12345,
+          bool: true,
+          null_: null,
+          arr: ['this', 1, true, 'thing'],
+          obj: { a: 1, b: 1 },
+        };
+        const asString = JSON.stringify(data);
+        await queue.add('default', { test: asString, expected: data });
+        await check('JSON.parse(job.data.test) == job.data.expected');
+      });
+
+      it('returns null for an invalid string', async () => {
+        await queue.add('default', { test: 'invalid' });
+        await check('JSON.parse(job.data.test) == null');
+      });
+    });
+
+    describe('stringify', () => {
+      it('handles a valid JSON', async () => {
+        const data = {
+          str: 'string',
+          num: 12345,
+          bool: true,
+          null_: null,
+          arr: ['this', 1, true, 'thing'],
+          obj: { a: 1, b: 1 },
+        };
+        const asString = JSON.stringify(data);
+        await queue.add('default', { test: data, expected: asString });
+        await check('JSON.parse(job.data.test) == job.data.expected');
+      });
+
+      it('returns null for a non object', async () => {
+        await queue.add('default', { test: 'invalid' });
+        await check('JSON.parse(job.data.test) == null');
+      });
+    });
+  });
+
+  describe('Object', () => {
+    describe('getOwnProperties', () => {
+      it('can get the keys of an object', async () => {
+        const data = {
+          str: 'string',
+          num: 12345,
+          bool: true,
+          null_: null,
+          arr: ['this', 1, true, 'thing'],
+          obj: { a: 1, b: 1 },
+        };
+        await queue.add('default', { test: data, expected: Object.keys(data) });
+        await check('job.data.test.getOwnProperties() == job.data.expected');
+      });
+    });
+
+    describe('toString', () => {
+      it('converts an object to a string', async () => {
+        const data = {
+          str: 'string',
+          num: 12345,
+          bool: true,
+          null_: null,
+          arr: ['this', 1, true, 'thing'],
+          obj: { a: 1, b: 1 },
+        };
+        await queue.add('default', { value: data });
+        await check('typeof job.data.value.toString() == "string"');
+      });
     });
   });
 
   describe('Functions', () => {
+    describe('ms', () => {
+      it('can convert human text to millis', async () => {
+        const expected = ms('2 days');
+        await testFunctionOnce('ms', '"2 days"', expected);
+      });
+    });
+
     describe('cmp', () => {
       it('properly compares values', async () => {
         const data = [
@@ -1226,78 +1263,32 @@ describe('filterJobs', () => {
         await checkExpressionByList(data, expr, () => true, 'item');
       });
     });
+
+    test('isEmpty', async () => {
+      const cases = [
+        [null, true],
+        [0, false],
+        ['', true],
+        ['v', false],
+        [0, 0],
+      ];
+      testFunction('isEmpty', cases);
+    });
   });
 
   describe('matches', () => {
     test('can match against non-array property', async () => {
-      const data = [{ l1: [{ tags: 'tag1' }, { notags: 'yep' }] }];
-      let res = await find(data, 'job.data.l1.tags matches ".*tag.*"');
-      expect(res.length).toBe(1);
+      const data = { l1: [{ tags: 'tag1' }, { notags: 'yep' }] };
+      await queue.add('default', data);
+      await check('job.data.l1.tags =~ ".*tag.*"');
     });
 
     test('can match against array property', async () => {
-      const data = [
-        {
-          l1: [{ tags: ['tag1', 'tag2'] }, { tags: ['tag66'] }],
-        },
-      ];
-      const res = await find(data, 'job.data.l1.tags matches "^tag*"');
-      expect(res.length).toBe(1);
-    });
-  });
-
-  describe('$expr tests', function () {
-    // https://docs.mongodb.com/manual/reference/operator/query/expr/
-
-    test('compare two fields from a single document', async () => {
-      const data = [
-        { _id: 1, category: 'food', budget: 400, spent: 450 },
-        { _id: 2, category: 'drinks', budget: 100, spent: 150 },
-        { _id: 3, category: 'clothes', budget: 100, spent: 50 },
-        { _id: 4, category: 'misc', budget: 500, spent: 300 },
-        { _id: 5, category: 'travel', budget: 200, spent: 650 },
-      ];
-
-      const expr = 'job.data.spent > job.data.budget';
-
-      await checkExpressionByList(
-        data,
-        expr,
-        (data) => data.spent > data.budget,
-        '_id',
-      );
-    });
-  });
-
-  describe('null or missing fields', () => {
-    const data = [{ _id: 1, item: null }, { _id: 2 }];
-
-    async function attempt(criteria: string, expected) {
-      const res = await find(data, criteria);
-      expect(res).toStrictEqual(expected);
-    }
-
-    test('should return all documents', async () => {
-      const expected = [{ _id: 1, item: null }, { _id: 2 }];
-      await attempt('job.data.item == null', expected);
-    });
-
-    test('should return one document with null field', async () => {
-      const query = 'typeof data.item = "null"';
-      const expected = [{ _id: 1, item: null }];
-      await attempt(query, expected);
-    });
-
-    test('should return one document without null field', async () => {
-      const query = 'job.data.item == null';
-      const expected = [{ _id: 2 }];
-      await attempt(query, expected);
-    });
-
-    test('in should return all documents', async function () {
-      const query = 'job.data.item in [null, false]';
-      const expected = [{ _id: 1, item: null }, { _id: 2 }];
-      await attempt(query, expected);
+      const data = {
+        l1: [{ tags: ['tag1', 'tag2'] }, { tags: ['tag66'] }],
+      };
+      await queue.add('default', data);
+      await check('job.data.l1.tags =~ "^tag*"');
     });
   });
 });

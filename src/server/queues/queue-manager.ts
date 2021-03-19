@@ -6,7 +6,12 @@ import { StatsClient, StatsListener } from '../stats';
 import { Rule, RuleManager } from '../rules';
 import { EventBus, LockManager } from '../redis';
 import { QueueListener } from './queue-listener';
-import { convertWorker, deleteAllQueueData, getJobTypes } from './queue';
+import {
+  convertWorker,
+  deleteAllQueueData,
+  getJobTypes,
+  getMultipleJobsById,
+} from './queue';
 import { HostManager } from '../hosts';
 import { getQueueUri, logger } from '../lib';
 import {
@@ -264,28 +269,7 @@ export class QueueManager {
    * @returns {Promise<[Job]>}
    */
   async getMultipleJobsById(...ids: (string | string[])[]): Promise<Job[]> {
-    const flat = [].concat(...ids);
-    const client = await this.queue.client;
-    const multi = client.pipeline();
-    flat.forEach((jid) => {
-      multi.hgetall(this.queue.toKey(jid));
-    });
-    const res = await multi.exec();
-    const result = [];
-
-    res.forEach((item, index) => {
-      if (item[0]) {
-        // err
-      } else {
-        const jobData = item[1];
-        const jid = flat[index];
-        if (!isEmpty(jobData)) {
-          const job = Job.fromJSON(this.queue, jobData, jid);
-          result.push(job);
-        }
-      }
-    });
-    return result;
+    return getMultipleJobsById(this.queue, ...ids);
   }
 
   /**

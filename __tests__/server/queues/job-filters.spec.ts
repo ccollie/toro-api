@@ -37,9 +37,9 @@ describe('Job Filters', function () {
     return client.hget(key, name);
   }
 
-  const SAMPLE_EXPR = { returnvalue: { $exists: true } };
+  const SAMPLE_EXPR = 'job.returnvalue == null';
 
-  async function createFilter(expr?: Record<string, any>): Promise<JobFilter> {
+  async function createFilter(expr?: string): Promise<JobFilter> {
     expr = expr || SAMPLE_EXPR;
     return addJobFilter(queue, 'Simple', JobStatusEnum.COMPLETED, expr);
   }
@@ -71,16 +71,19 @@ describe('Job Filters', function () {
 
     it('It validates the filter before saving', async () => {
       await expect(
-        addJobFilter(queue, 'test', JobStatusEnum.COMPLETED, {
-          $geoWithin: [100, 100],
-        }),
+        addJobFilter(
+          queue,
+          'test',
+          JobStatusEnum.COMPLETED,
+          'job.missing > (50',
+        ),
       ).rejects.toThrow();
     });
   });
 
   describe('getJobFilter', () => {
     it('it can retrieve stored filters', async () => {
-      const expr = { returnvalue: { $exists: true } };
+      const expr = 'job.returnvalue != null';
       const saved = await addJobFilter(
         queue,
         'Simple',

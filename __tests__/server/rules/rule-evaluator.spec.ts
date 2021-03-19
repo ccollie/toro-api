@@ -4,18 +4,25 @@ import {
   ConditionEvaluator,
   PeakConditionEvaluator,
   RuleEvaluator,
-  ThresholdConditionEvaluator
+  ThresholdConditionEvaluator,
 } from '../../../src/server/rules';
 import { clearDb, delay } from '../utils';
 import { QueueListenerHelper } from '../../fixtures';
-import { BaseMetric, LatencyMetric, MetricsListener } from '../../../src/server/metrics';
 import {
-  ChangeAggregationType, RuleAlert,
+  BaseMetric,
+  LatencyMetric,
+  MetricsListener,
+} from '../../../src/server/metrics';
+import {
+  ChangeAggregationType,
+  RuleAlert,
   RuleCondition,
   RuleConfigOptions,
   RuleEventsEnum,
-  RuleMetric, RuleOperator, RuleState,
-  RuleType
+  RuleMetric,
+  RuleOperator,
+  RuleState,
+  RuleType,
 } from '../../../src/types';
 import { createQueueListener, createRule, randomString } from './utils';
 import { QueueListener } from '../../../src/server/queues';
@@ -36,21 +43,26 @@ describe('RuleEvaluator', () => {
     queueListener = await createQueueListener();
     listenerHelper = new QueueListenerHelper(queueListener);
     metricsListener = new MetricsListener(queueListener);
-  })
+  });
 
   afterEach(async () => {
     await clearDb();
     if (metric) metric.destroy();
   });
 
-  async function postJob(options?: Record<string, any>, needDelay = true): Promise<void> {
+  async function postJob(
+    options?: Record<string, any>,
+    needDelay = true,
+  ): Promise<void> {
     await listenerHelper.postCompletedEvent(options);
     if (needDelay) {
       await delay(20);
     }
   }
 
-  function createEvaluator(options?: Partial<RuleConfigOptions>): ExtRuleEvaluator {
+  function createEvaluator(
+    options?: Partial<RuleConfigOptions>,
+  ): ExtRuleEvaluator {
     const rule = createRule(options);
     return new ExtRuleEvaluator(rule, metricsListener);
   }
@@ -61,7 +73,7 @@ describe('RuleEvaluator', () => {
         metric: {
           type: 'latency',
           options: {},
-        }
+        },
       });
 
       const evaluator = new RuleEvaluator(rule, metricsListener);
@@ -71,17 +83,16 @@ describe('RuleEvaluator', () => {
     });
 
     it('creates the proper type of evaluator depending on condition type', () => {
-
       let sut = createEvaluator({
         condition: {
           type: RuleType.CHANGE,
           changeType: 'CHANGE',
           timeShift: 1000,
-          timeWindow: 10000,
+          windowSize: 10000,
           aggregationType: ChangeAggregationType.Avg,
           errorThreshold: 20,
           operator: RuleOperator.gt,
-        }
+        },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(ChangeConditionEvaluator);
 
@@ -90,11 +101,11 @@ describe('RuleEvaluator', () => {
           type: RuleType.CHANGE,
           changeType: 'PCT',
           timeShift: 1000,
-          timeWindow: 10000,
+          windowSize: 10000,
           aggregationType: ChangeAggregationType.Avg,
           errorThreshold: 20,
           operator: RuleOperator.gt,
-        }
+        },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(ChangeConditionEvaluator);
 
@@ -103,7 +114,7 @@ describe('RuleEvaluator', () => {
           type: RuleType.PEAK,
           errorThreshold: 3.5,
           operator: RuleOperator.gt,
-        }
+        },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(PeakConditionEvaluator);
 
@@ -112,7 +123,7 @@ describe('RuleEvaluator', () => {
           type: RuleType.THRESHOLD,
           errorThreshold: 20,
           operator: RuleOperator.gt,
-        }
+        },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(ThresholdConditionEvaluator);
     });
@@ -129,7 +140,7 @@ describe('RuleEvaluator', () => {
     });
 
     it('not called if the rule is not ACTIVE', async () => {
-      const sut = createEvaluator({active: false});
+      const sut = createEvaluator({ active: false });
       const spy = jest.spyOn(sut, 'evaluate');
 
       sut.metric.update(10);
@@ -138,7 +149,7 @@ describe('RuleEvaluator', () => {
     });
 
     it('is triggered by queue event', async () => {
-      const sut = createEvaluator({active: false});
+      const sut = createEvaluator({ active: false });
       const spy = jest.spyOn(sut, 'evaluate');
 
       await postJob({ latency: 1000 });
@@ -148,7 +159,6 @@ describe('RuleEvaluator', () => {
   });
 
   describe('Alerts', () => {
-
     const condition: RuleCondition = {
       type: RuleType.THRESHOLD,
       operator: RuleOperator.gt,
@@ -159,14 +169,13 @@ describe('RuleEvaluator', () => {
       let called = 0;
       const payload = {
         num: random(0, 99),
-        str: randomString(4)
-      }
+        str: randomString(4),
+      };
       let alert: RuleAlert;
       const sut = await createEvaluator({
         condition,
-        payload
+        payload,
       });
-
 
       const rule = sut.rule;
       rule.on(RuleEventsEnum.ALERT_TRIGGERED, (eventData: RuleAlert) => {
@@ -189,7 +198,7 @@ describe('RuleEvaluator', () => {
       metric = new LatencyMetric({});
       const sut = await createEvaluator({
         metric: metric.toJSON() as RuleMetric,
-        condition
+        condition,
       });
 
       const triggerSpy = jest.fn();
@@ -223,7 +232,7 @@ describe('RuleEvaluator', () => {
           errorThreshold: 3000,
           warningThreshold: 1000,
           operator: RuleOperator.eq,
-        }
+        },
       });
 
       let count = 0;

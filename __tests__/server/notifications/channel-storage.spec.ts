@@ -4,20 +4,19 @@ import {
   ChannelStorage,
   MailChannel,
   SlackChannel,
-  WebhookChannel
+  WebhookChannel,
 } from '../../../src/server/notifications';
 import { EventBus } from '../../../src/server/redis';
-import { clearDb, DEFAULT_CLIENT_OPTIONS, delay } from '../utils';
+import { clearDb, DEFAULT_CLIENT_OPTIONS, delay, randomId } from '../utils';
 import IORedis from 'ioredis';
-import nanoid from 'nanoid';
 import {
   ChannelConfig,
   HostConfig,
   MailChannelConfig,
   SlackChannelConfig,
-  WebhookChannelConfig
+  WebhookChannelConfig,
 } from '../../../src/types';
-import random from 'lodash/random'
+import random from 'lodash/random';
 import { HostManager } from '../../../src/server/hosts';
 
 describe('ChannelStorage', () => {
@@ -33,9 +32,9 @@ describe('ChannelStorage', () => {
       connection: DEFAULT_CLIENT_OPTIONS,
       queues: [],
       channels: [],
-      id: nanoid(),
-      name: 'host-' + nanoid(),
-      ...(defaults || {})
+      id: randomId(),
+      name: 'host-' + randomId(),
+      ...(defaults || {}),
     };
   }
 
@@ -51,10 +50,7 @@ describe('ChannelStorage', () => {
 
   afterEach(async function () {
     sut && sut.destroy();
-    await Promise.allSettled([
-      hostManager.destroy(),
-      clearDb(client)
-    ]);
+    await Promise.allSettled([hostManager.destroy(), clearDb(client)]);
   });
 
   function addChannel(config?: ChannelConfig): Promise<Channel> {
@@ -62,7 +58,8 @@ describe('ChannelStorage', () => {
       config = {
         type: 'slack',
         name: 'Dev Slack Channel',
-        webhook: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
+        webhook:
+          'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
       } as SlackChannelConfig;
     }
     return sut.addChannel(config);
@@ -74,8 +71,8 @@ describe('ChannelStorage', () => {
       method: 'POST',
       name: 'Captain',
       responseType: 'json',
-      url: 'http://acme.com/webhook'
-    }
+      url: 'http://acme.com/webhook',
+    };
     return (await addChannel(config)) as WebhookChannel;
   }
 
@@ -85,8 +82,9 @@ describe('ChannelStorage', () => {
         id: 'dev.slack',
         type: 'slack',
         name: 'Dev Slack Channel',
-        webhook: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
-      }
+        webhook:
+          'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+      };
       const channel = await sut.addChannel(config);
       expect(channel).toBeInstanceOf(SlackChannel);
       expect(channel).toBeDefined();
@@ -102,16 +100,15 @@ describe('ChannelStorage', () => {
       const config: MailChannelConfig = {
         type: 'mail',
         name: 'Devops Staging',
-        recipients: ['no-reply@acme.co']
-      }
+        recipients: ['no-reply@acme.co'],
+      };
       const mailChannel = await addChannel(config);
 
       config.id = mailChannel.id;
       const host = hostManager.name;
-      const expected = `A channel with id "${config.id}" already exists in host "${host}"`
-      expect(addChannel(config))
-        .rejects.toThrowError(expected);
-    })
+      const expected = `A channel with id "${config.id}" already exists in host "${host}"`;
+      expect(addChannel(config)).rejects.toThrowError(expected);
+    });
 
     it('emits an event when a channel is added', async () => {
       let eventData;
@@ -122,14 +119,14 @@ describe('ChannelStorage', () => {
       await delay(450);
       expect(eventData).toBeDefined();
       expect(eventData.id).toEqual(channel.id);
-    })
+    });
   });
 
   describe('.updateChannel', () => {
     it('can update a channel', async () => {
       const webhook = await addWebhookChannel();
       webhook.url = 'http://nowhere.com/hooks';
-      webhook.name = 'changed - ' + nanoid(10);
+      webhook.name = 'changed - ' + randomId(10);
 
       await sut.updateChannel(webhook);
       const fromRedis = (await sut.getChannel(webhook.id)) as WebhookChannel;
@@ -162,7 +159,7 @@ describe('ChannelStorage', () => {
     });
 
     it('returns false for a non-existent key', async () => {
-      const invalidId = nanoid(6);
+      const invalidId = randomId(6);
 
       let exists = await sut.channelExists(invalidId);
       expect(!!exists).toBe(false);
@@ -190,11 +187,11 @@ describe('ChannelStorage', () => {
   describe('getChannel', () => {
     it('can get a channel by id', async () => {
       const config: MailChannelConfig = {
-        id: nanoid(6),
+        id: randomId(6),
         type: 'mail',
         name: 'Devops Staging',
-        recipients: ['no-reply@acme.co']
-      }
+        recipients: ['no-reply@acme.co'],
+      };
 
       await addChannel(config);
       const added = (await sut.getChannel(config.id)) as MailChannel;
@@ -206,7 +203,7 @@ describe('ChannelStorage', () => {
   });
 
   describe('.getChannels', () => {
-    it ('can return all channels', async () => {
+    it('can return all channels', async () => {
       const count = 5;
       const ids: string[] = [];
 
@@ -227,9 +224,7 @@ describe('ChannelStorage', () => {
 
       const otherChannels = await sut.getChannels();
       expect(otherChannels.length).toBe(expectedCount);
-
     });
-
   });
 
   describe('.getChannelCount', () => {
@@ -246,7 +241,6 @@ describe('ChannelStorage', () => {
   });
 
   describe('.channelExists', () => {
-
     it('returns true if a channel exists', async () => {
       const channel = await addWebhookChannel();
       const exists = await sut.channelExists(channel.id);
@@ -254,10 +248,9 @@ describe('ChannelStorage', () => {
     });
 
     it('returns FALSE if a channel does not exist', async () => {
-      const notExistsId = nanoid();
+      const notExistsId = randomId();
       const exists = await sut.channelExists(notExistsId);
       expect(exists).toBe(false);
     });
-
-  })
+  });
 });

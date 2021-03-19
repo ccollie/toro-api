@@ -1,11 +1,11 @@
 import { Clock, TimeTicker } from '../lib';
 import * as units from './units';
-// eslint-disable-next-line max-len
-import { ExponentiallyMovingWeightedAverage as EWMA } from './exponentially-moving-weighted-average';
+import { EWMA, TimeUnit } from './ewma';
 import { MeteredRates, MeterSummary } from '@src/types';
+import ms from 'ms';
 
-const RATE_UNIT = units.MINUTES;
-const TICK_INTERVAL = 5 * units.SECONDS;
+const RATE_UNIT = TimeUnit.MINUTES;
+const TICK_INTERVAL = 10 * units.SECONDS;
 
 /**
  *
@@ -14,12 +14,12 @@ const TICK_INTERVAL = 5 * units.SECONDS;
  * @type {Object}
  * @property {number} rateUnit The rate unit. Defaults to 1000 (1 sec).
  * @property {number} interval The interval in which the averages are updated.
- * Defaults to 5000 (5 sec).
+ * Defaults to 10000 (10 sec).
  * @example
  * const meter = new Meter(clock, { rateUnit: 1000, interval: 5000})
  */
 export interface MeterProperties {
-  rateUnit?: number;
+  rateUnit?: TimeUnit;
   interval?: number;
 }
 
@@ -35,11 +35,12 @@ export class BaseMeter {
    * @type {number}
    */
   private readonly _interval: number;
-  private readonly _rateUnit: number;
+  private readonly _rateUnit: TimeUnit;
   private _lastToJSON: number;
   private _startTime: number;
   private _count = 0;
   private _currentSum = 0;
+  private readonly _rateUnitMillis: number;
   private readonly _ticker: TimeTicker;
   private readonly clock: Clock;
 
@@ -52,6 +53,7 @@ export class BaseMeter {
     this._interval = properties.interval || TICK_INTERVAL;
     this.clock = clock;
     this._ticker = new TimeTicker(this._interval, clock);
+    this._rateUnitMillis = ms(`1 ${this._rateUnit}`);
     this._initializeState();
   }
 
@@ -73,7 +75,7 @@ export class BaseMeter {
     return this._interval;
   }
 
-  get rateUnit(): number {
+  get rateUnit(): TimeUnit {
     return this._rateUnit;
   }
 
@@ -81,7 +83,7 @@ export class BaseMeter {
     return this._count;
   }
 
-  private getTime(): number {
+  protected getTime(): number {
     return this.clock.getTime();
   }
 
@@ -129,7 +131,7 @@ export class BaseMeter {
     if (this._count === 0) {
       return 0;
     }
-    return (this._count / this.elapsedTime) * this._rateUnit;
+    return (this._count / this.elapsedTime) * this._rateUnitMillis;
   }
 
   toJSON(): Record<string, any> {
@@ -156,9 +158,11 @@ export interface SimpleMeterProperties extends MeterProperties {
 
 export class SimpleMeter extends BaseMeter {
   protected _ewma: EWMA;
+  private readonly alpha: number;
 
   constructor(clock: Clock, properties: SimpleMeterProperties) {
     super(clock, properties);
+    this.alpha = 1 - Math.exp((-1 * this.interval) / this.timePeriod);
     this._ewma = new EWMA(properties.timePeriod, this.interval);
   }
 
@@ -174,23 +178,20 @@ export class SimpleMeter extends BaseMeter {
    */
   tick(n = 1): this {
     this._ewma.tick(n);
+    // const elapsed = n * this._interval
+    // this._e
     return this;
   }
 
   get timePeriod(): number {
-    return this._ewma.timePeriod;
+    return this.interval;
   }
 
   get rate(): number {
     return this.getRate(this.rateUnit);
   }
 
-  get instantRate(): number {
-    this.tickIfNeeded();
-    return this._ewma.instantRate;
-  }
-
-  getRate(unit?: number): number {
+  getRate(unit?: TimeUnit): number {
     this.tickIfNeeded();
     return this._ewma.rate(unit || this.rateUnit);
   }
@@ -233,9 +234,9 @@ export class Meter extends BaseMeter {
    */
   protected _initializeState(): void {
     super._initializeState();
-    this._m1Rate = new EWMA(units.MINUTES, this.interval);
-    this._m5Rate = new EWMA(5 * units.MINUTES, this.interval);
-    this._m15Rate = new EWMA(15 * units.MINUTES, this.interval);
+    this._m1Rate = EWMA.oneMinuteEWMA();
+    this._m5Rate = EWMA.fiveMinuteEWMA();
+    this._m15Rate = EWMA.fifteenMinuteEWMA();
   }
 
   /**

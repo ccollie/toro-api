@@ -1,6 +1,6 @@
 import { isString } from 'lodash';
 
-import { Predicate } from '@src/types';
+import { Predicate } from '../../types';
 
 export function createJobNameFilter(
   jobNames?: string | string[],

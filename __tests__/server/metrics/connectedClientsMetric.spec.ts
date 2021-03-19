@@ -1,8 +1,8 @@
 import { ConnectedClientsMetric } from '../../../src/server/metrics';
 import { delay, randomString } from '../utils';
-import { PollingMetricOptions } from '../../../src/server/metrics/baseMetric';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../../src/server/redis';
+import { PollingMetricOptions } from '../../../src/types';
 
 describe('ConnectedClientsMetric', () => {
   describe('constructor', () => {
@@ -11,8 +11,8 @@ describe('ConnectedClientsMetric', () => {
         id: randomString(),
         name: randomString(),
         jobNames: [randomString()],
-        interval: 250
-      }
+        interval: 250,
+      };
       const sut = new ConnectedClientsMetric(options);
       expect(sut).toBeDefined();
       expect(sut.id).toBe(options.id);
@@ -22,16 +22,15 @@ describe('ConnectedClientsMetric', () => {
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
-    })
+    });
   });
 
   describe('.checkUpdate', () => {
-
     it('updates the value at the given interval', async () => {
       const interval = 50;
       const options: PollingMetricOptions = {
-        interval
-      }
+        interval,
+      };
       const sut = new ConnectedClientsMetric(options);
       const helper = MetricTestHelper.forMetric(sut);
       const client = await helper.client;
@@ -44,8 +43,6 @@ describe('ConnectedClientsMetric', () => {
       } finally {
         await helper.destroy();
       }
-
     });
   });
-
 });
