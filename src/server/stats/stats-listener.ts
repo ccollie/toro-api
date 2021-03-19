@@ -4,7 +4,6 @@ import { DateLike, roundDown, roundInterval, roundUp } from '../lib/datetime';
 import QueueStats from './queue-stats';
 import { systemClock, Clock, isNumber } from '../lib';
 import { isAfter, toDate } from 'date-fns';
-import Timeout = NodeJS.Timeout;
 import { StatsWriter } from './stats-writer';
 import Emittery from 'emittery';
 import logger from '../lib/logger';
@@ -227,7 +226,7 @@ export class StatsListener extends StatsWriter {
 
     const TIMEOUT = 15000;
 
-    let timer: Timeout;
+    let timer: NodeJS.Timeout;
 
     function clearTimer(): void {
       if (timer) {

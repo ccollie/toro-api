@@ -1,12 +1,12 @@
-import {
-  MetricCategory,
-  PollingMetric,
-  PollingMetricOptions,
-} from './baseMetric';
+import { PollingMetric } from './baseMetric';
 import { getRedisInfo } from '../redis';
 import IORedis from 'ioredis';
 import { MetricsListener } from './metricsListener';
-import { MetricType } from '../../types/metrics';
+import {
+  MetricType,
+  MetricCategory,
+  PollingMetricOptions,
+} from '../../types/metrics';
 
 export class RedisMetric extends PollingMetric {
   private client: Promise<IORedis.Redis>;

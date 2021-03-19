@@ -3,6 +3,7 @@ import { EventEmitter } from 'events';
 import { ObjectSchema } from 'joi';
 import { Clock, getStaticProp, systemClock } from '../../lib';
 import { BaseMetric } from '../baseMetric';
+import { SerializedAggregator } from '../../../types';
 
 export interface Aggregator {
   /** The number of samples added so far */
@@ -59,7 +60,7 @@ export class BaseAggregator extends EventEmitter implements Aggregator {
     return null;
   }
 
-  toJSON(): Record<string, any> {
+  toJSON(): SerializedAggregator {
     const type = (this.constructor as any).key;
     return { type, options: {} };
   }

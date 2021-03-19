@@ -1,6 +1,6 @@
 'use strict';
 import { random } from 'lodash';
-import { randomId, randomString, } from './utils';
+import { randomId, randomString } from './utils';
 import { Rule } from '../../../src/server/rules';
 import {
   ChangeAggregationType,
@@ -8,16 +8,15 @@ import {
   RuleConfigOptions,
   RuleMetric,
   RuleOperator,
-  RuleType
+  RuleType,
 } from '../../../src/types';
 
 describe('Rule', () => {
-
   function createRule(options: Partial<RuleConfigOptions> = {}): Rule {
     const opts: RuleConfigOptions = {
       metric: {
         type: 'latency',
-        options: {}
+        options: {},
       },
       name: 'Rule names ' + randomString(6),
       id: randomId(),
@@ -26,7 +25,7 @@ describe('Rule', () => {
         operator: RuleOperator.gt,
         errorThreshold: 50,
       },
-      ...options
+      ...options,
     };
     return new Rule(opts);
   }
@@ -46,22 +45,21 @@ describe('Rule', () => {
       expect(rule.condition).toStrictEqual(opts.condition);
       expect(rule.name).toBe(opts.name);
     });
-
   });
 
   describe('toJSON() and fromJSON()', () => {
-
     const metric: RuleMetric = {
       type: 'used_memory',
-      options: {}
+      options: {},
     };
 
     const condition: RuleCondition = {
       type: RuleType.CHANGE,
-      timeWindow: 0,
+      changeType: 'CHANGE',
+      windowSize: 0,
       aggregationType: ChangeAggregationType.Avg,
       operator: RuleOperator.eq,
-      errorThreshold: 10
+      errorThreshold: 10,
     };
 
     const name = 'testName';
@@ -78,8 +76,8 @@ describe('Rule', () => {
         channels,
         payload: {
           number: random(0, 99),
-          string: randomString(5)
-        }
+          string: randomString(5),
+        },
       });
     });
 
@@ -89,7 +87,7 @@ describe('Rule', () => {
       expect(json.name).toBe(rule.name);
       expect(json.createdAt).toBe(rule.createdAt);
       expect(json.updatedAt).toBe(rule.updatedAt);
-     // expect(json.options).toStrictEqual(rule.options);
+      // expect(json.options).toStrictEqual(rule.options);
       expect(json.metric).toStrictEqual(metric);
       expect(json.condition).toStrictEqual(condition);
       expect(json.payload).toStrictEqual(rule.payload);

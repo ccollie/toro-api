@@ -1,10 +1,14 @@
 import { EventBus, deleteAllQueueData } from '../common';
 import { RedisStreamAggregator } from '../common';
-import { randomString, delay, createClient, clearDb, DEFAULT_CLIENT_OPTIONS } from '../utils';
-import nanoid from 'nanoid';
+import {
+  randomString,
+  delay,
+  createClient,
+  clearDb,
+  DEFAULT_CLIENT_OPTIONS,
+} from '../utils';
 import pAll from 'p-all';
 import random from 'lodash/random';
-
 
 describe('EventBus', () => {
   // jest.setTimeout(5000);
@@ -14,10 +18,10 @@ describe('EventBus', () => {
   let key: string;
 
   beforeEach(async function () {
-    key = 'bus-' + nanoid(10);
+    key = 'bus-' + randomString(8);
     client = await createClient();
     const opts = { connectionOptions: DEFAULT_CLIENT_OPTIONS };
-    aggregator = new RedisStreamAggregator( opts );
+    aggregator = new RedisStreamAggregator(opts);
     bus = new EventBus(aggregator, key);
     await aggregator.connect();
   });
@@ -84,6 +88,5 @@ describe('EventBus', () => {
       expect(len).toBeLessThan(100);
       expect(len).not.toBeLessThan(5);
     });
-
   });
 });

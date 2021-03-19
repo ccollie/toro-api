@@ -5,26 +5,25 @@ import {
   PeakCondition,
   PeakSignalDirection,
   RuleType,
-  ThresholdCondition
+  ThresholdCondition,
 } from '../../../src/types';
 import {
   PeakConditionEvaluator,
-  ThresholdConditionEvaluator
-} from '../../../src/server/rules/rule-evaluator';
-import { RuleOperator } from '../../../src/types/rules';
-import ms = require('ms');
+  ThresholdConditionEvaluator,
+} from '../../../src/server/rules';
+import { RuleOperator } from '../../../src/types';
 
 describe('Condition Evaluation', () => {
-
   describe('ThresholdConditionEvaluator', () => {
-
-    function createEvaluator(options?: Partial<ThresholdCondition>): ThresholdConditionEvaluator {
+    function createEvaluator(
+      options?: Partial<ThresholdCondition>,
+    ): ThresholdConditionEvaluator {
       const defaults: ThresholdCondition = {
         type: RuleType.THRESHOLD,
         errorThreshold: 0,
-        operator: RuleOperator.gt
+        operator: RuleOperator.gt,
       };
-      const opts = { ...defaults, ... (options || {})};
+      const opts = { ...defaults, ...(options || {}) };
       const metric = new LatencyMetric({});
       return new ThresholdConditionEvaluator(metric, opts);
     }
@@ -35,7 +34,7 @@ describe('Condition Evaluation', () => {
         const options: ThresholdCondition = {
           type: RuleType.THRESHOLD,
           errorThreshold: 0,
-          operator: RuleOperator.gt
+          operator: RuleOperator.gt,
         };
         const sut = new ThresholdConditionEvaluator(metric, options);
         expect(sut).toBeDefined();
@@ -45,16 +44,18 @@ describe('Condition Evaluation', () => {
     });
 
     describe('.evaluate', () => {
-
       it('returns success for errorThreshold', () => {
-        const sut = createEvaluator({ errorThreshold: 10, operator: RuleOperator.lt });
+        const sut = createEvaluator({
+          errorThreshold: 10,
+          operator: RuleOperator.lt,
+        });
         const result = sut.evaluate(5);
         expect(result.success).toBe(true);
         expect(result.state).toMatchObject({
           value: 5,
           ruleType: RuleType.THRESHOLD,
           errorLevel: ErrorLevel.CRITICAL,
-          unit: 'ms'
+          unit: 'ms',
         });
       });
 
@@ -62,7 +63,7 @@ describe('Condition Evaluation', () => {
         const sut = createEvaluator({
           errorThreshold: 20,
           warningThreshold: 10,
-          operator: RuleOperator.gt
+          operator: RuleOperator.gt,
         });
         const result = sut.evaluate(12);
         expect(result.success).toBe(true);
@@ -70,7 +71,7 @@ describe('Condition Evaluation', () => {
           value: 12,
           ruleType: RuleType.THRESHOLD,
           errorLevel: ErrorLevel.WARNING,
-          unit: 'ms'
+          unit: 'ms',
         });
       });
 
@@ -79,69 +80,67 @@ describe('Condition Evaluation', () => {
           {
             options: { errorThreshold: 10, operator: RuleOperator.eq },
             value: 10,
-            expected: true
+            expected: true,
           },
           {
             options: { errorThreshold: 11, operator: RuleOperator.ne },
             value: 11,
-            expected: false
+            expected: false,
           },
           {
             options: { errorThreshold: 100, operator: RuleOperator.gt },
             value: 110,
-            expected: true
+            expected: true,
           },
           {
             options: { errorThreshold: 99, operator: RuleOperator.gte },
             value: 99,
-            expected: true
+            expected: true,
           },
           {
             options: { errorThreshold: 50, operator: RuleOperator.lt },
             value: 51,
-            expected: false
+            expected: false,
           },
           {
             options: { errorThreshold: 73, operator: RuleOperator.lte },
             value: 73,
-            expected: true
+            expected: true,
           },
         ];
 
-        testData.forEach(( { options, value, expected }) => {
+        testData.forEach(({ options, value, expected }) => {
           const opts: ThresholdCondition = {
             type: RuleType.THRESHOLD,
             errorThreshold: options.errorThreshold,
-            operator: options.operator
-          }
+            operator: options.operator,
+          };
           const sut = createEvaluator(opts);
           const result = sut.evaluate(value);
           expect(result.success).toBe(expected);
           expect(result.state).toMatchObject({
             value,
             ruleType: RuleType.THRESHOLD,
-           // errorLevel: ErrorLevel.CRITICAL,
-            unit: 'ms'
+            // errorLevel: ErrorLevel.CRITICAL,
+            unit: 'ms',
           });
         });
-
-      })
-
+      });
     });
-
-  })
+  });
 
   describe('PeakConditionEvaluator', () => {
-
-    function createEvaluator(options?: Partial<PeakCondition>): PeakConditionEvaluator {
+    function createEvaluator(
+      options?: Partial<PeakCondition>,
+    ): PeakConditionEvaluator {
       const defaults: PeakCondition = {
         operator: RuleOperator.gt,
         type: RuleType.PEAK,
         influence: 0.5,
         lag: 0,
-        errorThreshold: 3.5
+        errorThreshold: 3.5,
       };
-      const opts = {...defaults, ...(options || {})};
+      const opts = { ...defaults, ...(options || {}) };
       const metric = new LatencyMetric({});
       return new PeakConditionEvaluator(metric, opts);
     }
@@ -155,7 +154,7 @@ describe('Condition Evaluation', () => {
           errorThreshold: 3.5,
           influence: 0,
           lag: 0,
-          direction: PeakSignalDirection.BOTH
+          direction: PeakSignalDirection.BOTH,
         };
         const sut = new PeakConditionEvaluator(metric, options);
         expect(sut).toBeDefined();
@@ -165,16 +164,15 @@ describe('Condition Evaluation', () => {
     });
 
     describe('.evaluate', () => {
-
       it('returns success for errorThreshold', () => {
-        const sut = createEvaluator({errorThreshold: 10});
+        const sut = createEvaluator({ errorThreshold: 10 });
         const result = sut.evaluate(5);
         expect(result.success).toBe(true);
         expect(result.state).toMatchObject({
           value: 5,
           ruleType: RuleType.THRESHOLD,
           errorLevel: ErrorLevel.CRITICAL,
-          unit: 'ms'
+          unit: 'ms',
         });
       });
 
@@ -189,49 +187,49 @@ describe('Condition Evaluation', () => {
           value: 12,
           ruleType: RuleType.THRESHOLD,
           errorLevel: ErrorLevel.WARNING,
-          unit: 'ms'
+          unit: 'ms',
         });
       });
 
       it('properly handles comparisons', () => {
         const testData = [
           {
-            options: {errorThreshold: 10, operator: RuleOperator.eq },
+            options: { errorThreshold: 10, operator: RuleOperator.eq },
             value: 10,
-            expected: true
+            expected: true,
           },
           {
-            options: {errorThreshold: 11, operator: RuleOperator.ne },
+            options: { errorThreshold: 11, operator: RuleOperator.ne },
             value: 11,
-            expected: false
+            expected: false,
           },
           {
-            options: {errorThreshold: 100, operator: RuleOperator.gt},
+            options: { errorThreshold: 100, operator: RuleOperator.gt },
             value: 110,
-            expected: true
+            expected: true,
           },
           {
-            options: {errorThreshold: 99, operator: RuleOperator.gte},
+            options: { errorThreshold: 99, operator: RuleOperator.gte },
             value: 99,
-            expected: true
+            expected: true,
           },
           {
-            options: {errorThreshold: 50, operator: RuleOperator.lt},
+            options: { errorThreshold: 50, operator: RuleOperator.lt },
             value: 51,
-            expected: false
+            expected: false,
           },
           {
-            options: {errorThreshold: 73, operator: RuleOperator.lte},
+            options: { errorThreshold: 73, operator: RuleOperator.lte },
             value: 73,
-            expected: true
+            expected: true,
           },
         ];
 
-        testData.forEach(({options, value, expected}) => {
+        testData.forEach(({ options, value, expected }) => {
           const opts: Partial<PeakCondition> = {
             errorThreshold: options.errorThreshold,
-            operator: options.operator
-          }
+            operator: options.operator,
+          };
           const sut = createEvaluator(opts);
           const result = sut.evaluate(value);
           expect(result.success).toBe(expected);
@@ -239,7 +237,7 @@ describe('Condition Evaluation', () => {
             value,
             ruleType: RuleType.THRESHOLD,
             // errorLevel: ErrorLevel.CRITICAL,
-            unit: 'ms'
+            unit: 'ms',
           });
         });
       });

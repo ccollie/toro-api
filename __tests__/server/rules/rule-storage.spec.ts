@@ -1,8 +1,24 @@
-import { ErrorLevel, RuleAlert, RuleConfigOptions, RuleEventsEnum } from '../../../src/types';
+import {
+  ErrorLevel,
+  RuleAlert,
+  RuleConfigOptions,
+  RuleEventsEnum,
+} from '../../../src/types';
 import { Rule, RuleStorage } from '../../../src/server/rules';
-import { EventBus, getQueueBusKey, getUniqueId, RedisStreamAggregator } from '../common';
-import { clearDb, createClient, DEFAULT_CLIENT_OPTIONS, delay, randomString } from '../utils';
-import nanoid from 'nanoid';
+import {
+  EventBus,
+  getQueueBusKey,
+  getUniqueId,
+  RedisStreamAggregator,
+} from '../common';
+import {
+  clearDb,
+  createClient,
+  DEFAULT_CLIENT_OPTIONS,
+  delay,
+  randomString,
+  randomId,
+} from '../utils';
 import { Queue } from 'bullmq';
 import { createRuleOptions } from './utils';
 import * as IORedis from 'ioredis';
@@ -19,13 +35,12 @@ describe('RuleStorage', () => {
   let aggregator: RedisStreamAggregator;
   let storage: RuleStorage;
 
-
   beforeEach(async function () {
-    queueName = 'q-' + nanoid(6);
+    queueName = 'q-' + randomId(6);
     client = await createClient();
     queue = new Queue(queueName, { connection: client });
     const opts = { connectionOptions: DEFAULT_CLIENT_OPTIONS };
-    aggregator = new RedisStreamAggregator( opts );
+    aggregator = new RedisStreamAggregator(opts);
     bus = new EventBus(aggregator, getQueueBusKey(queue));
     storage = new RuleStorage(host, queue, bus);
     await bus.waitUntilReady();
@@ -33,10 +48,7 @@ describe('RuleStorage', () => {
 
   afterEach(async function () {
     bus.destroy();
-    await Promise.allSettled([
-      aggregator.destroy(),
-      clearDb(client)
-    ]);
+    await Promise.allSettled([aggregator.destroy(), clearDb(client)]);
     await queue.close();
   });
 
@@ -199,7 +211,7 @@ describe('RuleStorage', () => {
         state: {},
         severity: data.severity,
         violations: 0,
-        ...data
+        ...data,
       };
     }
 
@@ -251,7 +263,9 @@ describe('RuleStorage', () => {
         const storedAlert = await storage.addAlert(rule, alert);
         alert.end = Date.now() + 1000;
 
-        const newAlert = createAlert(rule, { event : RuleEventsEnum.ALERT_RESET });
+        const newAlert = createAlert(rule, {
+          event: RuleEventsEnum.ALERT_RESET,
+        });
         const updatedAlert = await storage.addAlert(rule, newAlert);
         expect(updatedAlert.event).toBe(RuleEventsEnum.ALERT_RESET);
 
@@ -287,7 +301,7 @@ describe('RuleStorage', () => {
 
         expect(eventData).not.toBeUndefined();
         expect(eventData.ruleId).toEqual(rule.id);
-      })
+      });
     });
 
     describe('.getAlert', async () => {
@@ -302,12 +316,14 @@ describe('RuleStorage', () => {
     });
 
     describe('.getRuleAlerts', () => {
-
       function sortList(items: RuleAlert[]): RuleAlert[] {
         return sortBy(items, 'id');
       }
 
-      async function addAlerts(rule: Rule, count?: number): Promise<RuleAlert[]> {
+      async function addAlerts(
+        rule: Rule,
+        count?: number,
+      ): Promise<RuleAlert[]> {
         const cnt = count ?? random(5, 10);
         const calls = [];
         for (let i = 0; i < cnt; i++) {
@@ -328,6 +344,5 @@ describe('RuleStorage', () => {
         expect(savedRules).toStrictEqual(retrieved);
       });
     });
-
   });
 });

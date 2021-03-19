@@ -13,14 +13,14 @@ import {
   RuleOperatorType,
   RuleStateType,
   SeverityType,
-} from './types/scalars';
+} from './resolvers/scalars';
 
 import { schemaComposer } from 'graphql-compose';
-import * as query from './query';
-import host from './types/host';
-import queue from './types/queue';
-import job from './types/job';
-import rule from './types/rule';
+import * as query from './resolvers/query';
+import host from './resolvers/host';
+import queue from './resolvers/queue';
+import job from './resolvers/job';
+import rule from './resolvers/rule';
 
 schemaComposer.add(ChangeAggregationEnumType);
 schemaComposer.add(Duration);
@@ -45,14 +45,14 @@ schemaComposer.Mutation.addFields({
   ...host.Mutation,
   ...job.Mutation,
   ...queue.Mutation,
-  ...rule.Mutation
+  ...rule.Mutation,
 });
 
 schemaComposer.Subscription.addFields({
   ...host.Subscription,
   ...job.Subscription,
   ...queue.Subscription,
-  ...rule.Subscription
+  ...rule.Subscription,
 });
 
 const schema = schemaComposer.buildSchema();

@@ -1,5 +1,5 @@
-import OnlineNormalEstimator from '../../../../src/server/metrics/lib/onlineNormalEstimator';
 import { random } from 'lodash';
+import OnlineNormalEstimator from '../../../../src/server/stats/online-normal-estimator';
 
 function randomArray(length: number) {
   const xs = new Array<number>(length);
@@ -8,7 +8,6 @@ function randomArray(length: number) {
   }
   return xs;
 }
-
 
 function createEstimator(xs: number[]): OnlineNormalEstimator {
   const est = new OnlineNormalEstimator();
@@ -35,9 +34,7 @@ function sumSquareDiffs(xs: number[], mean: number): number {
   return sum;
 }
 
-
 describe('onlineNormalEstimator', () => {
-
   describe('constructor', () => {
     it('can construct an OnlineNormalEstimator', () => {
       const estimator = new OnlineNormalEstimator();
@@ -56,8 +53,11 @@ describe('onlineNormalEstimator', () => {
   });
 
   describe('replace', () => {
-
-    function replaceValue(xs: number[], target: number, replacement: number): void {
+    function replaceValue(
+      xs: number[],
+      target: number,
+      replacement: number,
+    ): void {
       const i = xs.indexOf(target, 0);
       if (i >= 0) xs[i] = replacement;
     }
@@ -71,7 +71,7 @@ describe('onlineNormalEstimator', () => {
         const index = random(0, orig.length - 1);
         if (!dedup.has(index)) {
           dedup.add(index);
-          targets.push(orig[index])
+          targets.push(orig[index]);
         }
       }
 
@@ -88,20 +88,30 @@ describe('onlineNormalEstimator', () => {
 
       expect(actualEstimator.numSamples).toBe(expectedEstimator.numSamples);
       expect(actualEstimator.mean).toBeCloseTo(expectedEstimator.mean, 3);
-      expect(actualEstimator.variance).toBeCloseTo(expectedEstimator.variance, 3);
-      expect(actualEstimator.varianceUnbiased).toBeCloseTo(expectedEstimator.varianceUnbiased, 3);
-      expect(actualEstimator.standardDeviation).toBeCloseTo(expectedEstimator.standardDeviation, 3);
-      expect(actualEstimator.standardDeviationUnbiased).toBeCloseTo(expectedEstimator.standardDeviationUnbiased, 3);
-
+      expect(actualEstimator.variance).toBeCloseTo(
+        expectedEstimator.variance,
+        3,
+      );
+      expect(actualEstimator.varianceUnbiased).toBeCloseTo(
+        expectedEstimator.varianceUnbiased,
+        3,
+      );
+      expect(actualEstimator.standardDeviation).toBeCloseTo(
+        expectedEstimator.standardDeviation,
+        3,
+      );
+      expect(actualEstimator.standardDeviationUnbiased).toBeCloseTo(
+        expectedEstimator.standardDeviationUnbiased,
+        3,
+      );
     });
-
   });
 
   describe('remove', () => {
     it('can remove values', () => {
       const estimator = new OnlineNormalEstimator();
 
-      estimator.add(1.0);  // 1
+      estimator.add(1.0); // 1
       expect(estimator.numSamples).toBe(1);
 
       estimator.remove(1.0); //
@@ -109,24 +119,24 @@ describe('onlineNormalEstimator', () => {
 
       estimator.add(2.0); // 2
       expect(estimator.numSamples).toBe(1);
-      expect(estimator.mean).toBeCloseTo(2.0,3);
+      expect(estimator.mean).toBeCloseTo(2.0, 3);
       expect(estimator.variance).toBeCloseTo(0.0, 3);
 
       estimator.add(1.0); // 2, 1
       expect(estimator.numSamples).toBe(2);
-      expect(estimator.mean).toBeCloseTo(1.5,3);
+      expect(estimator.mean).toBeCloseTo(1.5, 3);
       expect(estimator.variance).toBeCloseTo(0.25, 3);
 
       estimator.remove(2.0); // 1
       expect(estimator.numSamples).toBe(1);
-      expect(estimator.mean).toBeCloseTo(1.0,3);
+      expect(estimator.mean).toBeCloseTo(1.0, 3);
       expect(estimator.variance).toBeCloseTo(0.0, 3);
 
       estimator.add(2.0); // 1, 2
       estimator.add(3.0); // 1, 2, 3
       estimator.remove(2.0); // 1, 3
       expect(estimator.numSamples).toBe(2);
-      expect(estimator.mean).toBeCloseTo(2.0,3);
+      expect(estimator.mean).toBeCloseTo(2.0, 3);
       expect(estimator.variance).toBeCloseTo(1.0, 3);
     });
 
@@ -137,7 +147,6 @@ describe('onlineNormalEstimator', () => {
       estimator.remove(2.0);
       expect(() => estimator.remove(2.0)).toThrow();
     });
-
   });
 
   describe('numSamples', () => {
@@ -174,7 +183,7 @@ describe('onlineNormalEstimator', () => {
     it('should calculate the varianceUnbiased', () => {
       for (let i = 0; i < 10; ++i) {
         const xs = randomArray(500);
-        const expectedVar = 500.0/499.0 * variance(xs);
+        const expectedVar = (500.0 / 499.0) * variance(xs);
         const actualVar = createEstimator(xs).varianceUnbiased;
         expect(actualVar).toBeCloseTo(expectedVar, 3);
       }
@@ -195,7 +204,7 @@ describe('onlineNormalEstimator', () => {
       for (let i = 0; i < 10; ++i) {
         const xs = randomArray(500);
         const _var = variance(xs);
-        const expected = Math.sqrt((500/ 499) * _var);
+        const expected = Math.sqrt((500 / 499) * _var);
         const actual = createEstimator(xs).standardDeviationUnbiased;
 
         expect(actual).toBeCloseTo(expected, 3);
@@ -220,7 +229,6 @@ describe('onlineNormalEstimator', () => {
   });
 
   describe('combine', () => {
-
     it('can combine two estimators', () => {
       const firstData = randomArray(400);
       const secondData = randomArray(400);
@@ -236,10 +244,14 @@ describe('onlineNormalEstimator', () => {
       expect(actual.mean).toBeCloseTo(expected.mean, 3);
       expect(actual.variance).toBeCloseTo(expected.variance, 3);
       expect(actual.varianceUnbiased).toBeCloseTo(expected.varianceUnbiased, 3);
-      expect(actual.standardDeviation).toBeCloseTo(expected.standardDeviation, 3);
-      expect(actual.standardDeviationUnbiased).toBeCloseTo(expected.standardDeviationUnbiased, 3);
-
+      expect(actual.standardDeviation).toBeCloseTo(
+        expected.standardDeviation,
+        3,
+      );
+      expect(actual.standardDeviationUnbiased).toBeCloseTo(
+        expected.standardDeviationUnbiased,
+        3,
+      );
     });
-
   });
 });

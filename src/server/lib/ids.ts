@@ -7,7 +7,7 @@ const nanoid = customAlphabet(
   6,
 );
 
-const Epoch = +new Date(2020, 1, 1);
+const Epoch = +new Date(2021, 1, 1);
 
 function getMachineID(): number {
   const id = process.env.MACHINE_ID;

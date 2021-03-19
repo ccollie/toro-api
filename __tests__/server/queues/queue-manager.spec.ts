@@ -22,7 +22,7 @@ describe('QueueManager', () => {
   describe('constructor', () => {
     it('constructs an instance', async () => {
       const queue = createQueue(null, {
-        client: hostManager.client,
+        connection: hostManager.client,
       });
       const config: QueueConfig = {
         id: nanoid(),
@@ -57,7 +57,7 @@ describe('QueueManager', () => {
       const expected = `localhost/q/${config.id}`;
 
       const queue = createQueue(null, {
-        client: hostManager.client,
+        connection: hostManager.client,
       });
       const sut = new QueueManager(hostManager, queue, config);
 

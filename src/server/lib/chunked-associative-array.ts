@@ -47,7 +47,7 @@ class Chunk<TKey = number, TValue = any> {
     const array = this.keys;
     const startIndex = this.startIndex;
     const endIndex = this.cursor;
-    if (endIndex == startIndex || array[this.startIndex] >= minKey) {
+    if (endIndex == startIndex || array[startIndex] >= minKey) {
       return startIndex;
     }
     const keyIndex = binarySearch(array, minKey, startIndex, endIndex);

@@ -1,6 +1,5 @@
-import { MaxAggregator } from '../../../../src/server/metrics/aggregators';
+import { MaxAggregator, LatencyMetric } from '../../../../src/server/metrics';
 import { systemClock, ManualClock } from '../../../../src/server/lib';
-import { LatencyMetric } from '../../../../src/server/metrics';
 import random from 'lodash/random';
 import { getRandomIntArray } from '../../utils';
 
@@ -11,10 +10,9 @@ describe('MaxAggregator', () => {
     });
 
     expect(instance).toBeDefined();
-  })
+  });
 
   describe('update', () => {
-
     it('upgrades without tick', () => {
       const clock = new ManualClock(0);
 
@@ -33,7 +31,7 @@ describe('MaxAggregator', () => {
       const clock = new ManualClock(0);
 
       const instance = new MaxAggregator(clock, {
-        duration: 3000
+        duration: 3000,
       });
       let value = instance.update(40);
       expect(value).toBe(40);
@@ -48,9 +46,7 @@ describe('MaxAggregator', () => {
       clock.advanceBy(instance.interval);
       value = instance.update(10);
       expect(value).toBe(30);
-
     });
-
   });
 
   describe('count', () => {
@@ -61,7 +57,7 @@ describe('MaxAggregator', () => {
     beforeEach(() => {
       clock = new ManualClock(0);
       instance = new MaxAggregator(clock, {
-        duration: 5000
+        duration: 5000,
       });
       total = 0;
     });
@@ -81,7 +77,6 @@ describe('MaxAggregator', () => {
     });
 
     it('updates counts on tick', () => {
-
       const numberSlices: Array<number[]> = [];
 
       const getCount = () => {
@@ -89,8 +84,11 @@ describe('MaxAggregator', () => {
       };
 
       const getMax = () => {
-        return numberSlices.reduce((max, slice) => Math.max(max, ...slice), Number.NEGATIVE_INFINITY);
-      }
+        return numberSlices.reduce(
+          (max, slice) => Math.max(max, ...slice),
+          Number.NEGATIVE_INFINITY,
+        );
+      };
 
       const sliceCount = instance.sliceCount;
       const tickSpy = jest.spyOn(instance, 'onTick');
@@ -99,7 +97,7 @@ describe('MaxAggregator', () => {
         let count = random(5, 100);
         const slice = getRandomIntArray(count);
         numberSlices.push(slice);
-        slice.forEach(x => instance.update(x));
+        slice.forEach((x) => instance.update(x));
         clock.advanceBy(instance.interval);
       }
 
@@ -117,7 +115,6 @@ describe('MaxAggregator', () => {
         expect(instance.count).toBe(count);
         clock.advanceBy(instance.interval);
       }
-
     });
   });
 
@@ -127,9 +124,9 @@ describe('MaxAggregator', () => {
     beforeEach(() => {
       const clock = new ManualClock(0);
       instance = new MaxAggregator(clock, {
-        duration: 5000
+        duration: 5000,
       });
-    })
+    });
 
     it('generates a short description', () => {
       const metric = new LatencyMetric({});

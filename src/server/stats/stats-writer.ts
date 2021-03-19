@@ -168,10 +168,19 @@ export class StatsWriter extends StatsClient {
       TimeSeries.multi.get(pipeline, key, start);
     });
 
-    return deserializePipeline<StatisticalSnapshot>(
+    const items = await deserializePipeline<StatisticalSnapshot>(
       pipeline,
       EmptyStatsSnapshot,
     );
+
+    items.forEach((item, index) => {
+      if (item) {
+        const { start, end } = rollupMeta[index];
+        if (!item.startTime) item.startTime = start.getTime();
+        if (!item.endTime) item.endTime = end.getTime();
+      }
+    });
+    return items;
   }
 
   private async rollupInternal(
@@ -187,6 +196,7 @@ export class StatsWriter extends StatsClient {
       const meta = rollupMeta[index];
       meta.data = current;
       const { start, end, unit, isHost } = meta;
+      current.endTime = end.getTime();
       const snapshot = aggregateSnapshots([source, current]);
       snapshot.startTime = start.getTime();
       snapshot.endTime = end.getTime();
@@ -216,10 +226,20 @@ export class StatsWriter extends StatsClient {
       TimeSeries.multi.get(pipeline, srcKey, start);
     });
 
+    const end = endOf(start, 'minute').getTime();
     const sources = await deserializePipeline<StatisticalSnapshot>(
       pipeline,
       EmptyStatsSnapshot,
     );
+
+    sources.forEach((item) => {
+      if (item) {
+        if (!item.startTime) item.startTime = start;
+        if (!item.endTime) item.endTime = end;
+      }
+    });
+
+    // not all of these will be available, so fixup with correct dates
 
     const source = aggregateSnapshots(sources);
 

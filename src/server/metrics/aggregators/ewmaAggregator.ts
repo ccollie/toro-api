@@ -1,54 +1,21 @@
 import { BaseAggregator } from './aggregator';
-import { ExponentiallyMovingWeightedAverage } from '../../stats';
-import { SECONDS, MINUTES } from '../../stats';
-import { Clock, getStaticProp, TimeTicker } from '../../lib';
-import Joi, { ObjectSchema } from 'joi';
-import { DurationSchema } from '../../validation/schemas';
+import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
-
-const DEFAULT_TICKINTERVAL = 5 * SECONDS;
-const DEFAULT_TIMEPERIOD = 5 * MINUTES;
-const DEFAULT_TIMEUNIT = MINUTES;
-
-const optionsSchema = Joi.object().keys({
-  timePeriod: DurationSchema,
-  tickInterval: DurationSchema,
-  timeUnit: Joi.number().positive().optional().default(DEFAULT_TIMEUNIT),
-});
-
-export interface EWMAAggregatorOptions {
-  timePeriod: number;
-  tickInterval?: number;
-  timeUnit?: number; // there
-}
-
-const DefaultOptions: EWMAAggregatorOptions = {
-  timePeriod: DEFAULT_TIMEPERIOD,
-  tickInterval: DEFAULT_TICKINTERVAL,
-  timeUnit: DEFAULT_TIMEUNIT,
-};
+import { IMovingAverage, MovingAverage } from '../../stats/moving-average';
 
 /***
  * Returns the Exponentially Weighted Moving Avg of a stream
  * of values
  */
 export class EWMAAggregator extends BaseAggregator {
-  private ewma: ExponentiallyMovingWeightedAverage;
-  private readonly timeUnit: number;
-  private readonly _ticker: TimeTicker;
-  private _count = 0;
+  private readonly ewma: IMovingAverage;
 
   /**
    * Construct a EWMAAggregator
    */
-  constructor(clock: Clock, options: EWMAAggregatorOptions = DefaultOptions) {
+  constructor(clock: Clock, interval: number) {
     super(clock);
-    this.ewma = new ExponentiallyMovingWeightedAverage(
-      options.timePeriod,
-      options.tickInterval,
-    );
-    this.timeUnit = options.timeUnit || DEFAULT_TIMEUNIT;
-    this._ticker = new TimeTicker(options.tickInterval, clock);
+    this.ewma = MovingAverage(interval, clock);
   }
 
   getDescription(metric: BaseMetric, short = false): string {
@@ -67,47 +34,64 @@ export class EWMAAggregator extends BaseAggregator {
     return 'EWMA';
   }
 
-  static get schema(): ObjectSchema {
-    return optionsSchema;
-  }
-
   get count(): number {
-    return this._count;
+    return this.ewma.count;
   }
 
   get value(): number {
-    return this.ewma.rate();
+    return this.ewma.value; // should we divide this by 1 minute ??
   }
 
   update(newVal: number): number {
-    this.tickIfNeeded();
     this.ewma.update(newVal);
-    this._count++;
     return this.value;
-  }
-
-  /**
-   * Checks for if an update of the averages is needed and if so
-   * updates the {@link Meter#lastTime}
-   * @private
-   */
-  private tickIfNeeded(): boolean {
-    return !!this._ticker.tickIfNeeded(() => this.ewma.tick());
-  }
-
-  toJSON(): Record<string, any> {
-    const type = (this.constructor as any).key;
-    return {
-      type,
-      options: {
-        timePeriod: this.ewma.timePeriod,
-        tickInterval: this.ewma.tickInterval,
-        timeUnit: this.timeUnit,
-      },
-    };
   }
 
   reset(): void {
     this.ewma.reset();
+  }
+}
+
+const ONE_MINUTE = 1000 * 60;
+
+export class EWMA1MinAggregator extends EWMAAggregator {
+  constructor(clock: Clock) {
+    super(clock, ONE_MINUTE);
+  }
+
+  static get key(): string {
+    return 'ewma1min';
+  }
+
+  static get description(): string {
+    return '1 min EWMA';
+  }
+}
+
+export class EWMA5MinAggregator extends EWMAAggregator {
+  constructor(clock: Clock) {
+    super(clock, 5 * ONE_MINUTE);
+  }
+
+  static get key(): string {
+    return 'ewma5min';
+  }
+
+  static get description(): string {
+    return '5 min EWMA';
+  }
+}
+
+export class EWMA15MinAggregator extends EWMAAggregator {
+  constructor(clock: Clock) {
+    super(clock, 15 * ONE_MINUTE);
+  }
+
+  static get key(): string {
+    return 'ewma15min';
+  }
+
+  static get description(): string {
+    return '15 min EWMA';
   }
 }

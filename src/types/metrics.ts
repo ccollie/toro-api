@@ -5,11 +5,26 @@ export enum MetricType {
 }
 
 export enum MetricCategory {
-  QUEUE = 'Queue',
-  HOST = 'Host',
-  REDIS = 'Redis',
+  Queue = 'Queue',
+  Host = 'Host',
+  Redis = 'Redis',
+}
+
+export interface SerializedAggregator {
+  type: string;
+  options: Record<string, any>;
 }
 
 export interface SlidingWindowOptions {
   duration: number;
+}
+
+export interface MetricOptions {
+  id?: string;
+  name?: string;
+  jobNames?: string[];
+}
+
+export interface PollingMetricOptions extends MetricOptions {
+  interval: number;
 }

@@ -1,6 +1,6 @@
 import random from 'lodash/random';
-import { ApdexCalculator } from '../../../../src/server/metrics/lib';
 import unirand from 'unirand';
+import { ApdexCalculator } from '../../../../src/server/stats';
 
 describe('ApdexCalculator', () => {
   it('calculates the apdex score', () => {
@@ -28,11 +28,10 @@ describe('ApdexCalculator', () => {
     const arr = unirand.normal(mu, sigma).distributionSync(count);
     arr.forEach((x) => {
       apdex.update(x);
-    })
+    });
   }
 
   describe('.merge', () => {
-
     it('merges values with another ApdexCalculator', () => {
       const self = new ApdexCalculator(1500);
       const other = new ApdexCalculator(1500);
@@ -59,10 +58,9 @@ describe('ApdexCalculator', () => {
 
       expect(() => self.merge(other)).toThrow();
     });
-  })
+  });
 
   describe('.subtract', () => {
-
     it('subtracts values from another ApdexCalculator', () => {
       const larger = new ApdexCalculator(1500);
       const smaller = new ApdexCalculator(1500);
@@ -72,7 +70,8 @@ describe('ApdexCalculator', () => {
       const expectedTotal = larger.totalCount - smaller.totalCount;
       const expectedTolerated = larger.toleratedCount - smaller.toleratedCount;
       const expectedSatisfied = larger.satisfiedCount - smaller.satisfiedCount;
-      const expectedFrustrated = larger.frustratedCount - smaller.frustratedCount;
+      const expectedFrustrated =
+        larger.frustratedCount - smaller.frustratedCount;
 
       larger.subtract(smaller);
       expect(expectedTotal).toBe(larger.totalCount);
@@ -101,7 +100,7 @@ describe('ApdexCalculator', () => {
 
       expect(() => self.subtract(other)).toThrow();
     });
-  })
+  });
 
   describe('.reset', () => {
     it('clears the internal states', () => {
@@ -132,6 +131,5 @@ describe('ApdexCalculator', () => {
       expect(calculator.toleratedCount).toBe(0);
       expect(calculator.frustratedCount).toBe(0);
     });
-  })
-
-})
+  });
+});

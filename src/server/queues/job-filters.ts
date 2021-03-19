@@ -6,7 +6,6 @@ import { Job, Queue } from 'bullmq';
 import { FilteredJobsResult, JobFilter, JobStatusEnum } from '../../types';
 import { Scripts } from '../commands/scripts';
 import { checkMultiErrors } from '../redis';
-import { isEmpty, isObject } from 'lodash';
 import { getMultipleJobsById } from './queue';
 import {
   convertToRPN,
@@ -18,6 +17,7 @@ import {
   LiteralNode,
 } from '../lib/expressions';
 import fnv from 'fnv-plus';
+import { isEmpty, isObject, uniq } from 'lodash';
 
 type FilterMeta = {
   rpn: RpnNode[];
@@ -236,7 +236,7 @@ export async function getJobsByFilterId(
   );
 }
 
-const FilterCursorPrefix = 'FILTER_CURSOR';
+const FilterCursorPrefix = '$filter-cursor';
 
 function getCursorKey(queue: Queue, cursor: string): string {
   return queue.toKey(`${FilterCursorPrefix}:${cursor}`);
@@ -253,15 +253,21 @@ function splitArray<T = any>(source: T[], count: number): [T[], T[]] {
   return [slice, remainder];
 }
 
-const CursorExpiration = ms('5 mins');
+const CursorExpiration = ms('10 mins');
 
 interface SearchCursorMeta {
   cursor: number;
   timestamp: number;
   filter: string;
   hash: string;
+  total: number;
+  current: number;
   ids: string[];
 }
+
+// todo: maxBatchCount to avoid blocking redis
+// todo: get from config
+const MAX_BATCH_COUNT = 200;
 
 export async function processSearch(
   queue: Queue,
@@ -271,10 +277,12 @@ export async function processSearch(
   cursor: string,
   count = 10,
 ): Promise<FilteredJobsResult> {
-  const jobs: Job[] = [];
+  let jobs: Job[] = [];
   const client = await queue.client;
   let key: string;
   let meta: SearchCursorMeta;
+  let firstRun: boolean;
+  const idSet = new Set<string>();
 
   if (!cursor) {
     if (isEmpty(filter)) {
@@ -284,10 +292,13 @@ export async function processSearch(
     meta = {
       filter,
       cursor: 0,
+      current: 0,
+      total: 0,
       ids: [],
       timestamp: Date.now(),
       hash: getExpressionHash(filter),
     };
+    firstRun = true;
   } else {
     key = getCursorKey(queue, cursor);
     const cursorStr = await client.get(key);
@@ -296,6 +307,7 @@ export async function processSearch(
       // invalid or expired cursor
       throw boom.badRequest(`Invalid or expired cursor "${cursor}"`);
     }
+    firstRun = false;
   }
 
   filter = filter || meta.filter;
@@ -312,11 +324,16 @@ export async function processSearch(
   }
 
   if (jobs.length < count) {
-    let requestCount = count;
+    let requestCount = Math.min(count - jobs.length, MAX_BATCH_COUNT);
     let nullCount = 0;
     const compiled = getCompiled(filter, hash);
-    while (meta.cursor && jobs.length < count) {
-      const { cursor: nextCursor, jobs: _jobs } = await Scripts.getJobsByFilter(
+    while ((firstRun || meta.cursor) && jobs.length < count) {
+      const {
+        cursor: nextCursor,
+        jobs: _jobs,
+        count: iterCount,
+        total,
+      } = await Scripts.getJobsByFilter(
         queue,
         status,
         compiled,
@@ -325,6 +342,8 @@ export async function processSearch(
       );
 
       meta.cursor = nextCursor;
+      meta.total = total;
+      meta.current += iterCount;
 
       if (!nextCursor) {
         break;
@@ -334,15 +353,18 @@ export async function processSearch(
         nullCount++;
         if (nullCount >= 2) {
           nullCount = 0;
-          requestCount = Math.max(requestCount * 2, 500);
+          requestCount = Math.max(requestCount * 2, MAX_BATCH_COUNT);
         }
         continue;
+      } else {
+        requestCount = Math.max(count, MAX_BATCH_COUNT);
       }
+
       const [slice, remainder] = splitArray(_jobs, count - jobs.length);
       jobs.push(...slice);
       if (remainder.length) {
         // store remainder to cursor
-        meta.ids = remainder.map((job) => job.id);
+        meta.ids = uniq(remainder.map((job) => job.id));
         break;
       }
     }
@@ -356,8 +378,24 @@ export async function processSearch(
     cursor = null;
   }
 
+  const items: Job[] = [];
+  // its possible for an id to be returned more than once
+  jobs.forEach((job) => {
+    if (!idSet.has(job.id)) {
+      idSet.add(job.id);
+      items.push(job);
+      if (status) {
+        // hackish
+        (job as any).state = status;
+      }
+    }
+  });
+  jobs = items;
+
   return {
     cursor,
     jobs,
+    total: meta.total,
+    current: meta.current,
   };
 }

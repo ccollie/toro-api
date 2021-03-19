@@ -134,6 +134,7 @@ export class LockManager extends EventEmitter {
 
       console.log('Lock acquired: ' + this.key);
       this.clearTimers();
+      // @ts-ignore
       this.renewId = setInterval(() => this.renew(), this.renewTime) as Timeout;
       this.emit(LockManager.ACQUIRED, this);
     } catch (error) {
@@ -145,7 +146,7 @@ export class LockManager extends EventEmitter {
         this.emit(LockManager.ERROR, error);
       }
       this.clearTimers();
-      this.electId = setTimeout(() => this.acquire(), this.waitTime);
+      this.setElectTimeout();
     }
     return this.isOwner;
   }
@@ -179,14 +180,13 @@ export class LockManager extends EventEmitter {
 
         this.lock = null;
         this.emit(LockManager.RELEASED, this);
-
         logger.error('[renew] Attempting to acquire');
-        this.electId = setTimeout(() => this.acquire(), this.waitTime);
+        this.setElectTimeout();
       }
     } else {
       logger.debug('[renew] non-owner reset renew interval');
       this.clearTimers();
-      this.electId = setTimeout(() => this.acquire(), this.waitTime);
+      this.setElectTimeout();
     }
     return this.isOwner;
   }
@@ -209,6 +209,11 @@ export class LockManager extends EventEmitter {
     }
 
     this.lock = null;
+  }
+
+  private setElectTimeout() {
+    // @ts-ignore
+    this.electId = setTimeout(() => this.acquire(), this.waitTime);
   }
 
   private clearTimers() {

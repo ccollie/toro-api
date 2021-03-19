@@ -2,7 +2,7 @@ import { get } from 'lodash';
 import { graphql, GraphQLInt, GraphQLObjectType, GraphQLSchema } from 'graphql';
 
 // eslint-disable-next-line import/no-named-as-default
-import { GraphQLJobFilterQuery } from '../../../../src/server/graphql/types/scalars';
+import { GraphQLJobFilterQuery } from '../../../../src/server/graphql/resolvers/scalars';
 
 const INVALID_FILTER = { $invalid: [234], '<': 30 };
 

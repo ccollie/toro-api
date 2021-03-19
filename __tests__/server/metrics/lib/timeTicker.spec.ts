@@ -1,5 +1,4 @@
-import { TimeTicker } from '../../../../src/server/metrics/lib';
-import { ManualClock } from '../../../../src/server/lib';
+import { TimeTicker, ManualClock } from '../../../../src/server/lib';
 import random from 'lodash/random';
 
 describe('TimeTicker', () => {
@@ -44,7 +43,7 @@ describe('TimeTicker', () => {
 
     for (let i = 0; i < 5; i++) {
       const expectedTicks = random(2, 5);
-      expectedCount += expectedTicks
+      expectedCount += expectedTicks;
       clock.advanceBy(expectedTicks * Interval);
       ticker.tickIfNeeded(spy);
     }
@@ -74,5 +73,4 @@ describe('TimeTicker', () => {
 
     expect(ticker.getElapsedTime()).toBe(elapsed);
   });
-
 });

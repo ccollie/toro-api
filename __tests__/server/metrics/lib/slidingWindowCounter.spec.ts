@@ -1,5 +1,5 @@
-import { SlidingWindowCounter } from '../../../../src/server/metrics/lib';
 import { systemClock, ManualClock } from '../../../../src/server/lib';
+import { SlidingWindowCounter } from '../../../../src/server/metrics';
 
 describe('SlidingWindowCounter', () => {
   describe('Constructor', () => {
@@ -31,7 +31,6 @@ describe('SlidingWindowCounter', () => {
     });
 
     it('increments and wraps buckets correctly', () => {
-
       for (let i = 0; i < 7; i++) {
         for (let k = 0; k < i; k++) {
           counter.incr('failure');

@@ -2,7 +2,7 @@ import { get } from 'lodash';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, graphql } from 'graphql';
 
 // eslint-disable-next-line import/no-named-as-default
-import { GraphQLJSONSchema } from '../../../../src/server/graphql/types/scalars';
+import { GraphQLJSONSchema } from '../../../../src/server/graphql/resolvers/scalars';
 import { JobsOptionsSchema } from '../../../../src/server/queues';
 
 const INVALID_SCHEMA = {
@@ -194,12 +194,12 @@ describe('GraphQLJSONSchema', () => {
           {
             value(
               arg: {
-                type: "object",
+                type: "object"
                 properties: {
-                  name: { type: "string", pattern: "^\w+$" },
+                  name: { type: "string", pattern: "^w+$" }
                   value: { type: "string" }
-                },
-                additionalProperties: false,
+                }
+                additionalProperties: false
                 required: ["name", "value"]
               }
             )
@@ -207,13 +207,13 @@ describe('GraphQLJSONSchema', () => {
         `,
       ).then(({ data, errors }) => {
         expect(data.value).toEqual({
-          type: "object",
-            properties: {
-            name: { type: "string", pattern: "^w+$" },
-            value: { type: "string" }
+          type: 'object',
+          properties: {
+            name: { type: 'string', pattern: '^w+$' },
+            value: { type: 'string' },
           },
           additionalProperties: false,
-          required: ["name", "value"]
+          required: ['name', 'value'],
         });
         expect(errors).toBeUndefined();
       }));
@@ -259,11 +259,11 @@ describe('GraphQLJSONSchema', () => {
           {
             value(
               arg: {
-                type: "object",
+                type: "object"
                 properties: {
-                  name: { type: "string" },
-                  invalidProp: { type: "invalid", default: false },
-                },
+                  name: { type: "string" }
+                  invalidProp: { type: "invalid", default: false }
+                }
                 additionalProperties: false
               }
             )

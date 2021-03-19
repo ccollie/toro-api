@@ -1,7 +1,8 @@
-import { MetricOptions, BaseMetric } from './baseMetric';
+import { BaseMetric } from './baseMetric';
 import { Events } from './constants';
 import { JobFinishedEventData } from '../queues';
 import { round } from 'lodash';
+import { MetricOptions } from '@src/types';
 
 // todo: can we set initial counts ?
 export class ErrorPercentageMetric extends BaseMetric {

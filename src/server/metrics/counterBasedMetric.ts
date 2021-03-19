@@ -1,5 +1,5 @@
-import { BaseMetric, MetricOptions } from './baseMetric';
-import { MetricType } from '../../types';
+import { BaseMetric } from './baseMetric';
+import { MetricType, MetricOptions } from '../../types';
 
 export class CounterBasedMetric extends BaseMetric {
   protected internalCount = 0;

@@ -1,9 +1,14 @@
-import { JobEventData, JobFinishedEventData, QueueListener } from '../../src/server/queues';
-import { defaultsDeep, random, isNumber } from 'lodash';
+import {
+  JobEventData,
+  JobFinishedEventData,
+  QueueListener,
+} from '../../src/server/queues';
+import isNumber from 'lodash-es/isNumber';
+import random from 'lodash-es/random';
+import defaultsDeep from 'lodash-es/defaultsDeep';
 import { ManualClock } from '../../src/server/lib';
 import { randomString } from '../server/utils';
 import { Events } from '../../src/server/metrics';
-
 
 function ensureJob(data: Record<string, any>, currentTime?: number): void {
   data.job = data.job || Object.create(null);
@@ -16,7 +21,10 @@ function ensureJob(data: Record<string, any>, currentTime?: number): void {
   data.job.id = data.job.id || randomString(10);
 }
 
-function ensureDurations(data: JobFinishedEventData, currentTime?: number): void {
+function ensureDurations(
+  data: JobFinishedEventData,
+  currentTime?: number,
+): void {
   const now = data.ts || currentTime || Date.now();
   let latency = data.latency;
   if (!isNumber(latency) || latency <= 0) {
@@ -24,7 +32,7 @@ function ensureDurations(data: JobFinishedEventData, currentTime?: number): void
   }
   data.job.finishedOn = now;
   data.job.processedOn = now - latency;
-  let wait = data.wait
+  let wait = data.wait;
   if (!isNumber(wait) || wait < 0) {
     data.wait = data.job.processedOn - data.job.timestamp;
   } else {
@@ -32,7 +40,11 @@ function ensureDurations(data: JobFinishedEventData, currentTime?: number): void
   }
 }
 
-export function createJobEvent(event: string, data: Record<string, any> = {}, defaultTs?: number): JobEventData {
+export function createJobEvent(
+  event: string,
+  data: Record<string, any> = {},
+  defaultTs?: number,
+): JobEventData {
   ensureJob(data, defaultTs);
   let eventName = event;
   if (eventName.startsWith('job.')) {
@@ -52,20 +64,23 @@ export function createJobEvent(event: string, data: Record<string, any> = {}, de
   return eventData as JobEventData;
 }
 
-export function createFinishedEvent(successful: boolean, data: Record<string, any> = {}, defaultTs?: number): JobFinishedEventData {
+export function createFinishedEvent(
+  successful: boolean,
+  data: Record<string, any> = {},
+  defaultTs?: number,
+): JobFinishedEventData {
   const event = createJobEvent(Events.FINISHED, data, defaultTs);
-  event.job.state = successful ? 'completed' : 'failed'
+  event.job.state = successful ? 'completed' : 'failed';
   const result: JobFinishedEventData = {
     ...event,
     wait: data.wait ?? -1,
     latency: data.latency ?? 0,
-    success: successful
-  }
+    success: successful,
+  };
   ensureDurations(result);
 
   return result;
 }
-
 
 export class QueueListenerHelper {
   private readonly listener: QueueListener;

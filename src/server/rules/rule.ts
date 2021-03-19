@@ -19,8 +19,8 @@ import {
   RuleCondition,
   RuleConfigOptions,
   RuleEventsEnum,
-  RuleMetric,
   RuleState,
+  SerializedRuleMetric,
   Severity,
 } from '../../types';
 
@@ -69,7 +69,7 @@ export class Rule extends Emittery {
   private _ruleState: RuleState = RuleState.NORMAL;
   private _clock: Clock = new ManualClock();
   private _channels: string[] = [];
-  public metric: RuleMetric;
+  public metric: SerializedRuleMetric;
   public queueId: string;
   public name: string;
   public message: string;

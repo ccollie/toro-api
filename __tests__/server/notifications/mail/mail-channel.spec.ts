@@ -1,7 +1,7 @@
 import { MailChannelConfig } from '../../../../src/types';
 import { MailChannel } from '../../../../src/server/notifications';
 import { createNotificationContext } from '../helpers';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import * as mailer from '../../../../src/server/lib/mail';
 import { registerHelpers } from '../../../../src/server/lib/hbs';
 
@@ -15,7 +15,7 @@ describe('MailChannel', () => {
       const cfg: MailChannelConfig = {
         type: 'mail',
         name: 'channel',
-        recipients: ['test@gmail.com']
+        recipients: ['test@gmail.com'],
       };
       const instance = new MailChannel(cfg);
       expect(instance).toBeDefined();
@@ -28,7 +28,7 @@ describe('MailChannel', () => {
         id: 'hook-' + nanoid(),
         name: 'names-' + nanoid(),
         type: 'mail',
-        recipients: ['test@gmail.com']
+        recipients: ['test@gmail.com'],
       };
       if (opts) {
         config = Object.assign(config, opts);
@@ -37,19 +37,18 @@ describe('MailChannel', () => {
     }
 
     interface DispatchResult {
-      instance: MailChannel,
-      received: Record<string, any>
+      instance: MailChannel;
+      received: Record<string, any>;
     }
     async function dispatch(
       data: Record<string, any>,
       config?: Partial<MailChannelConfig>,
-      event = 'test'
+      event = 'test',
     ): Promise<DispatchResult> {
-
       const instance = createChannel(config);
       const context = createNotificationContext();
 
-      await instance.dispatch(context, data, event)
+      await instance.dispatch(context, data, event);
 
       const call = sendMailSpy.mock.calls[0];
       sendMailSpy.mockClear();
@@ -59,16 +58,15 @@ describe('MailChannel', () => {
     }
 
     it('can fetch an email', async () => {
-
       const message = {
         str: 'string',
         num: 10,
         bool: true,
-        fl: 10.29
-      }
+        fl: 10.29,
+      };
 
       const opts = {
-        recipients:['test@dev.co']
+        recipients: ['test@dev.co'],
       };
 
       const { received } = await dispatch(message, opts);
@@ -95,11 +93,11 @@ describe('MailChannel', () => {
       const message = {
         bool: true,
         fl: 10.29,
-        message: markdown
-      }
+        message: markdown,
+      };
 
       const opts = {
-        recipients:['test@dev.co']
+        recipients: ['test@dev.co'],
       };
 
       const { received } = await dispatch(message, opts);
@@ -111,7 +109,6 @@ describe('MailChannel', () => {
     });
 
     it('renders data property as a props table', async () => {
-
       const data = {
         bool: true,
         fl: 10.29,
@@ -123,16 +120,16 @@ describe('MailChannel', () => {
           state: {},
           severity: undefined,
           violations: 0,
-        }
-      }
+        },
+      };
 
       const msg = {
         message: 'look at me now',
-        data
-      }
+        data,
+      };
 
       const { received } = await dispatch(msg, {
-        recipients: ['resident@whitehouse.gov']
+        recipients: ['resident@whitehouse.gov'],
       });
 
       const temp = received.html;
@@ -140,5 +137,4 @@ describe('MailChannel', () => {
       expect(temp).toBeDefined();
     });
   });
-
 });

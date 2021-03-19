@@ -237,7 +237,7 @@ export function convertWorker(worker: Record<string, string>): QueueWorker {
   const [addr, port] = address.split(':');
   const qbufFree = worker['qbuf-free'];
 
-  function toInt(val: string | undefined, defaultVal: number = 0): number {
+  function toInt(val: string | undefined, defaultVal = 0): number {
     if (val === undefined) return defaultVal;
     const res = parseInt(val ?? '0', 10);
     return isNaN(res) ? defaultVal : res;

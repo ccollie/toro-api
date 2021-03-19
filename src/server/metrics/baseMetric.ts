@@ -8,20 +8,15 @@ import { Events } from './constants';
 import { systemClock, Clock, createAsyncIterator } from '../lib';
 import { MetricsListener } from './metricsListener';
 import { DurationSchema } from '../validation/schemas';
-import { MetricType, Predicate } from '../../types';
+import {
+  MetricCategory,
+  MetricType,
+  MetricOptions,
+  PollingMetricOptions,
+  Predicate,
+  SerializedRuleMetric,
+} from '../../types';
 import { createJobNameFilter } from './utils';
-
-export enum MetricCategory {
-  Redis = 'redis',
-  Queue = 'queue',
-  Host = 'host',
-}
-
-export interface MetricOptions {
-  id?: string;
-  name?: string;
-  jobNames?: string[];
-}
 
 export interface MetricUpdateEvent {
   ts: number;
@@ -168,14 +163,14 @@ export class BaseMetric {
     return !name || this._filter(name);
   }
 
-  toJSON(): Record<string, any> {
+  toJSON(): SerializedRuleMetric {
     const type = (this.constructor as any).key;
     const aggregator = this._aggregator.toJSON();
     return {
+      id: this.id,
       type,
       options: {
         ...this.options,
-        id: this.id,
       },
       aggregator,
     };
@@ -201,10 +196,6 @@ export class BaseMetric {
     }
     return this._value;
   }
-}
-
-export interface PollingMetricOptions extends MetricOptions {
-  interval: number;
 }
 
 export const pollingMetricSchema = baseMetricSchema.append({

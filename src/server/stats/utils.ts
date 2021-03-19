@@ -276,10 +276,10 @@ export function calculateInterval(duration: number): number {
       return units.MILLISECONDS;
     case 'second':
     case 'seconds':
-      return 100 * units.MILLISECONDS;
+      return 200 * units.MILLISECONDS;
     case 'minute':
     case 'minutes':
-      return 5 * units.SECONDS;
+      return 15 * units.SECONDS;
     case 'hour':
     case 'hours':
       return 30 * units.SECONDS;
