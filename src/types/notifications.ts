@@ -45,14 +45,14 @@ export interface NotificationContext {
 
 export interface ChannelConfig {
   id?: string;
-  type: string;
+  readonly type: string;
   name: string;
   enabled?: boolean;
 }
 
 /** Configuration options for a SlackChannel */
 export interface SlackChannelConfig extends ChannelConfig {
-  type: 'slack';
+  readonly type: 'slack';
   /** Auth token if using the chat.postMessage method of posting */
   token?: string;
   /** The slack channel, if using the chat.postMessage method of posting */
@@ -62,7 +62,7 @@ export interface SlackChannelConfig extends ChannelConfig {
 }
 
 export interface MailChannelConfig extends ChannelConfig {
-  type: 'mail';
+  readonly type: 'mail';
   recipients: string[];
 }
 
@@ -71,7 +71,7 @@ type WebHookMethod = 'get' | 'GET' | 'post' | 'POST';
 
 /** Configuration options for the webhook channel */
 export interface WebhookChannelConfig extends ChannelConfig {
-  type: 'webhook';
+  readonly type: 'webhook';
   id?: string;
   name: string;
   enabled?: boolean;

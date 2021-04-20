@@ -10,7 +10,7 @@ export const notificationChannelDisable: FieldConfig = {
     },
   }).NonNull,
   args: {
-    hostId: 'String!',
+    hostId: 'ID!',
     channelId: 'ID!',
   },
   async resolve(_: unknown, { channelId, hostId }) {

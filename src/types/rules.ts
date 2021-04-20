@@ -1,4 +1,4 @@
-import { SerializedAggregator } from '@src/types/metrics';
+import { SerializedAggregator } from './metrics';
 
 export enum RuleType {
   THRESHOLD = 'threshold',
@@ -93,8 +93,13 @@ export enum ChangeAggregationType {
   P99 = 'p99',
 }
 
+export enum ChangeTypeEnum {
+  CHANGE = 'CHANGE',
+  PCT = 'PCT',
+}
+
 export interface ChangeConditionOptions extends RuleConditionThresholds {
-  readonly changeType: 'CHANGE' | 'PCT';
+  readonly changeType: ChangeTypeEnum;
   /**
   The sliding window for metric measurement
    */
