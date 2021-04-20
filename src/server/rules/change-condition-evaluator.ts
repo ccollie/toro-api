@@ -9,6 +9,7 @@ import {
   ChangeConditionOptions,
   RuleType,
   ErrorLevel,
+  ChangeTypeEnum,
 } from '../../types';
 import { ThresholdConditionEvaluator } from './condition-evaluator';
 
@@ -28,9 +29,11 @@ function percentileFactory(percentile: number): AggregateFunction {
 
 const optionsSchema = Joi.object().keys({
   windowSize: DurationSchema,
-  timeShift: DurationSchema,
+  timeShift: DurationSchema.optional(),
   sampleInterval: DurationSchema.optional(),
-  usePercentage: Joi.boolean().optional().default(true),
+  changeType: Joi.string()
+    .valid(ChangeTypeEnum.CHANGE, ChangeTypeEnum.PCT)
+    .default(ChangeTypeEnum.CHANGE),
   aggregationType: Joi.string()
     .valid(
       ChangeAggregationType.Avg,
@@ -55,29 +58,24 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
 
   public readonly windowSize: number;
   public readonly timeShift: number;
-  public readonly fullWindowStart: number;
   public readonly fullWindow: number;
   public readonly sampleInterval: number;
   public readonly usePercentage: boolean;
 
   constructor(metric: BaseMetric, options: ChangeConditionOptions) {
     super(metric, { ...options, type: RuleType.THRESHOLD });
-    // eslint-disable-next-line prefer-const
-    let { timeShift, windowSize, sampleInterval } = options;
+    const { timeShift, windowSize, sampleInterval } = options;
 
     this.windowSize = windowSize;
-    this.sampleInterval =
-      typeof sampleInterval === 'number'
-        ? sampleInterval
-        : calculateInterval(windowSize);
+    // TODO: validate sampleInterval
+    this.sampleInterval = sampleInterval ?? calculateInterval(windowSize);
     this.timeShift = timeShift ?? windowSize;
     this.measurements = new ChunkedAssociativeArray<number, number>();
 
-    this.fullWindow = windowSize + timeShift;
-    this.fullWindowStart = this.clock.getTime() + this.fullWindow;
+    this.fullWindow = 2 * windowSize + timeShift;
     this.calculationMethod = getAggregationFunction(options.aggregationType);
     this.aggregationType = options.aggregationType;
-    this.usePercentage = options.changeType === 'PCT';
+    this.usePercentage = options.changeType === ChangeTypeEnum.CHANGE;
   }
 
   protected evaluateThreshold(value: number): ErrorLevel {
@@ -97,10 +95,10 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
   }
 
   public get isFullWindow(): boolean {
-    return (
-      this._isFullWindow ||
-      (this._isFullWindow = this.now >= this.fullWindowStart)
-    );
+    if (this._isFullWindow) return true;
+    if (this._lastTick === undefined) return false;
+    this._isFullWindow = this.now > this._lastTick + this.fullWindow;
+    return this._isFullWindow;
   }
 
   get currentWindowStart(): number {
@@ -129,7 +127,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     start = this.align(start);
     const end = start + this.windowSize - 1;
     const interval = this.sampleInterval;
-    // It _is_ expected that we can have sparse arrays
+    // It _is_ expected that we can generate sparse arrays here
     for (const [ts, value] of this.measurements.range(start, end)) {
       const normalizedTs = (ts - start) / interval;
       result[normalizedTs] = value;

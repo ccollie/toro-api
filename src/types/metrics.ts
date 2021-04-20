@@ -19,6 +19,11 @@ export interface SlidingWindowOptions {
   duration: number;
 }
 
+export interface MetricsFilter {
+  idRegex?: string;
+  jobNames?: string[];
+}
+
 export interface MetricOptions {
   id?: string;
   name?: string;

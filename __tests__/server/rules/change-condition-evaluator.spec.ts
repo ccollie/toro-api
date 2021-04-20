@@ -5,6 +5,7 @@ import { getRandomIntArray } from '../utils';
 import {
   ChangeAggregationType,
   ChangeConditionOptions,
+  ChangeTypeEnum,
   RuleOperator,
 } from '../../../src/types';
 import ms from 'ms';
@@ -58,7 +59,7 @@ describe('ChangeConditionEvaluator', () => {
     const options: ChangeConditionOptions = {
       errorThreshold: 0,
       operator: RuleOperator.gte,
-      changeType: 'CHANGE',
+      changeType: ChangeTypeEnum.CHANGE,
       aggregationType: ChangeAggregationType.Max,
       windowSize: 10000,
       timeShift: 1000,
@@ -94,7 +95,7 @@ describe('ChangeConditionEvaluator', () => {
     const instance = createInstance({
       errorThreshold: 0,
       operator: RuleOperator.gte,
-      changeType: 'CHANGE',
+      changeType: ChangeTypeEnum.CHANGE,
       aggregationType: ChangeAggregationType.Max,
       windowSize: 10000,
       timeShift: 1000,
@@ -205,7 +206,7 @@ describe('ChangeConditionEvaluator', () => {
       instance = new ChangeConditionEvaluator(metric, {
         errorThreshold: 0,
         operator: RuleOperator.gte,
-        changeType: 'CHANGE',
+        changeType: ChangeTypeEnum.CHANGE,
         aggregationType: ChangeAggregationType.Max,
         windowSize: 10000,
         timeShift: 1000,
@@ -235,7 +236,7 @@ describe('ChangeConditionEvaluator', () => {
       const instance = new ChangeConditionEvaluator(metric, {
         errorThreshold: 0,
         operator: RuleOperator.gte,
-        changeType: 'CHANGE',
+        changeType: ChangeTypeEnum.CHANGE,
         aggregationType: ChangeAggregationType.Max,
         windowSize: 10000,
         timeShift: 1000,
@@ -273,7 +274,7 @@ describe('ChangeConditionEvaluator', () => {
     beforeEach(() => {
       const clock = new ManualClock(0);
       instance = createInstance({
-        changeType: 'CHANGE',
+        changeType: ChangeTypeEnum.CHANGE,
         aggregationType: ChangeAggregationType.Max,
         windowSize: 10000,
         timeShift: 1000,

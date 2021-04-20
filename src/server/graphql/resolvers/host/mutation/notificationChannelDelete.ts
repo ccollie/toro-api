@@ -7,13 +7,13 @@ export const notificationChannelDelete: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'NotificationChannelDeletePayload',
     fields: {
-      hostId: 'String!',
+      hostId: 'ID!',
       channelId: 'ID!',
       deleted: 'Boolean!',
     },
   }).NonNull,
   args: {
-    hostId: 'String!',
+    hostId: 'ID!',
     channelId: 'ID!',
   },
   async resolve(_: unknown, { channelId, hostId }, context) {

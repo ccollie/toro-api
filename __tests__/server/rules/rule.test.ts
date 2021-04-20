@@ -4,6 +4,7 @@ import { randomId, randomString } from './utils';
 import { Rule } from '../../../src/server/rules';
 import {
   ChangeAggregationType,
+  ChangeTypeEnum,
   RuleCondition,
   RuleConfigOptions,
   RuleMetric,
@@ -55,7 +56,7 @@ describe('Rule', () => {
 
     const condition: RuleCondition = {
       type: RuleType.CHANGE,
-      changeType: 'CHANGE',
+      changeType: ChangeTypeEnum.CHANGE,
       windowSize: 0,
       aggregationType: ChangeAggregationType.Avg,
       operator: RuleOperator.eq,

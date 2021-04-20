@@ -1,5 +1,5 @@
 import { HostManager } from '../../../../hosts';
-import { NotificationChannelTC } from './NotificationChannel';
+import { NotificationChannelTC } from '../scalars';
 import { FieldConfig } from '../../utils';
 
 export const hostChannelsFC: FieldConfig = {

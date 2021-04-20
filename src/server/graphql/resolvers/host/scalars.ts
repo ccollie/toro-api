@@ -3,7 +3,7 @@ import {
   ObjectTypeComposer,
   schemaComposer,
 } from 'graphql-compose';
-import { Duration, HttpMethod, HttpMethodType } from '../../scalars';
+import { Duration, HttpMethod, HttpMethodType } from '../scalars';
 
 const BaseFields = {
   id: 'ID!',
@@ -30,21 +30,20 @@ const BaseFields = {
 };
 
 const IgnoredInputFields = ['id', 'createdAt', 'updatedAt'];
+const IgnoredUpdateFields = ['createdAt', 'updatedAt'];
 
 function createInputType(
   tc: ObjectTypeComposer<any, any>,
   name: string,
 ): InputTypeComposer<any> {
-  return tc
-    .getITC()
-    .setTypeName(name)
-    .removeField(IgnoredInputFields)
-    .addFields({
-      hostId: {
-        type: 'ID!',
-        description: 'the host to add the channel to',
-      },
-    });
+  return tc.getITC().setTypeName(name).removeField(IgnoredInputFields);
+}
+
+export function createUpdateType(
+  tc: ObjectTypeComposer<any, any>,
+  name: string,
+): InputTypeComposer<any> {
+  return tc.getITC().setTypeName(name).removeField(IgnoredUpdateFields);
 }
 
 export const NotificationChannelTC = schemaComposer.createInterfaceTC({
@@ -81,6 +80,11 @@ export const SlackNotificationChannelInputTC = createInputType(
   'SlackNotificationChannelInput',
 );
 
+export const SlackNotificationChannelUpdateTC = createUpdateType(
+  SlackNotificationChannelTC,
+  'SlackNotificationChannelUpdate',
+);
+
 export const MailNotificationChannelTC = schemaComposer.createObjectTC({
   name: 'MailNotificationChannel',
   description: 'A channel which sends notifications through email',
@@ -97,6 +101,11 @@ export const MailNotificationChannelTC = schemaComposer.createObjectTC({
 export const MailNotificationChannelInputTC = createInputType(
   MailNotificationChannelTC,
   'MailNotificationChannelInput',
+);
+
+export const MailNotificationChannelUpdateTC = createUpdateType(
+  MailNotificationChannelTC,
+  'MailNotificationChannelUpdate',
 );
 
 export const WebhookNotificationChannelTC = schemaComposer.createObjectTC({
@@ -150,6 +159,13 @@ export const WebhookNotificationChannelTC = schemaComposer.createObjectTC({
 export const WebhookNotificationChannelInputTC = createInputType(
   WebhookNotificationChannelTC,
   'WebhookNotificationChannelInput',
+).extendField('method', {
+  defaultValue: HttpMethod.POST,
+});
+
+export const WebhookNotificationChannelUpdateTC = createUpdateType(
+  WebhookNotificationChannelTC,
+  'WebhookNotificationChannelUpdate',
 ).extendField('method', {
   defaultValue: HttpMethod.POST,
 });

@@ -71,12 +71,27 @@ export class NotificationManager {
 
   async getChannel(id: string): Promise<Channel> {
     // try local
-    let channel = this.channels.find((x) => x.id === id);
+    let channel = this.getLocalChannel(id);
     if (!channel) {
       channel = await this.storage.getChannel(id);
       channel && this.channels.push(channel);
     }
     return channel;
+  }
+
+  private getLocalChannelIndex(channel: string | Channel): number {
+    let id: string;
+    if (typeof channel !== 'string') {
+      id = getChannelId(channel);
+    } else {
+      id = channel;
+    }
+    return this.channels.findIndex((x) => x.id === id);
+  }
+
+  private getLocalChannel(channel: string | Channel): Channel | undefined {
+    const idx = this.getLocalChannelIndex(channel);
+    return idx === -1 ? undefined : this.channels[idx];
   }
 
   async addChannel<T = Channel>(channel: ChannelConfig): Promise<T> {
@@ -86,11 +101,22 @@ export class NotificationManager {
     return (result as unknown) as T;
   }
 
+  // TODO: needs tests
+  async updateChannel(channel: Channel): Promise<Channel> {
+    const result = await this.storage.updateChannel(channel);
+    const localIdx = this.getLocalChannelIndex(channel);
+    if (localIdx >= 0) {
+      this.channels[localIdx] = result;
+    } else {
+      this.channels.push(result);
+    }
+    return result;
+  }
+
   async deleteChannel(channel: Channel | string): Promise<boolean> {
     const isDeleted = await this.storage.deleteChannel(channel);
     if (isDeleted) {
-      const id = getChannelId(channel);
-      const idx = this.channels.findIndex((channel) => channel.id === id);
+      const idx = this.getLocalChannelIndex(channel);
       if (idx >= 0) {
         this.channels.splice(idx, 1);
       }
@@ -105,6 +131,7 @@ export class NotificationManager {
   async disableChannel(channel: Channel | string): Promise<boolean> {
     return this.setEnabled(channel, false);
   }
+
   protected async setEnabled(
     channel: Channel | string,
     value: boolean,

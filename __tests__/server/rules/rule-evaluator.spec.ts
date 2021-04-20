@@ -15,6 +15,7 @@ import {
 } from '../../../src/server/metrics';
 import {
   ChangeAggregationType,
+  ChangeTypeEnum,
   RuleAlert,
   RuleCondition,
   RuleConfigOptions,
@@ -86,7 +87,7 @@ describe('RuleEvaluator', () => {
       let sut = createEvaluator({
         condition: {
           type: RuleType.CHANGE,
-          changeType: 'CHANGE',
+          changeType: ChangeTypeEnum.CHANGE,
           timeShift: 1000,
           windowSize: 10000,
           aggregationType: ChangeAggregationType.Avg,
@@ -99,7 +100,7 @@ describe('RuleEvaluator', () => {
       sut = createEvaluator({
         condition: {
           type: RuleType.CHANGE,
-          changeType: 'PCT',
+          changeType: ChangeTypeEnum.CHANGE,
           timeShift: 1000,
           windowSize: 10000,
           aggregationType: ChangeAggregationType.Avg,
