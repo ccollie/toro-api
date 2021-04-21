@@ -1,8 +1,8 @@
 import { RedisMetric } from '../../../src/server/metrics/redisMetrics';
-import { createQueue } from '../utils';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../../src/server/redis';
 import { PollingMetricOptions } from '../../../src/types';
+import { createQueue } from '../../factories';
 
 describe('RedisMetric', () => {
   describe('constructor', () => {

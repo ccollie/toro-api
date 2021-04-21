@@ -36,6 +36,15 @@ export function safeParse(item: string): any {
   }
 }
 
+export function safeParseInt(
+  val: string,
+  defaultValue?: number,
+): number | undefined {
+  if (!val) return defaultValue;
+  const candidate = parseInt(val);
+  return isNaN(candidate) ? defaultValue : candidate;
+}
+
 export function parseBool(val: unknown, defaultVal?: boolean): boolean {
   const type = typeof val;
   if (val === null || type === 'undefined') {

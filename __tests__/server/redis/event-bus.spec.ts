@@ -1,14 +1,9 @@
-import { EventBus, deleteAllQueueData } from '../common';
+import { EventBus } from '../common';
 import { RedisStreamAggregator } from '../common';
-import {
-  randomString,
-  delay,
-  createClient,
-  clearDb,
-  DEFAULT_CLIENT_OPTIONS,
-} from '../utils';
+import { randomString, delay } from '../utils';
 import pAll from 'p-all';
 import random from 'lodash/random';
+import { createClient, clearDb, DEFAULT_CLIENT_OPTIONS } from '../../factories';
 
 describe('EventBus', () => {
   // jest.setTimeout(5000);
@@ -40,7 +35,7 @@ describe('EventBus', () => {
     jest.setTimeout(10000);
 
     it('should emit an event', async () => {
-      let eventData;
+      let eventData = null;
       await bus.on('event.raised', (evt) => {
         eventData = evt;
       });

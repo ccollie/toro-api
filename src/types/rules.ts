@@ -166,7 +166,12 @@ export interface RuleAlertOptions {
   /**
    * The minimum number of violations in "delay" period before an alert can be raised
    */
-  minViolations?: number;
+  failureThreshold?: number;
+
+  /**
+   * Number of consecutive successful method executions to transition from
+   */
+  successThreshold?: number;
 
   /**
    * the max number of alerts to receive per event trigger in case the condition is met.
@@ -177,17 +182,10 @@ export interface RuleAlertOptions {
    * The minimum amount of time after the last notification before a new alert is raised
    * on for same incident.
    * */
-  renotifyInterval?: number;
+  notifyInterval?: number;
 
   /** raise an alert after an event trigger when the situation returns to normal */
   alertOnReset?: boolean;
-
-  /**
-   * Duration (ms) after which to raise alerts or notifications in case the condition is met.
-   * This is useful for events which are normally transient and resolve quickly but may periodically
-   * persist longer than usual, or for not sending notifications out too quickly.
-   */
-  triggerWindow?: number;
 
   /**
    * An optional delay (ms) describing how long an anomalous metric must be normal before the alert
@@ -196,6 +194,8 @@ export interface RuleAlertOptions {
    * notifications when a rule condition passes and fails in rapid succession
    */
   recoveryWindow?: number;
+
+  autoRecoveryTimeout?: number;
 }
 
 /** configuration options for a {@link Rule} */
@@ -225,6 +225,8 @@ export interface RuleConfigOptions {
   /** channels for alert notifications. */
   channels?: string[];
   severity?: Severity;
+  state?: RuleState;
+  lastTriggeredAt?: number;
 }
 
 /**
@@ -238,25 +240,21 @@ export interface RuleConfigOptions {
  */
 export interface RuleAlert {
   readonly id: string;
-  /** the alert event (triggered or reset) */
-  readonly event: string;
+  readonly ruleId: string;
+  /** the alert state (triggered or reset) */
+  readonly status: 'open' | 'close';
   /** timestamp of when this alert was raised */
-  readonly start: number;
+  readonly raisedAt: number;
   /** timestamp of when an alert was reset */
-  end?: number;
-  /** The value of the alert threshold set in the rule’s alert conditions. */
-  readonly threshold: number;
+  resetAt?: number;
   /** The metric value that crossed the threshold.*/
-  readonly value: number;
-  /** The metric value that reset the threshold. */
-  resetValue?: number;
-  /*** The number of violations before the alert was generated */
-  readonly violations: number;
+  readonly triggerValue: number;
+  /*** The number of failures before the alert was generated */
+  readonly failures: number;
   /** Alert message */
   message?: string;
   /** states which triggered alert */
   readonly state?: Record<string, any>;
   readonly errorLevel: ErrorLevel;
   severity: Severity;
-  [propName: string]: any;
 }

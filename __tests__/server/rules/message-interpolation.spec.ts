@@ -8,10 +8,13 @@ import {
 } from '../../../src/types';
 import { Rule, RuleManager } from '../../../src/server/rules';
 import { HostManager, nanoid, QueueManager } from '../common';
-import { clearDb, delay } from '../utils';
-import { createRuleOptions } from './utils';
-import { QueueListenerHelper } from '../../fixtures';
-import { createHostManager } from '../../fixtures/host-manager';
+import {
+  clearDb,
+  createHostManager,
+  createRuleOptions,
+  QueueListenerHelper,
+} from '../../factories';
+import { delay } from '../utils';
 
 describe('Rule Message Interpolation', () => {
   // jest.setTimeout(5000);
@@ -49,7 +52,7 @@ describe('Rule Message Interpolation', () => {
     queueManager = hostManager.getQueueManager(queueConfig.name);
     ruleManager = new RuleManager(queueManager);
     listenerHelper = new QueueListenerHelper(ruleManager.queueListener);
-    dispatchSpy = jest.spyOn(ruleManager.notifications, 'dispatch');
+    dispatchSpy = jest.spyOn(hostManager.notifications, 'dispatch');
   });
 
   afterEach(async function () {

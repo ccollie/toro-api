@@ -1,4 +1,4 @@
-import { clearDb, createClient } from '../utils';
+import { clearDb, createClient } from '../../factories';
 import { parseMessageResponse } from '../../../src/server/redis';
 import sample from 'lodash/sample';
 import random from 'lodash/random';

@@ -1,5 +1,5 @@
 import pMap from 'p-map';
-import { clearDb, createClient } from '../utils';
+import { clearDb, createClient } from '../../factories';
 import { nanoid } from 'nanoid';
 import { Queue, JobsOptions } from 'bullmq';
 import {

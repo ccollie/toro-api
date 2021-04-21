@@ -2,7 +2,7 @@
 'use strict';
 import { Job, Queue } from 'bullmq';
 import { v4 } from 'uuid';
-import { clearDb, createQueue } from '../utils';
+import { clearDb, createQueue } from '../../factories';
 import { Scripts } from '@src/server/commands/scripts';
 
 describe('getState', function () {

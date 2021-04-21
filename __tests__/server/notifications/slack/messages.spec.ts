@@ -29,6 +29,9 @@ describe('messages', () => {
       const start = +new Date() - random(15 * ONE_MINUTE, ONE_HOUR);
       const end = start + random(ONE_MINUTE, 30 * ONE_MINUTE);
       const context: RuleAlert = {
+        raisedAt: 0,
+        status: 'open',
+        triggerValue: 0,
         id: nanoid(),
         event,
         errorLevel: ErrorLevel.WARNING,
@@ -36,7 +39,7 @@ describe('messages', () => {
         end,
         threshold: random(10, 100),
         value: random(10, 100),
-        violations: random(1, 5), // violations
+        failures: random(1, 5), // violations
         alerts: random(1, 5),
         state: {},
         severity: Severity.WARNING,

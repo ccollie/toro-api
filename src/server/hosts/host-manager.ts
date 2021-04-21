@@ -65,6 +65,8 @@ export class HostManager {
   private readonly defaultRedisClient: IORedis.Redis;
   private readonly queueManagerMap: Map<string, QueueManager>;
   private readonly _initialized: Promise<void>;
+  private _notificationContext: NotificationContext;
+
   private _uri: string = undefined;
 
   constructor(opts: HostConfig) {
@@ -392,18 +394,21 @@ export class HostManager {
     this.queueManagers.forEach((handler) => handler.sweep());
   }
 
-  createNotificationContext(): NotificationContext {
-    const env = config.get('env');
-    const app = getValue('appInfo');
-    const { id, name, uri } = this;
-    return {
-      host: {
-        id,
-        name,
-        uri,
-      },
-      app,
-      env,
-    };
+  get notificationContext(): NotificationContext {
+    if (!this._notificationContext) {
+      const env = config.get('env');
+      const app = getValue('appInfo');
+      const { id, name, uri } = this;
+      this._notificationContext = {
+        host: {
+          id,
+          name,
+          uri,
+        },
+        app,
+        env,
+      };
+    }
+    return this._notificationContext;
   }
 }

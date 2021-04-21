@@ -9,7 +9,12 @@ import { ErrorPercentageMetric } from './errorPercentageMetric';
 import { JobRateMetric } from './jobRateMetric';
 import { WaitTimeMetric } from './waitTimeMetric';
 import { LatencyMetric } from './latencyMetric';
-import { BaseMetric, PollingMetric } from './baseMetric';
+import {
+  BaseMetric,
+  PollingMetric,
+  MetricUpdateEvent,
+  MetricUpdateEventHandler,
+} from './baseMetric';
 import { UsedMemoryMetric, ConnectedClientsMetric } from './redisMetrics';
 import {
   CurrentActiveCountMetric,
@@ -176,6 +181,8 @@ export {
   FinishedCountMetric,
   JobRateMetric,
   LatencyMetric,
+  MetricUpdateEvent,
+  MetricUpdateEventHandler,
   UsedMemoryMetric,
   WaitTimeMetric,
 };

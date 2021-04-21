@@ -6,7 +6,7 @@ import {
   NullAggregator,
 } from '../../../src/server/metrics';
 import { delay, randomString } from '../utils';
-import { createJobEvent } from '../../fixtures';
+import { createJobEvent } from '../../factories';
 import { random } from 'lodash';
 import { systemClock } from '../../../src/server/lib';
 

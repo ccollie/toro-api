@@ -31,7 +31,7 @@ export class NotificationManager {
       maxAge: ms('1 hour'),
     });
     this.storage = new ChannelStorage(hostManager);
-    this.context = hostManager.createNotificationContext();
+    this.context = hostManager.notificationContext;
     this.dispatch = this.dispatch.bind(this);
     this.init();
   }

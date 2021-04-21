@@ -3,9 +3,9 @@ import {
   JobFinishedEventData,
   QueueListener,
 } from '../../src/server/queues';
-import isNumber from 'lodash-es/isNumber';
-import random from 'lodash-es/random';
-import defaultsDeep from 'lodash-es/defaultsDeep';
+import isNumber from 'lodash/isNumber';
+import random from 'lodash/random';
+import defaultsDeep from 'lodash/defaultsDeep';
 import { ManualClock } from '../../src/server/lib';
 import { randomString } from '../server/utils';
 import { Events } from '../../src/server/metrics';

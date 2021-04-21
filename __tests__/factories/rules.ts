@@ -1,21 +1,12 @@
-import crypto from 'crypto';
+import { randomString } from '../server/utils';
 import {
+  defaultRuleAlertOptions,
+  getUniqueId,
+  Rule,
   RuleConfigOptions,
   RuleOperator,
   RuleType,
-} from '../../../../src/types';
-import { defaultRuleAlertOptions, Rule } from '../../../../src/server/rules';
-import { getUniqueId, nanoid } from '../../../../src/server/lib';
-
-export * from '../../factories';
-
-export function randomString(length = 10): string {
-  return crypto.randomBytes(length).toString('hex');
-}
-
-export function randomId(len = 8): string {
-  return nanoid();
-}
+} from '../server/common';
 
 export function createRuleOptions(
   options: Partial<RuleConfigOptions> = {},

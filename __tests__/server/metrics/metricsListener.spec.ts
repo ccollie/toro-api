@@ -5,13 +5,12 @@ import {
   CompletedCountMetric,
   JobRateMetric,
   LatencyMetric,
-  MetricsListener
+  MetricsListener,
 } from '../../../src/server/metrics';
 import { QueueListener } from '../../../src/server/queues';
-import { QueueListenerHelper } from '../../fixtures';
+import { QueueListenerHelper } from '../../factories';
 import { createQueueListener } from '../factories';
 import { delay } from '../utils';
-
 
 describe('MetricsListener', () => {
   let sut: MetricsListener;
@@ -58,7 +57,7 @@ describe('MetricsListener', () => {
       const spy = jest.spyOn(metric, 'handleEvent');
 
       await helper.postCompletedEvent({
-        latency
+        latency,
       });
       await delay(10);
       expect(spy).toHaveBeenCalledTimes(1);
@@ -67,7 +66,7 @@ describe('MetricsListener', () => {
 
     it('filters events by job names', async () => {
       const metric = new LatencyMetric({
-        jobNames: ['valid']
+        jobNames: ['valid'],
       });
       sut.registerMetric(metric);
 
@@ -75,16 +74,16 @@ describe('MetricsListener', () => {
 
       await helper.postCompletedEvent({
         job: {
-          name: 'invalid'
-        }
+          name: 'invalid',
+        },
       });
       await delay(10);
       expect(spy).not.toHaveBeenCalled();
 
       await helper.postCompletedEvent({
         job: {
-          name: 'valid'
-        }
+          name: 'valid',
+        },
       });
       await delay(10);
       expect(spy).toHaveBeenCalled();
@@ -100,7 +99,7 @@ describe('MetricsListener', () => {
 
       let metrics: BaseMetric[];
       sut.onMetricsUpdated((event) => {
-        metrics = (event.metrics as BaseMetric[]);
+        metrics = event.metrics as BaseMetric[];
       });
 
       completed.onUpdate(() => {
@@ -113,36 +112,35 @@ describe('MetricsListener', () => {
       await helper.postCompletedEvent({});
       await delay(10);
       expect(count).toBe(2);
-      expect(metrics.length).toBe(2)
+      expect(metrics.length).toBe(2);
       expect(metrics.includes(completed)).toBe(true);
       expect(metrics.includes(latencies)).toBe(true);
     });
   });
 
   describe('polling metrics handling', () => {
-
     it('polls to periodically refresh metric values', async () => {
       const interval = ms('1 sec');
       const timePeriod = ms('1 min');
       const metric = new JobRateMetric({
         timePeriod,
-        interval
+        interval,
       });
       sut.registerMetric(metric);
       let ts = Date.now();
       await helper.postFinishedEvent(true, {
-        ts
+        ts,
       });
       //await delay(10);
 
       const updateSpy = jest.spyOn(metric, 'checkUpdate');
 
       let rate = metric.value;
-      const newTs = ts + interval + 1
+      const newTs = ts + interval + 1;
       // Fast-forward until all timers have been executed
       // jest.advanceTimersByTime(interval + 10);
       await helper.postCompletedEvent({
-        ts: newTs
+        ts: newTs,
       });
 
       await delay(1010);
@@ -151,7 +149,6 @@ describe('MetricsListener', () => {
 
       expect(updateSpy).toHaveBeenCalledTimes(1);
       expect(rate).not.toBe(newRate);
-    })
-
-  })
-})
+    });
+  });
+});

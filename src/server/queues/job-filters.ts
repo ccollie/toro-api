@@ -2,7 +2,7 @@ import boom from '@hapi/boom';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { getJobFiltersKey, getUniqueId, nanoid, safeParse } from '../lib';
-import { Job, Queue } from 'bullmq';
+import { Job, JobJsonRaw, Queue } from 'bullmq';
 import { FilteredJobsResult, JobFilter, JobStatusEnum } from '../../types';
 import { Scripts } from '../commands/scripts';
 import { checkMultiErrors } from '../redis';
@@ -318,7 +318,7 @@ export async function processSearch(
     const fromCache = await getMultipleJobsById(queue, slice);
     meta.ids = remainder;
     fromCache.forEach((json) => {
-      const job = Job.fromJSON(queue, json);
+      const job = Job.fromJSON(queue, (json as unknown) as JobJsonRaw);
       jobs.push(job);
     });
   }

@@ -120,6 +120,7 @@ export class StatsWriter extends StatsClient {
 
       // allow time for all queues to report in
       const delay = 2000 + random(3, 5) * 1000;
+      // @ts-ignore
       cacheData.timeout = setTimeout(() => {
         HostRollupCache.delete(key);
         if (this.isFinished) return;

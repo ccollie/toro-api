@@ -1,9 +1,10 @@
 import { CurrentWaitingCountMetric } from '../../../src/server/metrics';
-import { clearDb, createQueue, randomString } from '../utils';
+import { clearDb, createQueue } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
 import { PollingMetricOptions } from '../../../src/types';
+import { randomString } from '../utils';
 
 describe('CurrentWaitingCountMetric', () => {
   describe('constructor', () => {

@@ -6,18 +6,19 @@ import {
   RuleAlertOptions,
   RuleCondition,
   RuleOperator,
+  RuleState,
   RuleType,
   Severity,
 } from '../../types';
 
 const ruleAlertOptionsSchema = Joi.object().keys({
   warmupWindow: DurationSchema.optional(),
-  triggerWindow: DurationSchema.optional().default(0),
   recoveryWindow: DurationSchema.optional().default(0),
   maxAlertsPerEvent: Joi.number().integer().positive().optional().default(0),
   alertOnReset: Joi.boolean().optional().default(true),
-  renotifyInterval: DurationSchema.optional(),
-  minViolations: Joi.number().integer().positive().default(1),
+  notifyInterval: DurationSchema.optional(),
+  failureThreshold: Joi.number().integer().positive().optional().default(1),
+  successThreshold: Joi.number().integer().optional().default(1),
 });
 
 export const notificationThresholdSchema = Joi.object().keys({
@@ -74,10 +75,16 @@ export const changeConditionSchema = thresholdConditionSchema.keys({
     .default(ChangeAggregationType.Avg),
 });
 
-export const ruleMetricSchema = Joi.object().keys({
+export const serializedAggregatorSchema = Joi.object().keys({
   type: Joi.string().required(),
   options: Joi.object().optional().default({}),
-  aggregator: Joi.object().optional(),
+});
+
+export const ruleMetricSchema = Joi.object().keys({
+  id: Joi.string(),
+  type: Joi.string().required(),
+  options: Joi.object().optional().default({}),
+  aggregator: serializedAggregatorSchema,
 });
 
 export const ruleConditionSchema = Joi.alternatives().try(
@@ -87,12 +94,13 @@ export const ruleConditionSchema = Joi.alternatives().try(
 );
 
 export const defaultRuleAlertOptions: RuleAlertOptions = {
-  renotifyInterval: 0,
+  notifyInterval: 0,
   warmupWindow: 0,
   alertOnReset: true,
-  triggerWindow: 0,
   maxAlertsPerEvent: 1,
   recoveryWindow: 0,
+  failureThreshold: 1,
+  successThreshold: 0,
 };
 
 export const ruleConfigSchema = Joi.object().keys({
@@ -100,10 +108,20 @@ export const ruleConfigSchema = Joi.object().keys({
     .regex(/^[a-zA-Z0-9_\-!@#$]{3,25}$/)
     .optional(),
   name: Joi.string().required(),
+  state: Joi.string()
+    .optional()
+    .valid(
+      RuleState.WARNING,
+      RuleState.MUTED,
+      RuleState.NORMAL,
+      RuleState.ERROR,
+    ),
+  queueId: Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   message: Joi.string().optional().allow(null, ''),
   createdAt: Joi.date().optional(),
   updatedAt: Joi.date().optional(),
+  lastTriggeredAt: Joi.date().optional(),
   metric: ruleMetricSchema,
   condition: ruleConditionSchema.required().default(Object.create(null)),
   active: Joi.boolean().default(true).optional(),

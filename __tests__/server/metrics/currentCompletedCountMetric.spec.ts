@@ -1,10 +1,10 @@
 import { CurrentCompletedCountMetric } from '../../../src/server/metrics';
-import { clearDb, createQueue, randomString } from '../utils';
+import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { createWorker } from '../factories';
 import { PollingMetricOptions } from '../../../src/types';
+import { randomString } from '../utils';
 
 describe('CurrentCompletedCountMetric', () => {
   describe('constructor', () => {

@@ -86,6 +86,11 @@ export function getRuleKey(queue: Queue, id: string = null): string {
   return getKey(null, queue, null, tag);
 }
 
+export function getRuleStateKey(queue: Queue, id: string = null): string {
+  const base = getRuleKey(queue, id);
+  return `${base}:state`;
+}
+
 export function getAlertsKey(queue: Queue, ruleId: string): string {
   const ruleKey = getRuleKey(queue, ruleId);
   return `${ruleKey}:alerts`;

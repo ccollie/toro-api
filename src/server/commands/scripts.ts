@@ -1,5 +1,5 @@
 import { loadScripts } from './index';
-import { Job, Queue } from 'bullmq';
+import { Job, JobJsonRaw, Queue } from 'bullmq';
 import isEmpty from 'lodash/isEmpty';
 import { JobFinishedState, JobStatusEnum } from '../../types';
 import { nanoid } from '../lib';
@@ -183,14 +183,24 @@ export class Scripts {
     const newCursor = response[0] === '0' ? null : Number(response[0]);
     const jobs: Job[] = [];
 
-    let currentJob: Record<string, string> = {};
+    let currentJob: Record<string, any> = {};
     let jobId: string = null;
     const iterCount = Number(response[1]);
     const totalCount = Number(response[2]);
 
     function addJobIfNeeded() {
       if (!isEmpty(currentJob) && jobId) {
-        const job = Job.fromJSON(queue, currentJob, jobId);
+        // TODO: verify this
+        const trace = currentJob['stacktrace'];
+        if (!Array.isArray(trace)) {
+          if (typeof trace === 'string') {
+            currentJob['stacktrace'] = JSON.parse(trace);
+          } else {
+            currentJob['stacktrace'] = [];
+          }
+        }
+        const raw = currentJob as JobJsonRaw;
+        const job = Job.fromJSON(queue, raw, jobId);
         const ts = currentJob['timestamp'];
         job.timestamp = ts ? parseInt(ts) : Date.now();
         jobs.push(job);
