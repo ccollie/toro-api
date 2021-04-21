@@ -1,11 +1,11 @@
-import { LockManager } from '@src/server/redis';
-import { clearDb, createClient, delay } from '../utils';
+import { LockManager } from '../../../src/server/redis';
+import { clearDb, createClient } from '../../factories';
 import * as IORedis from 'ioredis';
+import { delay } from '../utils';
 const DEFAULT_TTL = 500;
 const LOCK_KEY = 'test-lock';
 
 describe('LockManager', () => {
-
   describe('Single client', () => {
     let client: IORedis.Redis;
     let lock: LockManager;
@@ -13,20 +13,20 @@ describe('LockManager', () => {
     beforeEach(async () => {
       client = await createClient();
       await clearDb(client);
-    })
+    });
 
     afterEach(async () => {
       client.disconnect();
       if (lock) {
         await lock.destroy();
       }
-    })
+    });
 
     describe('Lock Acquisition', () => {
       it('attempts to acquire lock on start', async () => {
         lock = new LockManager(client, {
           key: LOCK_KEY,
-          ttl: DEFAULT_TTL
+          ttl: DEFAULT_TTL,
         });
         const exists = await client.exists(lock.key);
         expect(!!exists).toBe(true);
@@ -42,14 +42,14 @@ describe('LockManager', () => {
 
       it('re-acquires lock if it is lost', async () => {
         let lock = new LockManager(client, {
-          ttl: 500
+          ttl: 500,
         });
 
         await lock.start();
         let acquired = false;
         lock.on('lock:acquired', () => {
           acquired = true;
-        })
+        });
 
         await delay(300);
 
@@ -60,7 +60,7 @@ describe('LockManager', () => {
 
         expect(acquired).toBe(true);
       });
-    })
+    });
 
     describe('Lock Release', () => {
       it('releases the lock in the destructor', async () => {
@@ -72,10 +72,10 @@ describe('LockManager', () => {
         lock = null;
         const exists = await client.exists(key);
         expect(!!exists).toBe(false);
-      })
-    })
+      });
+    });
   });
-})
+});
 
 describe('LockManager: Competing clients', () => {
   let client, client2: IORedis.Redis;
@@ -89,24 +89,20 @@ describe('LockManager: Competing clients', () => {
     await clearDb(client);
     client2 = await createClient();
     first = new LockManager(client, {
-      ttl: DEFAULT_TTL
+      ttl: DEFAULT_TTL,
     });
     second = new LockManager(client2, {
-      ttl: DEFAULT_TTL
+      ttl: DEFAULT_TTL,
     });
   }
 
   async function tearDown() {
     client.disconnect();
     client2.disconnect();
-    await Promise.all([
-      first.destroy(),
-      second.destroy(),
-    ])
+    await Promise.all([first.destroy(), second.destroy()]);
   }
 
   describe('Lock Aquisition', () => {
-
     it('allows only one client to own the lock', async () => {
       await setup();
       try {
@@ -134,7 +130,7 @@ describe('LockManager: Competing clients', () => {
     });
 
     it('can automatically acquire when the owner releases', async () => {
-      await setup()
+      await setup();
       try {
         await first.acquire();
         let secondIsOwner = await second.acquire();
@@ -161,6 +157,5 @@ describe('LockManager: Competing clients', () => {
         await tearDown();
       }
     });
-  })
-
+  });
 });

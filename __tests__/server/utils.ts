@@ -1,44 +1,10 @@
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
-import { Queue } from 'bullmq';
 
-import { createClient as _createClient } from '@src/server/redis/utils';
-import * as IORedis from 'ioredis';
-import { ConnectionOptions } from '@src/types';
 import random from 'lodash/random';
-import { loadScripts } from '../../src/server/commands';
-
-export const TEST_DB = 13;
-export const DEFAULT_CLIENT_OPTIONS: ConnectionOptions = {
-  db: TEST_DB,
-  lazyConnect: false,
-};
-
-export async function createClient(
-  options?: ConnectionOptions,
-): Promise<IORedis.Redis> {
-  options = options || DEFAULT_CLIENT_OPTIONS;
-  const client = _createClient(options);
-  await loadScripts(client);
-  return client;
-}
-
-export async function clearDb(client?: IORedis.Redis) {
-  const flushClient = client || (await createClient());
-  await flushClient.flushdb();
-  if (!client) {
-    flushClient.disconnect();
-  }
-}
 
 export function randomString(length = 10): string {
   return crypto.randomBytes(10).toString('hex');
-}
-
-export async function createQueue(name?: string): Promise<Queue> {
-  name = name || 'queue-' + randomString(6);
-  const client = await createClient();
-  return new Queue(name, { connection: client });
 }
 
 export function randomId(len = 8): string {
@@ -78,4 +44,8 @@ export function getRandomIntArray(
   }
 
   return result;
+}
+
+export function getRandomBool(): boolean {
+  return random(1, 57) % 2 === 0;
 }

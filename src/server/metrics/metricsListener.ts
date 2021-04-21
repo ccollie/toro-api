@@ -6,6 +6,8 @@ import { Clock, logger } from '../lib';
 import IORedis from 'ioredis';
 import { Queue } from 'bullmq';
 import { AccurateInterval, createAccurateInterval } from '../lib';
+import { createMetricFromJSON } from '../metrics';
+import { SerializedRuleMetric } from '@src/types';
 
 const DEFAULT_CONCURRENCY = 16;
 const UPDATE_EVENT_NAME = 'metrics.updated';
@@ -139,6 +141,19 @@ export class MetricsListener {
     }
   }
 
+  findMetricById(id: string): BaseMetric {
+    return this._metrics.find((x) => x.id === id);
+  }
+
+  registerMetricFromJSON(opts: SerializedRuleMetric): BaseMetric {
+    let metric = this.findMetricById(opts.id);
+    if (!metric) {
+      metric = createMetricFromJSON(this.clock, opts);
+      this.registerMetric(metric);
+    }
+    return metric;
+  }
+
   registerMetric(metric: BaseMetric): void {
     if (this._metrics.indexOf(metric) > 0) return;
     metric.validEvents.forEach((event) => {
@@ -161,6 +176,8 @@ export class MetricsListener {
   }
 
   unregisterMetric(metric: BaseMetric): void {
+    // todo: metric may possibly be reference by more than one rule
+    // use refCounts (see lib/recount-cache)
     metric.validEvents.forEach((event) => {
       const metricsForEvent = this.handlerMap.get(event);
       if (metricsForEvent) {

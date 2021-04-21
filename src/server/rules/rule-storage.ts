@@ -14,7 +14,7 @@ import {
   EventBus,
   parseMessageResponse,
 } from '../redis';
-import { getAlertsKey, getRuleKey } from '../lib/keys';
+import { getAlertsKey, getRuleKey, getRuleStateKey } from '../lib/keys';
 
 import { Rule } from './rule';
 import { Queue } from 'bullmq';
@@ -22,11 +22,17 @@ import {
   RuleAlert,
   RuleConfigOptions,
   RuleEventsEnum,
+  RuleState,
   Severity,
 } from '../../types';
 import IORedis from 'ioredis';
 import { getUniqueId, parseBool, systemClock } from '../lib';
-import { PossibleTimestamp, TimeSeries } from '../commands/timeseries';
+import {
+  PossibleTimestamp,
+  TimeSeries,
+  RuleScripts,
+  AlertData,
+} from '../commands';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -40,17 +46,14 @@ export interface RuleAlertFilter {
  */
 export class RuleStorage {
   private readonly queue: Queue;
-  public readonly host: string;
   private readonly bus: EventBus;
 
   /**
    * Construct a {@link RuleManager}
-   * @param {string} host queue host
    * @param {Queue} queue bull queue
    * @param {EventBus} bus queue bus
    */
-  constructor(host: string, queue: Queue, bus: EventBus) {
-    this.host = host;
+  constructor(queue: Queue, bus: EventBus) {
     this.queue = queue;
     this.bus = bus;
   }
@@ -67,43 +70,29 @@ export class RuleStorage {
     return getAlertsKey(this.queue, getRuleId(rule));
   }
 
-  async addRule(rule: RuleConfigOptions): Promise<Rule> {
-    if (!isObject(rule)) {
-      throw boom.badRequest('addRule: Rule must be an object');
-    }
-    let id = rule.id;
+  async createRule(opts: RuleConfigOptions): Promise<Rule> {
+    let isNew = false;
+    let id = opts.id;
     if (!id) {
-      id = rule.id = getUniqueId();
+      isNew = true;
+      id = opts.id = getUniqueId();
     }
 
-    if (!rule.createdAt) {
-      rule.createdAt = systemClock.getTime();
+    if (!opts.createdAt) {
+      opts.createdAt = systemClock.getTime();
     }
-    const client = await this.getClient();
-    const result = new Rule(rule);
     const key = this.getRuleKey(id);
-    const existing = await client.exists(key);
-    if (existing) {
-      throw boom.badRequest(
-        `A rule with id "${id}" exists in queue "${this.queue.name}"`,
-      );
+    const client = await this.getClient();
+    if (!isNew) {
+      const existing = await client.exists(key);
+      if (existing) {
+        throw boom.badRequest(
+          `A rule with id "${id}" exists in queue "${this.queue.name}"`,
+        );
+      }
     }
-    const data = serializeRule(rule);
-    const pipeline = client.pipeline();
-    pipeline.hmset(key, data);
-
-    // add to index
-    pipeline.zadd(this.rulesIndexKey, `${rule.createdAt}`, id);
-
-    await Promise.all([
-      pipeline.exec(),
-      this.bus.emit(RuleEventsEnum.RULE_ADDED, {
-        ruleId: id,
-        data: result.toJSON(),
-      }),
-    ]);
-
-    return result;
+    const rule = new Rule(opts);
+    return this.saveRule(rule);
   }
 
   getRuleKey(rule: Rule | string): string {
@@ -130,29 +119,40 @@ export class RuleStorage {
    * @param {Rule} rule
    * @returns {Promise<Rule>}
    */
-  async updateRule(rule): Promise<Rule> {
-    const id = rule.id;
-    if (!id) {
-      throw boom.badRequest('Rule should have an id');
-    }
+  async saveRule(rule: Rule): Promise<Rule> {
+    let existing = false;
+    const isNew = !rule.id;
+    const id = isNew ? getUniqueId() : rule.id;
     const key = this.getRuleKey(id);
+
     const client = await this.queue.client;
 
-    const existing = await client.exists(key);
-    if (!existing) {
-      return this.addRule(rule);
+    if (!isNew) {
+      existing = !!(await client.exists(key));
     }
+
+    const event = existing
+      ? RuleEventsEnum.RULE_UPDATED
+      : RuleEventsEnum.RULE_ADDED;
+
     const data = serializeRule(rule) as Record<string, any>;
-    delete data.id;
+    if (existing) {
+      delete data.id;
+    }
+    if (!data.createdAt) {
+      data.createdAt = systemClock.getTime();
+    }
 
     data.updatedAt = systemClock.getTime();
     const pipeline = client.pipeline();
     pipeline.hmset(key, data);
+    pipeline.zadd(this.rulesIndexKey, `${rule.createdAt}`, id, 'nx');
+
     rule.updatedAt = data.updatedAt;
 
     await Promise.all([
       pipeline.exec(),
-      this.bus.emit(RuleEventsEnum.RULE_UPDATED, {
+      this.bus.emit(event, {
         ruleId: id,
         data: rule.toJSON(),
       }),
@@ -246,13 +246,13 @@ export class RuleStorage {
     const ruleId = getRuleId(rule);
     const ruleKey = this.getRuleKey(ruleId);
     const alertsKey = this.getAlertsKey(rule);
+    const stateKey = getRuleStateKey(this.queue, ruleId);
     const client = await this.getClient();
     const pipeline = client.pipeline();
 
     const responses = await TimeSeries.multi
       .size(pipeline, alertsKey)
-      .del(ruleKey)
-      .del(alertsKey)
+      .del(ruleKey, alertsKey, stateKey)
       .zrem(this.rulesIndexKey, ruleId)
       .exec()
       .then(checkMultiErrors);
@@ -312,7 +312,7 @@ export class RuleStorage {
   }
 
   // Alerts
-
+  // TODO: change
   /**
    * Write an alert to redis
    * @param {Rule|string} rule
@@ -322,12 +322,12 @@ export class RuleStorage {
   async addAlert(rule: Rule | string, data: RuleAlert): Promise<RuleAlert> {
     const ruleId = getRuleId(rule);
     const alert = serializeAlert(data);
-    data.ruleId = ruleId;
+    alert.ruleId = ruleId;
 
     let severity: Severity = data.severity;
 
     if (!data.id) {
-      alert.id = '' + data.start; // set id to start
+      alert.id = getUniqueId(); // set id to start
       if (typeof rule !== 'string') {
         severity = rule.severity;
       } else {
@@ -337,49 +337,15 @@ export class RuleStorage {
       alert.severity = data.severity = severity;
     }
 
-    const client = await this.getClient();
-    const alertsKey = this.getAlertsKey(rule);
+    const alertData: AlertData = {
+      errorLevel: data.errorLevel,
+      id: getUniqueId(),
+      value: data.triggerValue,
+      state: data.state,
+      message: data.message,
+    };
 
-    let id = data.id || data.start;
-    let serialized = JSON.stringify(alert);
-    if (!data.id) {
-      id = await TimeSeries.add(client, alertsKey, id, serialized);
-    } else {
-      serialized = await TimeSeries.updateJson(
-        client,
-        alertsKey,
-        data.id,
-        serialized,
-      );
-    }
-
-    if (data.event === RuleEventsEnum.ALERT_TRIGGERED) {
-      const key = this.getRuleKey(ruleId);
-      const timestamp = data.end || data.start;
-
-      client.hset(key, 'lastAlertAt', timestamp, () => {
-        // noop;
-      });
-    }
-
-    await this.bus.emit(data.event, {
-      ruleId: ruleId,
-      data: serialized,
-    });
-
-    if (id !== null) {
-      return {
-        id: id.toString(),
-        event: data.event,
-        start: data.start,
-        end: data.end,
-        value: data.value,
-        violations: data.violations || 1,
-        severity,
-        ...data,
-      };
-    }
-    return null;
+    return RuleScripts.writeAlert(this.queue, rule, alertData);
   }
 
   /**
@@ -393,10 +359,8 @@ export class RuleStorage {
     const key = this.getAlertsKey(rule);
     const client = await this.getClient();
     const data = await TimeSeries.get(client, key, id);
+    if (data) data['ruleId'] = ruleId;
     const result = deserializeAlert(data);
-    if (result !== null) {
-      result.ruleId = ruleId;
-    }
     return result;
   }
 
@@ -598,7 +562,7 @@ function deserializeObject(str: string): any {
 function serializeRule(rule): Record<string, any> {
   const data = isFunction(rule.toJSON) ? rule.toJSON() : rule;
 
-  // deserialize object fields
+  // serialize object fields
   if (isObject(data.options)) {
     data.options = JSON.stringify(data.options);
   }
@@ -615,6 +579,8 @@ function serializeRule(rule): Record<string, any> {
     data.condition = JSON.stringify(data.condition);
   }
 
+  data.channels = JSON.stringify(data.channels || []);
+
   return data;
 }
 
@@ -630,20 +596,37 @@ function deserializeRule(data?: any): Rule {
   if (data.updatedAt) {
     data.updatedAt = parseInt(data.updatedAt);
   }
+  // todo: debug this
+  if (isString(data.lastTriggeredAt) && data.lastTriggeredAt.length) {
+    data.lastTriggeredAt = parseInt(data.lastTriggeredAt);
+  } else if (isNumber(data.lastTriggeredAt)) {
+    data.lastTriggeredAt = parseInt(data.lastTriggeredAt);
+  } else {
+    delete data.lastTriggeredAt; //
+  }
   data.active = parseBool(data.active, true);
   data.persist = parseBool(data.persist, true);
+  data.state = (data.state ?? RuleState.NORMAL) as RuleState;
+  if (typeof data.channels == 'string') {
+    try {
+      const channels = JSON.parse(data.channels);
+      if (Array.isArray(channels)) {
+        data.channels = channels;
+      } else {
+        data.channels = [];
+      }
+    } catch {
+      data.channels = [];
+    }
+  } else {
+    data.channels = [];
+  }
   return new Rule(data);
 }
 
 function serializeAlert(data: RuleAlert): Record<string, any> {
-  const { state, payload, ...res } = data;
-  if (!isEmpty(payload)) {
-    res['payload'] = serializeObject(payload);
-  }
-  if (!isEmpty(state)) {
-    res['payload'] = serializeObject(state);
-  }
-  res.violations = res.violations || 0;
+  const { state, ...res } = data;
+  res.failures = res.failures || 0;
   return res;
 }
 
@@ -654,10 +637,10 @@ function deserializeAlert(data: any): RuleAlert {
   if (!isObject(data)) return null;
 
   const alertData: Record<string, any> = { ...data };
-  alertData.end = parseTimestamp(data['end']);
-  alertData.start = parseTimestamp(data['start']);
+  alertData.raisedAt = parseTimestamp(data['raisedAt']);
+  alertData.resetAt = parseTimestamp(data['resetAt']);
   alertData.state = deserializeObject(data['state']);
-  alertData.violations = data['violations'] || 0;
+  alertData.failures = data['failures'] || 0;
   return alertData as RuleAlert;
 }
 
@@ -665,8 +648,8 @@ function deserializeAlertReply(reply, ruleId: string): any {
   const recs = parseMessageResponse(reply);
 
   return recs.map(({ id, data }) => {
+    if (data) data.ruleId = ruleId;
     const alert = deserializeAlert(data);
-    if (ruleId) alert.ruleId = ruleId;
     return {
       ts: id,
       alert,

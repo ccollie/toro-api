@@ -1,10 +1,24 @@
-import { systemClock } from './clock';
+import { Clock, systemClock } from './clock';
 import Timeout = NodeJS.Timeout;
 
 export interface AccurateInterval {
   start: () => void;
   stop: () => void;
 }
+
+export interface AccurateIntervalOpts {
+  clock: Clock;
+  aligned?: boolean;
+  immediate?: boolean;
+  quitOnError?: boolean;
+}
+
+const defaultOpts: AccurateIntervalOpts = {
+  clock: systemClock,
+  aligned: true,
+  immediate: false,
+  quitOnError: false,
+};
 
 /**
  * Create an accurate interval that does not skew over time.
@@ -19,17 +33,17 @@ export interface AccurateInterval {
 export function createAccurateInterval(
   func: () => void,
   interval: number,
-  opts = {
-    clock: systemClock,
-    aligned: true,
-    immediate: false,
-    quitOnError: false,
-  },
+  opts: AccurateIntervalOpts = defaultOpts,
 ): AccurateInterval {
   let nextAt: number;
   let stopped = false;
   let now: number;
   let timeout: Timeout = null;
+
+  opts = {
+    ...defaultOpts,
+    ...opts,
+  };
 
   function start(): void {
     if (!stopped) {

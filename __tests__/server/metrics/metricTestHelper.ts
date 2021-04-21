@@ -1,6 +1,5 @@
 import { MetricsListener, BaseMetric } from '../../../src/server/metrics';
-import { createQueueListener } from '../factories';
-import { QueueListenerHelper } from '../../fixtures';
+import { QueueListenerHelper, createQueueListener } from '../../factories';
 import { QueueListener } from '../../../src/server/queues';
 import { UnsubscribeFn } from 'emittery';
 import { Queue } from 'bullmq';
@@ -15,7 +14,7 @@ function getDefaultProp(name: string): string {
   const metric = new BaseMetric({});
   const value = getStaticProp(metric, name);
   metric.destroy();
-  return  value;
+  return value;
 }
 
 let baseKey: string;
@@ -125,7 +124,10 @@ export class MetricTestHelper {
     return this.queueListenerHelper.postFailedEvent(data);
   }
 
-  async emitFinishedEvent(success: boolean, data?: Record<string, any>): Promise<void> {
+  async emitFinishedEvent(
+    success: boolean,
+    data?: Record<string, any>,
+  ): Promise<void> {
     return this.queueListenerHelper.postFinishedEvent(success, data);
   }
 

@@ -1,6 +1,6 @@
 'use strict';
 import { random } from 'lodash';
-import { randomId, randomString } from './utils';
+import { randomString } from '../utils';
 import { Rule } from '../../../src/server/rules';
 import {
   ChangeAggregationType,
@@ -11,6 +11,7 @@ import {
   RuleOperator,
   RuleType,
 } from '../../../src/types';
+import { getUniqueId } from '../../../src/server/lib';
 
 describe('Rule', () => {
   function createRule(options: Partial<RuleConfigOptions> = {}): Rule {
@@ -20,7 +21,7 @@ describe('Rule', () => {
         options: {},
       },
       name: 'Rule names ' + randomString(6),
-      id: randomId(),
+      id: getUniqueId(),
       condition: {
         type: RuleType.THRESHOLD,
         operator: RuleOperator.gt,

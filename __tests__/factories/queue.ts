@@ -1,0 +1,16 @@
+import { Queue, QueueOptions } from 'bullmq';
+import { randomString } from '../server/utils';
+import { TEST_DB } from './client';
+
+export function createQueue(
+  name?: string,
+  opts?: Partial<QueueOptions>,
+): Queue {
+  name = name || 'queue-' + randomString(6);
+  const options: QueueOptions = {
+    connection: { db: TEST_DB, lazyConnect: false },
+    prefix: 'test',
+    ...(opts || {}),
+  };
+  return new Queue(name, options);
+}

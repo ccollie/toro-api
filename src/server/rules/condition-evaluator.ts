@@ -9,8 +9,8 @@ import {
   RuleType,
   ThresholdCondition,
 } from '../../types';
-import { EvaluationResult } from './rule';
 import { UnsubscribeFn } from 'emittery';
+import { EvaluationResult } from './rule-evaluator';
 
 export const OperatorNames = {
   short: {

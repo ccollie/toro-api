@@ -22,7 +22,6 @@ import {
   RuleAlert,
   RuleConfigOptions,
 } from '../../types';
-import { isEmpty } from 'lodash';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../lib/keys';
 

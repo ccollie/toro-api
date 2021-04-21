@@ -249,6 +249,7 @@ export class StatsListener extends StatsWriter {
 
     const startTimer = (): void => {
       lastSeen = systemClock.getTime();
+      // @ts-ignore
       timer = setInterval(() => {
         const now = systemClock.getTime();
         if (now - lastSeen > TIMEOUT) {

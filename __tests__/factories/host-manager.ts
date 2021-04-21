@@ -1,5 +1,5 @@
 import { HostConfig } from '../../src/types';
-import { DEFAULT_CLIENT_OPTIONS } from '../server/utils';
+import { DEFAULT_CLIENT_OPTIONS } from './client';
 import { getUniqueId } from '../../src/server/lib';
 import { HostManager } from '../../src/server/hosts';
 
@@ -12,11 +12,13 @@ function createConfig(defaults?: Partial<HostConfig>): HostConfig {
     channels: [],
     id: getUniqueId(),
     name: 'host-' + getUniqueId(),
-    ...(defaults || {})
+    ...(defaults || {}),
   };
 }
 
 export function createHostManager(config?: Partial<HostConfig>): HostManager {
+  process.env.HOST_URI_TEMPLATE =
+    '{{server.host}}:{{server.port}}/hosts/{{host.id}}';
   const hostConfig = createConfig(config);
   return new HostManager(hostConfig);
 }

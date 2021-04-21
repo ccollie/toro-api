@@ -8,29 +8,38 @@ import {
   RuleMetric,
   RuleOperator,
   RuleState,
-  RuleType
+  RuleType,
 } from '../../../src/types';
-import { Rule, RuleManager, RuleStateChangeEvent } from '../../../src/server/rules';
-import { getUniqueId, HostManager, QueueManager, } from '../common';
-import { clearDb, delay, randomString } from '../utils';
-import { createRule, createRuleOptions } from './utils';
-import { QueueListenerHelper } from '../../fixtures';
-import { createHostManager } from '../../fixtures/host-manager';
+import { Rule, RuleManager } from '../../../src/server/rules';
+import {
+  getUniqueId,
+  HostManager,
+  NotificationManager,
+  QueueManager,
+} from '../common';
+import { delay, randomString } from '../utils';
+import {
+  clearDb,
+  createHostManager,
+  createRule,
+  createRuleOptions,
+  QueueListenerHelper,
+} from '../../factories';
 
 function createAlert(rule, data = {}): RuleAlert {
   return {
     id: getUniqueId(),
+    triggerValue: 201,
     threshold: 100,
-    value: 201,
-    event: RuleEventsEnum.ALERT_TRIGGERED,
+    status: 'open',
     errorLevel: ErrorLevel.CRITICAL,
     name: rule.name,
     description: rule.description,
-    start: Date.now(),
+    raisedAt: Date.now(),
     state: {},
     severity: undefined,
-    violations: 0,
-    ...data
+    failures: 0,
+    ...data,
   };
 }
 
@@ -40,19 +49,21 @@ describe('RuleManager', () => {
   let listenerHelper: QueueListenerHelper;
   let hostManager: HostManager;
   let queueManager: QueueManager;
+  let notifications: NotificationManager;
 
   beforeEach(async function () {
     const queueName = 'test-' + randomString(5);
     const queueConfig: QueueConfig = {
       name: queueName,
-      prefix: 'bull'
+      prefix: 'bull',
     };
 
     hostManager = createHostManager({
-      queues: [ queueConfig ]
+      queues: [queueConfig],
     });
     await hostManager.waitUntilReady();
 
+    notifications = hostManager.notifications;
     queueManager = hostManager.getQueueManager(queueName);
     ruleManager = new RuleManager(queueManager);
     listenerHelper = new QueueListenerHelper(ruleManager.queueListener);
@@ -60,18 +71,22 @@ describe('RuleManager', () => {
 
   afterEach(async function () {
     await clearDb(hostManager.client);
-    await Promise.all([
-      queueManager.destroy(),
-      hostManager.destroy()
-    ]);
+    await Promise.all([queueManager.destroy(), hostManager.destroy()]);
   });
+
+  async function getLastAlert(rule: Rule): Promise<RuleAlert> {
+    return ruleManager.storage.getAlert(rule, '+');
+  }
 
   function addRule(data?: Partial<RuleConfigOptions>): Promise<Rule> {
     const opts: RuleConfigOptions = createRuleOptions(data);
     return ruleManager.addRule(opts);
   }
 
-  async function postJob(options?: Record<string, any>, needDelay = true): Promise<void> {
+  async function postJob(
+    options?: Record<string, any>,
+    needDelay = true,
+  ): Promise<void> {
     await listenerHelper.postCompletedEvent(options);
     if (needDelay) {
       await delay(40);
@@ -99,7 +114,10 @@ describe('RuleManager', () => {
     it('should add the rule id to the rule index', async () => {
       const rule = await addRule();
       const client = hostManager.client;
-      const score = await client.zscore(ruleManager.storage.rulesIndexKey, rule.id);
+      const score = await client.zscore(
+        ruleManager.storage.rulesIndexKey,
+        rule.id,
+      );
       expect(score).toBeDefined();
       expect(score).toBe('' + rule.createdAt);
     });
@@ -113,6 +131,14 @@ describe('RuleManager', () => {
       await delay(50);
       expect(eventData).not.toBeUndefined();
       expect(eventData.ruleId).toEqual(rule.id);
+    });
+
+    it('should register the associated metric', async () => {
+      const rule = await addRule();
+      const listener = ruleManager.metricsListener;
+      expect(listener.metrics.length).toBe(1);
+      const metric = listener.metrics[0];
+      expect(metric).toBeDefined();
     });
   });
 
@@ -140,6 +166,15 @@ describe('RuleManager', () => {
       await delay(150);
       expect(eventData).not.toBeUndefined();
       expect(eventData.ruleId).toEqual(rule.id);
+    });
+
+    it('should remove the associated metric', async () => {
+      const rule = await addRule();
+      const listener = ruleManager.metricsListener;
+      expect(listener.metrics.length).toBe(1);
+
+      await ruleManager.deleteRule(rule.id);
+      expect(listener.metrics.length).toBe(0);
     });
   });
 
@@ -174,7 +209,7 @@ describe('RuleManager', () => {
       expect(actual.name).toBe(rule.name);
       expect(actual.createdAt).toBe(rule.createdAt);
       expect(actual.updatedAt).toBe(rule.updatedAt);
-     // expect(actual.options).toStrictEqual(rule.options);
+      // expect(actual.options).toStrictEqual(rule.options);
       expect(actual.metric).toStrictEqual(rule.metric);
       expect(actual.condition).toStrictEqual(rule.condition);
       expect(actual.payload).toStrictEqual(rule.payload);
@@ -228,58 +263,152 @@ describe('RuleManager', () => {
   });
 
   describe('.addAlert', () => {
-    it('proxies to the internal storage class', async () => {
+    it('stores an alert to redis', async () => {
       const rule = createRule();
       const alert = createAlert(rule);
 
-      const spy = jest.spyOn(ruleManager.storage, 'addAlert');
       const stored = await ruleManager.addAlert(rule, alert);
+      const fromRedis = await getLastAlert(rule);
+      expect(stored).toStrictEqual(fromRedis);
+    });
+  });
+
+  describe('.deleteAlert', () => {
+    it('deletes an alert from redis', async () => {
+      const rule = createRule();
+      const alert = createAlert(rule);
+
+      const spy = jest.spyOn(ruleManager.storage, 'deleteAlert');
+      const stored = await ruleManager.addAlert(rule, alert);
+
+      let fromRedis = await getLastAlert(rule);
+      expect(fromRedis.id).toEqual(alert.id);
+
+      await ruleManager.deleteAlert(rule, alert.id);
+
+      fromRedis = await getLastAlert(rule);
+      expect(fromRedis).toBeFalsy();
+
       expect(stored).not.toBeUndefined();
       expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('Alert notifications', () => {
+  describe('Alerts', () => {
+    const ERROR_TRIGGER_VALUE = 2000;
+    const WARNING_TRIGGER_VALUE = ERROR_TRIGGER_VALUE - 1000;
+    const RESET_VALUE = WARNING_TRIGGER_VALUE - 100;
+
     const condition: RuleCondition = {
       type: RuleType.THRESHOLD,
-      errorThreshold: 1000,
-      operator: RuleOperator.gt
-    }
+      errorThreshold: ERROR_TRIGGER_VALUE - 100,
+      warningThreshold: WARNING_TRIGGER_VALUE - 100,
+      operator: RuleOperator.gt,
+    };
 
     const metric: RuleMetric = {
       type: 'latency',
-      options: {}
+      options: {},
+    };
+
+    beforeEach(() => {});
+
+    const TriggerData = { latency: ERROR_TRIGGER_VALUE };
+    const WarningTriggerData = { latency: WARNING_TRIGGER_VALUE };
+    const ResetData = { latency: RESET_VALUE };
+
+    async function trigger() {
+      return postJob(TriggerData);
     }
 
-    const SuccessData = { latency: 2000 };
-    const FailureData = { latency: 500 };
+    async function triggerWarning() {
+      return postJob(WarningTriggerData);
+    }
+
+    async function reset() {
+      return postJob(ResetData);
+    }
+
+    describe('redis', () => {
+      it('stores alerts to redis when an error is triggered', async () => {
+        const rule = await addRule({ metric, condition });
+
+        await trigger();
+        const alert = await getLastAlert(rule);
+        expect(alert).not.toBe(null);
+        expect(alert.status).toBe('open');
+        expect(alert.severity).toBe(rule.severity);
+        expect(alert.triggerValue).toBe(ERROR_TRIGGER_VALUE);
+        expect(alert.errorLevel).toBe(ErrorLevel.CRITICAL);
+      });
+
+      it('stores an alert to redis when a warning is triggered', async () => {
+        const rule = await addRule({ metric, condition });
+
+        await triggerWarning();
+        const alert = await getLastAlert(rule);
+        expect(alert).not.toBe(null);
+        expect(alert.status).toBe('open');
+        expect(alert.severity).toBe(rule.severity);
+        expect(alert.triggerValue).toBe(WARNING_TRIGGER_VALUE);
+        expect(alert.errorLevel).toBe(ErrorLevel.WARNING);
+      });
+
+      it('updates alert in redis when a rule is reset', async () => {
+        const options = {
+          alertOnReset: true,
+        };
+        const rule = await addRule({ metric, condition, options });
+
+        await trigger();
+        const alert = await getLastAlert(rule);
+        expect(alert.status).toBe('open');
+
+        await delay(10);
+        await reset();
+
+        const fromRedis = await ruleManager.getAlert(rule, alert.id);
+        expect(fromRedis.status).toBe('close');
+        expect(fromRedis.raisedAt).toBeDefined();
+        expect(fromRedis.raisedAt).toBeGreaterThan(alert.raisedAt);
+      });
+
+      it('updates the rule status on state change', async () => {
+        const options = {
+          alertOnReset: true,
+        };
+        const rule = await addRule({ metric, condition, options });
+
+        expect(rule.state).toBe(RuleState.NORMAL);
+
+        await trigger();
+        let fromRedis = await ruleManager.getRule(rule.id);
+        expect(rule.state).toBe(RuleState.ERROR);
+        expect(fromRedis.state).toBe(RuleState.ERROR);
+
+        await reset();
+        fromRedis = await ruleManager.getRule(rule.id);
+        expect(rule.state).toBe(RuleState.NORMAL);
+        expect(fromRedis.state).toBe(RuleState.NORMAL);
+      });
+    });
 
     it('sends an alert notification when triggered', async () => {
       const channels = ['email', 'slack'];
       const rule = await addRule({ metric, condition, channels });
 
       let alert: RuleAlert;
-      rule.on(RuleEventsEnum.ALERT_TRIGGERED, (data: RuleAlert) => {
+      await ruleManager.onAlertTriggered(rule.id, (data: RuleAlert) => {
         alert = data;
       });
-      const spy = jest.spyOn(ruleManager.notifications, 'dispatch');
-      await postJob(SuccessData);
+      const spy = jest.spyOn(notifications, 'dispatch');
+      await trigger();
 
-      expect(spy).toHaveBeenCalledWith(RuleEventsEnum.ALERT_TRIGGERED, alert, channels);
-    });
-
-    it('stores alerts to redis when triggered', async () => {
-      const channels = ['email', 'slack'];
-      const rule = await addRule({ metric, condition, channels });
-
-      let alert: RuleAlert;
-      rule.on(RuleEventsEnum.ALERT_TRIGGERED, (data: RuleAlert) => {
-        alert = data;
-      });
-      const spy = jest.spyOn(ruleManager.storage, 'addAlert');
-      await postJob(SuccessData);
-
-      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(
+        RuleEventsEnum.ALERT_TRIGGERED,
+        alert,
+        channels,
+      );
     });
 
     it('sends an alert notification on reset', async () => {
@@ -289,77 +418,52 @@ describe('RuleManager', () => {
         metric,
         condition,
         options: {
-          alertOnReset: true
-        }
+          alertOnReset: true,
+        },
       });
 
-      let alert: RuleAlert;
-      rule.on(RuleEventsEnum.ALERT_RESET, (data: RuleAlert) => {
-        alert = data;
-      });
+      await trigger();
 
-      await postJob(SuccessData);
-
-      const spy = jest.spyOn(ruleManager.notifications, 'dispatch');
+      const spy = jest.spyOn(notifications, 'dispatch');
 
       await delay(10);
-      await postJob(FailureData);
+      await reset();
 
-      expect(spy).toHaveBeenCalledWith(RuleEventsEnum.ALERT_RESET, alert, channels);
-    });
+      const alert = getLastAlert(rule);
 
-    it('stores alerts to redis on reset', async () => {
-      const channels = ['email', 'slack'];
-      const options = {
-        alertOnReset: true
-      };
-      const rule = await addRule({ metric, condition, channels, options });
-
-      let alert: RuleAlert;
-      rule.on(RuleEventsEnum.ALERT_RESET, (data: RuleAlert) => {
-        alert = data;
-      });
-      await postJob(SuccessData);
-      const spy = jest.spyOn(ruleManager.storage, 'addAlert');
-
-      await delay(10);
-      await postJob(FailureData);
-
-      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledWith(
+        RuleEventsEnum.ALERT_RESET,
+        alert,
+        channels,
+      );
     });
   });
 
   describe('Rule State Change', () => {
-
     const condition: RuleCondition = {
       type: RuleType.THRESHOLD,
       errorThreshold: 1000,
       warningThreshold: 500,
-      operator: RuleOperator.gt
-    }
+      operator: RuleOperator.gt,
+    };
 
     const metric: RuleMetric = {
       type: 'latency',
-      options: {}
-    }
+      options: {},
+    };
 
-    const SuccessData = { latency: 2000 };
+    const TriggerData = { latency: 2000 };
 
     it('emits an event bus event on states change', async () => {
       const channels = ['email', 'slack'];
       const rule = await addRule({ metric, condition, channels });
-
-      let event: RuleStateChangeEvent;
-      rule.on(RuleEventsEnum.STATE_CHANGED, (data: RuleStateChangeEvent) => {
-        event = data;
-      });
 
       let stateData;
       await ruleManager.bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
         stateData = eventData;
       });
 
-      await postJob(SuccessData);
+      await postJob(TriggerData);
       expect(stateData.state).toBe(RuleState.ERROR);
 
       await postJob({ latency: 10 });
@@ -369,7 +473,48 @@ describe('RuleManager', () => {
       await postJob({ latency: 700 });
       expect(stateData.state).toBe(RuleState.WARNING);
     });
+  });
 
-  })
+  describe('Queue Events', () => {
+    const condition: RuleCondition = {
+      type: RuleType.THRESHOLD,
+      errorThreshold: 1000,
+      operator: RuleOperator.gt,
+    };
 
+    const metric: RuleMetric = {
+      type: 'latency',
+      options: {},
+    };
+
+    const TriggerData = { latency: 2000 };
+    const ResetData = { latency: 500 };
+
+    it('posts a message when a rule is triggered', async () => {
+      const channels = ['email', 'slack'];
+      const rule = await addRule({ metric, condition, channels });
+
+      let alert: RuleAlert = null;
+      await ruleManager.onAlertTriggered(rule.id, (data: RuleAlert) => {
+        alert = data;
+      });
+      await postJob(TriggerData);
+      expect(alert).not.toBe(null);
+      expect(alert.id).toBeDefined();
+    });
+
+    it('posts a message when a rule is reset', async () => {
+      const rule = await addRule({ metric, condition });
+
+      let alert: RuleAlert = null;
+      await ruleManager.onAlertTriggered(rule.id, (data: RuleAlert) => {
+        alert = data;
+      });
+
+      await postJob(TriggerData);
+
+      expect(alert).not.toBe(null);
+      expect(alert.id).toBeDefined();
+    });
+  });
 });

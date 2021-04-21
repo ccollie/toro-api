@@ -20,10 +20,10 @@ import {
   randomId,
 } from '../utils';
 import { Queue } from 'bullmq';
-import { createRuleOptions } from './utils';
 import * as IORedis from 'ioredis';
 import { random, sortBy } from 'lodash';
 import pAll from 'p-all';
+import { createRuleOptions } from '../factories';
 
 describe('RuleStorage', () => {
   // jest.setTimeout(5000);
@@ -42,7 +42,7 @@ describe('RuleStorage', () => {
     const opts = { connectionOptions: DEFAULT_CLIENT_OPTIONS };
     aggregator = new RedisStreamAggregator(opts);
     bus = new EventBus(aggregator, getQueueBusKey(queue));
-    storage = new RuleStorage(host, queue, bus);
+    storage = new RuleStorage(queue, bus);
     await bus.waitUntilReady();
   });
 
@@ -54,14 +54,14 @@ describe('RuleStorage', () => {
 
   function addRule(data = {}): Promise<Rule> {
     const opts: RuleConfigOptions = createRuleOptions(data);
-    return storage.addRule(opts);
+    return storage.createRule(opts);
   }
 
   describe('.addRule', () => {
     it('stores a Rule', async () => {
       const opts: RuleConfigOptions = createRuleOptions();
       const rule = new Rule(opts);
-      const savedRule = await storage.addRule(opts);
+      const savedRule = await storage.createRule(opts);
       const expected = rule.toJSON();
       const actual = savedRule.toJSON();
       expect(expected).toMatchObject(actual);
@@ -70,7 +70,7 @@ describe('RuleStorage', () => {
 
     it('stores a rule expressed as an object', async () => {
       const opts = createRuleOptions();
-      const rule = await storage.addRule(opts);
+      const rule = await storage.createRule(opts);
       expect(rule).toBeInstanceOf(Rule);
       expect(rule.id).not.toBeUndefined();
     });
@@ -154,7 +154,7 @@ describe('RuleStorage', () => {
       rule.payload = { number: 1, string: randomString(), bool: false };
       const saveProps = rule.toJSON();
 
-      await storage.updateRule(rule);
+      await storage.saveRule(rule);
       const updated = await storage.getRule(rule.id);
       const newProps = updated.toJSON();
 
@@ -202,15 +202,15 @@ describe('RuleStorage', () => {
     function createAlert(rule, data: Partial<RuleAlert> = {}): RuleAlert {
       return {
         id: getUniqueId(),
+        status: 'open',
         errorLevel: ErrorLevel.CRITICAL,
-        event: RuleEventsEnum.ALERT_TRIGGERED,
-        value: 100,
+        triggerValue: 100,
         threshold: 200,
         name: rule.name,
-        start: Date.now(),
+        raisedAt: Date.now(),
         state: {},
         severity: data.severity,
-        violations: 0,
+        failures: 0,
         ...data,
       };
     }

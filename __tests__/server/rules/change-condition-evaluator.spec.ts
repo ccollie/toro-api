@@ -138,7 +138,7 @@ describe('ChangeConditionEvaluator', () => {
 
       value = instance.update(40);
       expect(value).toBe(0);
-      clock.advanceBy(instance.fullWindowStart);
+      clock.advanceBy(instance.fullWindow);
       value = instance.update(5);
       expect(value).toBe(40);
     });
