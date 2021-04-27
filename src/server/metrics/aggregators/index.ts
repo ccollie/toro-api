@@ -5,6 +5,7 @@ import { MinAggregator } from './minAggregator';
 import { MaxAggregator } from './maxAggregator';
 import { SumAggregator } from './sumAggregator';
 import { MeanAggregator } from './meanAggregator';
+import { LatestAggregator } from './latestAggregator';
 import {
   EWMA1MinAggregator,
   EWMA5MinAggregator,
@@ -31,6 +32,7 @@ export const aggregateMap: Record<string, AggregatorClass> = {
   ewma1min: EWMA1MinAggregator,
   ewma5min: EWMA5MinAggregator,
   ewma15Min: EWMA15MinAggregator,
+  latest: LatestAggregator,
   min: MinAggregator,
   max: MaxAggregator,
   mean: MeanAggregator,
@@ -80,6 +82,7 @@ export {
   EWMA1MinAggregator,
   EWMA5MinAggregator,
   EWMA15MinAggregator,
+  LatestAggregator,
   NullAggregator,
   MinAggregator,
   P75Aggregator,
