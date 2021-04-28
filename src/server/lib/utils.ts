@@ -37,11 +37,18 @@ export function safeParse(item: string): any {
 }
 
 export function safeParseInt(
-  val: string,
+  val: unknown,
   defaultValue?: number,
 ): number | undefined {
-  if (!val) return defaultValue;
-  const candidate = parseInt(val);
+  if (val === undefined || val === null) return defaultValue;
+  const type = typeof val;
+  let candidate: number;
+  if (type === 'number') return val as number;
+  if (type === 'string') {
+    candidate = parseInt(val as string, 10);
+  } else {
+    candidate = Number(val);
+  }
   return isNaN(candidate) ? defaultValue : candidate;
 }
 

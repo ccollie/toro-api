@@ -42,7 +42,7 @@ export async function getMultipleJobsById(
     multi.hgetall(queue.toKey(jid));
   });
   const res = await multi.exec();
-  const result: Job<any, any>[] | PromiseLike<Job<any, any>[]> = [];
+  const result: Job<any, any>[] = [];
   const now = systemClock.getTime();
   res.forEach((item, index) => {
     if (item[0]) {

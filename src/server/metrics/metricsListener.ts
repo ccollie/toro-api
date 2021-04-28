@@ -7,7 +7,7 @@ import IORedis from 'ioredis';
 import { Queue } from 'bullmq';
 import { AccurateInterval, createAccurateInterval } from '../lib';
 import { createMetricFromJSON } from '../metrics';
-import { SerializedRuleMetric } from '@src/types';
+import { SerializedRuleMetric } from '../../types';
 
 const DEFAULT_CONCURRENCY = 16;
 const UPDATE_EVENT_NAME = 'metrics.updated';

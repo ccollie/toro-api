@@ -194,8 +194,6 @@ export interface RuleAlertOptions {
    * notifications when a rule condition passes and fails in rapid succession
    */
   recoveryWindow?: number;
-
-  autoRecoveryTimeout?: number;
 }
 
 /** configuration options for a {@link Rule} */
@@ -215,7 +213,7 @@ export interface RuleConfigOptions {
   /** the condition which should trigger an alert */
   condition: RuleCondition;
   /** true if the {@link Rule} is ACTIVE. */
-  active?: boolean;
+  isActive?: boolean;
   /*** Optional text for message when an alert is raised */
   message?: string;
   /** optional data passed on to alerts */
@@ -248,7 +246,7 @@ export interface RuleAlert {
   /** timestamp of when an alert was reset */
   resetAt?: number;
   /** The metric value that crossed the threshold.*/
-  readonly triggerValue: number;
+  readonly value: number;
   /*** The number of failures before the alert was generated */
   readonly failures: number;
   /** Alert message */

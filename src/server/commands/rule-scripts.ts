@@ -6,8 +6,10 @@ import {
   getRuleKey,
   getRuleStateKey,
   parseBool,
+  safeParseInt,
   systemClock,
 } from '../lib';
+import { has } from 'lodash';
 import { Rule } from '../rules';
 import { parseObjectResponse } from '../redis';
 
@@ -36,7 +38,7 @@ export interface AlertData {
 }
 
 export interface RuleAlertState {
-  active: boolean;
+  isActive: boolean;
   state: CircuitState;
   ruleState: RuleState;
   failures: number;
@@ -47,6 +49,7 @@ export interface RuleAlertState {
   lastFailure?: number;
   lastTriggeredAt?: number;
   lastNotify?: number;
+  notifyPending?: boolean;
 }
 
 export interface MarkNotifyResult {
@@ -172,7 +175,16 @@ export class RuleScripts {
     const res = parseObjectResponse(response);
 
     const result: RuleAlertState = res as RuleAlertState;
-    result.active = parseBool(res['active']);
+    result.isActive = parseBool(res['isActive'], true);
+    result.notifyPending = has(res, 'notifyPending')
+      ? parseBool(res.notifyPending)
+      : undefined;
+    // todo: this is verbose. We should get ints back properly from redis
+    result.failures = safeParseInt(res.failures, 0);
+    result.totalFailures = safeParseInt(res.totalFailures, 0);
+    result.successes = safeParseInt(res.successes, 0);
+    result.lastFailure = safeParseInt(res.lastFailure, 0);
+    result.lastTriggeredAt = safeParseInt(res.lastTriggeredAt, 0);
 
     return result;
   }

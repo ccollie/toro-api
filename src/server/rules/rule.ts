@@ -174,7 +174,7 @@ export class Rule {
       queueId: this.queueId,
       metric: clone(this.metric),
       condition: clone(this.condition),
-      active: this.isActive,
+      isActive: this.isActive,
       message: this.message,
       payload: clone(this.payload),
       channels: [...this.channels],

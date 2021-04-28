@@ -19,7 +19,7 @@
 
 local HASH_FIELDS = {
     'id',
-    'active',
+    'isActive',
     'options',
     'severity',
     'state',
@@ -90,9 +90,12 @@ local dblQuote = function(v)
 end
 
 local function toStr(value, ...)
+    -- local v;
+    if (isNil(value)) then
+        return 'null'
+    end
     local str = '';
     local t = type(value)
-    -- local v;
     if (t == 'string') then
         return value
     elseif (t == 'boolean') then
@@ -231,15 +234,23 @@ local function incrementTimestamp(val)
     return assert(false, "timestamp must be a number. got: " .. tostring(val))
 end
 
-local function loadRule()
-    if isLoaded == false then
+local stateLoaded = false
+local function loadState()
+    if not stateLoaded then
         local state = redis.call('HGETALL', ruleStateKey) or {}
         ruleState = {}
         for i = 1, #state, 2 do
             ruleState[state[i]] = state[i+1]
         end
         ruleState.state = ruleState.state or CIRCUIT_CLOSED
-        
+        stateLoaded = true
+    end
+    return ruleState
+end
+
+local function loadRule()
+    if isLoaded == false then
+        loadState()
         local values = redis.call('HMGET', ruleKey, unpack(HASH_FIELDS))
         local len = #values
         rule = {}
@@ -258,7 +269,7 @@ local function loadRule()
         else
             rule.channels = {}
         end
-        rule.active = toBool(rule.active)
+        rule.isActive = toBool(rule.isActive)
         isLoaded = true
         --- debug(rule)
     end
@@ -346,10 +357,12 @@ local function updateRuleState(state)
         rule.state = state
         local args = {'state', state}
 
-        if (state ~= RULE_STATE_NORMAL) then
+        if (state == RULE_STATE_NORMAL) then
+            arrayHashAppend(args, 'lastResolvedAt', now)
+        else
             arrayHashAppend(args, 'lastTriggeredAt', now)
         end
-        debug('updateRuleState ', args)
+
         redis.call('hset', ruleKey, unpack(args))
 
         emitEvent(STATE_CHANGED, unpack(args))
@@ -400,12 +413,13 @@ local function getAlert(id)
     return nil
 end
 
-local function shouldNotify(event)
+local function shouldNotify(oldState)
     local getOpt = getNumberOption
     local state = ruleState.state
+    oldState = oldState or state
 
     if state == CIRCUIT_CLOSED then
-        if (event == RULE_STATE_NORMAL) then
+        if (oldState == CIRCUIT_CLOSED) then
             return false
         end
         -- we transitioned from error to normal
@@ -415,13 +429,14 @@ local function shouldNotify(event)
         end
     end
 
-    local channels = rule.opts['channels'] or {}
+    local channels = rule['channels'] or {}
     if (not isArray(channels)) or (#channels == 0) then
         return false
     end
 
     local notifyInterval = getOpt('notifyInterval',  0)
     if (notifyInterval > 0) then
+        debug('checking notifyInterval')
         local lastNotify = getNumberState('lastNotify', 0)
         if (lastNotify > 0) then
             local delta = now - lastNotify
@@ -432,18 +447,20 @@ local function shouldNotify(event)
     end
 
     local alertCount = getNumberState('alertCount', 0)
-    local maxAlertsPerEvent = getOpt('maxAlertsPerEvent', MAX_INTEGER)
+    local maxAlertsPerEvent = getOpt('maxAlertsPerEvent', 0)
 
-    if (alertCount >= maxAlertsPerEvent) then
+    if (maxAlertsPerEvent > 0) and (alertCount >= maxAlertsPerEvent) then
         return false
     end
+
+    debug("shouldNotify. at end ")
 
     return true
 end
 
 --- ??? setState(event, data)
 local function writeAlert(parameter)
-    if (not rule.active) then
+    if (not rule.isActive) then
         return '{}'
     end
     local data = cjson.decode(parameter)
@@ -459,7 +476,7 @@ local function writeAlert(parameter)
         state = data.state,
         message = data.message or '',
         failures = getFailures(),
-        triggerValue = data.value,
+        value = data.value,
         raisedAt = now
     }
     if (data.errorLevel == ERROR_LEVEL_WARNING) then
@@ -494,27 +511,29 @@ local function calculateState()
     if (failures >= failureThreshold) then
         local successes = getNumberState('successes', 0)
         local successThreshold = getOpt('successThreshold', 0)
-        if (successThreshold > 0) and (successes >= successThreshold) then
-            debug('here. passed success threshold')
+        if (successThreshold > 0) then
+            if (successes >= successThreshold) then
+                return CIRCUIT_CLOSED
+            end
+        elseif successes > 0 then
             return CIRCUIT_CLOSED
         end
+
         local lastFailure = getLastFailure()
         local cooldown = getNumberOption('recoveryWindow', 0)
-        debug('Checking cooldown. LastFailure = ', lastFailure, ', cooldown = ', cooldown)
-        debug('Heere ',
-            {
-                ['cooldown'] = cooldown,
-                ['now'] = now,
-                ['lastFailure'] = lastFailure,
-                ['timeSinceLastFailure'] = now - lastFailure,
-                ['expired'] = (now - lastFailure) > cooldown
-            }
-        )
+        --debug('Checking cooldown. LastFailure = ', lastFailure, ', cooldown = ', cooldown)
+        --debug('Heere ',
+        --    {
+        --        ['cooldown'] = cooldown,
+        --        ['now'] = now,
+        --        ['lastFailure'] = lastFailure,
+        --        ['timeSinceLastFailure'] = now - lastFailure,
+        --        ['expired'] = (now - lastFailure) > cooldown
+        --    }
+        --)
         if  (cooldown > 0) and (now - lastFailure) >= cooldown then
-            debug('here. Auto-Closed')
             return CIRCUIT_CLOSED
         else
-            debug('here. OPEN')
             return CIRCUIT_OPEN
         end
     else
@@ -544,7 +563,8 @@ local function resetAndCloseCircuit()
 end
 
 local function updateCircuit()
-    ruleState.state = ruleState.state or calculateState()
+    ruleState.state = ruleState.state or CIRCUIT_CLOSED
+    local oldState = ruleState.state
     local state = calculateState()
 
     local changed = false
@@ -555,27 +575,32 @@ local function updateCircuit()
 
         ruleState.state = state
         if (state == CIRCUIT_OPEN) then
-            --- table.insert(args, 'failures', failureThreshold)
             arrayHashAppend(args, 'lastNotify', 0, 'successes', 0)
-            local notificationStart = getNumberState('notificationStart', 0)
+            local notificationStart = getNumberState('lastNotify', 0)
             if (notificationStart == 0) then
-                arrayHashAppend(args, 'notificationStart', now, 'lastTriggeredAt', now)
+                arrayHashAppend(args, 'lastNotify', now, 'lastTriggeredAt', now)
             end
+            newRuleState = ruleState['errorType'] or ERROR_LEVEL_CRITICAL
         elseif (state == CIRCUIT_CLOSED) then
-            deleteState('warmupStart', 'notificationStart', 'alertId', 'successes', 'errorType', 'lastFailure')
             arrayHashAppend(args, 'failures', 0, 'alertCount', 0)
             resetAndCloseCircuit()
             newRuleState = RULE_STATE_NORMAL
         end
-        local notifyPending = shouldNotify() and 1 or 0
+
+        local notifyPending = shouldNotify(oldState) and 1 or 0
+        ruleState['notifyPending'] = notifyPending
+
         arrayHashAppend(args, 'notifyPending', notifyPending)
 
-        debug('updateCircuit ', newRuleState or 'null-state')
         if (newRuleState ~= nil) then
             updateRuleState(newRuleState)
         end
 
         redis.call('hset', ruleStateKey, unpack(args))
+        if (state == CIRCUIT_CLOSED) then
+            deleteState('warmupStart', 'lastNotify', 'alertId', 'successes', 'errorType', 'lastFailure')
+        end
+
         changed = true
     end
     return state, changed
@@ -603,7 +628,6 @@ local function setResult(...)
 end
 
 local function checkNotify(parameter)
-    local errorType = errorType
     local getOpt = getNumberOption
     local status = 'ok'
 
@@ -615,7 +639,7 @@ local function checkNotify(parameter)
         errorType = (parameter == ERROR_LEVEL_WARNING) and RULE_STATE_WARNING or RULE_STATE_ERROR
     end
 
-    if (not rule.active) then
+    if (not rule.isActive) then
         status = 'inactive'
     else
         if isWarmingUp() then
@@ -683,7 +707,7 @@ local function checkState()
         return {'status', 'not_found'}
     end
     updateCircuit()
-    local res = {'active', rule.active, 'ruleState', rule.state}
+    local res = {'isActive', rule.isActive, 'ruleState', rule.state}
     for k, v in pairs(ruleState) do
         table.insert(res, k)
         table.insert(res, v)

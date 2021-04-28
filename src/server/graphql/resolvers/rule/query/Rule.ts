@@ -39,6 +39,10 @@ export const RuleTC = schemaComposer.createObjectTC({
       type: 'ID!',
       description: 'The rule id',
     },
+    queueId: {
+      type: 'ID!',
+      description: 'The id of the queue to which the rule belongs',
+    },
     name: {
       type: 'String!',
       description: 'The names of the rule',
@@ -54,6 +58,10 @@ export const RuleTC = schemaComposer.createObjectTC({
     updatedAt: {
       type: 'Date!',
       description: 'The timestamp of last update',
+    },
+    lastTriggeredAt: {
+      type: 'Date',
+      description: 'The last time the rule was triggeered',
     },
     state: {
       type: RuleStateType,

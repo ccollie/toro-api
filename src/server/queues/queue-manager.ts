@@ -84,7 +84,7 @@ export class QueueManager {
     this.init();
   }
 
-  protected init() {
+  protected init(): void {
     if (this.hasLock) {
       process.nextTick(() => {
         this.catchupStats();
@@ -377,7 +377,7 @@ export class QueueManager {
   /**
    * Run queue garbage collection
    */
-  sweep() {
+  sweep(): void {
     if (this.hasLock) {
       this._workQueue
         .addAll([

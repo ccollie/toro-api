@@ -11,23 +11,20 @@ import {
   getUniqueId,
   RedisStreamAggregator,
 } from '../common';
-import {
-  clearDb,
-  createClient,
-  DEFAULT_CLIENT_OPTIONS,
-  delay,
-  randomString,
-  randomId,
-} from '../utils';
+import { delay, randomString, randomId } from '../utils';
 import { Queue } from 'bullmq';
 import * as IORedis from 'ioredis';
 import { random, sortBy } from 'lodash';
 import pAll from 'p-all';
-import { createRuleOptions } from '../factories';
+import {
+  clearDb,
+  createClient,
+  createRuleOptions,
+  DEFAULT_CLIENT_OPTIONS,
+} from '../../factories';
 
 describe('RuleStorage', () => {
   // jest.setTimeout(5000);
-  const host = 'localhost';
   let queue: Queue;
   let client: IORedis.Redis;
   let queueName: string;
@@ -202,11 +199,10 @@ describe('RuleStorage', () => {
     function createAlert(rule, data: Partial<RuleAlert> = {}): RuleAlert {
       return {
         id: getUniqueId(),
+        ruleId: rule.id,
         status: 'open',
         errorLevel: ErrorLevel.CRITICAL,
-        triggerValue: 100,
-        threshold: 200,
-        name: rule.name,
+        value: 100,
         raisedAt: Date.now(),
         state: {},
         severity: data.severity,
@@ -224,8 +220,6 @@ describe('RuleStorage', () => {
 
         const newAlert = await storage.addAlert(rule, alert);
         expect(newAlert).toBeDefined();
-        // todo: load
-        expect(newAlert.event).toBe(RuleEventsEnum.ALERT_TRIGGERED);
 
         const stored = await storage.getAlert(rule, newAlert.id);
         expect(stored).toBeDefined();
@@ -261,13 +255,12 @@ describe('RuleStorage', () => {
         const alert = createAlert(rule);
 
         const storedAlert = await storage.addAlert(rule, alert);
-        alert.end = Date.now() + 1000;
+        alert.resetAt = Date.now() + 1000;
 
         const newAlert = createAlert(rule, {
-          event: RuleEventsEnum.ALERT_RESET,
+          errorLevel: ErrorLevel.NONE,
         });
         const updatedAlert = await storage.addAlert(rule, newAlert);
-        expect(updatedAlert.event).toBe(RuleEventsEnum.ALERT_RESET);
 
         await delay(200);
         expect(eventData).not.toBeUndefined();

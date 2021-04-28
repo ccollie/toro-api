@@ -4,7 +4,7 @@ import { isEmpty } from 'lodash';
 import { Queue, JobsOptions } from 'bullmq';
 import { ValidateFunction } from 'ajv';
 import { JobsOptionsSchema } from './job-options-schema';
-import { getJobSchemaKey, logger, objToString, safeParse } from '../lib';
+import { getJobSchemaKey, objToString, safeParse } from '../lib';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
 
@@ -33,10 +33,6 @@ export function validateJobOptions(options: Partial<JobsOptions>): void {
   if (!isEmpty(options)) {
     ajvValidate(jobsOptionsValidator, JobsOptionsSchema, options);
   }
-}
-
-function formatErrors(errors) {
-  logger.warn(errors);
 }
 
 export function compileSchema(

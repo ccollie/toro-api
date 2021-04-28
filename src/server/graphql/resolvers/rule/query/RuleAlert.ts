@@ -7,38 +7,30 @@ export const RuleAlertTC = schemaComposer.createObjectTC({
     'An event recording the occurrence of an rule violation or reset',
   fields: {
     id: 'ID!',
-    event: {
+    ruleId: {
       type: 'String!',
-      description: 'The event that raised this alert',
+      description: 'The id of the rule that raised this alert',
     },
-    start: {
+    status: 'String!', // todo: enum open|close
+    raisedAt: {
       type: 'DateTime!',
       description: 'Timestamp of when this alert was raised',
     },
-    end: {
+    resetAt: {
       type: 'DateTime',
       description: 'Timestamp of when this alert was reset',
-    },
-    threshold: {
-      type: 'Float!',
-      description:
-        'The value of the alert threshold set in the rule’s alert conditions.',
     },
     value: {
       type: 'Float!',
       description: 'The metric value that crossed the threshold.',
     },
-    resetValue: {
-      type: 'Float',
-      description: 'The metric value that reset the threshold.',
-    },
     state: {
       type: 'JSONObject',
       description: 'State that triggered alert',
     },
-    violations: {
+    failures: {
       type: 'Int!',
-      description: 'The number of violations before this alert was generated',
+      description: 'The number of failures before this alert was generated',
     },
     payload: {
       type: 'JSONObject',

@@ -137,7 +137,7 @@ describe('RuleEvaluator', () => {
     });
 
     it('is triggered by queue event', async () => {
-      const sut = createEvaluator({ active: false });
+      const sut = createEvaluator({ isActive: false });
       const spy = jest.spyOn(sut, 'evaluate');
 
       await postJob({ latency: 1000 });

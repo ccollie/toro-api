@@ -29,12 +29,10 @@ import {
 function createAlert(rule, data = {}): RuleAlert {
   return {
     id: getUniqueId(),
-    triggerValue: 201,
-    threshold: 100,
+    value: 201,
     status: 'open',
     errorLevel: ErrorLevel.CRITICAL,
-    name: rule.name,
-    description: rule.description,
+    ruleId: rule.id,
     raisedAt: Date.now(),
     state: {},
     severity: undefined,
@@ -338,7 +336,7 @@ describe('RuleManager', () => {
         expect(alert).not.toBe(null);
         expect(alert.status).toBe('open');
         expect(alert.severity).toBe(rule.severity);
-        expect(alert.triggerValue).toBe(ERROR_TRIGGER_VALUE);
+        expect(alert.value).toBe(ERROR_TRIGGER_VALUE);
         expect(alert.errorLevel).toBe(ErrorLevel.CRITICAL);
       });
 
@@ -350,7 +348,7 @@ describe('RuleManager', () => {
         expect(alert).not.toBe(null);
         expect(alert.status).toBe('open');
         expect(alert.severity).toBe(rule.severity);
-        expect(alert.triggerValue).toBe(WARNING_TRIGGER_VALUE);
+        expect(alert.value).toBe(WARNING_TRIGGER_VALUE);
         expect(alert.errorLevel).toBe(ErrorLevel.WARNING);
       });
 

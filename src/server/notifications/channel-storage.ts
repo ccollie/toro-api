@@ -86,7 +86,7 @@ export class ChannelStorage {
     return result;
   }
 
-  /*
+  /**
    * Fetch a channel by id
    * @param {string} id
    * @returns {Promise<Rule>}
