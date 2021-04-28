@@ -340,7 +340,7 @@ export class RuleStorage {
     const alertData: AlertData = {
       errorLevel: data.errorLevel,
       id: getUniqueId(),
-      value: data.triggerValue,
+      value: data.value,
       state: data.state,
       message: data.message,
     };
@@ -604,7 +604,7 @@ function deserializeRule(data?: any): Rule {
   } else {
     delete data.lastTriggeredAt; //
   }
-  data.active = parseBool(data.active, true);
+  data.isActive = parseBool(data.isActive, true);
   data.persist = parseBool(data.persist, true);
   data.state = (data.state ?? RuleState.NORMAL) as RuleState;
   if (typeof data.channels == 'string') {

@@ -137,7 +137,7 @@ export class QueueListener extends Emittery {
     return this._clock;
   }
 
-  onError(err: Error) {
+  onError(err: Error): void {
     logger.warn(err);
   }
 
@@ -323,7 +323,7 @@ export class QueueListener extends Emittery {
     const { job } = data;
     if (QueueListener.needsMeta(data)) {
       // since we're hitting the backend anyway, grab data
-      // for other getJobs at the same time
+      // for other jobs at the same time
       await this.fetchJobData(20, job);
     }
     const finishedOn = job.finishedOn || systemClock.getTime();

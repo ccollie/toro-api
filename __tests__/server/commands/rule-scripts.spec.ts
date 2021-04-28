@@ -19,6 +19,7 @@ import {
   AlertData,
   CheckAlertResult,
   CircuitState,
+  MarkNotifyResult,
   RuleAlertState,
   RuleScripts,
 } from '../../../src/server/commands';
@@ -105,7 +106,7 @@ describe('RuleScripts', () => {
     return postResult(rule, ErrorLevel.NONE, timestamp);
   }
 
-  async function loadState(rule: Rule | string): Promise<RuleAlertState> {
+  async function getRawState(rule: Rule | string): Promise<RuleAlertState> {
     const id = getId(rule);
     const ruleStateKey = getRuleStateKey(queue, id);
     const client = await queue.client;
@@ -113,11 +114,15 @@ describe('RuleScripts', () => {
     return (fromRedis as unknown) as RuleAlertState;
   }
 
+  async function getState(rule: Rule): Promise<RuleAlertState> {
+    return RuleScripts.getState(queue, rule, clock.getTime());
+  }
+
   describe('Initial state', () => {
     it('should start in closed state', async () => {
-      const rule = await addRule({ active: true });
-      const state = await loadState(rule);
-      expect(state.state).toBe(CircuitState.CLOSED);
+      const rule = await addRule({ isActive: true });
+      const state = await getState(rule);
+      expect(state.state).not.toBe(CircuitState.OPEN);
     });
   });
 
@@ -142,28 +147,29 @@ describe('RuleScripts', () => {
   describe('stopRule', () => {
     it('does not notify if the rule is not active', async () => {
       const rule = await createRule({
-        active: false,
+        isActive: false,
       });
       const result = await postFailure(rule);
-      expect(result.state).toBeUndefined();
+      expect(result.status).toBe('inactive');
       expect(result.failures).toBeFalsy();
     });
   });
 
   describe('failure', () => {
     it('should increment the number of failures', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const result = await postFailure(rule);
       expect(result.failures).toBe(1);
     });
 
     it('updates rule state metadata', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const now = clock.getTime();
       await postFailure(rule, ErrorLevel.WARNING, now);
+
       let state = await RuleScripts.getState(queue, rule, now);
-      expect(state.state).toBe(RuleState.WARNING);
-      expect(state.active).toBe(rule.isActive);
+      expect(state.state).toBe(CircuitState.OPEN);
+      expect(state.isActive).toBe(rule.isActive);
       expect(state.failures).toBe(1);
       expect(state.totalFailures).toBe(1);
       expect(state.lastFailure).toBe(now);
@@ -180,9 +186,9 @@ describe('RuleScripts', () => {
       expect(state.totalFailures).toBe(2);
     });
 
-    it('should set circuit to open after max failures is reached', async () => {
+    it('should raise an alert after max failures is reached', async () => {
       const rule = await addRule({
-        active: true,
+        isActive: true,
         options: { failureThreshold: 3, recoveryWindow: 100 },
       });
 
@@ -196,7 +202,7 @@ describe('RuleScripts', () => {
 
     it('should auto resolve after no errors in the cooldown period', async () => {
       const rule = await addRule({
-        active: true,
+        isActive: true,
         options: { recoveryWindow: 100 },
       });
 
@@ -213,7 +219,7 @@ describe('RuleScripts', () => {
 
     it('should extend the cooldown period if a new failure occurs', async () => {
       const rule = await addRule({
-        active: true,
+        isActive: true,
         options: { recoveryWindow: 100 },
       });
 
@@ -230,7 +236,7 @@ describe('RuleScripts', () => {
     });
 
     it('should update the rule state with a WARNING', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const now = clock.getTime();
       await postFailure(rule, ErrorLevel.WARNING);
       const fromRedis = await getRule(rule.id);
@@ -239,7 +245,7 @@ describe('RuleScripts', () => {
     });
 
     it('should update the rule state with an ERROR', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const now = clock.getTime();
       await postFailure(rule, ErrorLevel.CRITICAL, now);
       const fromRedis = await getRule(rule.id);
@@ -251,7 +257,7 @@ describe('RuleScripts', () => {
       jest.setTimeout(10000);
 
       const rule = await addRule({
-        active: true,
+        isActive: true,
       });
 
       await queueManager.bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
@@ -264,38 +270,39 @@ describe('RuleScripts', () => {
 
   describe('success', () => {
     it('should reset number of failures to 0', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
 
       for (let i = 0; i < 5; i++) {
         await postFailure(rule);
       }
 
-      let state = await loadState(rule);
+      let state = await getState(rule);
       expect(state.failures).toBe(5);
 
       const result = await postSuccess(rule);
       expect(result.failures).toBe(0);
 
-      state = await loadState(rule);
+      state = await getRawState(rule);
       expect(state.failures).toBe(0);
       expect(state.successes).toBe(1);
       expect(state.totalFailures).toBe(5);
     });
 
     it('updates rule state metadata', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const now = clock.getTime();
       await postFailure(rule, ErrorLevel.CRITICAL, now);
       await postFailure(rule);
 
-      await postSuccess(rule);
+      let result = await postSuccess(rule);
       const state = await RuleScripts.getState(queue, rule, now);
+      expect(state.state).toBe(CircuitState.CLOSED);
       expect(state.failures).toBe(0);
       expect(state.totalFailures).toBe(2);
     });
 
     it('should resolve error after a successful result', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
 
       let result = await postFailure(rule);
       expect(result.state).toBe(CircuitState.OPEN);
@@ -306,7 +313,7 @@ describe('RuleScripts', () => {
 
     it('should resolve error after a specified number of consecutive successes', async () => {
       const rule = await addRule({
-        active: true,
+        isActive: true,
         options: {
           successThreshold: 3,
         },
@@ -326,13 +333,13 @@ describe('RuleScripts', () => {
     });
 
     it('should emit success event', async (done) => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
     });
   });
 
   describe('writeAlert', () => {
     it('writes an alert to redis', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const now = clock.getTime();
 
       await postFailure(rule);
@@ -341,7 +348,7 @@ describe('RuleScripts', () => {
       const alert = await RuleScripts.writeAlert(queue, rule, alertData, now);
       expect(alert).toBeDefined();
       expect(alert.ruleId).toBe(rule.id);
-      expect(alert.triggerValue).toBe(alertData.value);
+      expect(alert.value).toBe(alertData.value);
       expect(alert.status).toBe('open');
       expect(alert.errorLevel).toBe(ErrorLevel.CRITICAL);
       expect(alert.raisedAt).toBe(now);
@@ -351,7 +358,7 @@ describe('RuleScripts', () => {
     });
 
     it('updates the rule state', async () => {
-      const rule = await addRule({ active: true });
+      const rule = await addRule({ isActive: true });
       const now = clock.getTime();
 
       await postFailure(rule);
@@ -371,7 +378,7 @@ describe('RuleScripts', () => {
 
   describe('Alerts', () => {
     it('raise an event on reset', async () => {
-      const rule = createRule({ active: true });
+      const rule = createRule({ isActive: true });
 
       await postFailure(rule);
       // should be triggered
@@ -383,7 +390,7 @@ describe('RuleScripts', () => {
     });
 
     it('does not raise an alert if the rule is not ACTIVE', async () => {
-      const sut = await createRule({ active: false });
+      const sut = await addRule({ isActive: false });
 
       const result = await postFailure(sut);
       expect(result.status).toBe('inactive');
@@ -391,7 +398,7 @@ describe('RuleScripts', () => {
     });
 
     it('triggers a state change on a warning', async () => {
-      const rule = await createRule({ active: true });
+      const rule = await addRule({ isActive: true });
       expect(rule.state).toBe(RuleState.NORMAL);
 
       const result = await postFailure(rule, ErrorLevel.WARNING);
@@ -404,7 +411,8 @@ describe('RuleScripts', () => {
     describe('Options', () => {
       it('respects the warmupWindow option', async () => {
         const timeout = 100;
-        const rule = await createRule({
+        const rule = await addRule({
+          isActive: true,
           options: {
             warmupWindow: timeout,
           },
@@ -421,62 +429,106 @@ describe('RuleScripts', () => {
         expect(result.status).toBe('ok');
       });
 
-      it('only raises an alert after a minimum number of failures', async () => {
-        const MIN_VIOLATIONS = 3;
+      // todo: should not add a new alert if previous is not reset
+    });
+  });
 
-        const rule = await createRule({
-          options: {
-            failureThreshold: MIN_VIOLATIONS,
-          },
-        });
-
-        for (let i = 0; i < MIN_VIOLATIONS - 1; i++) {
-          await postFailure(rule);
-        }
-        await delay(50);
-
-        let result = await postFailure(rule);
-        expect(result.alertCount).toBe(0);
-        expect(result.failures).toBe(MIN_VIOLATIONS);
-
-        result = await postFailure(rule);
-        expect(result.alertCount).toBe(1);
-
-        const alert = getLastAlert(rule);
-        expect(alert).toBeDefined();
+  describe('notifications', () => {
+    it('notification state should be FALSE if rule has no channels', async () => {
+      const rule = await addRule({
+        isActive: true,
+        channels: [],
       });
+
+      const result = await postFailure(rule);
+      expect(result.notify).toBe(false);
+
+      const state = await getState(rule);
+      expect(state.notifyPending).toBe(false);
+    });
+
+    it('notification state should be TRUE on failure', async () => {
+      const rule = await addRule({
+        isActive: true,
+        channels: ['channel1', 'channel2'],
+      });
+
+      const result = await postFailure(rule);
+      expect(result.notify).toBe(true);
+
+      const state = await getState(rule);
+      expect(state.notifyPending).toBe(true);
+    });
+
+    it('notification state should be FALSE on success', async () => {
+      const rule = await addRule({
+        isActive: true,
+        channels: ['channel1', 'channel2'],
+        options: {
+          alertOnReset: false,
+        },
+      });
+
+      let result = await postFailure(rule);
+      expect(result.notify).toBe(true);
+
+      result = await postSuccess(rule);
+      expect(result.notify).toBe(false);
+    });
+
+    it('notification state should be TRUE when reset and alertOnReset = TRUE', async () => {
+      const rule = await addRule({
+        isActive: true,
+        channels: ['channel1', 'channel2'],
+        options: {
+          alertOnReset: true,
+        },
+      });
+
+      await postFailure(rule);
+      const result = await postSuccess(rule);
+      expect(result.notify).toBe(true);
+
+      const state = await getState(rule);
+      expect(state.notifyPending).toBe(true);
+    });
+
+    describe('markNotify', () => {
+      function notify(rule: Rule, alertId: string): Promise<MarkNotifyResult> {
+        return RuleScripts.markNotify(queue, rule, alertId, clock.getTime());
+      }
 
       it('respects the max number of repeats per event', async () => {
         const MAX_ALERTS = 4;
 
-        const rule = await createRule({
+        const rule = await addRule({
+          isActive: true,
+          channels: ['channel1', 'channel2'],
           options: {
             maxAlertsPerEvent: MAX_ALERTS,
           },
         });
 
+        let result: CheckAlertResult;
+        let notifyResult: MarkNotifyResult;
+
         for (let i = 0; i < MAX_ALERTS + 2; i++) {
-          await RuleScripts.checkAlert(
-            queue,
-            rule,
-            ErrorLevel.CRITICAL,
-            clock.getTime(),
-          );
+          result = await postFailure(rule);
+          notifyResult = await notify(rule, result.alertId);
         }
 
-        const state = await loadState(rule);
+        const state = await getState(rule);
 
-        await delay(40);
         expect(state.alertCount).toBe(MAX_ALERTS);
       });
 
-      it('waits a specified amount of time between alerts', async () => {
+      it('waits a specified amount of time between notifications', async () => {
         const options = {
           notifyInterval: 100,
         };
 
-        const rule = await createRule({
-          active: true,
+        const rule = await addRule({
+          isActive: true,
           options,
         });
 
@@ -496,8 +548,6 @@ describe('RuleScripts', () => {
         result = await postFailure(rule);
         expect(result.alertCount).toBe(2);
       });
-
-      // todo: should not add a new alert if previous is not reset
     });
   });
 });

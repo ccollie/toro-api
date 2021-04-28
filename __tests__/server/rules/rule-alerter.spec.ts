@@ -119,7 +119,7 @@ describe('RuleEAlerter', () => {
 
   describe('.handleResult', () => {
     it('does not notify if the rule is not active', async () => {
-      const sut = await createAlerter({ active: false });
+      const sut = await createAlerter({ isActive: false });
       await trigger(sut);
       expect(sut.state).toBeUndefined();
       expect(sut.isTriggered).toBe(false);
@@ -134,7 +134,7 @@ describe('RuleEAlerter', () => {
       };
 
       const sut = await createAlerter({
-        active: true,
+        isActive: true,
         payload,
         message: '{{rule.id}} is fantastic',
       });
@@ -150,12 +150,12 @@ describe('RuleEAlerter', () => {
       expect(alert.status).toBe('open');
       expect(alert.errorLevel).toBe(result.errorLevel);
       expect(alert.message).toBeDefined();
-      expect(alert.triggerValue).toBe(result.value);
+      expect(alert.value).toBe(result.value);
     });
 
     it('raise an event on reset', async () => {
       const sut = await createAlerter({
-        active: true,
+        isActive: true,
       });
 
       await trigger(sut);
@@ -168,21 +168,21 @@ describe('RuleEAlerter', () => {
     });
 
     it('does not raise an alert if the rule is not ACTIVE', async () => {
-      const sut = await createAlerter({ active: false });
+      const sut = await createAlerter({ isActive: false });
 
       await trigger(sut);
       expect(sut.isTriggered).toBeFalsy();
     });
 
     it('triggers a states change on a warning', async () => {
-      const sut = await createAlerter({ active: true });
+      const sut = await createAlerter({ isActive: true });
 
       await trigger(sut, ErrorLevel.WARNING);
       expect(sut.state).toBe(RuleState.WARNING);
     });
 
     it('increases the number of failures when triggered', async () => {
-      const sut = await createAlerter({ active: true });
+      const sut = await createAlerter({ isActive: true });
 
       await trigger(sut);
       expect(sut.failures).toBe(1);
@@ -192,7 +192,7 @@ describe('RuleEAlerter', () => {
     });
 
     it('zeroes the failure count when reset', async () => {
-      const sut = await createAlerter({ active: true });
+      const sut = await createAlerter({ isActive: true });
 
       await trigger(sut);
       expect(sut.failures).toBe(1);
@@ -221,28 +221,6 @@ describe('RuleEAlerter', () => {
         await trigger(sut);
 
         expect(sut.isWarmingUp).toBe(false);
-      });
-
-      it('only raises an alert after notificationDelay', async () => {
-        const ALERT_DELAY = 100;
-
-        const sut = await createAlerter({
-          options: {
-            notificationDelay: ALERT_DELAY,
-          },
-        });
-
-        await sut.start();
-        await trigger(sut);
-
-        expect(sut.failures).toBe(0);
-
-        clock.advanceBy(ALERT_DELAY);
-
-        await trigger(sut);
-
-        expect(sut.failures).toBe(1);
-        expect(sut.alertCount).toBe(1);
       });
 
       it('only raises an alert after a minimum number of violations', async () => {

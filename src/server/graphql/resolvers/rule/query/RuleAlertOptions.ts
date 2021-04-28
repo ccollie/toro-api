@@ -10,10 +10,15 @@ export const RuleAlertOptionsTC = schemaComposer.createObjectTC({
         'a timeout after startup (in ms) during which no alerts are raised, irrespective of ' +
         'the truthiness of the rule condition.',
     },
-    minViolations: {
+    failureThreshold: {
       type: 'Int',
       description:
         'The minimum number of violations before an alert can be raised',
+    },
+    successThreshold: {
+      type: 'Int',
+      description:
+        'Optional number of consecutive successful method executions to close then alert. Default 1',
     },
     maxAlertsPerEvent: {
       type: 'Int',
@@ -21,23 +26,15 @@ export const RuleAlertOptionsTC = schemaComposer.createObjectTC({
         'The max number of alerts to receive per event trigger in case the condition is met.\n ' +
         'In this case the "event" is a single period between the rule VIOLATION and RESET states.',
     },
-    triggerWindow: {
-      type: 'Duration',
-      description:
-        'Duration (ms) for which a metric is anomalous before triggering a violation.\n' +
-        'After a rule violation is encountered, no alerts are dispatched until this period ' +
-        'has passed. This is useful for events which are normally transient by may periodically ' +
-        'persist longer than usual, or for not sending notifications out too quickly.',
-    },
     recoveryWindow: {
       type: 'Duration',
       description:
-        'How long an anomalous metric must be normal before resetting an alert\'s states ' +
+        'How long an triggered rule must be without failures before resetting it ' +
         'to NORMAL. In conjunction with "alertOnReset", this can be used to prevent ' +
         'a possible storm of notifications when a rule condition passes and fails in ' +
         'rapid succession ("flapping")',
     },
-    renotifyInterval: {
+    notifyInterval: {
       type: 'Duration',
       description:
         'If specified, the minimum time between alerts for the same incident',

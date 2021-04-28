@@ -124,7 +124,7 @@ export const ruleConfigSchema = Joi.object().keys({
   lastTriggeredAt: Joi.date().optional(),
   metric: ruleMetricSchema,
   condition: ruleConditionSchema.required().default(Object.create(null)),
-  active: Joi.boolean().default(true).optional(),
+  isActive: Joi.boolean().default(true).optional(),
   persist: Joi.boolean().default(true).optional(),
   payload: Joi.object().default(Object.create(null)),
   options: ruleAlertOptionsSchema.optional().default(defaultRuleAlertOptions),

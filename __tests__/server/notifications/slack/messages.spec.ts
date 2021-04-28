@@ -31,7 +31,7 @@ describe('messages', () => {
       const context: RuleAlert = {
         raisedAt: 0,
         status: 'open',
-        triggerValue: 0,
+        value: 0,
         id: nanoid(),
         event,
         errorLevel: ErrorLevel.WARNING,

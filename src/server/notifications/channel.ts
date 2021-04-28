@@ -63,8 +63,11 @@ export class Channel<TConfig extends ChannelConfig = ChannelConfig>
   }
 
   async dispatch(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     context: NotificationContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     message: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     eventName?: string,
   ): Promise<void> {
     throw boom.notImplemented('dispatch');
