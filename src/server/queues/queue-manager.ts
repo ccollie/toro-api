@@ -13,7 +13,7 @@ import {
   getMultipleJobsById,
 } from './queue';
 import { HostManager } from '../hosts';
-import { getQueueUri, logger } from '../lib';
+import { Clock, getQueueUri, logger } from '../lib';
 import {
   JobStatus,
   QueueConfig,
@@ -24,6 +24,9 @@ import {
 } from '../../types';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../lib/keys';
+import { MetricManager } from '../metrics/metric-manager';
+import { parseDuration } from '../lib/datetime';
+import { BaseMetric } from '../metrics';
 
 const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
 
@@ -47,6 +50,15 @@ export function getCronDescription(cron: string | number): string {
   }
 }
 
+const DEFAULT_RETENTION = ms('2 weeks');
+
+function getRetention(): number {
+  const baseValue = process.env.DATA_RETENTION;
+  return baseValue
+    ? parseDuration(baseValue, DEFAULT_RETENTION)
+    : DEFAULT_RETENTION;
+}
+
 /**
  * Maintain all data related to a queue
  * @property {RuleManager} ruleManager
@@ -63,11 +75,14 @@ export class QueueManager {
   readonly queueListener: QueueListener;
   readonly statsClient: StatsClient;
   readonly ruleManager: RuleManager;
+  readonly metricManager: MetricManager;
   readonly bus: EventBus;
+  readonly clock: Clock;
   private readonly _workQueue: PQueue = new PQueue({ concurrency: 6 });
   public readonly statsListener: StatsListener;
   private _uri: string = undefined;
   private inStatsUpdate = false;
+  public readonly dataRetention = getRetention();
 
   constructor(host: HostManager, queue: Queue, config: QueueConfig) {
     this.host = host.name;
@@ -79,6 +94,12 @@ export class QueueManager {
     this.statsClient = new StatsClient(this);
     this.ruleManager = new RuleManager(this);
     this.statsListener = this.createStatsListener();
+    this.metricManager = new MetricManager(
+      this.id,
+      this.queueListener,
+      this.bus,
+    );
+    this.clock = this.queueListener.clock;
     this.onError = this.onError.bind(this);
     this.handleLockEvent = this.handleLockEvent.bind(this);
     this.init();
@@ -95,10 +116,11 @@ export class QueueManager {
 
   async destroy(): Promise<void> {
     this.lock.off(LockManager.ACQUIRED, this.handleLockEvent);
+    this.metricManager.destroy();
+    this.ruleManager.destroy();
     await this.queueListener.destroy();
     this.bus.destroy();
     this.statsClient.destroy();
-    this.ruleManager.destroy();
     this.statsListener.destroy();
     await this._workQueue.onIdle(); // should we just clear ?
     await this.queue.close();
@@ -186,6 +208,10 @@ export class QueueManager {
     return this.ruleManager.getRule(id);
   }
 
+  findMetric(id: string): BaseMetric {
+    return this.metricManager.metrics.find((x) => x.id === id);
+  }
+
   addWork(fn: () => void | Promise<void>): void {
     this._workQueue.add(fn).catch((err) => {
       logger.warn(err);
@@ -252,12 +278,14 @@ export class QueueManager {
     return this.queue.isPaused();
   }
 
-  pause(): Promise<void> {
-    return this.queue.pause();
+  async pause(): Promise<void> {
+    await this.queue.pause();
+    this.metricManager.stop();
   }
 
-  resume(): Promise<void> {
-    return this.queue.resume();
+  async resume(): Promise<void> {
+    await this.queue.resume();
+    await this.metricManager.start();
   }
 
   /****
@@ -382,8 +410,9 @@ export class QueueManager {
       this._workQueue
         .addAll([
           () => this.statsListener.sweep(),
-          () => this.ruleManager.pruneAlerts(),
+          () => this.ruleManager.pruneAlerts(this.dataRetention),
           () => this.bus.cleanup(),
+          () => this.metricManager.pruneData(this.dataRetention),
         ])
         .catch((err) => this.onError(err));
     }

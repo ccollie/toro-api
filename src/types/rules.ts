@@ -127,13 +127,6 @@ export type RuleMetric = {
   [propName: string]: any;
 };
 
-export interface SerializedRuleMetric {
-  id: string;
-  type: string;
-  aggregator: SerializedAggregator;
-  options: Record<string, any>;
-}
-
 export type RuleCondition =
   | PeakCondition
   | ThresholdCondition

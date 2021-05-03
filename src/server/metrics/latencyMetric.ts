@@ -1,6 +1,7 @@
 import { BaseMetric } from './baseMetric';
 import { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
+import { MetricTypes } from '../../types';
 
 export class LatencyMetric extends BaseMetric {
   get validEvents(): string[] {
@@ -11,8 +12,8 @@ export class LatencyMetric extends BaseMetric {
     this.update(event.latency);
   }
 
-  static get key(): string {
-    return 'latency';
+  static get key(): MetricTypes {
+    return MetricTypes.Latency;
   }
 
   static get description(): string {

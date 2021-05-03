@@ -100,6 +100,16 @@ export function getQueueAlertsIndex(queue: Queue): string {
   return getKey(null, queue, null, 'alerts-index');
 }
 
+export function getMetricsKey(queue: Queue, id: string = null): string {
+  const tag = 'metrics' + (id ? `:${id}` : '');
+  return getKey(null, queue, null, tag);
+}
+
+export function getMetricsDataKey(queue: Queue, id: string): string {
+  const base = getMetricsKey(queue, id);
+  return `${base}:data`;
+}
+
 export function getHostBusKey(host: string): string {
   return getHostKey(host, 'events');
 }

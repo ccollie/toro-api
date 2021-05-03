@@ -1,7 +1,9 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
 import { Clock, getStaticProp } from '../../lib';
-import { SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
 import { BaseMetric } from '../baseMetric';
+import { ObjectSchema } from 'joi';
+import { SlidingWindowOptionSchema } from './slidingTimeWindowAggregator';
 
 /***
  * An aggregator returning the mean of a stream of values
@@ -23,11 +25,15 @@ export class MeanAggregator extends StatsBasedAggregator {
     return `${type} avg`;
   }
 
-  static get key(): string {
-    return 'avg';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Mean;
   }
 
   static get description(): string {
     return 'Average';
+  }
+
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

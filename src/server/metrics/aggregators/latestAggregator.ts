@@ -2,6 +2,7 @@ import { ObjectSchema } from 'joi';
 import { BaseMetric } from '../baseMetric';
 import { BaseAggregator } from './aggregator';
 import { getStaticProp } from '../../lib';
+import { AggregatorTypes } from '../../../types';
 
 /**
  * An aggregator which returns the latest value
@@ -20,8 +21,8 @@ export class LatestAggregator extends BaseAggregator {
     return getStaticProp(metric, 'key');
   }
 
-  static get key(): string {
-    return 'latest';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Latest;
   }
 
   static get description(): string {

@@ -81,9 +81,11 @@ describe('RuleStorage', () => {
 
     it('emits a "rule.added" event', async () => {
       let eventData;
-      await bus.on(RuleEventsEnum.RULE_ADDED, (evt) => {
+
+      bus.on(RuleEventsEnum.RULE_ADDED, (evt) => {
         eventData = evt;
       });
+
       const rule = await addRule();
       await delay(450);
       expect(eventData).not.toBeUndefined();
@@ -107,7 +109,7 @@ describe('RuleStorage', () => {
     it('emits a "rule.deleted" event', async () => {
       let eventData;
 
-      await bus.on(RuleEventsEnum.RULE_DELETED, (evt) => {
+      bus.on(RuleEventsEnum.RULE_DELETED, (evt) => {
         eventData = evt;
       });
       const rule = await addRule();
@@ -228,7 +230,7 @@ describe('RuleStorage', () => {
       it('raises the "alert.triggered" event', async () => {
         let eventData;
 
-        await bus.on(RuleEventsEnum.ALERT_TRIGGERED, (evt) => {
+        bus.on(RuleEventsEnum.ALERT_TRIGGERED, (evt) => {
           eventData = evt;
         });
 
@@ -247,7 +249,7 @@ describe('RuleStorage', () => {
       it('updates an existing alert', async () => {
         let eventData;
 
-        await bus.on(RuleEventsEnum.ALERT_RESET, (evt) => {
+        bus.on(RuleEventsEnum.ALERT_RESET, (evt) => {
           eventData = evt;
         });
 
@@ -285,7 +287,7 @@ describe('RuleStorage', () => {
 
         let eventData;
 
-        await bus.on(RuleEventsEnum.ALERT_DELETED, (evt) => {
+        bus.on(RuleEventsEnum.ALERT_DELETED, (evt) => {
           eventData = evt;
         });
 

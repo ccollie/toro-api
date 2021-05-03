@@ -2,6 +2,7 @@ import { ObjectSchema } from 'joi';
 import { BaseMetric } from '../baseMetric';
 import { BaseAggregator } from './aggregator';
 import { getStaticProp } from '../../lib';
+import { AggregatorTypes } from '../../../types';
 
 export class NullAggregator extends BaseAggregator {
   protected _value: number | undefined;
@@ -17,8 +18,8 @@ export class NullAggregator extends BaseAggregator {
     return getStaticProp(metric, 'key');
   }
 
-  static get key(): string {
-    return 'null_aggregator';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Null;
   }
 
   static get description(): string {

@@ -2,6 +2,13 @@ import { BaseAggregator } from './aggregator';
 import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
 import { IMovingAverage, MovingAverage } from '../../stats/moving-average';
+import { AggregatorTypes } from '../../../types';
+import Joi from 'joi';
+import { DurationSchema } from '../../validation/schemas';
+
+export const schema = Joi.object().keys({
+  interval: DurationSchema.required(),
+});
 
 /***
  * Returns the Exponentially Weighted Moving Avg of a stream
@@ -14,7 +21,7 @@ export class EWMAAggregator extends BaseAggregator {
    * Construct a EWMAAggregator
    */
   constructor(clock: Clock, interval: number) {
-    super(clock);
+    super(clock, { interval });
     this.ewma = MovingAverage(interval, clock);
   }
 
@@ -24,10 +31,6 @@ export class EWMAAggregator extends BaseAggregator {
       return super.getDescription(metric, true);
     }
     return `${type} EWMA`;
-  }
-
-  static get key(): string {
-    return 'ewma';
   }
 
   static get description(): string {
@@ -59,8 +62,8 @@ export class EWMA1MinAggregator extends EWMAAggregator {
     super(clock, ONE_MINUTE);
   }
 
-  static get key(): string {
-    return 'ewma1min';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Ewma1Min;
   }
 
   static get description(): string {
@@ -73,8 +76,8 @@ export class EWMA5MinAggregator extends EWMAAggregator {
     super(clock, 5 * ONE_MINUTE);
   }
 
-  static get key(): string {
-    return 'ewma5min';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Ewma5Min;
   }
 
   static get description(): string {
@@ -87,8 +90,8 @@ export class EWMA15MinAggregator extends EWMAAggregator {
     super(clock, 15 * ONE_MINUTE);
   }
 
-  static get key(): string {
-    return 'ewma15min';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Ewma15Min;
   }
 
   static get description(): string {

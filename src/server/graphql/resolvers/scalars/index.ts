@@ -12,8 +12,6 @@ export * from './duration';
 export * from './jobProgress';
 export * from './jobRemoveOption';
 export * from './jsonSchema';
-export * from './MetricType';
-export * from './MetricCategory';
 export * from './StatsGranularityEnum';
 export * from './StatsMetricsTypeEnum';
 export * from './JobFilterQuery';

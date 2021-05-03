@@ -13,16 +13,11 @@ export interface RedisStreamItem {
 export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
   let client;
   if (isNil(redisOpts)) {
-    client = new IORedis({ enableAutoPipelining: true }); // supported in 4.19.0
+    client = new IORedis(); // supported in 4.19.0
   } else if (isString(redisOpts)) {
     client = new IORedis(redisOpts as string);
   } else {
-    // casting is done as types are behind the current release (4.19.0)
-    const opts = {
-      ...redisOpts,
-      enableAutoPipelining: true,
-    } as IORedis.RedisOptions;
-    client = new IORedis(opts);
+    client = new IORedis(redisOpts);
   }
 
   loadScripts(client).catch((err) => logger.warn(err));

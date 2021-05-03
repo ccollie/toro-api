@@ -1,11 +1,12 @@
 import { StreamingStats } from '../../stats';
 import { BaseAggregator } from './aggregator';
 import { Clock } from '../../lib';
-import { SerializedAggregator, SlidingWindowOptions } from '../../../types';
+import { SlidingWindowOptions } from '../../../types';
+import { ObjectSchema } from 'joi';
+import { SlidingWindowOptionSchema } from './slidingTimeWindowAggregator';
 
 export class StatsBasedAggregator extends BaseAggregator {
   protected readonly stats: StreamingStats;
-  private readonly options: SlidingWindowOptions;
 
   /**
    * Construct a StatsBasedAggregator
@@ -15,7 +16,7 @@ export class StatsBasedAggregator extends BaseAggregator {
    * @param {Number} options.interval interval for rolling window
    */
   constructor(clock: Clock, options: SlidingWindowOptions) {
-    super(clock);
+    super(clock, options);
     this.stats = new StreamingStats(clock, options.duration);
   }
 
@@ -33,13 +34,7 @@ export class StatsBasedAggregator extends BaseAggregator {
     return this.value;
   }
 
-  toJSON(): SerializedAggregator {
-    const type = (this.constructor as any).key;
-    return {
-      type,
-      options: {
-        ...this.options,
-      },
-    };
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

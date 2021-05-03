@@ -1,7 +1,13 @@
 import { Queue } from 'bullmq';
 import { PollingMetric } from './baseMetric';
 import { MetricsListener } from './metricsListener';
-import { JobStatusEnum, MetricType, PollingMetricOptions } from '../../types';
+import {
+  JobStatusEnum,
+  MetricType,
+  MetricTypes,
+  PollingMetricOptions,
+} from '../../types';
+import { JobEventData } from '@src/server/queues';
 
 export interface JobSpotCountMetricOptions extends PollingMetricOptions {
   status: JobStatusEnum;
@@ -9,11 +15,11 @@ export interface JobSpotCountMetricOptions extends PollingMetricOptions {
 
 /**
  * Base class to provide spot/instant values of job counts from a queue.
- * This differs from other queue related in that they are stream based,
+ * This differs from other queue related metrics in that they are stream based,
  * meaning that they can work even on historical data. This class gets
  * current values from the queue.
  */
-class JobSpotCountMetric extends PollingMetric {
+abstract class JobSpotCountMetric extends PollingMetric {
   private queue: Queue;
   private readonly status: JobStatusEnum;
   private readonly _interval: number;
@@ -48,6 +54,9 @@ class JobSpotCountMetric extends PollingMetric {
   static get type(): MetricType {
     return MetricType.Count;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleEvent(event?: JobEventData) {}
 }
 
 /**
@@ -58,8 +67,8 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
     super(options, JobStatusEnum.ACTIVE);
   }
 
-  static get key(): string {
-    return 'current_active';
+  static get key(): MetricTypes {
+    return MetricTypes.ActiveJobs;
   }
 
   static get description(): string {
@@ -75,8 +84,8 @@ export class CurrentWaitingCountMetric extends JobSpotCountMetric {
     super(options, JobStatusEnum.WAITING);
   }
 
-  static get key(): string {
-    return 'current_waiting';
+  static get key(): MetricTypes {
+    return MetricTypes.Waiting;
   }
 
   static get description(): string {
@@ -92,8 +101,8 @@ export class CurrentCompletedCountMetric extends JobSpotCountMetric {
     super(options, JobStatusEnum.COMPLETED);
   }
 
-  static get key(): string {
-    return 'current_completed';
+  static get key(): MetricTypes {
+    return MetricTypes.CurrentCompletedCount;
   }
 
   static get description(): string {
@@ -109,8 +118,8 @@ export class CurrentFailedCountMetric extends JobSpotCountMetric {
     super(options, JobStatusEnum.FAILED);
   }
 
-  static get key(): string {
-    return 'current_failed';
+  static get key(): MetricTypes {
+    return MetricTypes.CurrentFailedCount;
   }
 
   static get description(): string {
@@ -126,8 +135,8 @@ export class CurrentDelayedCountMetric extends JobSpotCountMetric {
     super(options, JobStatusEnum.DELAYED);
   }
 
-  static get key(): string {
-    return 'current_delayed';
+  static get key(): MetricTypes {
+    return MetricTypes.DelayedJobs;
   }
 
   static get description(): string {

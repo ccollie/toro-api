@@ -143,7 +143,7 @@ async function getRange<T = any>(
   reply.forEach(([timestamp, data]) => {
     try {
       const value = JSON.parse(data) as T;
-      if (value) {
+      if (value !== undefined) {
         result.push({
           timestamp,
           value,

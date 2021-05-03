@@ -2,7 +2,7 @@ import { BaseMetric } from './baseMetric';
 import { Events } from './constants';
 import { JobFinishedEventData } from '../queues';
 import { round } from 'lodash';
-import { MetricOptions } from '@src/types';
+import { MetricOptions, MetricTypes } from '../../types';
 
 // todo: can we set initial counts ?
 export class ErrorPercentageMetric extends BaseMetric {
@@ -34,8 +34,8 @@ export class ErrorPercentageMetric extends BaseMetric {
     return this.completed ? round(this._failures / this.completed, 2) * 100 : 0;
   }
 
-  static get key(): string {
-    return 'error_percentage';
+  static get key(): MetricTypes {
+    return MetricTypes.ErrorPercentage;
   }
 
   static get description(): string {

@@ -1,6 +1,7 @@
 import { BaseMetric } from './baseMetric';
 import { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
+import { MetricTypes } from '../../types';
 
 export class WaitTimeMetric extends BaseMetric {
   get validEvents(): string[] {
@@ -11,8 +12,8 @@ export class WaitTimeMetric extends BaseMetric {
     this.update(event.wait);
   }
 
-  static get key(): string {
-    return 'wait_time';
+  static get key(): MetricTypes {
+    return MetricTypes.WaitTime;
   }
 
   static get description(): string {

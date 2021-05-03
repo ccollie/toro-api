@@ -5,16 +5,18 @@ import Joi, { ObjectSchema } from 'joi';
 import { JobEventData } from '../queues';
 import { BaseAggregator, NullAggregator } from './aggregators';
 import { Events } from './constants';
-import { systemClock, Clock, createAsyncIterator } from '../lib';
+import { Clock, createAsyncIterator, systemClock } from '../lib';
 import { MetricsListener } from './metricsListener';
 import { DurationSchema } from '../validation/schemas';
 import {
   MetricCategory,
-  MetricType,
   MetricOptions,
+  MetricType,
+  MetricTypes,
   PollingMetricOptions,
   Predicate,
-  SerializedRuleMetric,
+  SerializedMetric,
+  TimeseriesDataPoint,
 } from '../../types';
 import { createJobNameFilter } from './utils';
 
@@ -27,43 +29,38 @@ export interface MetricUpdateEvent {
 export type MetricUpdateEventHandler = (eventData?: MetricUpdateEvent) => void;
 
 export const baseMetricSchema = Joi.object().keys({
-  id: Joi.string()
-    .regex(/^[a-zA-Z0-9_\-!@#$]{3,25}$/)
-    .optional(),
   jobNames: Joi.array().items(Joi.string()).single().optional().default([]),
-  name: Joi.string().optional(),
 });
 
-export class BaseMetric {
+/**
+ * Metrics are numeric samples of data collected over time
+ */
+export abstract class BaseMetric {
   public readonly id: string;
   public queueId: string;
   public name: string;
-  public readonly jobNames: string[];
+  public description: string;
+  protected options: MetricOptions;
   private readonly emitter: Emittery = new Emittery();
-  private readonly _filter: Predicate<string>;
+  private _filter: Predicate<string>;
   private _aggregator: BaseAggregator;
-  protected readonly options: MetricOptions;
   private _prev: number;
   protected _value: number;
+  public isActive = true;
+  public createdAt: number;
+  public updatedAt: number;
   public lastChangedAt: number;
   public clock: Clock = systemClock;
 
   constructor(options: MetricOptions) {
     this._prev = null;
     this._value = -1;
-    this.options = this.validateOptions(options);
-    this.jobNames = options.jobNames || [];
-    this._filter = createJobNameFilter(this.jobNames);
+    this.setOptions(options);
     this._aggregator = new NullAggregator();
-    if (options.id) {
-      this.id = options.id;
-    } else {
-      const key = (this.constructor as any).key;
-      this.id = key + '-' + crypto.randomBytes(6).toString('hex');
-    }
-    if (options.name) {
-      this.name = options.name;
-    }
+    const key = (this.constructor as any).key;
+    this.id = key + '-' + crypto.randomBytes(6).toString('hex');
+    this.createdAt = this.clock.getTime();
+    this.updatedAt = this.createdAt;
   }
 
   get aggregator(): BaseAggregator {
@@ -78,7 +75,7 @@ export class BaseMetric {
     this._aggregator = value;
   }
 
-  protected validateOptions(options: MetricOptions): MetricOptions {
+  validateOptions(options: MetricOptions): MetricOptions {
     const schema = (this.constructor as any).schema;
     if (schema) {
       const { error, value } = schema.validate(options);
@@ -91,19 +88,28 @@ export class BaseMetric {
     return options;
   }
 
+  setOptions(options: MetricOptions): void {
+    this.options = this.validateOptions(options);
+    this._filter = createJobNameFilter(this.jobNames);
+  }
+
   get validEvents(): string[] {
     return [Events.FINISHED];
   }
 
-  destroy(): any {
+  destroy(): void {
     if (this._aggregator) {
       this._aggregator.destroy();
     }
     this.emitter.clearListeners();
   }
 
-  static get key(): string {
-    return 'base_metric';
+  get jobNames(): string[] {
+    return this.options.jobNames || [];
+  }
+
+  static get key(): MetricTypes {
+    return MetricTypes.None;
   }
 
   static get description(): string {
@@ -138,11 +144,14 @@ export class BaseMetric {
     return this.emitter.off('update', listener);
   }
 
-  createValueIterator(): AsyncIterator<number> {
+  createValueIterator(): AsyncIterator<TimeseriesDataPoint> {
     return createAsyncIterator(this.emitter, {
       eventNames: ['update'],
       transform(_, data: MetricUpdateEvent) {
-        return data.value;
+        return {
+          ts: data.ts,
+          value: data.value,
+        };
       },
     });
   }
@@ -153,26 +162,29 @@ export class BaseMetric {
     // abstract method
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleEvent(event?: JobEventData): void {
-    // to override in subclasses
-  }
+  abstract handleEvent(event?: JobEventData): void;
 
   accept(event: JobEventData): boolean {
     const name = event.job.name;
     return !name || this._filter(name);
   }
 
-  toJSON(): SerializedRuleMetric {
+  toJSON(): SerializedMetric {
     const type = (this.constructor as any).key;
     const aggregator = this._aggregator.toJSON();
+    const { createdAt, updatedAt, isActive } = this;
     return {
       id: this.id,
+      name: this.name,
+      isActive,
       type,
+      description: this.description,
       options: {
         ...this.options,
       },
       aggregator,
+      createdAt,
+      updatedAt,
     };
   }
 
@@ -202,8 +214,8 @@ export const pollingMetricSchema = baseMetricSchema.append({
   interval: DurationSchema.required(),
 });
 
-export class PollingMetric extends BaseMetric {
-  constructor(options: PollingMetricOptions) {
+export abstract class PollingMetric extends BaseMetric {
+  protected constructor(options: PollingMetricOptions) {
     super(options);
   }
 

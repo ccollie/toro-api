@@ -1,6 +1,7 @@
 import { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
 import { CounterBasedMetric } from './counterBasedMetric';
+import { MetricTypes } from '../../types';
 
 export class ConsecutiveFailuresMetric extends CounterBasedMetric {
   handleEvent(event?: JobFinishedEventData): void {
@@ -15,8 +16,8 @@ export class ConsecutiveFailuresMetric extends CounterBasedMetric {
     return [Events.FINISHED];
   }
 
-  static get key(): string {
-    return 'consecutive_failures';
+  static get key(): MetricTypes {
+    return MetricTypes.ConsecutiveFailures;
   }
 
   static get description(): string {

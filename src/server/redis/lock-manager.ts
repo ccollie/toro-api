@@ -56,6 +56,7 @@ export class LockManager extends EventEmitter {
   static ACQUIRED = 'elected';
   static RELEASED = 'released';
   static ERROR = 'lock-error';
+  static STATE_CHANGED = 'state-changed';
 
   constructor(client: IORedis.Redis, options?: Partial<LockOptions>) {
     super();
@@ -137,6 +138,7 @@ export class LockManager extends EventEmitter {
       // @ts-ignore
       this.renewId = setInterval(() => this.renew(), this.renewTime) as Timeout;
       this.emit(LockManager.ACQUIRED, this);
+      this.emit(LockManager.STATE_CHANGED, this.isOwner);
     } catch (error) {
       this.lock = null;
       if (error.name === 'LockError') {
@@ -202,6 +204,7 @@ export class LockManager extends EventEmitter {
 
         logger.info('[release] release complete');
         this.emit(LockManager.RELEASED, this);
+        this.emit(LockManager.STATE_CHANGED, this.isOwner);
       } catch (error) {
         logger.error('[release] unlock FAILED - error: %O', error);
         this.emit(LockManager.ERROR, error);
