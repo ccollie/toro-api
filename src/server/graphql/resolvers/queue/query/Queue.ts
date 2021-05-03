@@ -22,6 +22,7 @@ import { jobsByFilter } from './Queue.jobsByFilter';
 import { ruleAlertCount } from './Queue.ruleAlertCount';
 import { ruleAlerts } from './Queue.ruleAlerts';
 import { jobsById } from './Queue.jobsById';
+import { queueMetrics as metrics } from './Queue.metrics';
 
 import {
   histogram,
@@ -64,6 +65,7 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobDurationAvg,
     jobMemoryAvg,
     lastStatsSnapshot,
+    metrics,
     pendingJobCount,
     percentileDistribution,
     repeatableJobs,

@@ -1,23 +1,27 @@
 import { InfiniteWindow, SlidingTimeWindow, TickEventData } from '../../stats';
 import { Clock } from '../../lib';
 import { BaseAggregator } from './aggregator';
-import { SerializedAggregator, SlidingWindowOptions } from '../../../types';
+import { SlidingWindowOptions } from '../../../types';
+import Joi, { ObjectSchema } from 'joi';
+import { DurationSchema } from '../../validation/schemas';
+
+export const SlidingWindowOptionSchema = Joi.object().keys({
+  interval: DurationSchema.required(),
+});
 
 export class SlidingTimeWindowAggregator<
   TSlice = number
 > extends BaseAggregator {
+  protected readonly options: SlidingWindowOptions;
   protected readonly slidingWindow: SlidingTimeWindow<TSlice>;
   protected _value: number | undefined;
-  protected readonly options: SlidingWindowOptions;
-  protected clock: Clock;
 
   constructor(
     clock: Clock,
     defaultValue: TSlice | (() => TSlice),
     options: SlidingWindowOptions = { duration: InfiniteWindow },
   ) {
-    super();
-    this.clock = clock;
+    super(clock);
     this.options = options;
     this.slidingWindow = new SlidingTimeWindow<TSlice>(
       clock,
@@ -67,11 +71,7 @@ export class SlidingTimeWindowAggregator<
     return this.handleUpdate(value);
   }
 
-  toJSON(): SerializedAggregator {
-    const type = (this.constructor as any).key;
-    return {
-      type,
-      options: { ...this.options },
-    };
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

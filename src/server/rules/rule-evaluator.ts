@@ -1,5 +1,5 @@
 import { logger } from '../lib';
-import { BaseMetric, MetricsListener } from '../metrics';
+import { BaseMetric } from '../metrics';
 import {
   ChangeCondition,
   ErrorLevel,
@@ -24,36 +24,24 @@ export interface EvaluationResult {
 }
 
 export class RuleEvaluator {
-  private readonly unsubscribe: () => void;
+  public unsubscribe: () => void;
   protected evaluator: ConditionEvaluator;
   public readonly rule: Rule;
   public readonly metric: BaseMetric;
 
-  constructor(rule: Rule, listener: MetricsListener) {
+  constructor(rule: Rule, metric: BaseMetric) {
     this.rule = rule;
     this.onError = this.onError.bind(this);
-    let metric = listener.findMetricById(rule.metric.id);
-    if (!metric) {
-      metric = listener.registerMetricFromJSON(rule.metric);
-      this.unsubscribe = () => {
-        listener.unregisterMetric(metric);
-        metric.destroy();
-      };
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      this.unsubscribe = () => {};
-    }
     this.metric = metric;
-    // todo: bail if metric is undefined
-    this.evaluator = this.createEvaluator(this.metric);
+    this.evaluator = this.createEvaluator(this.metric, rule);
   }
 
   destroy(): void {
-    this.unsubscribe();
+    this.unsubscribe?.();
   }
 
-  private createEvaluator(metric: BaseMetric): ConditionEvaluator {
-    const condition = parseRuleCondition(this.rule.condition);
+  private createEvaluator(metric: BaseMetric, rule: Rule): ConditionEvaluator {
+    const condition = parseRuleCondition(rule.condition);
 
     switch (condition.type) {
       case RuleType.PEAK:

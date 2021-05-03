@@ -7,49 +7,49 @@ import { SumAggregator } from './sumAggregator';
 import { MeanAggregator } from './meanAggregator';
 import { LatestAggregator } from './latestAggregator';
 import {
+  EWMA15MinAggregator,
   EWMA1MinAggregator,
   EWMA5MinAggregator,
-  EWMA15MinAggregator,
 } from './ewmaAggregator';
 import { StandardDeviationAggregator } from './standardDeviationAggregator';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import {
-  QuantileAggregator,
   P75Aggregator,
   P90Aggregator,
   P95Aggregator,
-  P99Aggregator,
   P995Aggregator,
+  P99Aggregator,
   PercentileAggregatorOptions,
+  QuantileAggregator,
 } from './quantileAggregator';
 import { Clock } from '../../lib';
-import { Constructor } from '../../../types';
+import { AggregatorTypes, Constructor } from '../../../types';
 
 export type AggregatorClass = Constructor<BaseAggregator>;
 
-export const aggregateMap: Record<string, AggregatorClass> = {
-  none: NullAggregator,
-  ewma1min: EWMA1MinAggregator,
-  ewma5min: EWMA5MinAggregator,
-  ewma15Min: EWMA15MinAggregator,
-  latest: LatestAggregator,
-  min: MinAggregator,
-  max: MaxAggregator,
-  mean: MeanAggregator,
-  sum: SumAggregator,
-  stddev: StandardDeviationAggregator,
-  p75: P75Aggregator,
-  p90: P90Aggregator,
-  p95: P95Aggregator,
-  p99: P99Aggregator,
-  p995: P995Aggregator,
+export const aggregateMap: Record<AggregatorTypes, AggregatorClass | null> = {
+  [AggregatorTypes.None]: null,
+  [AggregatorTypes.Null]: NullAggregator,
+  [AggregatorTypes.Ewma1Min]: EWMA1MinAggregator,
+  [AggregatorTypes.Ewma5Min]: EWMA5MinAggregator,
+  [AggregatorTypes.Ewma15Min]: EWMA15MinAggregator,
+  [AggregatorTypes.Latest]: LatestAggregator,
+  [AggregatorTypes.Min]: MinAggregator,
+  [AggregatorTypes.Max]: MaxAggregator,
+  [AggregatorTypes.Mean]: MeanAggregator,
+  [AggregatorTypes.Quantile]: QuantileAggregator,
+  [AggregatorTypes.Sum]: SumAggregator,
+  [AggregatorTypes.StdDev]: StandardDeviationAggregator,
+  [AggregatorTypes.P75]: P75Aggregator,
+  [AggregatorTypes.P90]: P90Aggregator,
+  [AggregatorTypes.P95]: P95Aggregator,
+  [AggregatorTypes.P99]: P99Aggregator,
+  [AggregatorTypes.P995]: P995Aggregator,
 };
 
-export function createAggregator(
-  type = 'default',
-  clock: Clock,
-  options?: Record<string, any>,
-): BaseAggregator {
+function findAggregator(
+  type: string | AggregatorTypes = AggregatorTypes.Null,
+): AggregatorClass {
   let ctor = aggregateMap[type];
   if (!ctor) {
     const entries = Object.values(aggregateMap);
@@ -63,18 +63,27 @@ export function createAggregator(
     }
   }
   if (!ctor) {
-    throw boom.badRequest(`Invalid Aggregate type "${type}"`);
+    throw boom.badRequest(`Invalid aggregator type "${type}"`);
   }
-  options = options || Object.create(null);
-  const schema = (ctor as any).schema;
-  if (schema) {
-    const { error, value } = schema.validate(options);
-    if (error) {
-      throw error;
-    }
-    options = value;
-  }
+  return ctor;
+}
+
+export function createAggregator(
+  type: string | AggregatorTypes = AggregatorTypes.Null,
+  clock: Clock,
+  options?: Record<string, any>,
+): BaseAggregator {
+  const ctor = findAggregator(type);
   return new ctor(clock, options);
+}
+
+export function validateAggregatorOpts(
+  type: string | AggregatorTypes,
+  options?: Record<string, any>,
+): Record<string, any> | undefined {
+  const ctor = findAggregator(type);
+  const validateOptions: (opts: any) => any = (ctor as any).validateOptions;
+  return validateOptions(options);
 }
 
 export {
@@ -87,6 +96,7 @@ export {
   MinAggregator,
   P75Aggregator,
   P90Aggregator,
+  P95Aggregator,
   P99Aggregator,
   P995Aggregator,
   PercentileAggregatorOptions,

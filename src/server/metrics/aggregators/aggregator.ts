@@ -1,9 +1,10 @@
 import boom from '@hapi/boom';
+import { isEqual } from 'lodash';
 import { EventEmitter } from 'events';
 import { ObjectSchema } from 'joi';
 import { Clock, getStaticProp, systemClock } from '../../lib';
 import { BaseMetric } from '../baseMetric';
-import { SerializedAggregator } from '../../../types';
+import { AggregatorTypes, SerializedAggregator } from '../../../types';
 
 export interface Aggregator {
   /** The number of samples added so far */
@@ -28,14 +29,43 @@ export interface Aggregator {
 
 export class BaseAggregator extends EventEmitter implements Aggregator {
   protected clock: Clock;
+  protected options: any;
 
-  constructor(clock?: Clock) {
+  constructor(clock?: Clock, options?: any) {
     super();
     this.clock = clock || systemClock;
+    if (arguments.length > 1) {
+      this.setOptions(options);
+    } else {
+      this.options = {};
+    }
   }
 
   destroy(): void {
     // do not delete
+  }
+
+  setOptions(options: any) {
+    this.options = BaseAggregator.validateOptions(options);
+  }
+
+  isSameAs(other: BaseAggregator): boolean {
+    return (
+      other && other.type === this.type && isEqual(other.options, this.options)
+    );
+  }
+
+  static validateOptions(options: any): any {
+    const schema = (this.constructor as any).schema;
+    if (schema) {
+      const { error, value } = schema.validate(options);
+      if (error) {
+        throw error;
+      }
+      return value;
+    }
+
+    return options;
   }
 
   getDescription(metric: BaseMetric, short = false): string {
@@ -48,8 +78,12 @@ export class BaseAggregator extends EventEmitter implements Aggregator {
     return `${description} ${type}`;
   }
 
-  static get key(): string {
-    return 'base_aggregator';
+  get type(): AggregatorTypes {
+    return (this.constructor as any).key;
+  }
+
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.None;
   }
 
   static get description(): string {
@@ -61,8 +95,12 @@ export class BaseAggregator extends EventEmitter implements Aggregator {
   }
 
   toJSON(): SerializedAggregator {
-    const type = (this.constructor as any).key;
-    return { type, options: {} };
+    const type = this.type;
+    const options = this.options ? { ...this.options } : {};
+    return {
+      type,
+      options,
+    };
   }
 
   get count(): number {

@@ -5,7 +5,12 @@ import {
   toKeyValueList,
 } from '../redis';
 import IORedis, { Pipeline } from 'ioredis';
-import { IteratorOptions, createAsyncIterator, nanoid } from '../lib';
+import {
+  IteratorOptions,
+  createAsyncIterator,
+  nanoid,
+  safeParse,
+} from '../lib';
 
 const SENDER_ID_KEY = '__sid';
 const EVENT_KEY = '__evt';
@@ -119,7 +124,7 @@ export class EventBus {
     }
   }
 
-  async on(event: string, handler: BusEventHandler): Promise<UnsubscribeFn> {
+  on(event: string, handler: BusEventHandler): UnsubscribeFn {
     return this._emitter.on(event, handler);
   }
 
@@ -167,7 +172,8 @@ export class EventBus {
   }
 
   private _formatData(data = {}): Record<string, any> {
-    return { [SENDER_ID_KEY]: this._senderId, ...data };
+    const serialized = JSON.stringify(data);
+    return { [SENDER_ID_KEY]: this._senderId, data: serialized };
   }
 
   private _localEmit(event: string, data: Record<string, any>): Promise<void> {
@@ -179,19 +185,20 @@ export class EventBus {
    * @param data
    * @return {Promise<void>}
    */
-  private _onBusMessage(data: Record<string, any>): Promise<void> {
+  private _onBusMessage(data: [string, any]): Promise<void> {
     const subscription = this.subscriptionInfo;
     if (!subscription) return;
     this._lastEventId = subscription.cursor;
     if (data) {
-      const { __sid, ...rest } = data;
+      const [ts, other] = data;
+      const { __sid, __evt, ...rest } = other;
       // if __sid is set, it means it was already emitted locally
       // make sure we weren't the ones doing it
       if (__sid !== this._senderId) {
-        const event = rest[EVENT_KEY];
+        const event = __evt ?? other[EVENT_KEY];
         if (event) {
-          delete rest[EVENT_KEY];
-          return this._localEmit(event, rest);
+          const data = safeParse(rest.data);
+          return this._localEmit(event, data);
         }
       }
     }

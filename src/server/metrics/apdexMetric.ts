@@ -4,7 +4,7 @@ import { Events } from './constants';
 import { DurationSchema } from '../validation/schemas';
 import { JobFinishedEventData } from '../queues';
 import { ApdexCalculator } from '../stats';
-import { MetricOptions } from '@src/types';
+import { MetricOptions, MetricTypes } from '../../types';
 
 export interface ApdexMetricOptions extends MetricOptions {
   threshold: number;
@@ -27,8 +27,8 @@ export class ApdexMetric extends BaseMetric {
     this._data = new ApdexCalculator(options.threshold);
   }
 
-  static get key(): string {
-    return 'apdex';
+  static get key(): MetricTypes {
+    return MetricTypes.Apdex;
   }
 
   static get description(): string {

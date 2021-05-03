@@ -8,7 +8,7 @@ import {
   RuleCondition,
   RuleConfigOptions,
   RuleState,
-  SerializedRuleMetric,
+  SerializedMetric,
   Severity,
 } from '../../types';
 
@@ -32,7 +32,7 @@ export class Rule {
   private readonly options: RuleAlertOptions;
   private _condition: RuleCondition = Object.create(null);
   public state: RuleState = RuleState.NORMAL;
-  public metric: SerializedRuleMetric;
+  public metric: SerializedMetric;
   public queueId: string;
   public name: string;
   public message: string;

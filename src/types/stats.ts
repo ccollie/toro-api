@@ -1,5 +1,12 @@
 export type StatsMetricType = 'latency' | 'wait' | 'counts';
 
+export interface TimeseriesDataPoint {
+  /** The unix based timestamp of when the measurement occurred */
+  ts: number;
+  /** The value of the measurement */
+  value?: number;
+}
+
 export enum StatsRateType {
   Throughput = 'Throughput',
   Errors = 'Errors',
@@ -41,7 +48,8 @@ export interface StatisticalSnapshotOptions {
 }
 
 /**
- * Helper interface for serialized {@link Meter} metrics - represents a snapshot of the rates of a {@link Meter}.
+ * Helper interface for serialized {@link Meter} metrics - represents a snapshot of the
+ * rates of a {@link Meter}.
  *
  * @export
  * @interface MeteredRates
@@ -70,7 +78,8 @@ export interface MeterSnapshot {
    */
   meanRate: number;
   /**
-   * Mapping of time-frame to rate values - time-unit and meaning depend on the actual implementation.
+   * Mapping of time-frame to rate values - time-unit and meaning depend on the
+   * actual implementation.
    *
    * @type {MeteredRates}
    */

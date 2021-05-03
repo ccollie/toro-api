@@ -201,7 +201,7 @@ export class ChannelStorage {
   }
 
   // Events
-  on(event: ChannelEvents, handler: BusEventHandler): Promise<UnsubscribeFn> {
+  on(event: ChannelEvents, handler: BusEventHandler): UnsubscribeFn {
     return this.bus.on(event, handler);
   }
 }

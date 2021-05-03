@@ -11,11 +11,17 @@ import { WaitTimeMetric } from './waitTimeMetric';
 import { LatencyMetric } from './latencyMetric';
 import {
   BaseMetric,
-  PollingMetric,
   MetricUpdateEvent,
   MetricUpdateEventHandler,
+  PollingMetric,
 } from './baseMetric';
-import { UsedMemoryMetric, ConnectedClientsMetric } from './redisMetrics';
+import {
+  ConnectedClientsMetric,
+  FragmentationRatioMetric,
+  InstantaneousOpsMetric,
+  PeakMemoryMetric,
+  UsedMemoryMetric,
+} from './redisMetrics';
 import {
   CurrentActiveCountMetric,
   CurrentCompletedCountMetric,
@@ -23,10 +29,18 @@ import {
   CurrentFailedCountMetric,
   CurrentWaitingCountMetric,
 } from './jobSpotCountMetric';
-import { Constructor, RuleType, MetricOptions } from '@src/types';
+import {
+  AggregatorTypes,
+  Constructor,
+  MetricOptions,
+  MetricTypes,
+  SerializedAggregator,
+} from '../../types';
 import { createAggregator } from './aggregators';
-import { Clock, hashObject, titleCase } from '../lib';
+import { Clock, hashObject, parseBool, systemClock, titleCase } from '../lib';
 import { ApdexMetric, ApdexMetricOptions } from './apdexMetric';
+import { parseTimestamp } from '../lib/datetime';
+import { isNil, isObject, isString } from 'lodash';
 
 export * from './constants';
 export * from './metricsListener';
@@ -42,8 +56,11 @@ const metrics = [
   ErrorPercentageMetric,
   FailedCountMetric,
   FinishedCountMetric,
+  FragmentationRatioMetric,
   JobRateMetric,
   LatencyMetric,
+  PeakMemoryMetric,
+  InstantaneousOpsMetric,
   UsedMemoryMetric,
   WaitTimeMetric,
   CurrentActiveCountMetric,
@@ -55,35 +72,37 @@ const metrics = [
 
 export type MetricConstructor = Constructor<BaseMetric>;
 
-export enum MetricTypeEnum {
-  Apdex,
-  ConnectedClients,
-  ConsecutiveFailures,
-  CompletedCount,
-  CompletedRate,
-  CurrentActiveCount,
-  CurrentCompletedCount,
-  CurrentDelayedCount,
-  CurrentFailedCount,
-  CurrentWaitingCount,
-  ErrorRate,
-  ErrorPercentage,
-  FailureCount,
-  FinishedCount,
-  JobRate,
-  Latency,
-  UsedMemory,
-  WaitTime,
-}
+const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
+  [MetricTypes.None]: null, //
+  [MetricTypes.Apdex]: ApdexMetric,
+  [MetricTypes.ConnectedClients]: ConnectedClientsMetric,
+  [MetricTypes.Completed]: CompletedCountMetric,
+  [MetricTypes.CompletedRate]: CompletedRateMetric,
+  [MetricTypes.ConsecutiveFailures]: ConsecutiveFailuresMetric,
+  [MetricTypes.ActiveJobs]: CurrentActiveCountMetric,
+  [MetricTypes.CurrentCompletedCount]: CurrentCompletedCountMetric,
+  [MetricTypes.DelayedJobs]: CurrentDelayedCountMetric,
+  [MetricTypes.CurrentFailedCount]: CurrentFailedCountMetric,
+  [MetricTypes.Waiting]: CurrentWaitingCountMetric,
+  [MetricTypes.ErrorRate]: ErrorRateMetric,
+  [MetricTypes.ErrorPercentage]: ErrorPercentageMetric,
+  [MetricTypes.Failures]: FailedCountMetric,
+  [MetricTypes.Finished]: FinishedCountMetric,
+  [MetricTypes.FragmentationRatio]: FragmentationRatioMetric,
+  [MetricTypes.JobRate]: JobRateMetric,
+  [MetricTypes.Latency]: LatencyMetric,
+  [MetricTypes.UsedMemory]: UsedMemoryMetric,
+  [MetricTypes.PeakMemory]: PeakMemoryMetric,
+  [MetricTypes.InstantaneousOps]: InstantaneousOpsMetric,
+  [MetricTypes.WaitTime]: WaitTimeMetric,
+};
 
 export const metricsMap = metrics.reduce((res, clazz) => {
   res.set(clazz.key, clazz);
   return res;
 }, new Map<string, MetricConstructor>());
 
-export function getMetricByKey(
-  type: string | MetricTypeEnum,
-): MetricConstructor {
+export function getMetricByKey(type: string | MetricTypes): MetricConstructor {
   let ctor: MetricConstructor;
   if (typeof type === 'string') {
     ctor = metricsMap.get(type);
@@ -95,13 +114,13 @@ export function getMetricByKey(
       ctor = ctors.find((v) => v.name === type);
     }
   } else {
-    ctor = metrics[type];
+    ctor = metricsByEnum[type];
   }
   return ctor;
 }
 
 export function createMetric(
-  type: string | MetricTypeEnum,
+  type: string | MetricTypes,
   options: Record<string, any>,
 ): BaseMetric {
   const ctor = getMetricByKey(type);
@@ -112,38 +131,79 @@ export function createMetric(
   return new ctor(...args);
 }
 
+function deserializeObject(str: string): any {
+  const empty = Object.create(null);
+  if (isNil(str)) return empty;
+  try {
+    return isString(str) ? JSON.parse(str) : empty;
+  } catch {
+    // console.log
+    return empty;
+  }
+}
+
 export function createMetricFromJSON(
-  clock: Clock,
   json: Record<string, any>,
+  clock: Clock = systemClock,
 ): BaseMetric {
-  const { type, options, aggregator: aggOptions } = json as Record<string, any>;
+  /// TODO: Hackish handling of createdAt, updatedAt
+  const {
+    type,
+    options: _options,
+    aggregator: _aggOptions,
+    createdAt,
+    updatedAt,
+    isActive,
+  } = json as Record<string, any>;
+
+  let options: MetricOptions;
+  if (typeof _options == 'string') {
+    options = JSON.parse(_options) as MetricOptions;
+  } else {
+    options = _options;
+  }
+
   const metric = createMetric(type, options);
 
-  if (aggOptions) {
-    const { type, options } = aggOptions;
+  if (createdAt) {
+    metric.createdAt = parseTimestamp(createdAt);
+  }
+
+  if (updatedAt) {
+    metric.updatedAt = parseTimestamp(createdAt);
+  }
+
+  metric.isActive = parseBool(isActive);
+
+  if (_aggOptions) {
+    let aggregator: SerializedAggregator;
+    if (typeof _aggOptions === 'string') {
+      aggregator = deserializeObject(_aggOptions) as SerializedAggregator;
+    } else {
+      aggregator = _aggOptions;
+    }
+    const { type, options } = aggregator;
     metric.aggregator = createAggregator(type, clock, options);
+  } else {
+    metric.aggregator = createAggregator(AggregatorTypes.Null, clock, {});
   }
 
   return metric;
 }
 
 export function serializeMetric(metric: BaseMetric): Record<string, any> {
-  const json = metric.toJSON();
-  json.id = json.id || metric.id || hashObject(json);
-  return json;
-}
-
-export function serializeParams(
-  metric: BaseMetric,
-  type: RuleType,
-  options?: Record<string, any>,
-): Record<string, any> {
-  const json = serializeMetric(metric);
-  return {
-    metric: json,
-    type,
-    options: { ...(options || {}) },
+  const json: Record<string, any> = {
+    ...metric.toJSON(),
   };
+  json.id = json.id || metric.id || hashObject(json);
+  // serialize object fields
+  if (isObject(json.options)) {
+    json.options = JSON.stringify(json.options);
+  }
+  if (isObject(json.aggregator)) {
+    json.aggregator = JSON.stringify(json.aggregator);
+  }
+  return json;
 }
 
 export function isPollingMetric(clazz: MetricConstructor): boolean {
@@ -177,10 +237,13 @@ export {
   CurrentWaitingCountMetric,
   ErrorPercentageMetric,
   ErrorRateMetric,
+  InstantaneousOpsMetric,
   FailedCountMetric,
   FinishedCountMetric,
+  FragmentationRatioMetric,
   JobRateMetric,
   LatencyMetric,
+  PeakMemoryMetric,
   MetricUpdateEvent,
   MetricUpdateEventHandler,
   UsedMemoryMetric,

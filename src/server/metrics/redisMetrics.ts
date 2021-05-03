@@ -3,10 +3,12 @@ import { getRedisInfo } from '../redis';
 import IORedis from 'ioredis';
 import { MetricsListener } from './metricsListener';
 import {
-  MetricType,
   MetricCategory,
+  MetricType,
+  MetricTypes,
   PollingMetricOptions,
 } from '../../types/metrics';
+import { JobEventData } from '@src/server/queues';
 
 export class RedisMetric extends PollingMetric {
   private client: Promise<IORedis.Redis>;
@@ -46,6 +48,9 @@ export class RedisMetric extends PollingMetric {
   static get type(): MetricType {
     return MetricType.Gauge;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  handleEvent(event?: JobEventData): void {}
 }
 
 export class UsedMemoryMetric extends RedisMetric {
@@ -53,8 +58,8 @@ export class UsedMemoryMetric extends RedisMetric {
     super(options, 'used_memory_rss');
   }
 
-  static get key(): string {
-    return 'used_memory';
+  static get key(): MetricTypes {
+    return MetricTypes.UsedMemory;
   }
 
   static get description(): string {
@@ -71,8 +76,8 @@ export class ConnectedClientsMetric extends RedisMetric {
     super(options, 'connected_clients');
   }
 
-  static get key(): string {
-    return 'connected_clients';
+  static get key(): MetricTypes {
+    return MetricTypes.ConnectedClients;
   }
 
   static get description(): string {
@@ -81,5 +86,59 @@ export class ConnectedClientsMetric extends RedisMetric {
 
   static get unit(): string {
     return 'connections';
+  }
+}
+
+export class PeakMemoryMetric extends RedisMetric {
+  constructor(options: PollingMetricOptions) {
+    super(options, 'used_memory_peak');
+  }
+
+  static get key(): MetricTypes {
+    return MetricTypes.PeakMemory;
+  }
+
+  static get description(): string {
+    return 'Redis Peak Memory';
+  }
+
+  static get unit(): string {
+    return 'bytes';
+  }
+}
+
+export class FragmentationRatioMetric extends RedisMetric {
+  constructor(options: PollingMetricOptions) {
+    super(options, 'mem_fragmentation_ratio');
+  }
+
+  static get key(): MetricTypes {
+    return MetricTypes.FragmentationRatio;
+  }
+
+  static get description(): string {
+    return 'Memory Fragmentation Ratio';
+  }
+
+  static get unit(): string {
+    return '';
+  }
+}
+
+export class InstantaneousOpsMetric extends RedisMetric {
+  constructor(options: PollingMetricOptions) {
+    super(options, 'instantaneous_ops_per_sec');
+  }
+
+  static get key(): MetricTypes {
+    return MetricTypes.InstantaneousOps;
+  }
+
+  static get description(): string {
+    return 'Number of commands processed per second';
+  }
+
+  static get unit(): string {
+    return 'operations';
   }
 }

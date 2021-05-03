@@ -36,7 +36,7 @@ describe('EventBus', () => {
 
     it('should emit an event', async () => {
       let eventData = null;
-      await bus.on('event.raised', (evt) => {
+      bus.on('event.raised', (evt) => {
         eventData = evt;
       });
 
@@ -82,6 +82,25 @@ describe('EventBus', () => {
       const len = await bus.getLength();
       expect(len).toBeLessThan(100);
       expect(len).not.toBeLessThan(5);
+    });
+  });
+
+  describe('remote', () => {
+    it('receives events from server', async (done) => {
+      const otherBus = new EventBus(aggregator, key);
+
+      let eventData = null;
+      otherBus.on('event.raised', (evt) => {
+        eventData = evt;
+        done();
+      });
+
+      const ruleId = randomString();
+      await bus.emit('event.raised', {
+        string: 'string',
+        number: 1,
+        ruleId,
+      });
     });
   });
 });

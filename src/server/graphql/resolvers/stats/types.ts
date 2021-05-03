@@ -158,3 +158,19 @@ export const StatsRateQueryInputTC = schemaComposer.createInputTC({
     },
   },
 });
+
+export const TimeseriesDataPointTC = schemaComposer.createObjectTC({
+  name: 'TimeseriesDataPoint',
+  description:
+    'A data point representing the value of a metric in a time series.',
+  fields: {
+    ts: {
+      type: 'DateTime!',
+      description: 'The timestamp of when the event occurred',
+    },
+    value: {
+      type: 'Float!',
+      description: 'The value at the given timestamp',
+    },
+  },
+});

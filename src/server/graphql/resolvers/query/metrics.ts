@@ -1,11 +1,12 @@
 import { FieldConfig } from '../index';
-import { isPollingMetric, metricsMap, MetricTypeEnum } from '../../../metrics';
+import { isPollingMetric, metricsMap } from '../../../metrics';
 import { schemaComposer, upperFirst } from 'graphql-compose';
-import { MetricCategory, MetricType } from '../scalars';
+import { MetricCategory, MetricType } from '../metrics';
+import { MetricTypes } from '../../imports';
 
 export interface MetricsInfo {
   key: string;
-  type: MetricTypeEnum;
+  type: MetricTypes;
   description: string;
   unit: string;
   category: string;

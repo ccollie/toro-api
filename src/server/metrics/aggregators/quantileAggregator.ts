@@ -4,7 +4,11 @@ import { QuantileEstimator, TickEventData } from '../../stats';
 import baseSchema from '../slidingWindowBaseSchema';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import { BaseMetric } from '../baseMetric';
-import { SerializedAggregator, SlidingWindowOptions } from '../../../types';
+import {
+  AggregatorTypes,
+  SerializedAggregator,
+  SlidingWindowOptions,
+} from '../../../types';
 import { round } from 'lodash';
 
 function quantileToString(q: number): string {
@@ -68,14 +72,14 @@ export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEsti
     const type = getStaticProp(metric, 'key');
     const q = round(this.quantile, 2);
     if (short) {
-      const qstr = quantileToString(q);
-      return `${qstr}(${type})`;
+      const str = quantileToString(q);
+      return `${str}(${type})`;
     }
     return `${type} ${ordinal(q)} percentile`;
   }
 
-  static get key(): string {
-    return 'quantile';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Quantile;
   }
 
   static get description(): string {
@@ -142,8 +146,8 @@ export class P75Aggregator extends QuantileAggregator {
     });
   }
 
-  static get key(): string {
-    return 'p75';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.P75;
   }
 
   static get description(): string {
@@ -163,8 +167,8 @@ export class P90Aggregator extends QuantileAggregator {
     });
   }
 
-  static get key(): string {
-    return 'p90';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.P90;
   }
 
   static get description(): string {
@@ -184,8 +188,8 @@ export class P95Aggregator extends QuantileAggregator {
     });
   }
 
-  static get key(): string {
-    return 'p95';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.P95;
   }
 
   static get description(): string {
@@ -205,8 +209,8 @@ export class P99Aggregator extends QuantileAggregator {
     });
   }
 
-  static get key(): string {
-    return 'p99';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.P99;
   }
 
   static get description(): string {
@@ -226,8 +230,8 @@ export class P995Aggregator extends QuantileAggregator {
     });
   }
 
-  static get key(): string {
-    return 'p995';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.P995;
   }
 
   static get description(): string {

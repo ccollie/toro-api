@@ -1,8 +1,8 @@
 export const Events = {
-  FINISHED: 'job.finished',
+  FINISHED: 'job.FINISHED',
   COMPLETED: 'job.COMPLETED',
   FAILED: 'job.FAILED',
-  PROGRESS: 'job.progress',
+  PROGRESS: 'job.PROGRESS',
   ACTIVE: 'job.ACTIVE',
   DELAYED: 'job.DELAYED',
   STALLED: 'job.STALLED',

@@ -1,9 +1,13 @@
 'use strict';
 import { Clock, getStaticProp } from '../../lib';
-import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
+import {
+  SlidingTimeWindowAggregator,
+  SlidingWindowOptionSchema,
+} from './slidingTimeWindowAggregator';
 import { TickEventData } from '../../stats';
 import { BaseMetric } from '../baseMetric';
-import { SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { ObjectSchema } from 'joi';
 
 const DEFAULT_VALUE = Number.POSITIVE_INFINITY;
 
@@ -48,8 +52,8 @@ export class MinAggregator extends SlidingTimeWindowAggregator<MinBucket> {
     return `${type} min`;
   }
 
-  static get key(): string {
-    return 'min';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Min;
   }
 
   static get description(): string {
@@ -79,5 +83,9 @@ export class MinAggregator extends SlidingTimeWindowAggregator<MinBucket> {
     this._count++;
     this._value = Math.min(this._current.update(newVal), this._value);
     return this._value;
+  }
+
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

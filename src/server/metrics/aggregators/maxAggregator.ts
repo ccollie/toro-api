@@ -1,8 +1,12 @@
-import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
+import {
+  SlidingTimeWindowAggregator,
+  SlidingWindowOptionSchema,
+} from './slidingTimeWindowAggregator';
 import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
-import { SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
 import { TickEventData } from '../../stats';
+import { ObjectSchema } from 'joi';
 
 const DEFAULT_VALUE = Number.NEGATIVE_INFINITY;
 
@@ -42,8 +46,8 @@ export class MaxAggregator extends SlidingTimeWindowAggregator<Bucket> {
     this._current = this.currentSlice;
   }
 
-  static get key(): string {
-    return 'max';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Max;
   }
 
   getDescription(metric: BaseMetric, short = false): string {
@@ -91,5 +95,9 @@ export class MaxAggregator extends SlidingTimeWindowAggregator<Bucket> {
     this._count++;
     this._value = Math.max(this._current.update(newVal), this._value);
     return this._value;
+  }
+
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

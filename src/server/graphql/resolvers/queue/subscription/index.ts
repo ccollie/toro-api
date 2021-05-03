@@ -9,3 +9,4 @@ export { onQueueStatsUpdated } from './onQueueStatsUpdated';
 export { onQueueRegistered } from './onQueueRegistered';
 export { onQueueUnregistered } from './onQueueUnregistered';
 export { onQueueWorkersCountChanged } from './onQueueWorkersCountChanged';
+export { onQueueMetricValueUpdated } from './onQueueMetricValueUpdated';

@@ -6,11 +6,10 @@ import { Queue } from 'bullmq';
 import { RuleAlert, RuleConfigOptions, RuleEventsEnum } from '../../types';
 import { RuleAlertFilter, RuleStorage } from './rule-storage';
 import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
-import { BaseMetric, MetricsListener, MetricUpdateEvent } from '../metrics';
+import { BaseMetric, MetricUpdateEvent } from '../metrics';
 import { QueueListener, QueueManager } from '../queues';
 import { Clock, IteratorOptions, logger } from '../lib';
 import { RuleEvaluator } from './rule-evaluator';
-import { parseDuration } from '../lib/datetime';
 import { RuleAlerter } from './rule-alerter';
 
 type RuleLike = Rule | RuleConfigOptions | string;
@@ -23,19 +22,12 @@ const getRuleId = (rule: RuleLike): string => {
 
 const DEFAULT_RETENTION = ms('2 weeks');
 
-function getRetention(): number {
-  const baseValue = process.env.ALERT_RETENTION;
-  return baseValue
-    ? parseDuration(baseValue, DEFAULT_RETENTION)
-    : DEFAULT_RETENTION;
-}
-
 /**
  * Manages the storage of {@link Rule} and alert instances related to a queue
  */
 export class RuleManager {
   public readonly storage: RuleStorage;
-  public readonly metricsListener: MetricsListener;
+  public readonly clock: Clock;
   // RuleId to evaluator map
   private readonly _evaluators = new Map<string, RuleEvaluator>();
   private readonly _alerters = new Map<string, RuleAlerter>();
@@ -46,11 +38,10 @@ export class RuleManager {
    * @param queueManager
    */
   constructor(queueManager: QueueManager) {
-    const mgr = queueManager;
-    this.queueManager = mgr;
+    this.queueManager = queueManager;
     this.storage = new RuleStorage(this.queue, this.bus);
-    this.metricsListener = new MetricsListener(this.queueListener);
     this.onError = this.onError.bind(this);
+    this.clock = queueManager.clock;
   }
 
   destroy(): void {
@@ -60,7 +51,6 @@ export class RuleManager {
     for (const handler of this._alerters.values()) {
       handler.destroy();
     }
-    this.metricsListener.destroy();
   }
 
   startListening(start?: string): Promise<void> {
@@ -69,14 +59,6 @@ export class RuleManager {
 
   stopListening(): Promise<void> {
     return this.queueListener.unlisten();
-  }
-
-  get metrics(): BaseMetric[] {
-    return this.metricsListener.metrics;
-  }
-
-  get clock(): Clock {
-    return this.metricsListener.clock;
   }
 
   get queueListener(): QueueListener {
@@ -104,12 +86,20 @@ export class RuleManager {
     return this.queueManager.hasLock;
   }
 
+  private findMetric(rule: Rule): BaseMetric {
+    return this.queueManager.findMetric(rule.metric.id);
+  }
+
   private _registerRule(rule: Rule): void {
     const id = getRuleId(rule);
     let evaluator = this._evaluators.get(id);
     if (!evaluator) {
-      const listener = this.metricsListener;
-      evaluator = new RuleEvaluator(rule, listener);
+      const metric = this.findMetric(rule);
+      if (!metric) {
+        // todo: throw
+        return;
+      }
+      evaluator = new RuleEvaluator(rule, metric);
       const alertHandler = new RuleAlerter(this.queueManager, rule, this.clock);
 
       this._evaluators.set(id, evaluator);
@@ -133,7 +123,8 @@ export class RuleManager {
         }
       };
 
-      evaluator.metric.onUpdate(dispatch);
+      metric.onUpdate(dispatch);
+      evaluator.unsubscribe = () => metric.offUpdate(dispatch);
 
       this.queueManager.addWork(() => alertHandler.start());
     }
@@ -313,7 +304,7 @@ export class RuleManager {
   async pruneAlerts(retention?: number): Promise<number> {
     const ids = await this.storage.getRuleIds();
     if (ids.length) {
-      retention = retention || getRetention();
+      retention = retention || DEFAULT_RETENTION;
       const keys = ids.map((id) => this.storage.getRuleKey(id));
       const counts = await pMap(
         keys,
@@ -331,11 +322,11 @@ export class RuleManager {
   }
 
   // Events
-  async onAlertEvent(
+  onAlertEvent(
     eventName: string,
     ruleId: string | null,
     handler: BusEventHandler,
-  ): Promise<UnsubscribeFn> {
+  ): UnsubscribeFn {
     const fn = (alert: RuleAlert) => {
       if (!ruleId || ruleId === alert.ruleId) {
         return handler(alert);
@@ -345,17 +336,14 @@ export class RuleManager {
     return this.bus.on(eventName, fn);
   }
 
-  async onAlertTriggered(
+  onAlertTriggered(
     ruleId: string | null,
     handler: BusEventHandler,
-  ): Promise<UnsubscribeFn> {
+  ): UnsubscribeFn {
     return this.onAlertEvent(RuleEventsEnum.ALERT_TRIGGERED, ruleId, handler);
   }
 
-  async onAlertReset(
-    ruleId: string | null,
-    handler: BusEventHandler,
-  ): Promise<UnsubscribeFn> {
+  onAlertReset(ruleId: string | null, handler: BusEventHandler): UnsubscribeFn {
     return this.onAlertEvent(RuleEventsEnum.ALERT_RESET, ruleId, handler);
   }
 

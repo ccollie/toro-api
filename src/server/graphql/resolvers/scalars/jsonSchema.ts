@@ -10,7 +10,7 @@ function validate(schema) {
   }
 }
 
-function ensureObject(value: any): object {
+function ensureObject(value: any): any {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new TypeError(
       `JSONSchema cannot represent non-object value: ${value}`,
@@ -45,7 +45,7 @@ function parseLiteral(ast, variables): any {
   }
 }
 
-function parseObject(ast, variables): object {
+function parseObject(ast, variables): any {
   const value = Object.create(null);
   ast.fields.forEach((field) => {
     // eslint-disable-next-line no-use-before-define

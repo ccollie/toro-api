@@ -121,22 +121,16 @@ describe('RuleManager', () => {
     });
 
     it(`should emit a "${RuleEventsEnum.RULE_ADDED}" event`, async () => {
-      let eventData;
-      await hostManager.bus.on(RuleEventsEnum.RULE_ADDED, (evt) => {
+      let eventData = null;
+
+      hostManager.bus.on(RuleEventsEnum.RULE_ADDED, (evt) => {
         eventData = evt;
       });
+
       const rule = await addRule();
       await delay(50);
       expect(eventData).not.toBeUndefined();
       expect(eventData.ruleId).toEqual(rule.id);
-    });
-
-    it('should register the associated metric', async () => {
-      const rule = await addRule();
-      const listener = ruleManager.metricsListener;
-      expect(listener.metrics.length).toBe(1);
-      const metric = listener.metrics[0];
-      expect(metric).toBeDefined();
     });
   });
 
@@ -154,9 +148,9 @@ describe('RuleManager', () => {
     });
 
     it('should emit a "rule.deleted" event', async () => {
-      let eventData;
+      let eventData = null;
 
-      await hostManager.bus.on(RuleEventsEnum.RULE_DELETED, (evt) => {
+      hostManager.bus.on(RuleEventsEnum.RULE_DELETED, (evt) => {
         eventData = evt;
       });
       const rule = await addRule();
@@ -457,7 +451,8 @@ describe('RuleManager', () => {
       const rule = await addRule({ metric, condition, channels });
 
       let stateData;
-      await ruleManager.bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
+
+      ruleManager.bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
         stateData = eventData;
       });
 

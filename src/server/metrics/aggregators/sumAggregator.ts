@@ -1,6 +1,10 @@
-import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
+import {
+  SlidingTimeWindowAggregator,
+  SlidingWindowOptionSchema,
+} from './slidingTimeWindowAggregator';
 import { Clock } from '../../lib';
-import { SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { ObjectSchema } from 'joi';
 
 class SumBucket {
   public value: number;
@@ -37,8 +41,8 @@ export class SumAggregator extends SlidingTimeWindowAggregator<SumBucket> {
     this._current = this.currentSlice;
   }
 
-  static get key(): string {
-    return 'sum';
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Sum;
   }
 
   static get description(): string {
@@ -67,5 +71,9 @@ export class SumAggregator extends SlidingTimeWindowAggregator<SumBucket> {
     this._count++;
     this.currentSlice.add(newVal);
     return this._value;
+  }
+
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

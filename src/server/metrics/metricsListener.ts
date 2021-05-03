@@ -2,12 +2,20 @@ import { default as PQueue } from 'p-queue';
 import { JobEventData, QueueListener } from '../queues';
 import { BaseMetric, PollingMetric } from './baseMetric';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import { Clock, logger } from '../lib';
 import IORedis from 'ioredis';
 import { Queue } from 'bullmq';
-import { AccurateInterval, createAccurateInterval } from '../lib';
+import {
+  Clock,
+  AccurateInterval,
+  createAccurateInterval,
+  logger,
+  getMetricsDataKey,
+} from '../lib';
 import { createMetricFromJSON } from '../metrics';
-import { SerializedRuleMetric } from '../../types';
+import { SerializedMetric } from '../../types';
+import { TimeSeries } from '../commands';
+import ms from 'ms';
+import { parseDuration } from '../lib/datetime';
 
 const DEFAULT_CONCURRENCY = 16;
 const UPDATE_EVENT_NAME = 'metrics.updated';
@@ -23,9 +31,19 @@ interface PollingMetricMetadata {
   interval: number;
 }
 
+const DEFAULT_SAVE_INTERVAL = ms('1 minute');
+
+function getSaveInterval(): number {
+  const baseValue = process.env.METRIC_SAVE_INTERVAL;
+  return baseValue
+    ? parseDuration(baseValue, DEFAULT_SAVE_INTERVAL)
+    : DEFAULT_SAVE_INTERVAL;
+}
+
 /***
  * A queue listener that acts as an event emitter/dispatcher for
- * queue metrics. Instead of each metric subscribing to the listener
+ * queue metrics, as well as storing metric data at a preset interval.
+ * Instead of each metric subscribing to the listener
  * we handle dispatching in a central place. This is backed by a work queue
  * so we don't slow down the reading of events from the queue listener
  * and we also have fine-tuned control over concurrency
@@ -35,15 +53,20 @@ export class MetricsListener {
   protected readonly workQueue: PQueue;
   private readonly _shouldDestroy: boolean;
   private readonly _metrics: BaseMetric[] = [];
-  private readonly _pollingMetrics = new Map<
+  private activeMetrics: BaseMetric[] = [];
+  private readonly pollingMetrics = new Map<
     PollingMetric,
     PollingMetricMetadata
   >();
   private readonly emitter: Emittery = new Emittery();
   private readonly handlerMap = new Map<string, Set<BaseMetric>>();
+  private readonly _saveInterval = getSaveInterval();
+  private readonly _state: Record<string, any> = Object.create(null);
+
   private _rateTimer: AccurateInterval;
+  private _saveTimer: AccurateInterval;
   private _timerInterval = 0;
-  private _state: Record<string, any> = Object.create(null);
+  private running = false;
 
   constructor(queueListener: QueueListener, workQueue?: PQueue) {
     this._shouldDestroy = !workQueue;
@@ -54,8 +77,31 @@ export class MetricsListener {
     this.dispatch = this.dispatch.bind(this);
   }
 
+  public start(): void {
+    if (!this.running) {
+      this.running = true;
+      this.initTimer();
+    }
+  }
+
+  public stop(): void {
+    if (this.running) {
+      this.running = false;
+      this.stopTimer();
+      this.stopSaveTimer();
+    }
+  }
+
+  private getDataKey(metric: BaseMetric): string {
+    return getMetricsDataKey(this.queue, metric.id);
+  }
+
+  private updateActive(): BaseMetric[] {
+    return (this.activeMetrics = this._metrics.filter((m) => m.isActive));
+  }
+
   private initTimer(): void {
-    if (this._pollingMetrics.size === 0) {
+    if (this.pollingMetrics.size === 0) {
       this.stopTimer();
       return;
     }
@@ -65,13 +111,14 @@ export class MetricsListener {
       this.stopTimer();
       this.startTimer();
     }
+    if (!this._saveTimer) this.startSaveTimer();
   }
 
   private poll(): void {
     const now = Date.now();
     const checked: PollingMetric[] = [];
     const tasks = [];
-    this._pollingMetrics.forEach((meta, metric) => {
+    this.pollingMetrics.forEach((meta, metric) => {
       const age = now - meta.lastTick;
       if (age >= meta.interval) {
         meta.lastTick = now;
@@ -84,6 +131,36 @@ export class MetricsListener {
         .addAll(tasks)
         .then(() => this.emitUpdate(checked))
         .catch(this.onError);
+    }
+  }
+
+  private async savePoll() {
+    const active = this.activeMetrics;
+    if (active.length) {
+      const client = await this.client;
+      const pipeline = client.pipeline();
+      for (const metric of active) {
+        const key = this.getDataKey(metric);
+        TimeSeries.multi.add(pipeline, key, this.clock.getTime(), metric.value);
+      }
+      await pipeline.exec();
+    }
+  }
+
+  private startSaveTimer(): void {
+    if (this._saveTimer) {
+      this._saveTimer.stop();
+    }
+    this._saveTimer = createAccurateInterval(
+      () => this.savePoll().catch(this.onError),
+      this._saveInterval,
+    );
+  }
+
+  private stopSaveTimer(): void {
+    if (this._saveTimer) {
+      this._saveTimer.stop();
+      this._saveTimer = null;
     }
   }
 
@@ -129,15 +206,17 @@ export class MetricsListener {
       lastTick: Date.now(),
       interval: metric.interval,
     };
-    this._pollingMetrics.set(metric, meta);
-    this.initTimer();
+    this.pollingMetrics.set(metric, meta);
+    this.updateActive();
+    this.running && this.initTimer();
   }
 
   private removePollingMetric(metric: PollingMetric): void {
-    const meta = this._pollingMetrics.get(metric);
+    const meta = this.pollingMetrics.get(metric);
     if (meta) {
-      this._pollingMetrics.delete(metric);
-      this.initTimer();
+      this.pollingMetrics.delete(metric);
+      this.updateActive();
+      this.running && this.initTimer();
     }
   }
 
@@ -145,10 +224,10 @@ export class MetricsListener {
     return this._metrics.find((x) => x.id === id);
   }
 
-  registerMetricFromJSON(opts: SerializedRuleMetric): BaseMetric {
+  registerMetricFromJSON(opts: SerializedMetric): BaseMetric {
     let metric = this.findMetricById(opts.id);
     if (!metric) {
-      metric = createMetricFromJSON(this.clock, opts);
+      metric = createMetricFromJSON(opts, this.clock);
       this.registerMetric(metric);
     }
     return metric;
@@ -168,6 +247,7 @@ export class MetricsListener {
       }
     });
     this._metrics.push(metric);
+    this.updateActive();
     // metric.onUpdate()
     if (isPollingMetric(metric)) {
       this.addPollingMetric(metric as PollingMetric);
@@ -196,6 +276,7 @@ export class MetricsListener {
         this.removePollingMetric(metric as PollingMetric);
       }
     }
+    this.updateActive();
   }
 
   on(event: string, handler: (eventData?: any) => void): UnsubscribeFn {
@@ -224,7 +305,7 @@ export class MetricsListener {
   private calcTimerInterval(): number {
     let val = Number.MAX_VALUE;
     let gcf = -1;
-    this._pollingMetrics.forEach((meta) => {
+    this.pollingMetrics.forEach((meta) => {
       if (gcf === -1) {
         gcf = meta.interval;
       } else if (gcf > 1) {
@@ -283,12 +364,16 @@ export class MetricsListener {
     logger.warn(err.message || err);
   }
 
+  clear() {
+    this.emitter.clearListeners();
+    this.handlerMap.clear();
+  }
+
   destroy(): void {
     if (this._shouldDestroy) {
       this.workQueue.clear();
     }
-    this.stopTimer();
-    this.emitter.clearListeners();
-    this.handlerMap.clear();
+    this.stop();
+    this.clear();
   }
 }

@@ -1,5 +1,6 @@
 import { CounterBasedMetric } from './counterBasedMetric';
 import { Events } from './constants';
+import { MetricTypes } from '../../types';
 
 /**
  * Tracks the number of finished jobs (i.e. Completed or Failed)
@@ -9,8 +10,8 @@ export class FinishedCountMetric extends CounterBasedMetric {
     return [Events.FINISHED];
   }
 
-  static get key(): string {
-    return 'finished_count';
+  static get key(): MetricTypes {
+    return MetricTypes.Finished;
   }
 
   static get unit(): string {

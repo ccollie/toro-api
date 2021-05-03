@@ -7,7 +7,7 @@ import {
   WebhookChannel,
 } from '../../../src/server/notifications';
 import { EventBus } from '../../../src/server/redis';
-import { clearDb, DEFAULT_CLIENT_OPTIONS, delay, randomId } from '../utils';
+import { delay, randomId } from '../utils';
 import IORedis from 'ioredis';
 import {
   ChannelConfig,
@@ -18,6 +18,7 @@ import {
 } from '../../../src/types';
 import random from 'lodash/random';
 import { HostManager } from '../../../src/server/hosts';
+import { clearDb, DEFAULT_CLIENT_OPTIONS } from '../../factories';
 
 describe('ChannelStorage', () => {
   let client: IORedis.Redis;
@@ -111,8 +112,8 @@ describe('ChannelStorage', () => {
     });
 
     it('emits an event when a channel is added', async () => {
-      let eventData;
-      await bus.on(ChannelEvents.Added, (evt) => {
+      let eventData: Record<string, any> = null;
+      bus.on(ChannelEvents.Added, (evt) => {
         eventData = evt;
       });
       const channel = await addChannel();
@@ -170,7 +171,7 @@ describe('ChannelStorage', () => {
 
     it('raises an event upon successful deletion of a channel', async () => {
       let eventData;
-      await bus.on(ChannelEvents.Deleted, (evt) => {
+      bus.on(ChannelEvents.Deleted, (evt) => {
         eventData = evt;
       });
 

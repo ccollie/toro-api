@@ -1,13 +1,14 @@
 import { Events } from './constants';
 import { RateMetric } from './rateMetric';
+import { MetricTypes } from '../../types';
 
 export class CompletedRateMetric extends RateMetric {
   get validEvents(): string[] {
     return [Events.COMPLETED];
   }
 
-  static get key(): string {
-    return 'completed_rate';
+  static get key(): MetricTypes {
+    return MetricTypes.CompletedRate;
   }
 
   static get description(): string {

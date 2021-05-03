@@ -1,13 +1,14 @@
 import { CounterBasedMetric } from './counterBasedMetric';
 import { Events } from './constants';
+import { MetricTypes } from '../../types';
 
 export class CompletedCountMetric extends CounterBasedMetric {
   get validEvents(): string[] {
     return [Events.COMPLETED];
   }
 
-  static get key(): string {
-    return 'completed';
+  static get key(): MetricTypes {
+    return MetricTypes.Completed;
   }
 
   static get description(): string {

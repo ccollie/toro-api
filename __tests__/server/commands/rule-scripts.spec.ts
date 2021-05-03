@@ -260,7 +260,7 @@ describe('RuleScripts', () => {
         isActive: true,
       });
 
-      await queueManager.bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
+      queueManager.bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
         done();
       });
       await delay(1000);
