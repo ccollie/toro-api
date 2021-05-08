@@ -4,6 +4,7 @@ import { toDate } from 'date-fns';
 import { isDate } from 'lodash';
 import { isNumber } from '../lib';
 import IORedis from 'ioredis';
+import { RedisClient } from 'bullmq';
 
 const deserializerMap = new Map();
 const deserializerCache = new Map();
@@ -71,7 +72,7 @@ export function getDeserializer(key: string) {
 }
 
 export async function getInfo(
-  client: IORedis.Redis,
+  client: RedisClient,
   stream: string,
 ): Promise<RedisStreamItem> {
   try {

@@ -1,15 +1,8 @@
-import { FieldConfig, RuleTC, RuleAddInputTC, QueueTC } from '../../index';
-import { schemaComposer } from 'graphql-compose';
+import { FieldConfig, RuleTC, RuleAddInputTC } from '../../index';
 import { getQueueManager } from '../../../helpers';
 
 export const ruleAdd: FieldConfig = {
-  type: schemaComposer.createObjectTC({
-    name: 'RuleAddPayload',
-    fields: {
-      rule: RuleTC.NonNull,
-      queue: QueueTC.NonNull,
-    },
-  }).NonNull,
+  type: RuleTC.NonNull,
   description: 'Create a rule for a queue',
   args: {
     input: RuleAddInputTC.NonNull,
@@ -17,7 +10,6 @@ export const ruleAdd: FieldConfig = {
   async resolve(_, args): Promise<any> {
     const { queueId, ...options } = args;
     const manager = getQueueManager(queueId);
-    const rule = await manager.addRule(options);
-    return { rule, queue: manager.queue };
+    return manager.addRule(options);
   },
 };

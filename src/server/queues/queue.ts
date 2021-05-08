@@ -1,6 +1,6 @@
 import ms from 'ms';
 import { isEmpty, uniq } from 'lodash';
-import { Job, Queue } from 'bullmq';
+import { Job, Queue, RedisClient } from 'bullmq';
 import { getQueueConfig } from '../hosts';
 import { deleteByPattern, normalizePrefixGlob, scanKeys } from '../redis';
 import { getQueueMetaKey, getQueueStatsPattern, systemClock } from '../lib';
@@ -17,7 +17,7 @@ import {
   QueueWorker,
   StatsGranularity,
 } from '../../types';
-import IORedis, { Pipeline } from 'ioredis';
+import { Pipeline } from 'ioredis';
 import logger from '../lib/logger';
 import { Scripts } from '../commands/scripts';
 
@@ -90,7 +90,7 @@ export async function setQueueMeta(
 }
 
 export async function discoverQueues(
-  client: IORedis.Redis,
+  client: RedisClient,
   prefix?: string,
 ): Promise<DiscoveredQueue[]> {
   const pattern = normalizePrefixGlob(prefix);

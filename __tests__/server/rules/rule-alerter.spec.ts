@@ -103,12 +103,7 @@ describe('RuleEAlerter', () => {
 
   describe('constructor', () => {
     it('can create a RuleAlerter', () => {
-      const rule = createRule({
-        metric: {
-          type: 'latency',
-          options: {},
-        },
-      });
+      const rule = createRule({});
 
       const alerter = new RuleAlerter(queueManager, rule, clock);
       expect(alerter).toBeDefined();

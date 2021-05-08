@@ -1,10 +1,10 @@
 // Based on https://github.com/bluerivers/redlock-coordinator
-import * as IORedis from 'ioredis';
 import { EventEmitter } from 'events';
 import logger from '../lib/logger';
 import RedLock from 'redlock';
 import Timeout = NodeJS.Timeout;
 import { parseDuration } from '../lib/datetime';
+import { RedisClient } from 'bullmq';
 
 export interface LockOptions {
   key: string;
@@ -43,7 +43,7 @@ function getLockTTL(): number {
  * Class to maintain a distributed redlock to control writing to the db
  */
 export class LockManager extends EventEmitter {
-  private readonly client: IORedis.Redis;
+  private readonly client: RedisClient;
   private readonly redLock: RedLock;
   public readonly key: string;
   public readonly ttl: number;
@@ -58,7 +58,7 @@ export class LockManager extends EventEmitter {
   static ERROR = 'lock-error';
   static STATE_CHANGED = 'state-changed';
 
-  constructor(client: IORedis.Redis, options?: Partial<LockOptions>) {
+  constructor(client: RedisClient, options?: Partial<LockOptions>) {
     super();
     this.client = client;
 
@@ -133,9 +133,8 @@ export class LockManager extends EventEmitter {
         new Date(this.lock.expiration),
       );
 
-      console.log('Lock acquired: ' + this.key);
+      // console.log('Lock acquired: ' + this.key);
       this.clearTimers();
-      // @ts-ignore
       this.renewId = setInterval(() => this.renew(), this.renewTime) as Timeout;
       this.emit(LockManager.ACQUIRED, this);
       this.emit(LockManager.STATE_CHANGED, this.isOwner);
@@ -215,7 +214,6 @@ export class LockManager extends EventEmitter {
   }
 
   private setElectTimeout() {
-    // @ts-ignore
     this.electId = setTimeout(() => this.acquire(), this.waitTime);
   }
 

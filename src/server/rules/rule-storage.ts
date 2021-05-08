@@ -17,7 +17,7 @@ import {
 import { getAlertsKey, getRuleKey, getRuleStateKey } from '../lib/keys';
 
 import { Rule } from './rule';
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import {
   RuleAlert,
   RuleConfigOptions,
@@ -25,13 +25,13 @@ import {
   RuleState,
   Severity,
 } from '../../types';
-import IORedis from 'ioredis';
+import { Redis } from 'ioredis';
 import { getUniqueId, parseBool, systemClock } from '../lib';
 import {
-  PossibleTimestamp,
-  TimeSeries,
-  RuleScripts,
   AlertData,
+  PossibleTimestamp,
+  RuleScripts,
+  TimeSeries,
 } from '../commands';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
@@ -39,6 +39,12 @@ import {
 export interface RuleAlertFilter {
   eventNames?: string[];
   ruleIds?: string[];
+}
+
+export interface RuleSortOpts {
+  sortBy?: string;
+  sortAscending?: boolean;
+  fields?: string[];
 }
 
 /**
@@ -99,7 +105,7 @@ export class RuleStorage {
     return getRuleKey(this.queue, getRuleId(rule));
   }
 
-  private getClient(): Promise<IORedis.Redis> {
+  private getClient(): Promise<RedisClient> {
     return this.queue.client;
   }
 
@@ -146,12 +152,12 @@ export class RuleStorage {
     data.updatedAt = systemClock.getTime();
     const pipeline = client.pipeline();
     pipeline.hmset(key, data);
-    pipeline.zadd(this.rulesIndexKey, `${rule.createdAt}`, id, 'nx');
+    pipeline.zadd(this.rulesIndexKey, rule.id, id);
 
     rule.updatedAt = data.updatedAt;
 
     await Promise.all([
-      pipeline.exec(),
+      pipeline.exec().then(checkMultiErrors),
       this.bus.emit(event, {
         ruleId: id,
         data: rule.toJSON(),
@@ -159,6 +165,39 @@ export class RuleStorage {
     ]);
 
     return rule;
+  }
+
+  protected async _sort(opts: RuleSortOpts): Promise<Array<any>> {
+    const ruleKeyPattern = getRuleKey(this.queue, '*');
+    const args: string[] = [];
+    const client = await this.getClient();
+    if (opts.sortBy) {
+      const sortSpec = `${ruleKeyPattern}->${opts.sortBy}`;
+      args.push('alpha', 'by', sortSpec);
+      args.push(!!opts.sortAscending ? 'asc' : 'desc');
+    }
+    let getHash = false;
+    if (opts.fields && opts.fields.length) {
+      opts.fields.forEach((name) => {
+        args.push('GET', `*->${name}`);
+      });
+    } else {
+      getHash = true;
+      args.push('GET', '#');
+    }
+    const data = await client.sort(this.rulesIndexKey, ...args);
+    if (isNumber(data)) return [];
+    if (opts.fields && opts.fields.length) {
+    }
+    return data;
+  }
+
+  // utility function. Mainly to check for dupes while adding
+  async getRuleNames(): Promise<Record<string, string>> {
+    const client = await this.getClient();
+    const result = Object.create(null);
+    const response = await this._sort({ fields: ['id', 'name'] });
+    return result;
   }
 
   /**
@@ -360,8 +399,7 @@ export class RuleStorage {
     const client = await this.getClient();
     const data = await TimeSeries.get(client, key, id);
     if (data) data['ruleId'] = ruleId;
-    const result = deserializeAlert(data);
-    return result;
+    return deserializeAlert(data);
   }
 
   async deleteAlert(rule: Rule | string, id: string): Promise<boolean> {

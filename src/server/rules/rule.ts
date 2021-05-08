@@ -2,7 +2,11 @@ import boom from '@hapi/boom';
 import { clone, isNil, isString } from 'lodash';
 import { parseTimestamp } from '../lib/datetime';
 import { systemClock } from '../lib';
-import { ruleConfigSchema } from './schemas';
+import {
+  ruleAlertOptionsSchema,
+  ruleConditionSchema,
+  ruleConfigSchema,
+} from './schemas';
 import {
   RuleAlertOptions,
   RuleCondition,
@@ -29,10 +33,10 @@ export class Rule {
   private _channels: string[] = [];
   public readonly id: string;
   public readonly createdAt: number;
-  private readonly options: RuleAlertOptions;
+  private options: RuleAlertOptions;
   private _condition: RuleCondition = Object.create(null);
   public state: RuleState = RuleState.NORMAL;
-  public metric: SerializedMetric;
+  public metricId: string;
   public queueId: string;
   public name: string;
   public message: string;
@@ -60,7 +64,7 @@ export class Rule {
       id,
       name,
       condition,
-      metric,
+      metricId,
       active,
       payload,
       description,
@@ -112,14 +116,26 @@ export class Rule {
     //   );
     // }
 
-    this.metric = metric;
+    this.metricId = metricId;
     // todo: basic condition validation
     this.condition = condition;
     this.severity = config.severity || Severity.WARNING;
   }
 
+  private validateAlertOptions(opts: RuleAlertOptions) {
+    const { error, value } = ruleAlertOptionsSchema.validate(opts);
+    if (error) {
+      throw error;
+    }
+    return value;
+  }
+
   get alertOptions(): RuleAlertOptions {
     return this.options;
+  }
+
+  set alertOptions(opts: RuleAlertOptions) {
+    this.options = this.validateAlertOptions(opts);
   }
 
   /**
@@ -137,8 +153,12 @@ export class Rule {
     return this._condition;
   }
 
-  set condition(value: RuleCondition) {
-    this._condition = value;
+  set condition(cond: RuleCondition) {
+    const { error, value } = ruleConditionSchema.validate(cond);
+    if (error) {
+      throw error;
+    }
+    this._condition = cond;
   }
 
   get alertOnReset(): boolean {
@@ -172,7 +192,7 @@ export class Rule {
       updatedAt,
       options,
       queueId: this.queueId,
-      metric: clone(this.metric),
+      metricId: this.metricId,
       condition: clone(this.condition),
       isActive: this.isActive,
       message: this.message,

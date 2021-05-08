@@ -4,13 +4,14 @@ import { isValidDate } from '../lib/datetime';
 import { isNumber, logger } from '../lib';
 import { ConnectionOptions, RedisMetrics } from '../../types';
 import { loadScripts } from '../commands';
+import { RedisClient } from 'bullmq';
 
 export interface RedisStreamItem {
   id: string | number | Date;
   data: any;
 }
 
-export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
+export function createClient(redisOpts?: ConnectionOptions): RedisClient {
   let client;
   if (isNil(redisOpts)) {
     client = new IORedis(); // supported in 4.19.0
@@ -26,9 +27,9 @@ export function createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
 
 /**
  * Waits for a redis client to be ready.
- * @param {IORedis.Redis} client redis client
+ * @param {RedisClient} client redis client
  */
-export async function waitUntilReady(client: IORedis.Redis): Promise<void> {
+export async function waitUntilReady(client: RedisClient): Promise<void> {
   return new Promise(function (resolve, reject) {
     if (client.status === 'ready') {
       resolve();
@@ -49,7 +50,7 @@ export async function waitUntilReady(client: IORedis.Redis): Promise<void> {
   });
 }
 
-export async function disconnect(client: IORedis.Redis): Promise<void> {
+export async function disconnect(client: RedisClient): Promise<void> {
   if (client.status !== 'end') {
     let _resolve, _reject;
 
@@ -73,7 +74,7 @@ export async function disconnect(client: IORedis.Redis): Promise<void> {
 
 /** Iterate redis keys by pattern  */
 export function scanKeys(
-  client: IORedis.Redis,
+  client: RedisClient,
   options: any = {},
   batchFn: (keys: string[]) => any,
 ): Promise<void> {
@@ -114,7 +115,7 @@ export function scanKeys(
 }
 
 export async function deleteByPattern(
-  client: IORedis.Redis,
+  client: RedisClient,
   pattern: string,
 ): Promise<number> {
   let totalCount = 0;
@@ -306,9 +307,7 @@ const metrics: MetricName[] = [
   'role',
 ];
 
-export async function getRedisInfo(
-  client: IORedis.Redis,
-): Promise<RedisMetrics> {
+export async function getRedisInfo(client: RedisClient): Promise<RedisMetrics> {
   const res = await client.info();
   const redisInfo = Object.create(null);
 

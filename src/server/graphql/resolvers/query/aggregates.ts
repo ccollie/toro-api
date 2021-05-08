@@ -1,9 +1,10 @@
 import { FieldConfig } from '../index';
 import { aggregateMap } from '../../../metrics';
 import { schemaComposer } from 'graphql-compose';
+import { AggregatorTypes } from '../../../../types';
 
 export interface AggregateInfo {
-  key: string;
+  type: AggregatorTypes;
   description: string;
 }
 
@@ -11,20 +12,22 @@ export const aggregates: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'AggregateInfo',
     fields: {
-      key: 'String!',
+      type: 'AggregateTypeEnum!',
       description: 'String!',
     },
   }).List.NonNull,
   description: 'Get the list of aggregate types available for metrics',
   args: {},
   resolve(): AggregateInfo[] {
-    const keys = Object.keys(aggregateMap);
-    return keys.map((key) => {
-      const ctor = aggregateMap[key];
-      return {
-        key: (ctor as any).key,
-        description: (ctor as any).description,
-      };
-    });
+    const result: AggregateInfo[] = [];
+    for (const [key, ctor] of Object.entries(aggregateMap)) {
+      if (ctor) {
+        result.push({
+          type: key as AggregatorTypes,
+          description: (ctor as any).description,
+        });
+      }
+    }
+    return result;
   },
 };

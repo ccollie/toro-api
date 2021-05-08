@@ -20,15 +20,16 @@ import {
   LatencyMetric,
   P90Aggregator,
 } from '../../../src/server/metrics';
-import IORedis from 'ioredis';
 import ms from 'ms';
+import nanoid = require('nanoid');
+import { RedisClient } from 'bullmq';
 
 describe('MetricManager', () => {
   let listenerHelper: QueueListenerHelper;
   let queueListener: QueueListener;
   let hostManager: HostManager;
   let queueManager: QueueManager;
-  let client: IORedis.Redis;
+  let client: RedisClient;
 
   beforeEach(async function () {
     const queueName = 'test-' + randomString(5);
@@ -56,6 +57,7 @@ describe('MetricManager', () => {
   describe('constructor', () => {
     it('should construct an object', () => {
       const sut = new MetricManager(
+        '1234',
         queueManager.queueListener,
         queueManager.bus,
       );
@@ -68,7 +70,7 @@ describe('MetricManager', () => {
   });
 
   describe('createMetric', () => {
-    let client: IORedis.Redis;
+    let client: RedisClient;
 
     beforeEach(async () => {
       client = await queueManager.queue.client;
@@ -77,7 +79,7 @@ describe('MetricManager', () => {
     it('creates a metric from JSON', async () => {
       const json: SerializedMetric = {
         aggregator: {
-          type: AggregatorTypes.Null,
+          type: AggregatorTypes.Identity,
           options: {},
         },
         id: '',
@@ -87,7 +89,7 @@ describe('MetricManager', () => {
         type: MetricTypes.Latency,
       };
 
-      const sut = new MetricManager(queueListener, queueManager.bus);
+      const sut = new MetricManager('some_id', queueListener, queueManager.bus);
       const metric = await sut.createMetric(json);
 
       expect(metric).toBeDefined();
@@ -110,7 +112,7 @@ describe('MetricManager', () => {
     it('emits an "added" event', async (done) => {
       const json: SerializedMetric = {
         aggregator: {
-          type: AggregatorTypes.Null,
+          type: AggregatorTypes.Identity,
           options: {},
         },
         id: '',
@@ -125,7 +127,11 @@ describe('MetricManager', () => {
         eventData = data;
         done();
       });
-      const sut = new MetricManager(queueListener, queueManager.bus);
+      const sut = new MetricManager(
+        'some_queue_id',
+        queueListener,
+        queueManager.bus,
+      );
       const metric = await sut.createMetric(json);
     });
   });
@@ -137,14 +143,19 @@ describe('MetricManager', () => {
     const metric = new InstantaneousOpsMetric({
       interval: INTERVAL,
       jobNames: [],
-      name: `name-${randomString(4)}`,
     });
 
+    metric.name = `name-${randomString(4)}`;
     metric.aggregator = new P90Aggregator(queueManager.clock, {
       duration: DURATION,
     });
 
     return metric;
+  }
+
+  function createManager(): MetricManager {
+    const id = nanoid.nanoid();
+    return new MetricManager(id, queueListener, queueManager.bus);
   }
 
   describe('saveMetric', () => {
@@ -154,7 +165,7 @@ describe('MetricManager', () => {
 
         const metric = createMetric();
 
-        const sut = new MetricManager(queueListener, queueManager.bus);
+        const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
         const members = await client.smembers(sut.indexKey);
@@ -178,7 +189,7 @@ describe('MetricManager', () => {
           done();
         });
 
-        const sut = new MetricManager(queueListener, queueManager.bus);
+        const sut = createManager();
         await sut.saveMetric(metric);
       });
     });
@@ -187,7 +198,7 @@ describe('MetricManager', () => {
       it('saves to redis', async () => {
         const metric = createMetric();
 
-        const sut = new MetricManager(queueListener, queueManager.bus);
+        const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
         expect(saved.isActive).toBe(true);
@@ -216,7 +227,7 @@ describe('MetricManager', () => {
           done();
         });
 
-        const sut = new MetricManager(queueListener, queueManager.bus);
+        const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
         saved.isActive = false;
@@ -240,7 +251,7 @@ describe('MetricManager', () => {
           eventData = data;
         });
 
-        const sut = new MetricManager(queueListener, queueManager.bus);
+        const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
         saved.isActive = true;
@@ -264,7 +275,7 @@ describe('MetricManager', () => {
     }
 
     it('should remove the metric', async () => {
-      const sut = new MetricManager(queueListener, queueManager.bus);
+      const sut = createManager();
       const metric = await addMetric(sut);
       const deleted = await sut.deleteMetric(metric);
 
@@ -286,7 +297,7 @@ describe('MetricManager', () => {
         done();
       });
 
-      const sut = new MetricManager(queueListener, queueManager.bus);
+      const sut = createManager();
       const metric = await addMetric(sut);
       await sut.deleteMetric(metric);
     });

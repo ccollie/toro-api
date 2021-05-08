@@ -1,13 +1,13 @@
 import { LockManager } from '../../../src/server/redis';
 import { clearDb, createClient } from '../../factories';
-import * as IORedis from 'ioredis';
 import { delay } from '../utils';
+import { RedisClient } from 'bullmq';
 const DEFAULT_TTL = 500;
 const LOCK_KEY = 'test-lock';
 
 describe('LockManager', () => {
   describe('Single client', () => {
-    let client: IORedis.Redis;
+    let client: RedisClient;
     let lock: LockManager;
 
     beforeEach(async () => {
@@ -78,7 +78,7 @@ describe('LockManager', () => {
 });
 
 describe('LockManager: Competing clients', () => {
-  let client, client2: IORedis.Redis;
+  let client, client2: RedisClient;
   let first: LockManager;
   let second: LockManager;
 
@@ -102,7 +102,7 @@ describe('LockManager: Competing clients', () => {
     await Promise.all([first.destroy(), second.destroy()]);
   }
 
-  describe('Lock Aquisition', () => {
+  describe('Lock Acquisition', () => {
     it('allows only one client to own the lock', async () => {
       await setup();
       try {

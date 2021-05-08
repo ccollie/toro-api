@@ -1,8 +1,7 @@
-import { Queue, QueueEvents } from 'bullmq';
+import { Queue, QueueEvents, RedisClient } from 'bullmq';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import Emittery from 'emittery';
-import * as IORedis from 'ioredis';
 import logger from '../lib/logger';
 import { isFinishedStatus, isNumber } from '../lib';
 import { parseTimestamp } from '../lib/datetime';
@@ -63,7 +62,7 @@ export class QueueListener extends Emittery {
   private _listening: boolean;
   private readonly _handlerMap = {};
   private readonly keysToFetch: string[];
-  private _client: IORedis.Redis = null;
+  private _client: RedisClient = null;
   private readonly _clock: ManualClock;
   private currentJob: any;
   private eventRefCounts: Record<string, number> = {};

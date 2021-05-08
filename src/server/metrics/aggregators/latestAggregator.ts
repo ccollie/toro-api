@@ -26,7 +26,7 @@ export class LatestAggregator extends BaseAggregator {
   }
 
   static get description(): string {
-    return 'returns the latest value from a stream of values';
+    return 'Latest value';
   }
 
   static get schema(): ObjectSchema {

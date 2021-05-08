@@ -706,10 +706,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@stoplight/better-ajv-errors@^0.0.4":
-  "integrity" "sha512-HFXOerq/6/6YisiTJwCOScwfNaXyGmX7ROAEUoKOrckK9+hJ/QLFm5EofQYEgX4aXkvHokLEbWBs4NMwZ6hQUw=="
-  "resolved" "https://registry.npmjs.org/@stoplight/better-ajv-errors/-/better-ajv-errors-0.0.4.tgz"
-  "version" "0.0.4"
+"@stoplight/better-ajv-errors@^0.1.0":
+  "integrity" "sha512-EiX3Hx7Q8pwxxEtl9RZigI2jfAcNo6xA7V/AwDDJ7hgxhOknvoLH1omtycCheCLdz0MxxU+uvYo1wPrYE7UL+w=="
+  "resolved" "https://registry.npmjs.org/@stoplight/better-ajv-errors/-/better-ajv-errors-0.1.0.tgz"
+  "version" "0.1.0"
   dependencies:
     "jsonpointer" "^4.0.1"
     "leven" "^3.1.0"
@@ -1263,10 +1263,10 @@
     "json-schema-traverse" "^0.4.1"
     "uri-js" "^4.2.2"
 
-"ajv@^8.0.1", "ajv@^8.1.0", "ajv@>=6":
-  "integrity" "sha512-B/Sk2Ix7A36fs/ZkuGLIR86EdjbgR6fsAcbx9lOP/QBSXujDNbVmIS/U4Itz5k8fPFDeVZl/zQ/gJW4Jrq6XjQ=="
-  "resolved" "https://registry.npmjs.org/ajv/-/ajv-8.1.0.tgz"
-  "version" "8.1.0"
+"ajv@^8.0.1", "ajv@^8.2.0", "ajv@>=8":
+  "integrity" "sha512-WSNGFuyWd//XO8n/m/EaOlNLtO0yL8EXT/74LqT4khdhpZjP7lkj/kT5uwRmGitKEVp/Oj7ZUHeGfPtgHhQ5CA=="
+  "resolved" "https://registry.npmjs.org/ajv/-/ajv-8.2.0.tgz"
+  "version" "8.2.0"
   dependencies:
     "fast-deep-equal" "^3.1.1"
     "json-schema-traverse" "^1.0.0"
@@ -2111,10 +2111,10 @@
     "base64-js" "^1.3.1"
     "ieee754" "^1.1.13"
 
-"bullmq@^1.20.5":
-  "integrity" "sha512-Tq2v/5i5rvu9PjB1QZ9FATMZQLnnpV4o38rDZiYd4q2EGeWL+vPxD2S56AVRbRJxpfwKcE31HTaezNjMI3oRaQ=="
-  "resolved" "https://registry.npmjs.org/bullmq/-/bullmq-1.20.5.tgz"
-  "version" "1.20.5"
+"bullmq@^1.24.0":
+  "integrity" "sha512-JqlWZLk05LtY99wRwuQcGrmNdmxZeM0ODPd7091JmLFFL1Nqlk6Umo3hsDlQbcXkwubrNEX6Ht8EOrqezD3bPQ=="
+  "resolved" "https://registry.npmjs.org/bullmq/-/bullmq-1.24.0.tgz"
+  "version" "1.24.0"
   dependencies:
     "@types/ioredis" "^4.22.2"
     "cron-parser" "^2.7.3"
@@ -2681,10 +2681,10 @@
     "is-nan" "^1.3.0"
     "moment-timezone" "^0.5.31"
 
-"cronstrue@^1.111.0":
-  "integrity" "sha512-XuZj3jHp3p3r6OXo8yuhjO0n6UEj9qEtpSzVg9ruKhpV5pBJZCqZwpaApqRV0nW+AJLiAB+3OSPEWcFlzIM25g=="
-  "resolved" "https://registry.npmjs.org/cronstrue/-/cronstrue-1.111.0.tgz"
-  "version" "1.111.0"
+"cronstrue@^1.112.0":
+  "integrity" "sha512-sVw7RKaOm4l3DRGeOXpdxDKL5qcFrKy9diZHob/kie14OYuOV3uCxAthb56OOf/M2u+FCYPiBMYhZuFibuxwMQ=="
+  "resolved" "https://registry.npmjs.org/cronstrue/-/cronstrue-1.112.0.tgz"
+  "version" "1.112.0"
 
 "cross-spawn@^6.0.0":
   "integrity" "sha512-eTVLrBSt7fjbDygz805pMnstIs2VTBNkRm0qxZd+M7A5XDdxVRWO5MxGBXZhjY4cqLYLdtrGqRf8mBPmzwSpWQ=="
@@ -5332,9 +5332,9 @@
     "@sideway/pinpoint" "^2.0.0"
 
 "js-beautify@^1.6.14":
-  "integrity" "sha512-+3CW1fQqkV7aXIvprevNYfSrKrASQf02IstAZCVSNh+/IS5ciaOtE7erfjyowdMYZZmP2A7SMFkcJ28qCl84+A=="
-  "resolved" "https://registry.npmjs.org/js-beautify/-/js-beautify-1.13.11.tgz"
-  "version" "1.13.11"
+  "integrity" "sha512-oH+nc0U5mOAqX8M5JO1J0Pw/7Q35sAdOsM5W3i87pir9Ntx6P/5Gx1xLNoK+MGyvHk4rqqRCE4Oq58H6xl2W7A=="
+  "resolved" "https://registry.npmjs.org/js-beautify/-/js-beautify-1.13.13.tgz"
+  "version" "1.13.13"
   dependencies:
     "config-chain" "^1.1.12"
     "editorconfig" "^0.15.3"
@@ -6072,46 +6072,46 @@
     "for-in" "^1.0.2"
     "is-extendable" "^1.0.1"
 
-"mjml-accordion@4.9.0":
-  "integrity" "sha512-wj8Z2Nm8brZQzVHE6Uds7dMjBq/cjyC6UhPbaG2QpkfvTTZ7fxEIVS2LJgeAkuqHjnzQJNvQU8cFWRiB2Uw5zQ=="
-  "resolved" "https://registry.npmjs.org/mjml-accordion/-/mjml-accordion-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-accordion@4.9.3":
+  "integrity" "sha512-mPpNtTs9dz14wiq/46hYxT37xGZi3PHwggZyLokj5d2GgqlQADhYoO7/TSqfKR6zIhzco0gDLjNJL5COXxOAeQ=="
+  "resolved" "https://registry.npmjs.org/mjml-accordion/-/mjml-accordion-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-body@4.9.0":
-  "integrity" "sha512-1CvOpMchVwauVH0PEqd2yfPQAxXJ2E1OEPFItQfs2M1rFl0RHdN1TvkJmSig05WKGirTn/5AMZlKZSnl3cWTZw=="
-  "resolved" "https://registry.npmjs.org/mjml-body/-/mjml-body-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-body@4.9.3":
+  "integrity" "sha512-PaClGgS86XtZvX3XLAOt96gob4PwwFr9o2EwRem3KgGlEtd1HLIiYAmfhwkPJtNTY8rO9qZubNqIg2iB9LfHyA=="
+  "resolved" "https://registry.npmjs.org/mjml-body/-/mjml-body-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-button@4.9.0":
-  "integrity" "sha512-7kNE77NF3qKsE5a+ZSvpNaE8mrariokISwFsfxDTL3+GNuPas3dGIFCOYkMYXRu8wCWoNNh4eTd4GmnLieKGaA=="
-  "resolved" "https://registry.npmjs.org/mjml-button/-/mjml-button-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-button@4.9.3":
+  "integrity" "sha512-KbPxXSbHboXubS6Wo8pnc+co9dB1gL+fRTmBzeSBfy8uZhv+6AaU7iIvDvMOQQ4gSbtLb6AG9yranWtQCM8YTg=="
+  "resolved" "https://registry.npmjs.org/mjml-button/-/mjml-button-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-carousel@4.9.0":
-  "integrity" "sha512-Xgo5is2dpSdfeaPZ91mJ34jBTDCS4hLvc6X6VGcV9oUUvpO7ttDuKw6hMKevS123L9Xyl7NYn6e+5ZtR/JElIQ=="
-  "resolved" "https://registry.npmjs.org/mjml-carousel/-/mjml-carousel-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-carousel@4.9.3":
+  "integrity" "sha512-9obd5NTnGVIDHWF+fmRBg19gawyI6min+2mawZbKG3ze5aUkqr308UTNOYcAWX1+E0UnSHksw570RCQhWnGFyA=="
+  "resolved" "https://registry.npmjs.org/mjml-carousel/-/mjml-carousel-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-cli@4.9.0":
-  "integrity" "sha512-FOkmYvFYMn17wON3i3Sm86SjcLwqXFEfZR2lOc/5zvyEN3JpUna/8v2Tt9EeP+S38sWyDarVlKtilJnKKm/7Lg=="
-  "resolved" "https://registry.npmjs.org/mjml-cli/-/mjml-cli-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-cli@4.9.3":
+  "integrity" "sha512-85Zw5PFhGImb3yhrnnsbl6FMDUpS5oR6HnSpyhuPNt5Z/E9fA2ilZ1sRqezjxIhh9IHhLTpmqgZZcRINFXVUKw=="
+  "resolved" "https://registry.npmjs.org/mjml-cli/-/mjml-cli-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "chokidar" "^3.0.0"
@@ -6119,25 +6119,25 @@
     "html-minifier" "^4.0.0"
     "js-beautify" "^1.6.14"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
-    "mjml-migrate" "4.9.0"
-    "mjml-parser-xml" "4.9.0"
-    "mjml-validator" "4.9.0"
+    "mjml-core" "4.9.3"
+    "mjml-migrate" "4.9.3"
+    "mjml-parser-xml" "4.9.3"
+    "mjml-validator" "4.9.3"
     "yargs" "^16.1.0"
 
-"mjml-column@4.9.0":
-  "integrity" "sha512-lFkYgxx8aRPChEV8hBpgOXAtQFw6YT9WuwbMfvNnUz0R9aIE7rvWLxMaHXsslla4YZz+LB3amPJgeqlDZ9HNjg=="
-  "resolved" "https://registry.npmjs.org/mjml-column/-/mjml-column-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-column@4.9.3":
+  "integrity" "sha512-vEpHwLBhFCP+g+sqUvKPoLk9FZ3NeYXhKyoJwCn/o/sPrSiibUsGFEMN77ypx/ekKV3QGj6iE6dAf696NZctvw=="
+  "resolved" "https://registry.npmjs.org/mjml-column/-/mjml-column-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-core@4.9.0":
-  "integrity" "sha512-89mMFH2+CwMXhEMgy1PT/KrqjOBcl4yezdZk/I3JezIYhv39kaa2Q0yt2uOmdDwxGIVkLAtA32Kug/a1K+zbQQ=="
-  "resolved" "https://registry.npmjs.org/mjml-core/-/mjml-core-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-core@4.9.3":
+  "integrity" "sha512-MFuM6557R/brQoDALmd6SaQ1K/0t3frCvJAloL8KGOBocvJID8xN5/4iL87+KJg7k0fqXj1WSsIl9lLXtaEZfA=="
+  "resolved" "https://registry.npmjs.org/mjml-core/-/mjml-core-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "cheerio" "1.0.0-rc.3"
@@ -6146,263 +6146,263 @@
     "js-beautify" "^1.6.14"
     "juice" "^7.0.0"
     "lodash" "^4.17.15"
-    "mjml-migrate" "4.9.0"
-    "mjml-parser-xml" "4.9.0"
-    "mjml-validator" "4.9.0"
+    "mjml-migrate" "4.9.3"
+    "mjml-parser-xml" "4.9.3"
+    "mjml-validator" "4.9.3"
 
-"mjml-divider@4.9.0":
-  "integrity" "sha512-DYsFunfmhtlUQ9Fkf2ZZGkMdWALStcZZcFJBLQMpz07UzpVeWgvlH1o2MPn81rfyDpwMBW6PgwoGlZ7tcpAP8Q=="
-  "resolved" "https://registry.npmjs.org/mjml-divider/-/mjml-divider-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-divider@4.9.3":
+  "integrity" "sha512-NSc+MksfFv+6O4ERLWn2HG8h6w1AKKGdYbT3d2cNazNeUG9GIW4C7vuUaaguy4IBjVQqZTu55vo2/GhLRVL5eA=="
+  "resolved" "https://registry.npmjs.org/mjml-divider/-/mjml-divider-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-group@4.9.0":
-  "integrity" "sha512-/CH6gQ1qzaG/3P5pKttSGRZaY3FB8pEsyiUNDIV8yEqgu0AYYLT7LOFyIEqC3+BYYLavecnyelyEKbiM0+qZaA=="
-  "resolved" "https://registry.npmjs.org/mjml-group/-/mjml-group-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-group@4.9.3":
+  "integrity" "sha512-TB8+Of4mYcJuT5Huq/RTtFyKUJ8jtk/p4QoZLGhbVo2Q6w5oWLLbp1qcTWj7B3GagLdhYfrtBrr0JRWiVaq6Kg=="
+  "resolved" "https://registry.npmjs.org/mjml-group/-/mjml-group-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-attributes@4.9.0":
-  "integrity" "sha512-QCCkcYIGDxdfBeI4Oy5jPHvmUCPmhTA6Fy4o3kLLpv+MoG9aDdJIH7SGrQoy2BoQp/MYoMPxau3miY10P/Ozwg=="
-  "resolved" "https://registry.npmjs.org/mjml-head-attributes/-/mjml-head-attributes-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-attributes@4.9.3":
+  "integrity" "sha512-3EqQHe081uWoQEfnozwV1tEygzeTlRPLc87+D+cfB/fB0RxfOnyXNU2SZVyvfb1hzl2LmRO4TdujxKzQvI0sow=="
+  "resolved" "https://registry.npmjs.org/mjml-head-attributes/-/mjml-head-attributes-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-breakpoint@4.9.0":
-  "integrity" "sha512-GXyIe2QBNll1DX1dPPOrww+wW/GqaV8GkBmzfyL3OCN2k5N1eYTx6FP9VPkJi43EDvRALgQJK7sy8CeWWAnVvA=="
-  "resolved" "https://registry.npmjs.org/mjml-head-breakpoint/-/mjml-head-breakpoint-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-breakpoint@4.9.3":
+  "integrity" "sha512-1ZCEK14yiLOp3tnk0riPMH6myNWWOTSsIl3ScTYQcr6KEsJrAXW+MpDwr2Ri2zOmuSqCDJorEMAsb8rAHxirCQ=="
+  "resolved" "https://registry.npmjs.org/mjml-head-breakpoint/-/mjml-head-breakpoint-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-font@4.9.0":
-  "integrity" "sha512-pqJcG0jpCYxsV8FjLrtbgCzU23z0kalwcxaOpulCXonSsfUNRtp68TVE2L1rNkcLrwhjIdlLoGHBAPLo47uQdg=="
-  "resolved" "https://registry.npmjs.org/mjml-head-font/-/mjml-head-font-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-font@4.9.3":
+  "integrity" "sha512-ciWMNT7ZFniJDXXyXpfQy0Ep2Xvr09BPpPCVx6DfjzWcfJwLjZdIuIK3Go6NgEY7PweflrZYVorE3FUdqVEWKQ=="
+  "resolved" "https://registry.npmjs.org/mjml-head-font/-/mjml-head-font-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-html-attributes@4.9.0":
-  "integrity" "sha512-NSLEiq8cs+8AYdZrbIxsNTWqUEkRMxtAD294YsGvM5NsuzAJOGqJ/BT+aZbm3qiMKeWhaj9OPiph6VV/k+IUzw=="
-  "resolved" "https://registry.npmjs.org/mjml-head-html-attributes/-/mjml-head-html-attributes-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-html-attributes@4.9.3":
+  "integrity" "sha512-DpyJrPPJibtwHZ32l9jLSb6B06dJouOf48hU59tcfeZRWkOBsr+FfYvbNktZbmfC6+lQOOjomDGzUybIJRjFbw=="
+  "resolved" "https://registry.npmjs.org/mjml-head-html-attributes/-/mjml-head-html-attributes-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-preview@4.9.0":
-  "integrity" "sha512-ZiNJFyuMWbvUHJVszPa9EkadeapeWoQdTYjqBio+QOQYcwIGmrsIu0P2ffaLqRUYZLubudF5+1eGGGKRy0cOAw=="
-  "resolved" "https://registry.npmjs.org/mjml-head-preview/-/mjml-head-preview-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-preview@4.9.3":
+  "integrity" "sha512-4Ki+I7GREU5fFqTJBJbPwuoVeK5Azwp5lo++nYHA0LXkc3N5Zm9USOLNlvxao4PEQFZ5uS+wz3qQInjoW983TA=="
+  "resolved" "https://registry.npmjs.org/mjml-head-preview/-/mjml-head-preview-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-style@4.9.0":
-  "integrity" "sha512-t/aVMReqYMyXwzedMMCM/TLGboqkpRlbuHixOjG9AnNug1QuDnuAj0mE5sFVbbxz1bcuE+rGJ0Q69ynkNTW2rQ=="
-  "resolved" "https://registry.npmjs.org/mjml-head-style/-/mjml-head-style-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-style@4.9.3":
+  "integrity" "sha512-8E/8SAv0Ba3GBuz8P2raDUU7oOjwfq2uIgPCGBQNreN3cVlxBAHQBNErlv3HY5YxH36Ep0Cn0v18FxKkiADlUA=="
+  "resolved" "https://registry.npmjs.org/mjml-head-style/-/mjml-head-style-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head-title@4.9.0":
-  "integrity" "sha512-+QxEtIWvgqOjbQNEvS3/IYTrVORpIVffpsEsoPlcgO7K0i6Q+Q7i/O2u3ViFfUW5y7p/tjO0P1TP6nQX+H5lQw=="
-  "resolved" "https://registry.npmjs.org/mjml-head-title/-/mjml-head-title-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head-title@4.9.3":
+  "integrity" "sha512-IW2Zjlujz5Wl85RsIaAzCRcItDjsTpYH6GC0qRaNvbrg28J4jc/Z34uzdwtCBvt7Q+SDnHm780HLwKRvoW5Lyg=="
+  "resolved" "https://registry.npmjs.org/mjml-head-title/-/mjml-head-title-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-head@4.9.0":
-  "integrity" "sha512-CA8iJBp8DjI20j2quJbvB55h2tM+rVaYcB2rPykLq/kQuNEdgxEtIEuHWr1QMteBf0smXfSK/UDw4/vp2Ja0Cw=="
-  "resolved" "https://registry.npmjs.org/mjml-head/-/mjml-head-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-head@4.9.3":
+  "integrity" "sha512-Mw7tcmuMhkruvDAqLHgR1M+WdjKj77Fp6YG3+j6aMTzkeCUP8eT6wQLoBVwKG8Y1XLHWVJccwFCp5ITsKG6E2A=="
+  "resolved" "https://registry.npmjs.org/mjml-head/-/mjml-head-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-hero@4.9.0":
-  "integrity" "sha512-yPpfn5uHL86oWlG0utcJ5SxHEmnsBK8n+SILhDSUbi8cLHWkloCrsuwGOYM9ebD1lcw09if9jPvXUZi0wNYHag=="
-  "resolved" "https://registry.npmjs.org/mjml-hero/-/mjml-hero-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-hero@4.9.3":
+  "integrity" "sha512-apzmRj2sHvmgE7qbyjiATDAUXHT6K6Ku+LUrrzerwdgxmeKmXHeeLduGQ7g4IhfNtbkB/IOqjit9e0Att6sQKg=="
+  "resolved" "https://registry.npmjs.org/mjml-hero/-/mjml-hero-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-image@4.9.0":
-  "integrity" "sha512-hKjW07e+K5pZBPGkC5EXYVEalrWA91+ut+X8guMZOie89XlT/pDDotXXZnocB2hmo75c2lEoMW/ygTbc+Xmv0g=="
-  "resolved" "https://registry.npmjs.org/mjml-image/-/mjml-image-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-image@4.9.3":
+  "integrity" "sha512-LchR36jOcQYiOqkmIaw+lZY43+fQnO7oT3c14wEMhfyycted/cXYrOYa0gqW7pBWZAA+uLgrQ8v9PB51+Wa7OA=="
+  "resolved" "https://registry.npmjs.org/mjml-image/-/mjml-image-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-migrate@4.9.0":
-  "integrity" "sha512-rKqy9isx73tD85zcghuj1krIUHky0o/MuQEDOaStcaln6LlR9019tLTbgMefjBflcHNDL0BgMFzp/jdP35u13w=="
-  "resolved" "https://registry.npmjs.org/mjml-migrate/-/mjml-migrate-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-migrate@4.9.3":
+  "integrity" "sha512-O14+3bJB+ZlwlWIx4gvmz0uu6V3ANV8WJ/dZy0hF0PRETDjr/zAjmbmtP9/qMKQTtTB/GjmMaIxvDlfR39hIYQ=="
+  "resolved" "https://registry.npmjs.org/mjml-migrate/-/mjml-migrate-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "js-beautify" "^1.6.14"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
-    "mjml-parser-xml" "4.9.0"
+    "mjml-core" "4.9.3"
+    "mjml-parser-xml" "4.9.3"
     "yargs" "^16.1.0"
 
-"mjml-navbar@4.9.0":
-  "integrity" "sha512-hH+xo6rVfFVT+M/1nhnIyE6lmHHLoZrrdrfJwTx6xPV2mw05fbDFNNnfK2T+8PU9koYpU2RYo2ZahVa1LxYU0A=="
-  "resolved" "https://registry.npmjs.org/mjml-navbar/-/mjml-navbar-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-navbar@4.9.3":
+  "integrity" "sha512-8BjfQFszHBBa1/dHImwvUOC1xV+LkP3XeB2VA6vLAf+wd65Zw4gDd7muKNARUcHhoLqe039rbDEHbj0FOlOLhw=="
+  "resolved" "https://registry.npmjs.org/mjml-navbar/-/mjml-navbar-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-parser-xml@4.9.0":
-  "integrity" "sha512-YD9BMjr7l5B49czSj2OtLW5+1i53GgMnroIt84F+QUWUz9f6pyeK4cyUO/L5wKW+WiTVM3O0q142Bmq45PZvyA=="
-  "resolved" "https://registry.npmjs.org/mjml-parser-xml/-/mjml-parser-xml-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-parser-xml@4.9.3":
+  "integrity" "sha512-hEwMWBIKtS7YvA9Nt+nqc5SmILzHH20MZ6P5RY8d6AKQnBR0uxZAlYR7rqC8KYjblITILuNO54dVkPrpuB/VKg=="
+  "resolved" "https://registry.npmjs.org/mjml-parser-xml/-/mjml-parser-xml-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "detect-node" "2.0.4"
     "htmlparser2" "^4.1.0"
     "lodash" "^4.17.15"
 
-"mjml-preset-core@4.9.0":
-  "integrity" "sha512-sNWt6sffvzgvBgrZA1LclxAV/YuWy2UZIBuGbTjKVhYil1EfrH8SeZClyIBcVW42vx7qDRVnPYrV7w88CBRzOQ=="
-  "resolved" "https://registry.npmjs.org/mjml-preset-core/-/mjml-preset-core-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-preset-core@4.9.3":
+  "integrity" "sha512-A28CiAZAMYaiKQ12JGI2bQ654piYXfVcmA+NkjNlZRDC9n0C38Ey4mGrVUMXg38v2ElpvMMpjA23CW368XZwLw=="
+  "resolved" "https://registry.npmjs.org/mjml-preset-core/-/mjml-preset-core-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
-    "mjml-accordion" "4.9.0"
-    "mjml-body" "4.9.0"
-    "mjml-button" "4.9.0"
-    "mjml-carousel" "4.9.0"
-    "mjml-column" "4.9.0"
-    "mjml-divider" "4.9.0"
-    "mjml-group" "4.9.0"
-    "mjml-head" "4.9.0"
-    "mjml-head-attributes" "4.9.0"
-    "mjml-head-breakpoint" "4.9.0"
-    "mjml-head-font" "4.9.0"
-    "mjml-head-html-attributes" "4.9.0"
-    "mjml-head-preview" "4.9.0"
-    "mjml-head-style" "4.9.0"
-    "mjml-head-title" "4.9.0"
-    "mjml-hero" "4.9.0"
-    "mjml-image" "4.9.0"
-    "mjml-navbar" "4.9.0"
-    "mjml-raw" "4.9.0"
-    "mjml-section" "4.9.0"
-    "mjml-social" "4.9.0"
-    "mjml-spacer" "4.9.0"
-    "mjml-table" "4.9.0"
-    "mjml-text" "4.9.0"
-    "mjml-wrapper" "4.9.0"
+    "mjml-accordion" "4.9.3"
+    "mjml-body" "4.9.3"
+    "mjml-button" "4.9.3"
+    "mjml-carousel" "4.9.3"
+    "mjml-column" "4.9.3"
+    "mjml-divider" "4.9.3"
+    "mjml-group" "4.9.3"
+    "mjml-head" "4.9.3"
+    "mjml-head-attributes" "4.9.3"
+    "mjml-head-breakpoint" "4.9.3"
+    "mjml-head-font" "4.9.3"
+    "mjml-head-html-attributes" "4.9.3"
+    "mjml-head-preview" "4.9.3"
+    "mjml-head-style" "4.9.3"
+    "mjml-head-title" "4.9.3"
+    "mjml-hero" "4.9.3"
+    "mjml-image" "4.9.3"
+    "mjml-navbar" "4.9.3"
+    "mjml-raw" "4.9.3"
+    "mjml-section" "4.9.3"
+    "mjml-social" "4.9.3"
+    "mjml-spacer" "4.9.3"
+    "mjml-table" "4.9.3"
+    "mjml-text" "4.9.3"
+    "mjml-wrapper" "4.9.3"
 
-"mjml-raw@4.9.0":
-  "integrity" "sha512-gKNEqpPDPYPdSoHy+/JdUeclnuHEsF8SWVgMkthc3581T2qefYZAORU7Kj1BZWTIsxObcGYfWJu6kQWKVpj8PA=="
-  "resolved" "https://registry.npmjs.org/mjml-raw/-/mjml-raw-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-raw@4.9.3":
+  "integrity" "sha512-e2OknBwuiQvaLxHOH9OXSlmHEx7EqczkWdNS//TE1rsRcTQvLXzuajuMt+Oa72UZY85B/vw/iNk/Gm/jRSvieA=="
+  "resolved" "https://registry.npmjs.org/mjml-raw/-/mjml-raw-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-section@4.9.0":
-  "integrity" "sha512-9SdCf+Jf2ezhA6y/zEjvPvAyyccyRwpqusI2M83guM40tFzevknjMqzM1MnHAebQiXwS4+3xfoTHas5GgJhFqA=="
-  "resolved" "https://registry.npmjs.org/mjml-section/-/mjml-section-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-section@4.9.3":
+  "integrity" "sha512-B7mXgT5yrNhPHTrMRHyPTiKs8rfiM9VRUEL078PCEqczrUtlIQUTVBrfDkwxUIXbNPDhpB8yUxs4i89DA+vX4g=="
+  "resolved" "https://registry.npmjs.org/mjml-section/-/mjml-section-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-social@4.9.0":
-  "integrity" "sha512-CxbUP5Kv7Mzag5wf1js31RaZCPeQMV7JgeYaFAFMNp8f3PF6p33nS4FMFQpyGsoYKUSTkRCaSDFnjHR4MMfibw=="
-  "resolved" "https://registry.npmjs.org/mjml-social/-/mjml-social-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-social@4.9.3":
+  "integrity" "sha512-kslVluCHXbXTpL7bclOVHUfHIwhLy+HaEHXilJtyxo0YfH68APRe5y9ikJqTZ6zVa2ziAjvHPMU5f200eZjqdA=="
+  "resolved" "https://registry.npmjs.org/mjml-social/-/mjml-social-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-spacer@4.9.0":
-  "integrity" "sha512-UXZEnvxjqajXXRkYrV6a2TN1PBKKkhb8DM4zvlgwZrllh/fEimiu1GWZm2AfCvp1Yax+uuDG3dXr37xVk0B+Hg=="
-  "resolved" "https://registry.npmjs.org/mjml-spacer/-/mjml-spacer-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-spacer@4.9.3":
+  "integrity" "sha512-fqF0qbDoTjq24D4t0kX+CiMEn5MAoxDG+fHz3k6ruwIsijs/77LiumkOL97H9tnFapnw8jJNJUC6UIT0LQTC1A=="
+  "resolved" "https://registry.npmjs.org/mjml-spacer/-/mjml-spacer-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-table@4.9.0":
-  "integrity" "sha512-cFKO5tQGxpJCzK1W5aDjkY0BVXfFEVG7akNp3bVeHO0hjdR2Gdvd/hVJPOqhG1aL4PmqJuTZhrMchTTTbifezA=="
-  "resolved" "https://registry.npmjs.org/mjml-table/-/mjml-table-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-table@4.9.3":
+  "integrity" "sha512-5dlpAisy2GgteLZ5DhYrfjCiQKcoDHDd8h7idvdQWAx0/8cbbjo+t+EHLfIuxkhcm8cDlJLOjb//AVk2qxBuVw=="
+  "resolved" "https://registry.npmjs.org/mjml-table/-/mjml-table-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-text@4.9.0":
-  "integrity" "sha512-734JDf1uDiEn0q9fAkW09FHGFBteLYyBGCd8xK5vqenbO0dtEp/j1vjKaw9yMUd6K4MZp4+r7e1N3DsZto4uSQ=="
-  "resolved" "https://registry.npmjs.org/mjml-text/-/mjml-text-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-text@4.9.3":
+  "integrity" "sha512-X30kIUhjF4cH2eF4yZcMgkhbHIOTfbcOqDMjav/i6FRnIXJXNkAHoNZ/bGsEYqOcN7pECTwDwFgZK5Igres/dg=="
+  "resolved" "https://registry.npmjs.org/mjml-text/-/mjml-text-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
+    "mjml-core" "4.9.3"
 
-"mjml-validator@4.9.0":
-  "integrity" "sha512-ta6ipn9QiIFzsLq6yT+CIsadB/GHVTbRYQ7AIBowlrHSREmip4pxPDk6WdaQtjFfG9XD4GQwbJoUbKCERFDg6w=="
-  "resolved" "https://registry.npmjs.org/mjml-validator/-/mjml-validator-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-validator@4.9.3":
+  "integrity" "sha512-k6qH9Sd7fwIklYh1LFjTFSB36vkIte41iC5XhAyMTYG3x9I03Cjw3KkEmGOrlbV0T1nOAuz3Iy+2rMcW26U6zQ=="
+  "resolved" "https://registry.npmjs.org/mjml-validator/-/mjml-validator-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
 
-"mjml-wrapper@4.9.0":
-  "integrity" "sha512-fhaa/KIJKEc/SLeYCKF6D8/iQAEM8OFGbna1CdflxbS6Sn3N9wWprWypZN5kbc9zXRR0+G+yI7b19mTYs4Iv0g=="
-  "resolved" "https://registry.npmjs.org/mjml-wrapper/-/mjml-wrapper-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml-wrapper@4.9.3":
+  "integrity" "sha512-F3PLghHqiusp2ax7eBtkjL0z1FJkQKHm1Jy9VCjCQSsqg8nqZ7iz6W2V/xo0pNeJWPQqoHW0bX0GK5aNP1aL2g=="
+  "resolved" "https://registry.npmjs.org/mjml-wrapper/-/mjml-wrapper-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
     "lodash" "^4.17.15"
-    "mjml-core" "4.9.0"
-    "mjml-section" "4.9.0"
+    "mjml-core" "4.9.3"
+    "mjml-section" "4.9.3"
 
-"mjml@4.9.0":
-  "integrity" "sha512-34oQtWxbNEwGBCAESAYRtmKdgicIYBWjfB4NY2OzufQ4JxK5BdpvWWVAoG5moty/cxKuhgSh7Q9DSaSWrdmvRA=="
-  "resolved" "https://registry.npmjs.org/mjml/-/mjml-4.9.0.tgz"
-  "version" "4.9.0"
+"mjml@4.9.3":
+  "integrity" "sha512-l3KzyBj8EkdkBwdFTFUHbkAXLDfyyFSkcm9YwLbMTLa6kX7Wyfo26v62iVRKX9aUnys2JkoSgP0JNBx7i0+chg=="
+  "resolved" "https://registry.npmjs.org/mjml/-/mjml-4.9.3.tgz"
+  "version" "4.9.3"
   dependencies:
     "@babel/runtime" "^7.8.7"
-    "mjml-cli" "4.9.0"
-    "mjml-core" "4.9.0"
-    "mjml-migrate" "4.9.0"
-    "mjml-preset-core" "4.9.0"
-    "mjml-validator" "4.9.0"
+    "mjml-cli" "4.9.3"
+    "mjml-core" "4.9.3"
+    "mjml-migrate" "4.9.3"
+    "mjml-preset-core" "4.9.3"
+    "mjml-validator" "4.9.3"
 
 "mkdirp-classic@^0.5.2":
   "integrity" "sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A=="
@@ -6598,10 +6598,10 @@
     "node-addon-api" "^3.0.0"
     "prebuild-install" "5.3.4"
 
-"nodemailer@^6.5.0":
-  "integrity" "sha512-Tm4RPrrIZbnqDKAvX+/4M+zovEReiKlEXWDzG4iwtpL9X34MJY+D5LnQPH/+eghe8DLlAVshHAJZAZWBGhkguw=="
-  "resolved" "https://registry.npmjs.org/nodemailer/-/nodemailer-6.5.0.tgz"
-  "version" "6.5.0"
+"nodemailer@^6.6.0":
+  "integrity" "sha512-ikSMDU1nZqpo2WUPE0wTTw/NGGImTkwpJKDIFPZT+YvvR9Sj+ze5wzu95JHkBMglQLoG2ITxU21WukCC/XsFkg=="
+  "resolved" "https://registry.npmjs.org/nodemailer/-/nodemailer-6.6.0.tgz"
+  "version" "6.6.0"
 
 "noms@0.0.0":
   "integrity" "sha1-2o69nzr51nYJGbJ9nNyAkqczKFk="

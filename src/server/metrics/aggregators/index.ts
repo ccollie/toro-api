@@ -29,7 +29,7 @@ export type AggregatorClass = Constructor<BaseAggregator>;
 
 export const aggregateMap: Record<AggregatorTypes, AggregatorClass | null> = {
   [AggregatorTypes.None]: null,
-  [AggregatorTypes.Null]: NullAggregator,
+  [AggregatorTypes.Identity]: NullAggregator,
   [AggregatorTypes.Ewma1Min]: EWMA1MinAggregator,
   [AggregatorTypes.Ewma5Min]: EWMA5MinAggregator,
   [AggregatorTypes.Ewma15Min]: EWMA15MinAggregator,
@@ -48,7 +48,7 @@ export const aggregateMap: Record<AggregatorTypes, AggregatorClass | null> = {
 };
 
 function findAggregator(
-  type: string | AggregatorTypes = AggregatorTypes.Null,
+  type: string | AggregatorTypes = AggregatorTypes.Identity,
 ): AggregatorClass {
   let ctor = aggregateMap[type];
   if (!ctor) {
@@ -69,7 +69,7 @@ function findAggregator(
 }
 
 export function createAggregator(
-  type: string | AggregatorTypes = AggregatorTypes.Null,
+  type: string | AggregatorTypes = AggregatorTypes.Identity,
   clock: Clock,
   options?: Record<string, any>,
 ): BaseAggregator {

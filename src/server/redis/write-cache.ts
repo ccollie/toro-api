@@ -1,9 +1,10 @@
-import IORedis, { Redis, Pipeline } from 'ioredis';
+import IORedis, { Pipeline } from 'ioredis';
 import { isObject, isEmpty } from 'lodash';
 
 import logger from '../lib/logger';
 import { LockManager } from './lock-manager';
 import { parseDuration } from '../lib/datetime';
+import { RedisClient } from 'bullmq';
 
 const DEFAULT_FLUSH_INTERVAL = 1000;
 
@@ -26,7 +27,7 @@ function incrementValues(
  */
 export class WriteCache {
   private _isFlushing: boolean;
-  public readonly client: Redis;
+  public readonly client: RedisClient;
   private readonly flushInterval: number;
   private pendingMulti: Pipeline | null = null;
   private timer: NodeJS.Timeout = null;
@@ -43,10 +44,10 @@ export class WriteCache {
 
   /**
    * Constructs a {@link WriteCache}
-   * @param {Redis} client a redis client
+   * @param {RedisClient} client a redis client
    * @param {LockManager} lockMgr
    */
-  constructor(client: Redis, lockMgr: LockManager) {
+  constructor(client: RedisClient, lockMgr: LockManager) {
     this.timer = null;
     this._isFlushing = false;
     this._changed = false;
@@ -86,9 +87,7 @@ export class WriteCache {
   poll(): void {
     if (!this.timer) {
       const pollTimer = setInterval(() => this.flush(), this.flushInterval);
-      // @ts-ignore
       pollTimer.unref();
-      // @ts-ignore
       this.timer = pollTimer;
     }
   }

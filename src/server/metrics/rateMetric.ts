@@ -6,7 +6,7 @@ import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metricsListener';
-import { MetricType, PollingMetricOptions } from '../../types';
+import { MetricValueType, PollingMetricOptions } from '../../types';
 
 /**
  * @interface RateMetricOptions
@@ -88,7 +88,7 @@ export class RateMetric extends PollingMetric {
     return schema;
   }
 
-  static get type(): MetricType {
-    return MetricType.Rate;
+  static get type(): MetricValueType {
+    return MetricValueType.Rate;
   }
 }

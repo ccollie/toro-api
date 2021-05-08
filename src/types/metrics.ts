@@ -25,7 +25,7 @@ export enum MetricTypes {
 
 export enum AggregatorTypes {
   None = 'None',
-  Null = 'Null',
+  Identity = 'Identity',
   Ewma1Min = 'Ewma1Min',
   Ewma5Min = 'Ewma5Min',
   Ewma15Min = 'Ewma15Min',
@@ -43,7 +43,7 @@ export enum AggregatorTypes {
   P995 = 'P995',
 }
 
-export enum MetricType {
+export enum MetricValueType {
   Count = 'Count',
   Gauge = 'Gauge',
   Rate = 'Rate',
@@ -96,4 +96,14 @@ export interface SerializedMetric {
   options: Record<string, any>;
   createdAt?: number;
   updatedAt?: number;
+}
+
+export interface MetricInfo {
+  key: string;
+  type: MetricTypes;
+  valueType: MetricValueType;
+  description: string;
+  unit: string;
+  category: MetricCategory;
+  isPolling: boolean;
 }

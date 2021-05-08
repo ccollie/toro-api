@@ -1,9 +1,9 @@
 'use strict';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import IORedis from 'ioredis';
 import { ConnectionOptions } from '@src/types';
 import { createClient, waitUntilReady } from './utils';
 import { createDebug } from '../lib/debug';
+import { RedisClient } from 'bullmq';
 
 const debug = createDebug('keyspace notifications');
 
@@ -39,9 +39,9 @@ export type KeyspaceNotificationFunc = (msg: KeyspaceNotification) => void;
 // http://redis.io/topics/notifications
 export class KeyspaceNotifier {
   private readonly emitter = new Emittery();
-  private client: IORedis.Redis;
+  private client: RedisClient;
   private db = 0;
-  private readonly initializing: Promise<IORedis.Redis>;
+  private readonly initializing: Promise<RedisClient>;
   private readonly connectionOpts: ConnectionOptions;
 
   constructor(opts: ConnectionOptions) {
@@ -54,7 +54,7 @@ export class KeyspaceNotifier {
     await this.client.disconnect();
   }
 
-  private async init(): Promise<IORedis.Redis> {
+  private async init(): Promise<RedisClient> {
     const client = createClient(this.connectionOpts);
 
     this.client = client;
@@ -139,8 +139,8 @@ export class KeyspaceNotifier {
       const channel = getChannel(type, key, this.db);
       const handlerCount = this.emitter.listenerCount(channel);
 
-      // this dedupes handlers
-      await this.emitter.on(channel, cb);
+      // this de-dupes handlers
+      this.emitter.on(channel, cb);
       if (!handlerCount) {
         await this.client.psubscribe(channel);
       }

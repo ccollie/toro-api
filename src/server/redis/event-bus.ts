@@ -4,19 +4,20 @@ import {
   SubscriberInfo,
   toKeyValueList,
 } from '../redis';
-import IORedis, { Pipeline } from 'ioredis';
+import { Pipeline } from 'ioredis';
 import {
   IteratorOptions,
   createAsyncIterator,
   nanoid,
   safeParse,
 } from '../lib';
+import { RedisClient } from 'bullmq';
 
 const SENDER_ID_KEY = '__sid';
 const EVENT_KEY = '__evt';
 
 function baseEmit(
-  client: Pipeline | IORedis.Redis,
+  client: Pipeline | RedisClient,
   key: string,
   event: string,
   data,
@@ -75,7 +76,7 @@ export class EventBus {
     return this.aggregator.connect();
   }
 
-  get client(): IORedis.Redis {
+  get client(): RedisClient {
     return this.aggregator.writeClient;
   }
 

@@ -1,36 +1,16 @@
-import { MetricsListener, BaseMetric } from '../../../src/server/metrics';
-import { QueueListenerHelper, createQueueListener } from '../../factories';
+import { BaseMetric, MetricsListener } from '../../../src/server/metrics';
+import { createQueueListener, QueueListenerHelper } from '../../factories';
 import { QueueListener } from '../../../src/server/queues';
 import { UnsubscribeFn } from 'emittery';
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import { Clock } from '../../../src/server/lib';
 import * as IORedis from 'ioredis';
+import { MetricTypes } from '../../../src/types';
+const BASE_UNIT = 'base_unit';
+const BASE_DESCRIPTION = 'base_description';
 
-function getStaticProp(obj: object, name: string): any {
-  return (obj.constructor as any)[name];
-}
-
-function getDefaultProp(name: string): string {
-  const metric = new BaseMetric({});
-  const value = getStaticProp(metric, name);
-  metric.destroy();
-  return value;
-}
-
-let baseKey: string;
-let baseDescription: string;
-let baseUnit: string;
-
-function getBaseKey(): string {
-  return baseKey || (baseKey = getDefaultProp('key'));
-}
-
-function getBaseDescription(): string {
-  return baseDescription || (baseDescription = getDefaultProp('description'));
-}
-
-function getBaseUnit(): string {
-  return baseUnit || (baseUnit = getDefaultProp('unit'));
+function getBaseKey(): MetricTypes {
+  return MetricTypes.None;
 }
 
 export class MetricTestHelper {
@@ -71,12 +51,12 @@ export class MetricTestHelper {
 
   static hasUnit(metric: BaseMetric): boolean {
     const unit = this.getStaticProp(metric, 'unit');
-    return unit && unit !== getBaseUnit();
+    return unit && unit !== BASE_UNIT;
   }
 
   static hasDescription(metric: BaseMetric): boolean {
     const descr = this.getStaticProp(metric, 'description');
-    return descr && descr !== getBaseDescription();
+    return descr && descr !== BASE_DESCRIPTION;
   }
 
   async destroy(): Promise<void> {
@@ -96,7 +76,7 @@ export class MetricTestHelper {
     return this.metricsListener.clock;
   }
 
-  get client(): Promise<IORedis.Redis> {
+  get client(): Promise<RedisClient> {
     return this.queue.client;
   }
 

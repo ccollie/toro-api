@@ -3,7 +3,7 @@ import { PollingMetric } from './baseMetric';
 import { MetricsListener } from './metricsListener';
 import {
   JobStatusEnum,
-  MetricType,
+  MetricValueType,
   MetricTypes,
   PollingMetricOptions,
 } from '../../types';
@@ -51,8 +51,8 @@ abstract class JobSpotCountMetric extends PollingMetric {
     return 'jobs';
   }
 
-  static get type(): MetricType {
-    return MetricType.Count;
+  static get type(): MetricValueType {
+    return MetricValueType.Count;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

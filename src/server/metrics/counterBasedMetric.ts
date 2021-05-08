@@ -1,5 +1,5 @@
 import { BaseMetric } from './baseMetric';
-import { MetricType, MetricOptions } from '../../types';
+import { MetricValueType, MetricOptions } from '../../types';
 
 export class CounterBasedMetric extends BaseMetric {
   protected internalCount = 0;
@@ -23,7 +23,7 @@ export class CounterBasedMetric extends BaseMetric {
     this.update(0);
   }
 
-  static get type(): MetricType {
-    return MetricType.Count;
+  static get type(): MetricValueType {
+    return MetricValueType.Count;
   }
 }

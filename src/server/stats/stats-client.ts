@@ -1,4 +1,4 @@
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import { DateLike } from '../lib/datetime';
 import { getHostStatsKey, getQueueMetaKey, getStatsKey } from '../lib';
 import {
@@ -8,8 +8,8 @@ import {
   StatsMetricType,
   StatsRateType,
   Timespan,
-} from '@src/types';
-import IORedis, { Pipeline } from 'ioredis';
+} from '../../types';
+import { Pipeline } from 'ioredis';
 import { TimeSeries } from '../commands/timeseries';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
@@ -22,15 +22,14 @@ import {
   aggregateMeter,
 } from '../stats/utils';
 import { WriteCache } from '../redis';
-import { doc } from 'prettier';
-import isEmpty = doc.utils.isEmpty;
+import { isEmpty } from 'lodash';
 
 /**
  * Base class for manipulating and querying collected queue stats in redis
  */
 export class StatsClient extends Emittery {
   private readonly queueManager;
-  private readonly _client: IORedis.Redis;
+  private readonly _client: RedisClient;
   private readonly cache: LRUCache;
 
   constructor(queueManager: QueueManager) {
@@ -55,7 +54,7 @@ export class StatsClient extends Emittery {
     return this.queueManager.hostManager.writer;
   }
 
-  get client(): IORedis.Redis {
+  get client(): RedisClient {
     return this._client;
   }
 
@@ -160,7 +159,7 @@ export class StatsClient extends Emittery {
       start,
       end,
     );
-    return stats.map(this.fixRates); //hacky
+    return stats.map(StatsClient.fixRates); //hacky
   }
 
   async getAggregateStats(
@@ -199,7 +198,7 @@ export class StatsClient extends Emittery {
   }
 
   // HACK.
-  private fixRates(stats: StatisticalSnapshot): StatisticalSnapshot {
+  private static fixRates(stats: StatisticalSnapshot): StatisticalSnapshot {
     const { rates, ...rest } = stats as any;
     if (!isEmpty(rates)) {
       stats = { ...rest };
@@ -223,7 +222,7 @@ export class StatsClient extends Emittery {
       start,
       end,
     );
-    return stats.map(this.fixRates);
+    return stats.map(StatsClient.fixRates);
   }
 
   async getAggregateHostStats(
@@ -400,7 +399,7 @@ export class StatsClient extends Emittery {
     return getHostStatsKey(host, jobName, metric, unit);
   }
 
-  onError(err: Error) {
+  onError(err: Error): void {
     logger.warn(err);
   }
 }

@@ -1,3 +1,3 @@
 export * from './MetricCategory';
-export * from './MetricType';
+export * from './MetricValueType';
 export * from './Metric';
