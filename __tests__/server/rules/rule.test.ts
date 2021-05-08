@@ -7,7 +7,6 @@ import {
   ChangeTypeEnum,
   RuleCondition,
   RuleConfigOptions,
-  RuleMetric,
   RuleOperator,
   RuleType,
 } from '../../../src/types';
@@ -16,10 +15,7 @@ import { getUniqueId } from '../../../src/server/lib';
 describe('Rule', () => {
   function createRule(options: Partial<RuleConfigOptions> = {}): Rule {
     const opts: RuleConfigOptions = {
-      metric: {
-        type: 'latency',
-        options: {},
-      },
+      metricId: getUniqueId(),
       name: 'Rule names ' + randomString(6),
       id: getUniqueId(),
       condition: {
@@ -50,10 +46,7 @@ describe('Rule', () => {
   });
 
   describe('toJSON() and fromJSON()', () => {
-    const metric: RuleMetric = {
-      type: 'used_memory',
-      options: {},
-    };
+    const metricId = getUniqueId();
 
     const condition: RuleCondition = {
       type: RuleType.CHANGE,
@@ -71,7 +64,7 @@ describe('Rule', () => {
       const channels = [randomString(6), randomString(6)];
       rule = createRule({
         name,
-        metric,
+        metricId,
         condition,
         description: 'description-' + randomString(4),
         message: randomString(),
@@ -90,7 +83,7 @@ describe('Rule', () => {
       expect(json.createdAt).toBe(rule.createdAt);
       expect(json.updatedAt).toBe(rule.updatedAt);
       // expect(json.options).toStrictEqual(rule.options);
-      expect(json.metric).toStrictEqual(metric);
+      expect(json.metricId).toStrictEqual(metricId);
       expect(json.condition).toStrictEqual(condition);
       expect(json.payload).toStrictEqual(rule.payload);
       expect(json.active).toBe(rule.isActive);
@@ -107,7 +100,7 @@ describe('Rule', () => {
       expect(fromJson.createdAt).toBe(rule.createdAt);
       expect(fromJson.updatedAt).toBe(rule.updatedAt);
       // expect(json.options).toStrictEqual(rule.options);
-      expect(fromJson.metric).toStrictEqual(metric);
+      expect(fromJson.metricId).toBe(metricId);
       expect(fromJson.condition).toStrictEqual(condition);
       expect(fromJson.payload).toStrictEqual(rule.payload);
       expect(fromJson.isActive).toBe(rule.isActive);

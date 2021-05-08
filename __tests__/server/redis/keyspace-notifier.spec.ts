@@ -12,12 +12,13 @@ import {
 } from '../../factories';
 import * as IORedis from 'ioredis';
 import { delay } from '../utils';
+import { RedisClient } from 'bullmq';
 
 const WAIT_DELAY = 100;
 
 describe('KeyspaceNotifier', () => {
   let sut: KeyspaceNotifier;
-  let client: IORedis.Redis;
+  let client: RedisClient;
   let messages: KeyspaceNotification[];
 
   beforeEach(async () => {

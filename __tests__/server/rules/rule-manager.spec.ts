@@ -156,17 +156,8 @@ describe('RuleManager', () => {
       const rule = await addRule();
       await ruleManager.deleteRule(rule);
       await delay(150);
-      expect(eventData).not.toBeUndefined();
+      expect(eventData).not.toBe(null);
       expect(eventData.ruleId).toEqual(rule.id);
-    });
-
-    it('should remove the associated metric', async () => {
-      const rule = await addRule();
-      const listener = ruleManager.metricsListener;
-      expect(listener.metrics.length).toBe(1);
-
-      await ruleManager.deleteRule(rule.id);
-      expect(listener.metrics.length).toBe(0);
     });
   });
 
@@ -202,7 +193,7 @@ describe('RuleManager', () => {
       expect(actual.createdAt).toBe(rule.createdAt);
       expect(actual.updatedAt).toBe(rule.updatedAt);
       // expect(actual.options).toStrictEqual(rule.options);
-      expect(actual.metric).toStrictEqual(rule.metric);
+      expect(actual.metricId).toBe(rule.metricId);
       expect(actual.condition).toStrictEqual(rule.condition);
       expect(actual.payload).toStrictEqual(rule.payload);
       expect(actual.isActive).toBe(rule.isActive);
@@ -298,12 +289,11 @@ describe('RuleManager', () => {
       operator: RuleOperator.gt,
     };
 
-    const metric: RuleMetric = {
-      type: 'latency',
-      options: {},
-    };
+    let metricId: string;
 
-    beforeEach(() => {});
+    beforeEach(() => {
+      metricId = getUniqueId();
+    });
 
     const TriggerData = { latency: ERROR_TRIGGER_VALUE };
     const WarningTriggerData = { latency: WARNING_TRIGGER_VALUE };
@@ -323,7 +313,7 @@ describe('RuleManager', () => {
 
     describe('redis', () => {
       it('stores alerts to redis when an error is triggered', async () => {
-        const rule = await addRule({ metric, condition });
+        const rule = await addRule({ metricId, condition });
 
         await trigger();
         const alert = await getLastAlert(rule);
@@ -335,7 +325,7 @@ describe('RuleManager', () => {
       });
 
       it('stores an alert to redis when a warning is triggered', async () => {
-        const rule = await addRule({ metric, condition });
+        const rule = await addRule({ metricId, condition });
 
         await triggerWarning();
         const alert = await getLastAlert(rule);
@@ -350,7 +340,7 @@ describe('RuleManager', () => {
         const options = {
           alertOnReset: true,
         };
-        const rule = await addRule({ metric, condition, options });
+        const rule = await addRule({ condition, options });
 
         await trigger();
         const alert = await getLastAlert(rule);
@@ -369,7 +359,7 @@ describe('RuleManager', () => {
         const options = {
           alertOnReset: true,
         };
-        const rule = await addRule({ metric, condition, options });
+        const rule = await addRule({ condition, options });
 
         expect(rule.state).toBe(RuleState.NORMAL);
 
@@ -387,7 +377,7 @@ describe('RuleManager', () => {
 
     it('sends an alert notification when triggered', async () => {
       const channels = ['email', 'slack'];
-      const rule = await addRule({ metric, condition, channels });
+      const rule = await addRule({ condition, channels });
 
       let alert: RuleAlert;
       await ruleManager.onAlertTriggered(rule.id, (data: RuleAlert) => {
@@ -407,7 +397,6 @@ describe('RuleManager', () => {
       const channels = ['email', 'slack'];
       const rule = await addRule({
         channels,
-        metric,
         condition,
         options: {
           alertOnReset: true,
@@ -439,16 +428,11 @@ describe('RuleManager', () => {
       operator: RuleOperator.gt,
     };
 
-    const metric: RuleMetric = {
-      type: 'latency',
-      options: {},
-    };
-
     const TriggerData = { latency: 2000 };
 
     it('emits an event bus event on states change', async () => {
       const channels = ['email', 'slack'];
-      const rule = await addRule({ metric, condition, channels });
+      const rule = await addRule({ condition, channels });
 
       let stateData;
 
@@ -475,17 +459,12 @@ describe('RuleManager', () => {
       operator: RuleOperator.gt,
     };
 
-    const metric: RuleMetric = {
-      type: 'latency',
-      options: {},
-    };
-
     const TriggerData = { latency: 2000 };
     const ResetData = { latency: 500 };
 
     it('posts a message when a rule is triggered', async () => {
       const channels = ['email', 'slack'];
-      const rule = await addRule({ metric, condition, channels });
+      const rule = await addRule({ condition, channels });
 
       let alert: RuleAlert = null;
       await ruleManager.onAlertTriggered(rule.id, (data: RuleAlert) => {
@@ -497,7 +476,7 @@ describe('RuleManager', () => {
     });
 
     it('posts a message when a rule is reset', async () => {
-      const rule = await addRule({ metric, condition });
+      const rule = await addRule({ condition });
 
       let alert: RuleAlert = null;
       await ruleManager.onAlertTriggered(rule.id, (data: RuleAlert) => {

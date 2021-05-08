@@ -73,14 +73,14 @@ export class Supervisor {
       process.env.SWEEP_INTERVAL,
       DEFAULT_SWEEP_INTERVAL,
     );
-    this.sweepTimer = setInterval(() => this.sweep(), this.sweepInterval);
+    this.sweepTimer = setInterval(() => Supervisor.sweep(), this.sweepInterval);
   }
 
   /**
    * Run a garbage collection pass over queues
    * @private
    */
-  private sweep(): void {
+  private static sweep(): void {
     hosts.forEach((host) => {
       host.sweep();
     });

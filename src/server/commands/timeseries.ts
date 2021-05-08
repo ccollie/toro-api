@@ -1,4 +1,4 @@
-import IORedis, { Pipeline } from 'ioredis';
+import { Pipeline } from 'ioredis';
 import { DateLike, parseTimestamp, roundDown, roundUp } from '../lib/datetime';
 import toDate from 'date-fns/toDate';
 import isNumber from 'lodash/isNumber';
@@ -6,6 +6,7 @@ import isDate from 'lodash/isDate';
 import { Timespan } from '../../types';
 import { systemClock } from '../lib';
 import { deserializePipeline } from '../redis';
+import { RedisClient } from 'bullmq';
 
 export type PossibleTimestamp = string | DateLike;
 
@@ -70,7 +71,7 @@ function _pcall(
 }
 
 async function _call(
-  client: IORedis.Redis,
+  client: RedisClient,
   method: string,
   key: string,
   ...args: any[]
@@ -79,7 +80,7 @@ async function _call(
 }
 
 async function get<T = any>(
-  client: IORedis.Redis,
+  client: RedisClient,
   key: string,
   ts: PossibleTimestamp,
   remove: boolean,
@@ -112,7 +113,7 @@ function parseRangeParameters(
 }
 
 async function rangeCmd(
-  client: IORedis.Redis,
+  client: RedisClient,
   cmd: string,
   key: string,
   start: PossibleTimestamp,
@@ -130,7 +131,7 @@ export interface TimeseriesValue<T = any> {
 }
 
 async function getRange<T = any>(
-  client: IORedis.Redis,
+  client: RedisClient,
   cmd: string,
   key: string,
   start: PossibleTimestamp,
@@ -169,7 +170,7 @@ function multiRangeCmd(
 
 export class TimeSeries {
   static async add(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ts: PossibleTimestamp,
     data: unknown,
@@ -180,7 +181,7 @@ export class TimeSeries {
   }
 
   static async bulkAdd(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     data: TimeseriesBulkItem[],
   ): Promise<number> {
@@ -189,7 +190,7 @@ export class TimeSeries {
   }
 
   static async del(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ...ids: PossibleTimestamp[]
   ): Promise<number> {
@@ -198,7 +199,7 @@ export class TimeSeries {
   }
 
   static async get<T = any>(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ts: PossibleTimestamp,
   ): Promise<T | null> {
@@ -206,7 +207,7 @@ export class TimeSeries {
   }
 
   static async getMany<T = any>(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ...ids: PossibleTimestamp[]
   ): Promise<(T | null)[]> {
@@ -218,7 +219,7 @@ export class TimeSeries {
   }
 
   static async pop<T = any>(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ts: PossibleTimestamp,
   ): Promise<T | null> {
@@ -226,7 +227,7 @@ export class TimeSeries {
   }
 
   static async set(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ts: PossibleTimestamp,
     data: unknown,
@@ -237,7 +238,7 @@ export class TimeSeries {
   }
 
   static async updateJson(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ts: PossibleTimestamp,
     data: unknown,
@@ -248,7 +249,7 @@ export class TimeSeries {
   }
 
   static async exists(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     ts: PossibleTimestamp,
   ): Promise<boolean> {
@@ -256,12 +257,12 @@ export class TimeSeries {
     return !!value;
   }
 
-  static async size(client: IORedis.Redis, key: string): Promise<number> {
+  static async size(client: RedisClient, key: string): Promise<number> {
     return _call(client, 'size', key);
   }
 
   static async getRange<T = any>(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     start: PossibleTimestamp,
     end: PossibleTimestamp,
@@ -272,7 +273,7 @@ export class TimeSeries {
   }
 
   static async getRevRange<T = any>(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     start: PossibleTimestamp,
     end: PossibleTimestamp,
@@ -283,7 +284,7 @@ export class TimeSeries {
   }
 
   static async removeRange(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     start: DateLike,
     end: DateLike,
@@ -294,7 +295,7 @@ export class TimeSeries {
   }
 
   static async getSpan(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
   ): Promise<{ start: string; end: string } | null> {
     const span = await _call(client, 'span', key);
@@ -306,7 +307,7 @@ export class TimeSeries {
   }
 
   static async getTimeSpan(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
   ): Promise<Timespan | null> {
     const span = await TimeSeries.getSpan(client, key);
@@ -321,7 +322,7 @@ export class TimeSeries {
   }
 
   static async getCount(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     start: PossibleTimestamp,
     end: PossibleTimestamp,
@@ -344,7 +345,7 @@ export class TimeSeries {
    * @return gaps as Array<{start: number, end: number}>
    */
   static async getGaps(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     start: PossibleTimestamp,
     end: PossibleTimestamp,
@@ -358,7 +359,7 @@ export class TimeSeries {
 
   /** Async iterator to get all gaps > interval ms in the given range */
   static async *getGapIterator(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     start,
     end,
@@ -401,7 +402,7 @@ export class TimeSeries {
   }
 
   static async truncate(
-    client: IORedis.Redis,
+    client: RedisClient,
     key: string,
     retention: number,
   ): Promise<any> {

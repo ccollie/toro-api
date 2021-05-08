@@ -1,14 +1,14 @@
 'use strict';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../index';
-import { MetricInputTC, MetricTC } from '../../metrics';
+import { MetricCreateTC, MetricTC } from '../../metrics';
 import { SerializedMetric } from '../../../imports';
 
 export const queueMetricCreate: FieldConfig = {
   description: 'Add a queue metric',
   type: MetricTC.NonNull,
   args: {
-    input: MetricInputTC.NonNull,
+    input: MetricCreateTC.NonNull,
   },
   resolve: async (_, { input }) => {
     const { queueId, ...rest } = input;

@@ -1,10 +1,9 @@
 import boom from '@hapi/boom';
-import IORedis from 'ioredis';
 import { isEmpty, isNil, isNumber, isString } from 'lodash';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../lib/keys';
 
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import {
   MetricsEventsEnum,
   SerializedMetric,
@@ -84,6 +83,10 @@ export class MetricManager {
     return getMetricsDataKey(this.queue, getMetricId(metric));
   }
 
+  findMetricById(id: string): BaseMetric {
+    return this.listener.findMetricById(id);
+  }
+
   async createMetric(opts: SerializedMetric): Promise<BaseMetric> {
     let isNew = false;
     let id = opts.id;
@@ -118,7 +121,7 @@ export class MetricManager {
     return getMetricsKey(this.queue, getMetricId(metric));
   }
 
-  private getClient(): Promise<IORedis.Redis> {
+  private getClient(): Promise<RedisClient> {
     return this.queue.client;
   }
 
@@ -129,8 +132,19 @@ export class MetricManager {
    */
   async getMetric(id: string): Promise<BaseMetric> {
     const client = await this.getClient();
-    const data = await client.hgetall(this.getMetricKey(id));
-    return deserializeMetric(data);
+    let metric = this.listener.findMetricById(id);
+    if (!metric) {
+      const data = await client.hgetall(this.getMetricKey(id));
+      if (metric) {
+        metric = deserializeMetric(data);
+        this.listener.registerMetric(metric);
+      }
+    }
+    return metric;
+  }
+
+  getMetricByName(name: string): BaseMetric {
+    return this.listener.findMetricByName(name);
   }
 
   /**
@@ -142,6 +156,15 @@ export class MetricManager {
     const isNew = !metric.id;
     const id = isNew ? getUniqueId() : metric.id;
     const key = this.getMetricKey(id);
+
+    if ((metric.name ?? '').trim().length === 0) {
+      throw boom.badRequest('A metric must have a name');
+    }
+    const foundByName = this.getMetricByName(metric.name);
+
+    if (foundByName && foundByName.id !== metric.id) {
+      throw boom.badRequest('A metric must have a unique name');
+    }
 
     const client = await this.getClient();
 

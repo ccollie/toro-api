@@ -11,7 +11,7 @@ import { DurationSchema } from '../validation/schemas';
 import {
   MetricCategory,
   MetricOptions,
-  MetricType,
+  MetricValueType,
   MetricTypes,
   PollingMetricOptions,
   Predicate,
@@ -58,7 +58,7 @@ export abstract class BaseMetric {
     this.setOptions(options);
     this._aggregator = new NullAggregator();
     const key = (this.constructor as any).key;
-    this.id = key + '-' + crypto.randomBytes(6).toString('hex');
+    this.id = key.toLowerCase() + '-' + crypto.randomBytes(6).toString('hex');
     this.createdAt = this.clock.getTime();
     this.updatedAt = this.createdAt;
   }
@@ -72,6 +72,7 @@ export abstract class BaseMetric {
     if (this._aggregator) {
       this._aggregator.destroy();
     }
+    // todo: validate by schema
     this._aggregator = value;
   }
 
@@ -128,8 +129,8 @@ export abstract class BaseMetric {
     return 'base_unit';
   }
 
-  static get type(): MetricType {
-    return MetricType.Gauge;
+  static get type(): MetricValueType {
+    return MetricValueType.Gauge;
   }
 
   get value(): number {

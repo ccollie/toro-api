@@ -1,6 +1,5 @@
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import Emittery from 'emittery';
-import IORedis from 'ioredis';
 import pSettle from 'p-settle';
 import pAll from 'p-all';
 import { sortBy, uniqBy } from 'lodash';
@@ -62,7 +61,7 @@ export class HostManager {
   public readonly writer: WriteCache;
 
   private readonly connectionOpts: ConnectionOptions;
-  private readonly defaultRedisClient: IORedis.Redis;
+  private readonly defaultRedisClient: RedisClient;
   private readonly queueManagerMap: Map<string, QueueManager>;
   private readonly _initialized: Promise<void>;
   private _notificationContext: NotificationContext;
@@ -114,7 +113,7 @@ export class HostManager {
     return this.config.id;
   }
 
-  get client(): IORedis.Redis {
+  get client(): RedisClient {
     return this.defaultRedisClient;
   }
 
@@ -160,7 +159,7 @@ export class HostManager {
     return getRedisInfo(this.defaultRedisClient);
   }
 
-  private createClient(redisOpts?: ConnectionOptions): IORedis.Redis {
+  private createClient(redisOpts?: ConnectionOptions): RedisClient {
     if (this.defaultRedisClient && !redisOpts) {
       return this.defaultRedisClient.duplicate();
     }

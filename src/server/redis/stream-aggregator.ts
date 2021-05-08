@@ -7,6 +7,7 @@ import { parseObjectResponse, toKeyValueList, disconnect } from './utils';
 import { ConnectionOptions } from '@src/types';
 import { getDeserializer } from './streams';
 import { createDebug, logger } from '../lib';
+import { RedisClient } from 'bullmq';
 
 const debug = createDebug('stream-aggregator');
 
@@ -160,11 +161,11 @@ export class RedisStreamAggregator {
     });
   }
 
-  get readClient(): IORedis.Redis {
+  get readClient(): RedisClient {
     return this.handles.read;
   }
 
-  get writeClient(): IORedis.Redis {
+  get writeClient(): RedisClient {
     return this.handles.write;
   }
 

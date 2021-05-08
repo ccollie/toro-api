@@ -12,8 +12,7 @@ import {
   RedisStreamAggregator,
 } from '../common';
 import { delay, randomString, randomId } from '../utils';
-import { Queue } from 'bullmq';
-import * as IORedis from 'ioredis';
+import { Queue, RedisClient } from 'bullmq';
 import { random, sortBy } from 'lodash';
 import pAll from 'p-all';
 import {
@@ -26,7 +25,7 @@ import {
 describe('RuleStorage', () => {
   // jest.setTimeout(5000);
   let queue: Queue;
-  let client: IORedis.Redis;
+  let client: RedisClient;
   let queueName: string;
   let bus: EventBus;
   let aggregator: RedisStreamAggregator;

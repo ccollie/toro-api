@@ -1,5 +1,5 @@
 import { JobFinishedEventData, QueueListener, QueueManager } from '../queues';
-import { StatisticalSnapshotOptions, StatsMetricType } from '@src/types';
+import { StatisticalSnapshotOptions, StatsMetricType } from '../../types';
 import { DateLike, roundDown, roundInterval, roundUp } from '../lib/datetime';
 import QueueStats from './queue-stats';
 import { systemClock, Clock, isNumber } from '../lib';
@@ -249,7 +249,6 @@ export class StatsListener extends StatsWriter {
 
     const startTimer = (): void => {
       lastSeen = systemClock.getTime();
-      // @ts-ignore
       timer = setInterval(() => {
         const now = systemClock.getTime();
         if (now - lastSeen > TIMEOUT) {

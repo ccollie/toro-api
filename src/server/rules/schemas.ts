@@ -11,7 +11,7 @@ import {
   Severity,
 } from '../../types';
 
-const ruleAlertOptionsSchema = Joi.object().keys({
+export const ruleAlertOptionsSchema = Joi.object().keys({
   warmupWindow: DurationSchema.optional(),
   recoveryWindow: DurationSchema.optional().default(0),
   maxAlertsPerEvent: Joi.number().integer().positive().optional().default(0),
@@ -122,7 +122,7 @@ export const ruleConfigSchema = Joi.object().keys({
   createdAt: Joi.date().optional(),
   updatedAt: Joi.date().optional(),
   lastTriggeredAt: Joi.date().optional(),
-  metric: ruleMetricSchema,
+  metricId: Joi.string().required(),
   condition: ruleConditionSchema.required().default(Object.create(null)),
   isActive: Joi.boolean().default(true).optional(),
   persist: Joi.boolean().default(true).optional(),

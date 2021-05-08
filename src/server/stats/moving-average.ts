@@ -7,6 +7,7 @@ export interface IMovingAverage {
   update: (value: number) => void;
   value: number;
   variance: number;
+  deviation: number;
   forecast: number;
   count: number;
 }
@@ -93,6 +94,9 @@ export function MovingAverage(timespan: number, clock?: Clock): IMovingAverage {
     },
     get variance() {
       return v;
+    },
+    get deviation() {
+      return d;
     },
     get forecast() {
       return f;

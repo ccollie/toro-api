@@ -2,8 +2,7 @@ import { default as PQueue } from 'p-queue';
 import { JobEventData, QueueListener } from '../queues';
 import { BaseMetric, PollingMetric } from './baseMetric';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import IORedis from 'ioredis';
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import {
   Clock,
   AccurateInterval,
@@ -197,7 +196,7 @@ export class MetricsListener {
    * Gets a client to the redis instance used by the listener, to be used by
    * any metric that needs it (like RedisMetric). Reuses the queue client
    */
-  get client(): Promise<IORedis.Redis> {
+  get client(): Promise<RedisClient> {
     return this.queueListener.queue.client;
   }
 
@@ -222,6 +221,10 @@ export class MetricsListener {
 
   findMetricById(id: string): BaseMetric {
     return this._metrics.find((x) => x.id === id);
+  }
+
+  findMetricByName(name: string): BaseMetric {
+    return this._metrics.find((x) => x.name === name);
   }
 
   registerMetricFromJSON(opts: SerializedMetric): BaseMetric {
@@ -316,7 +319,7 @@ export class MetricsListener {
     if (gcf > 1) {
       return gcf;
     }
-    return val < 1000 ? 1000 : val;
+    return Math.min(1000, val);
   }
 
   protected dispatch(event?: JobEventData): void {
@@ -364,7 +367,7 @@ export class MetricsListener {
     logger.warn(err.message || err);
   }
 
-  clear() {
+  clear(): void {
     this.emitter.clearListeners();
     this.handlerMap.clear();
   }

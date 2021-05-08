@@ -10,14 +10,10 @@ describe('CurrentCompletedCountMetric', () => {
   describe('constructor', () => {
     it('constructs a CurrentCompletedCountMetric', () => {
       const options: PollingMetricOptions = {
-        id: randomString(),
-        name: randomString(),
         interval: 250,
       };
       const sut = new CurrentCompletedCountMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.id).toBe(options.id);
-      expect(sut.name).toBe(options.name);
       expect(sut.interval).toBe(options.interval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);

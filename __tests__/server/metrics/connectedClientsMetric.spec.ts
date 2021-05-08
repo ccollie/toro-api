@@ -8,15 +8,12 @@ describe('ConnectedClientsMetric', () => {
   describe('constructor', () => {
     it('constructs a ConnectedClientsMetric', () => {
       const options: PollingMetricOptions = {
-        id: randomString(),
-        name: randomString(),
         jobNames: [randomString()],
         interval: 250,
       };
       const sut = new ConnectedClientsMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.id).toBe(options.id);
-      expect(sut.name).toBe(options.name);
+      expect(sut.id).toBeDefined();
       expect(sut.jobNames).toBe(options.jobNames);
       expect(sut.interval).toBe(options.interval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);

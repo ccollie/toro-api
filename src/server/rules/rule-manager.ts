@@ -82,12 +82,16 @@ export class RuleManager {
     return rules;
   }
 
+  findRuleByName(name: string): Rule {
+    return this.rules.find((r) => r.name === name);
+  }
+
   get hasLock(): boolean {
     return this.queueManager.hasLock;
   }
 
   private findMetric(rule: Rule): BaseMetric {
-    return this.queueManager.findMetric(rule.metric.id);
+    return this.queueManager.findMetric(rule.metricId);
   }
 
   private _registerRule(rule: Rule): void {

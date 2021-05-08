@@ -8,7 +8,6 @@ import {
 } from '../../../src/server/notifications';
 import { EventBus } from '../../../src/server/redis';
 import { delay, randomId } from '../utils';
-import IORedis from 'ioredis';
 import {
   ChannelConfig,
   HostConfig,
@@ -19,9 +18,10 @@ import {
 import random from 'lodash/random';
 import { HostManager } from '../../../src/server/hosts';
 import { clearDb, DEFAULT_CLIENT_OPTIONS } from '../../factories';
+import { RedisClient } from 'bullmq';
 
 describe('ChannelStorage', () => {
-  let client: IORedis.Redis;
+  let client: RedisClient;
   let bus: EventBus;
   let sut: ChannelStorage;
   let hostManager: HostManager;

@@ -32,6 +32,7 @@ import {
 import {
   AggregatorTypes,
   Constructor,
+  MetricInfo,
   MetricOptions,
   MetricTypes,
   SerializedAggregator,
@@ -149,6 +150,7 @@ export function createMetricFromJSON(
   /// TODO: Hackish handling of createdAt, updatedAt
   const {
     type,
+    name,
     options: _options,
     aggregator: _aggOptions,
     createdAt,
@@ -164,6 +166,8 @@ export function createMetricFromJSON(
   }
 
   const metric = createMetric(type, options);
+
+  metric.name = name;
 
   if (createdAt) {
     metric.createdAt = parseTimestamp(createdAt);
@@ -185,7 +189,7 @@ export function createMetricFromJSON(
     const { type, options } = aggregator;
     metric.aggregator = createAggregator(type, clock, options);
   } else {
-    metric.aggregator = createAggregator(AggregatorTypes.Null, clock, {});
+    metric.aggregator = createAggregator(AggregatorTypes.Identity, clock, {});
   }
 
   return metric;
@@ -216,6 +220,20 @@ export function isPollingMetric(clazz: MetricConstructor): boolean {
     curPrototype = Object.getPrototypeOf(curPrototype);
   }
   return false;
+}
+
+export function getClassMetadata(clazz: MetricConstructor): MetricInfo {
+  const ctor = clazz as any;
+  const meta: MetricInfo = {
+    type: ctor.key,
+    key: ctor.key,
+    category: ctor.category,
+    unit: ctor.unit,
+    valueType: ctor.type,
+    description: ctor.description,
+    isPolling: isPollingMetric(clazz),
+  };
+  return meta;
 }
 
 export * from './aggregators';

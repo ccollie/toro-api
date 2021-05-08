@@ -15,7 +15,7 @@ export const queueMetricUpdate: FieldConfig = {
   resolve: async (_, { input }) => {
     const {
       queueId,
-      metricId,
+      id,
       name,
       description,
       isActive,
@@ -23,17 +23,22 @@ export const queueMetricUpdate: FieldConfig = {
       aggregator,
     } = input;
     const manager = getQueueManager(queueId);
-    const metric = await manager.metricManager.getMetric(metricId);
+    const metric = await manager.metricManager.getMetric(id);
 
     if (!metric) {
       throw boom.notFound(
-        `No metric with id#${metricId} found for queue "${manager.name}"`,
+        `No metric with id#${id} found for queue "${manager.name}"`,
       );
     }
 
     if (name !== undefined) {
       if (name.length === 0) {
         throw boom.badRequest('metric.name must have a value');
+      }
+
+      const foundByName = manager.metricManager.getMetricByName(metric.name);
+      if (foundByName && foundByName.id !== metric.id) {
+        throw boom.badRequest('A metric must have a unique name');
       }
       metric.name = name;
     }

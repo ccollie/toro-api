@@ -4,3 +4,4 @@ export * from './ruleDelete';
 export * from './ruleAdd';
 export * from './ruleActivate';
 export * from './ruleDeactivate';
+export * from './ruleUpdate';

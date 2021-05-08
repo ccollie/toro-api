@@ -201,8 +201,8 @@ export interface RuleConfigOptions {
   createdAt?: number;
   /** Rule modification timestamp */
   updatedAt?: number;
-  /** metric descriptor */
-  metric: RuleMetric;
+  /** id of monitored metric */
+  metricId: string;
   /** the condition which should trigger an alert */
   condition: RuleCondition;
   /** true if the {@link Rule} is ACTIVE. */

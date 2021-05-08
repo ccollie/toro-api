@@ -13,8 +13,8 @@
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
-import IORedis from 'ioredis';
 import * as util from 'util';
+import { RedisClient } from 'bullmq';
 
 const readdir = util.promisify(fs.readdir);
 const readFile = util.promisify(fs.readFile);
@@ -36,9 +36,7 @@ function calcSha1(str: string): string {
   return createHash('sha1').update(str, 'utf8').digest('hex');
 }
 
-export async function loadScripts(
-  client: IORedis.Redis,
-): Promise<IORedis.Redis> {
+export async function loadScripts(client: RedisClient): Promise<RedisClient> {
   // make sure we only do this once per client
   if (!initClients.has(client)) {
     initClients.add(client);

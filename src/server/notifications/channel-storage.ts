@@ -1,5 +1,4 @@
 import boom from '@hapi/boom';
-import IORedis from 'ioredis';
 import { isEmpty, isFunction, isObject } from 'lodash';
 import {
   getHostKey,
@@ -13,6 +12,7 @@ import { Channel } from './channel';
 import { EventBus, BusEventHandler, UnsubscribeFn } from '../redis';
 import { HostManager } from '../hosts';
 import { createChannel } from './channel-factory';
+import { RedisClient } from 'bullmq';
 
 export const enum ChannelEvents {
   Added = 'channel.added',
@@ -42,7 +42,7 @@ export class ChannelStorage {
     //
   }
 
-  private get client(): IORedis.Redis {
+  private get client(): RedisClient {
     return this.hostManager.client;
   }
 

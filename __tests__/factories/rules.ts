@@ -15,10 +15,7 @@ export function createRuleOptions(
     options: defaultRuleAlertOptions,
     name: 'rule-test-' + randomString(5),
     id: getUniqueId(),
-    metric: {
-      type: 'latency',
-      options: {},
-    },
+    metricId: getUniqueId(),
     condition: {
       type: RuleType.THRESHOLD,
       errorThreshold: 20,

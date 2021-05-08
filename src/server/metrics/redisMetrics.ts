@@ -1,17 +1,17 @@
 import { PollingMetric } from './baseMetric';
 import { getRedisInfo } from '../redis';
-import IORedis from 'ioredis';
 import { MetricsListener } from './metricsListener';
 import {
   MetricCategory,
-  MetricType,
+  MetricValueType,
   MetricTypes,
   PollingMetricOptions,
 } from '../../types/metrics';
 import { JobEventData } from '@src/server/queues';
+import { RedisClient } from 'bullmq';
 
 export class RedisMetric extends PollingMetric {
-  private client: Promise<IORedis.Redis>;
+  private client: Promise<RedisClient>;
   private readonly fieldName: string;
 
   constructor(options: PollingMetricOptions, fieldName: string) {
@@ -45,8 +45,8 @@ export class RedisMetric extends PollingMetric {
     return MetricCategory.Redis;
   }
 
-  static get type(): MetricType {
-    return MetricType.Gauge;
+  static get type(): MetricValueType {
+    return MetricValueType.Gauge;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -135,10 +135,10 @@ export class InstantaneousOpsMetric extends RedisMetric {
   }
 
   static get description(): string {
-    return 'Number of commands processed per second';
+    return 'Redis Operations';
   }
 
   static get unit(): string {
-    return 'operations';
+    return 'ops/sec';
   }
 }

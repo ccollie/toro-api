@@ -7,30 +7,39 @@ import {
 } from './RuleAlertOptions';
 import { ruleAlertsFC } from './Rule.alerts';
 import { ruleAlertCountFC } from './Rule.alert-count';
+import { ruleMetric } from './Rule.metric';
+import { ruleChannels } from './Rule.channels';
 
-const SerializedAggregatorTC = schemaComposer.createObjectTC({
-  name: 'SerializedAggregator',
-  fields: {
-    type: 'String!',
-    options: 'JSONObject',
+const BaseFields = {
+  queueId: {
+    type: 'ID!',
+    description: 'The id of the queue to which the rule belongs',
   },
-});
-
-export const RuleMetricTC = schemaComposer.createObjectTC({
-  name: 'RuleMetric',
-  fields: {
-    id: 'String!',
+  name: {
     type: 'String!',
-    options: 'JSONObject',
-    aggregator: {
-      type: SerializedAggregatorTC.NonNull,
-    },
+    description: 'The names of the rule',
   },
-});
-
-export const RuleMetricInputTC = RuleMetricTC.getITC().setTypeName(
-  'RuleMetricInput',
-);
+  description: {
+    type: 'String',
+    description: 'A helpful description of the rule',
+  },
+  severity: {
+    type: SeverityType,
+  },
+  isActive: {
+    type: 'Boolean!',
+    description: 'Is this rule active or not',
+  },
+  payload: {
+    type: 'JSONObject',
+    description: 'Optional data passed on to alerts',
+  },
+  message: {
+    type: 'String',
+    description:
+      'Optional text for message when an alert is raised. Markdown and handlebars supported',
+  },
+};
 
 export const RuleTC = schemaComposer.createObjectTC({
   name: 'Rule',
@@ -39,18 +48,7 @@ export const RuleTC = schemaComposer.createObjectTC({
       type: 'ID!',
       description: 'The rule id',
     },
-    queueId: {
-      type: 'ID!',
-      description: 'The id of the queue to which the rule belongs',
-    },
-    name: {
-      type: 'String!',
-      description: 'The names of the rule',
-    },
-    description: {
-      type: 'String',
-      description: 'A helpful description of the rule',
-    },
+    ...BaseFields,
     createdAt: {
       type: 'Date!',
       description: 'The rule creation timestamp',
@@ -67,33 +65,12 @@ export const RuleTC = schemaComposer.createObjectTC({
       type: RuleStateType,
       description: 'The current rule states',
     },
-    severity: {
-      type: SeverityType,
-    },
-    isActive: {
-      type: 'Boolean!',
-      description: 'Is this rule active or not',
-    },
-    metric: {
-      type: RuleMetricTC.NonNull,
-    },
+    metric: ruleMetric,
     condition: {
       type: RuleConditionTC.NonNull,
       makeRequired: true,
     },
-    message: {
-      type: 'String',
-      description:
-        'Optional text for message when an alert is raised. Markdown and handlebars supported',
-    },
-    channels: {
-      type: '[String!]!',
-      description: 'channels for alert notifications.',
-    },
-    payload: {
-      type: 'JSONObject',
-      description: 'Optional data passed on to alerts',
-    },
+    channels: ruleChannels,
     options: {
       type: RuleAlertOptionsTC,
       description: 'Options controlling the generation of events',
@@ -103,23 +80,13 @@ export const RuleTC = schemaComposer.createObjectTC({
   },
 });
 
-export const RuleAddInputTC = RuleTC.clone('temp')
-  .removeField([
-    'condition',
-    'options',
-    'createdAt',
-    'updatedAt',
-    'id',
-    'metric',
-    'state',
-    'alerts',
-  ])
-  .getITC()
-  .setTypeName('RuleAddInput')
-  .addFields({
-    queueId: 'ID!',
-    metric: {
-      type: RuleMetricInputTC,
+export const RuleAddInputTC = schemaComposer.createInputTC({
+  name: 'RuleAddInput',
+  description: 'Information required to add or edit a Rule',
+  fields: {
+    ...BaseFields,
+    metricId: {
+      type: 'String!',
       makeRequired: true,
     },
     condition: {
@@ -127,8 +94,26 @@ export const RuleAddInputTC = RuleTC.clone('temp')
       makeRequired: true,
       description: 'The rule condition',
     },
+    channels: {
+      type: '[String!]',
+      makeRequired: true,
+      description: 'Notification channel ids',
+    },
     options: {
       type: RuleAlertOptionsInputTC,
       description: 'Options controlling the generation of events',
     },
-  });
+  },
+});
+
+const OptionalFields = ['metricId', 'isActive', 'name', 'severity'];
+
+export const RuleUpdateInputTC = RuleAddInputTC.clone('RuleUpdateInput')
+  .setDescription('Information needed to update a rule')
+  .addFields({
+    id: {
+      type: 'ID!',
+      description: 'The id of the the rule to update',
+    },
+  })
+  .makeFieldNullable(OptionalFields);

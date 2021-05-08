@@ -18,6 +18,7 @@ export const RuleAlertOptionsTC = schemaComposer.createObjectTC({
     successThreshold: {
       type: 'Int',
       description:
+        // eslint-disable-next-line max-len
         'Optional number of consecutive successful method executions to close then alert. Default 1',
     },
     maxAlertsPerEvent: {

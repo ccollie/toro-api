@@ -5,11 +5,12 @@ import {
   RuleEvaluator,
   ThresholdConditionEvaluator,
 } from '../../../src/server/rules';
-import { delay } from '../utils';
+import { delay, randomString } from '../utils';
 import {
   BaseMetric,
   LatencyMetric,
   MetricsListener,
+  P90Aggregator,
 } from '../../../src/server/metrics';
 import {
   ChangeAggregationType,
@@ -25,6 +26,7 @@ import {
   createQueueListener,
   createRule,
 } from '../../factories';
+import ms from 'ms';
 
 class ExtRuleEvaluator extends RuleEvaluator {
   getEvaluator(): ConditionEvaluator {
@@ -62,20 +64,37 @@ describe('RuleEvaluator', () => {
   function createEvaluator(
     options?: Partial<RuleConfigOptions>,
   ): ExtRuleEvaluator {
-    const rule = createRule(options);
-    return new ExtRuleEvaluator(rule, metricsListener);
+    const metric = createMetric();
+    const rule = createRule({
+      ...options,
+      metricId: metric.id,
+    });
+    return new ExtRuleEvaluator(rule, metric);
+  }
+
+  const DURATION = ms('2 min');
+
+  function createMetric(): BaseMetric {
+    const metric = new LatencyMetric({
+      jobNames: [],
+    });
+
+    metric.name = `name-${randomString(4)}`;
+    metric.aggregator = new P90Aggregator(queueListener.clock, {
+      duration: DURATION,
+    });
+
+    return metric;
   }
 
   describe('constructor', () => {
     it('can create a RuleEvaluator', () => {
+      const metric = createMetric();
       const rule = createRule({
-        metric: {
-          type: 'latency',
-          options: {},
-        },
+        metricId: metric.id,
       });
 
-      const evaluator = new RuleEvaluator(rule, metricsListener);
+      const evaluator = new RuleEvaluator(rule, metric);
       expect(evaluator).toBeDefined();
       expect(evaluator.metric).toBeInstanceOf(LatencyMetric);
       expect(evaluator.rule).toBe(rule);

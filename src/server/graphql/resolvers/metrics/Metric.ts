@@ -18,18 +18,17 @@ export const AggregatorTC = schemaComposer.createObjectTC({
 
 export const AggregatorInputTC = AggregatorTC.getITC();
 
-export const MetricTypesTC = createEnumFromTS(MetricTypes, 'MetricTypeEnum');
+export const MetricTypeTC = createEnumFromTS(MetricTypes, 'MetricType');
 
 const BaseFields = {
-  type: MetricTypesTC.NonNull,
+  type: MetricTypeTC.NonNull,
   queueId: {
-    type: 'String!',
+    type: 'ID!',
     description: 'The id of the queue to which the metric belongs',
   },
   name: {
     type: 'String!',
-    description:
-      'The minimum number of violations before an alert can be raised',
+    description: 'The name of the metric',
   },
   description: {
     type: 'String',
@@ -55,16 +54,16 @@ export const MetricTC = schemaComposer.createObjectTC({
   description: 'Metrics are numeric samples of data collected over time',
   fields: {
     id: {
-      type: 'String!',
-      description: 'the id off the metric',
+      type: 'ID!',
+      description: 'the id of the metric',
     },
     ...BaseFields,
     createdAt: {
       type: 'Date!',
       description: 'Timestamp of when this metric was created',
     },
-    updateAt: {
-      type: 'DateTime!',
+    updatedAt: {
+      type: 'Date!',
       description: 'Timestamp of when this metric was created',
     },
     options: {
@@ -81,6 +80,10 @@ export const MetricInputTC = schemaComposer
     name: 'MetricInput',
     description: 'Input fields for updating a metric',
     fields: {
+      id: {
+        type: 'ID!',
+        description: 'the id of the metric',
+      },
       ...InputFields,
     },
   })
@@ -94,4 +97,4 @@ export const MetricCreateTC = schemaComposer
       ...InputFields,
     },
   })
-  .makeRequired('name');
+  .makeRequired(['name', 'queueId']);

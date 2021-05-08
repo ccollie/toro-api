@@ -196,6 +196,10 @@ export class QueueManager {
     return this.ruleManager.rules;
   }
 
+  get metrics(): BaseMetric[] {
+    return this.metricManager.metrics;
+  }
+
   private createQueueListener(): QueueListener {
     return new QueueListener(this.queue);
   }
@@ -209,7 +213,7 @@ export class QueueManager {
   }
 
   findMetric(id: string): BaseMetric {
-    return this.metricManager.metrics.find((x) => x.id === id);
+    return this.metricManager.findMetricById(id);
   }
 
   addWork(fn: () => void | Promise<void>): void {
@@ -232,12 +236,48 @@ export class QueueManager {
     if (!rule) {
       throw boom.badRequest('must pass a valid rule');
     }
-    const oldRule = await this.getRule(rule.id);
-    if (oldRule) {
-      throw boom.badRequest(`An rule named "${rule.id}" already exists`);
+    if (rule.id) {
+      const oldRule = await this.getRule(rule.id);
+      if (oldRule) {
+        throw boom.badRequest(`An rule with id "${rule.id}" already exists`);
+      }
+    }
+    if (!rule.metricId) {
+      throw boom.badRequest('No metric id was specified');
+    }
+
+    const metric = this.findMetric(rule.metricId);
+    if (!metric) {
+      throw boom.badRequest(
+        `No metric with id "${rule.metricId}" was found in queue "${this.name}"`,
+      );
     }
 
     return this.ruleManager.addRule(rule);
+  }
+
+  async updateRule(rule: Rule): Promise<Rule> {
+    if (!rule) {
+      throw boom.badRequest('must pass a valid rule');
+    }
+    const oldRule = await this.getRule(rule.id);
+    if (!oldRule) {
+      throw boom.notFound(
+        `No rule with id "${rule.id}" found in queue "${this.name}"`,
+      );
+    }
+    if (!rule.metricId) {
+      throw boom.badRequest('No metric id was specified');
+    }
+
+    const metric = this.findMetric(rule.metricId);
+    if (!metric) {
+      throw boom.badRequest(
+        `No metric with id "${rule.metricId}" was found in queue "${this.name}"`,
+      );
+    }
+
+    return this.ruleManager.updateRule(rule);
   }
 
   /**

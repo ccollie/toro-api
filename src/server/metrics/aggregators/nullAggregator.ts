@@ -19,7 +19,7 @@ export class NullAggregator extends BaseAggregator {
   }
 
   static get key(): AggregatorTypes {
-    return AggregatorTypes.Null;
+    return AggregatorTypes.Identity;
   }
 
   static get description(): string {
