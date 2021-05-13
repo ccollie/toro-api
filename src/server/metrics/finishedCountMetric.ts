@@ -1,11 +1,11 @@
-import { CounterBasedMetric } from './counterBasedMetric';
+import { QueueCounterBasedMetric } from './counterBasedMetric';
 import { Events } from './constants';
 import { MetricTypes } from '../../types';
 
 /**
  * Tracks the number of finished jobs (i.e. Completed or Failed)
  */
-export class FinishedCountMetric extends CounterBasedMetric {
+export class FinishedCountMetric extends QueueCounterBasedMetric {
   get validEvents(): string[] {
     return [Events.FINISHED];
   }

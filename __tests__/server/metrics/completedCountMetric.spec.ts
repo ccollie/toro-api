@@ -16,7 +16,7 @@ describe('CompletedCountMetric', () => {
   });
 
   const defaultOptions: MetricOptions = {
-    id: 'test'
+    jobNames: [],
   };
 
   describe('constructor', () => {

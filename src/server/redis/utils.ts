@@ -298,6 +298,7 @@ const metrics: MetricName[] = [
   'used_memory_peak',
   'used_cpu_sys',
   'maxmemory',
+  'os',
   'used_memory_lua',
   'number_of_cached_scripts',
   'instantaneous_ops_per_sec',

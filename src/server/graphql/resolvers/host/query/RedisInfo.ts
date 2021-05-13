@@ -4,7 +4,7 @@ export const RedisInfoTC = schemaComposer.createObjectTC({
   name: 'RedisInfo',
   fields: {
     redis_version: 'String!',
-    tcp_port: 'Int',
+    tcp_port: 'Int!',
     uptime_in_seconds: 'Int!',
     uptime_in_days: 'Int!',
     connected_clients: 'Int!',
@@ -18,6 +18,7 @@ export const RedisInfoTC = schemaComposer.createObjectTC({
     number_of_cached_scripts: 'Int!',
     instantaneous_ops_per_sec: 'Int!',
     mem_fragmentation_ratio: 'Float',
-    role: 'String',
+    role: 'String!',
+    os: 'String!',
   },
 });

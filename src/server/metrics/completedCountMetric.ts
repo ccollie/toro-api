@@ -1,8 +1,8 @@
-import { CounterBasedMetric } from './counterBasedMetric';
+import { QueueCounterBasedMetric } from './counterBasedMetric';
 import { Events } from './constants';
 import { MetricTypes } from '../../types';
 
-export class CompletedCountMetric extends CounterBasedMetric {
+export class CompletedCountMetric extends QueueCounterBasedMetric {
   get validEvents(): string[] {
     return [Events.COMPLETED];
   }
