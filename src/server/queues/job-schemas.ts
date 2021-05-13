@@ -3,12 +3,12 @@ import fnv from 'fnv-plus';
 import { isEmpty } from 'lodash';
 import { Queue, JobsOptions } from 'bullmq';
 import { ValidateFunction } from 'ajv';
-import { JobsOptionsSchema } from './job-options-schema';
+import { JobOptionsSchema } from './job-options-schema';
 import { getJobSchemaKey, objToString, safeParse } from '../lib';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
 
-const jobsOptionsValidator = ajv.compile(JobsOptionsSchema);
+const jobsOptionsValidator = ajv.compile(JobOptionsSchema);
 
 export type JobSchema = {
   schema: any;
@@ -31,7 +31,7 @@ function getLocalValidator(queue: Queue, jobName: string): JobSchema {
 
 export function validateJobOptions(options: Partial<JobsOptions>): void {
   if (!isEmpty(options)) {
-    ajvValidate(jobsOptionsValidator, JobsOptionsSchema, options);
+    ajvValidate(jobsOptionsValidator, JobOptionsSchema, options);
   }
 }
 

@@ -1,4 +1,4 @@
-import { JobsOptionsSchema as schema } from '../../../queues';
+import { JobOptionsSchema as schema } from '../../../queues';
 import { FieldConfig } from '../index';
 
 export const jobOptionsSchema: FieldConfig = {

@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { PollingMetric } from './baseMetric';
+import { QueuePollingMetric } from './baseMetric';
 import { MetricsListener } from './metrics-listener';
 import {
   JobStatusEnum,
@@ -19,12 +19,12 @@ export interface JobSpotCountMetricOptions extends PollingMetricOptions {
  * meaning that they can work even on historical data. This class gets
  * current values from the queue.
  */
-abstract class JobSpotCountMetric extends PollingMetric {
+abstract class JobSpotCountMetric extends QueuePollingMetric {
   private queue: Queue;
   private readonly status: JobStatusEnum;
   private readonly _interval: number;
 
-  constructor(props: PollingMetricOptions, status: JobStatusEnum) {
+  protected constructor(props: PollingMetricOptions, status: JobStatusEnum) {
     super(props);
     this._interval = props.interval;
     this.status = status;
@@ -72,7 +72,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
   }
 
   static get description(): string {
-    return 'currently ACTIVE jobs';
+    return 'Active jobs';
   }
 }
 
@@ -123,7 +123,7 @@ export class CurrentFailedCountMetric extends JobSpotCountMetric {
   }
 
   static get description(): string {
-    return 'current FAILED jobs';
+    return 'Failed Jobs';
   }
 }
 
