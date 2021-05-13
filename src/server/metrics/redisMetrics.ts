@@ -1,13 +1,12 @@
 import { PollingMetric } from './baseMetric';
 import { getRedisInfo } from '../redis';
-import { MetricsListener } from './metricsListener';
+import { MetricsListener } from './metrics-listener';
 import {
   MetricCategory,
   MetricValueType,
   MetricTypes,
   PollingMetricOptions,
 } from '../../types/metrics';
-import { JobEventData } from '@src/server/queues';
 import { RedisClient } from 'bullmq';
 
 export class RedisMetric extends PollingMetric {
@@ -48,9 +47,6 @@ export class RedisMetric extends PollingMetric {
   static get type(): MetricValueType {
     return MetricValueType.Gauge;
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleEvent(event?: JobEventData): void {}
 }
 
 export class UsedMemoryMetric extends RedisMetric {

@@ -6,7 +6,7 @@ import { JobEventData } from '../queues';
 import { BaseAggregator, NullAggregator } from './aggregators';
 import { Events } from './constants';
 import { Clock, createAsyncIterator, systemClock } from '../lib';
-import { MetricsListener } from './metricsListener';
+import { MetricsListener } from './metrics-listener';
 import { DurationSchema } from '../validation/schemas';
 import {
   MetricCategory,
@@ -36,13 +36,12 @@ export const baseMetricSchema = Joi.object().keys({
  * Metrics are numeric samples of data collected over time
  */
 export abstract class BaseMetric {
+  private readonly emitter: Emittery = new Emittery();
   public readonly id: string;
   public queueId: string;
   public name: string;
   public description: string;
-  protected options: MetricOptions;
-  private readonly emitter: Emittery = new Emittery();
-  private _filter: Predicate<string>;
+  protected options: any;
   private _aggregator: BaseAggregator;
   private _prev: number;
   protected _value: number;
@@ -52,7 +51,7 @@ export abstract class BaseMetric {
   public lastChangedAt: number;
   public clock: Clock = systemClock;
 
-  constructor(options: MetricOptions) {
+  protected constructor(options: any) {
     this._prev = null;
     this._value = -1;
     this.setOptions(options);
@@ -76,26 +75,21 @@ export abstract class BaseMetric {
     this._aggregator = value;
   }
 
-  validateOptions(options: MetricOptions): MetricOptions {
+  validateOptions<T = any>(options: any): T {
     const schema = (this.constructor as any).schema;
     if (schema) {
       const { error, value } = schema.validate(options);
       if (error) {
         throw error;
       }
-      return value;
+      return value as T;
     }
 
-    return options;
+    return options as T;
   }
 
   setOptions(options: MetricOptions): void {
     this.options = this.validateOptions(options);
-    this._filter = createJobNameFilter(this.jobNames);
-  }
-
-  get validEvents(): string[] {
-    return [Events.FINISHED];
   }
 
   destroy(): void {
@@ -163,13 +157,6 @@ export abstract class BaseMetric {
     // abstract method
   }
 
-  abstract handleEvent(event?: JobEventData): void;
-
-  accept(event: JobEventData): boolean {
-    const name = event.job.name;
-    return !name || this._filter(name);
-  }
-
   toJSON(): SerializedMetric {
     const type = (this.constructor as any).key;
     const aggregator = this._aggregator.toJSON();
@@ -211,11 +198,85 @@ export abstract class BaseMetric {
   }
 }
 
+export abstract class QueueBasedMetric extends BaseMetric {
+  private _filter: Predicate<string>;
+  private _jobNames: string[] = [];
+
+  constructor(options: MetricOptions) {
+    super(options);
+  }
+
+  static get category(): MetricCategory {
+    return MetricCategory.Queue;
+  }
+
+  setOptions(options: MetricOptions): void {
+    this.options = this.validateOptions(options);
+    this.jobNames = options.jobNames || [];
+  }
+
+  get validEvents(): string[] {
+    return [Events.FINISHED];
+  }
+
+  get jobNames(): string[] {
+    return this._jobNames;
+  }
+
+  set jobNames(values: string[]) {
+    this._jobNames = values;
+    this._filter = createJobNameFilter(values);
+  }
+
+  abstract handleEvent(event?: JobEventData): void;
+
+  accept(event: JobEventData): boolean {
+    const name = event.job.name;
+    return !name || this._filter(name);
+  }
+}
+
 export const pollingMetricSchema = baseMetricSchema.append({
   interval: DurationSchema.required(),
 });
 
-export abstract class PollingMetric extends BaseMetric {
+export interface IPollingMetric {
+  interval: number;
+  checkUpdate: () => Promise<void>;
+}
+
+export function isPollingMetric(arg: any): arg is IPollingMetric {
+  return (
+    arg &&
+    typeof arg.interval === 'number' &&
+    typeof arg.checkUpdate === 'function' &&
+    arg instanceof BaseMetric
+  );
+}
+
+export abstract class PollingMetric
+  extends BaseMetric
+  implements IPollingMetric {
+  protected constructor(options: PollingMetricOptions) {
+    super(options);
+  }
+
+  get interval(): number {
+    return (this.options as PollingMetricOptions).interval;
+  }
+
+  checkUpdate(): Promise<void> {
+    throw boom.notImplemented('checkUpdate');
+  }
+
+  static get schema(): ObjectSchema {
+    return pollingMetricSchema;
+  }
+}
+
+export abstract class QueuePollingMetric
+  extends QueueBasedMetric
+  implements IPollingMetric {
   protected constructor(options: PollingMetricOptions) {
     super(options);
   }

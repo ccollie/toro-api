@@ -1,6 +1,11 @@
 import { default as PQueue } from 'p-queue';
 import { JobEventData, QueueListener } from '../queues';
-import { BaseMetric, PollingMetric } from './baseMetric';
+import {
+  BaseMetric,
+  IPollingMetric,
+  isPollingMetric,
+  QueueBasedMetric,
+} from './baseMetric';
 import Emittery, { UnsubscribeFn } from 'emittery';
 import { Queue, RedisClient } from 'bullmq';
 import {
@@ -18,8 +23,6 @@ import { parseDuration } from '../lib/datetime';
 
 const DEFAULT_CONCURRENCY = 16;
 const UPDATE_EVENT_NAME = 'metrics.updated';
-
-const isPollingMetric = (metric: BaseMetric) => metric instanceof PollingMetric;
 
 function GCF(a: number, b: number): number {
   return b === 0 ? a : GCF(b, a % b);
@@ -54,11 +57,11 @@ export class MetricsListener {
   private readonly _metrics: BaseMetric[] = [];
   private activeMetrics: BaseMetric[] = [];
   private readonly pollingMetrics = new Map<
-    PollingMetric,
+    IPollingMetric,
     PollingMetricMetadata
   >();
   private readonly emitter: Emittery = new Emittery();
-  private readonly handlerMap = new Map<string, Set<BaseMetric>>();
+  private readonly handlerMap = new Map<string, Set<QueueBasedMetric>>();
   private readonly _saveInterval = getSaveInterval();
   private readonly _state: Record<string, any> = Object.create(null);
 
@@ -115,7 +118,7 @@ export class MetricsListener {
 
   private poll(): void {
     const now = Date.now();
-    const checked: PollingMetric[] = [];
+    const checked: IPollingMetric[] = [];
     const tasks = [];
     this.pollingMetrics.forEach((meta, metric) => {
       const age = now - meta.lastTick;
@@ -128,7 +131,7 @@ export class MetricsListener {
     if (checked.length) {
       this.workQueue
         .addAll(tasks)
-        .then(() => this.emitUpdate(checked))
+        .then(() => this.emitUpdate((checked as unknown) as BaseMetric[]))
         .catch(this.onError);
     }
   }
@@ -200,7 +203,7 @@ export class MetricsListener {
     return this.queueListener.queue.client;
   }
 
-  private addPollingMetric(metric: PollingMetric): void {
+  private addPollingMetric(metric: IPollingMetric): void {
     const meta: PollingMetricMetadata = {
       lastTick: Date.now(),
       interval: metric.interval,
@@ -210,7 +213,7 @@ export class MetricsListener {
     this.running && this.initTimer();
   }
 
-  private removePollingMetric(metric: PollingMetric): void {
+  private removePollingMetric(metric: IPollingMetric): void {
     const meta = this.pollingMetrics.get(metric);
     if (meta) {
       this.pollingMetrics.delete(metric);
@@ -238,45 +241,49 @@ export class MetricsListener {
 
   registerMetric(metric: BaseMetric): void {
     if (this._metrics.indexOf(metric) > 0) return;
-    metric.validEvents.forEach((event) => {
-      let metricsForEvent = this.handlerMap.get(event);
-      if (!metricsForEvent) {
-        metricsForEvent = new Set<BaseMetric>();
-        this.handlerMap.set(event, metricsForEvent);
-      }
-      metricsForEvent.add(metric);
-      if (!this.queueListener.listenerCount(event)) {
-        this.queueListener.on(event, this.dispatch);
-      }
-    });
-    this._metrics.push(metric);
+    if (isPollingMetric(metric)) {
+      this.addPollingMetric(metric);
+      this._metrics.push(metric);
+    } else if (metric instanceof QueueBasedMetric) {
+      metric.validEvents.forEach((event) => {
+        let metricsForEvent = this.handlerMap.get(event);
+        if (!metricsForEvent) {
+          metricsForEvent = new Set<QueueBasedMetric>();
+          this.handlerMap.set(event, metricsForEvent);
+        }
+        metricsForEvent.add(metric);
+        if (!this.queueListener.listenerCount(event)) {
+          this.queueListener.on(event, this.dispatch);
+        }
+      });
+      this._metrics.push(metric);
+    }
     this.updateActive();
     // metric.onUpdate()
-    if (isPollingMetric(metric)) {
-      this.addPollingMetric(metric as PollingMetric);
-    }
     metric.init(this);
   }
 
   unregisterMetric(metric: BaseMetric): void {
     // todo: metric may possibly be reference by more than one rule
     // use refCounts (see lib/recount-cache)
-    metric.validEvents.forEach((event) => {
-      const metricsForEvent = this.handlerMap.get(event);
-      if (metricsForEvent) {
-        metricsForEvent.delete(metric);
-        if (metricsForEvent.size === 0) {
-          this.handlerMap.delete(event);
-          this.queueListener.off(event, this.dispatch);
+    if (metric instanceof QueueBasedMetric) {
+      metric.validEvents.forEach((event) => {
+        const metricsForEvent = this.handlerMap.get(event);
+        if (metricsForEvent) {
+          metricsForEvent.delete(metric);
+          if (metricsForEvent.size === 0) {
+            this.handlerMap.delete(event);
+            this.queueListener.off(event, this.dispatch);
+          }
         }
-      }
-    });
+      });
+    }
     delete this._state[metric.id];
     const idx = this._metrics.indexOf(metric);
     if (idx >= 0) {
       this._metrics.splice(idx, 1);
       if (isPollingMetric(metric)) {
-        this.removePollingMetric(metric as PollingMetric);
+        this.removePollingMetric(metric);
       }
     }
     this.updateActive();
@@ -326,14 +333,17 @@ export class MetricsListener {
     const eventName = `job.${event.event}`;
     const metricsForEvent = this.handlerMap.get(eventName);
     if (metricsForEvent) {
-      this.handleEvent(metricsForEvent, event);
+      this.handleQueueEvent(metricsForEvent, event);
     }
   }
 
-  private handleEvent(metrics: Set<BaseMetric>, event: JobEventData): void {
+  private handleQueueEvent(
+    metrics: Set<QueueBasedMetric>,
+    event: JobEventData,
+  ): void {
     const tasks = [];
     const filtered: BaseMetric[] = [];
-    metrics.forEach((metric: BaseMetric) => {
+    metrics.forEach((metric) => {
       if (metric.accept(event)) {
         filtered.push(metric);
         tasks.push(() => metric.handleEvent(event));

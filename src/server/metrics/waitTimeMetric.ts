@@ -1,9 +1,9 @@
-import { BaseMetric } from './baseMetric';
+import { QueueBasedMetric } from './baseMetric';
 import { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
 import { MetricTypes } from '../../types';
 
-export class WaitTimeMetric extends BaseMetric {
+export class WaitTimeMetric extends QueueBasedMetric {
   get validEvents(): string[] {
     return [Events.FINISHED];
   }

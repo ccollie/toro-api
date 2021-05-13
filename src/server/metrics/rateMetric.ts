@@ -1,11 +1,11 @@
 import Joi, { ObjectSchema } from 'joi';
 import boom from '@hapi/boom';
 import { SimpleMeter, TimeUnit } from '../stats';
-import { PollingMetric, pollingMetricSchema } from './baseMetric';
+import { pollingMetricSchema, QueuePollingMetric } from './baseMetric';
 import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
-import { MetricsListener } from './metricsListener';
+import { MetricsListener } from './metrics-listener';
 import { MetricValueType, PollingMetricOptions } from '../../types';
 
 /**
@@ -35,7 +35,7 @@ const schema = pollingMetricSchema.append({
   rateUnit: Joi.number().integer().default(units.MINUTES),
 });
 
-export class RateMetric extends PollingMetric {
+export class RateMetric extends QueuePollingMetric {
   private _meter: SimpleMeter;
 
   constructor(options: RateMetricOptions = DefaultRateMetricOptions) {

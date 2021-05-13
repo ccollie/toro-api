@@ -1,4 +1,4 @@
-import { BaseMetric, baseMetricSchema } from './baseMetric';
+import { baseMetricSchema, QueueBasedMetric } from './baseMetric';
 import { ObjectSchema } from 'joi';
 import { Events } from './constants';
 import { DurationSchema } from '../validation/schemas';
@@ -19,7 +19,7 @@ const schema = baseMetricSchema.append({
  * requests to the total requests. Each satisfied client counts as one client,
  * while each tolerating client counts as half a satisfied client.
  */
-export class ApdexMetric extends BaseMetric {
+export class ApdexMetric extends QueueBasedMetric {
   private readonly _data: ApdexCalculator;
 
   constructor(options: ApdexMetricOptions) {

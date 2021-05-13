@@ -44,7 +44,7 @@ import { parseTimestamp } from '../lib/datetime';
 import { isNil, isObject, isString } from 'lodash';
 
 export * from './constants';
-export * from './metricsListener';
+export * from './metrics-listener';
 export * from './sliding-window-counter';
 
 const metrics = [
