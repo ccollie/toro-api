@@ -34,9 +34,22 @@ const RepeatOptionsSchema = {
   //  errorMessage: 'Options for repeatable job creation',
 };
 
+const JobParentSchema = {
+  type: 'object',
+  properties: {
+    id: {
+      type: 'string',
+    },
+    queue: {
+      type: 'string',
+    },
+  },
+  required: ['queue', 'id'],
+};
+
 // eslint-disable-next-line max-len
 // https://github.com/taskforcesh/bullmq/blob/2604753984a03d079ece28db0686d734ee10ba52/src/interfaces/jobs-options.ts
-export const JobsOptionsSchema = {
+export const BulkJobsOptionsSchema = {
   type: 'object',
   properties: {
     timestamp: {
@@ -104,6 +117,14 @@ export const JobsOptionsSchema = {
       description:
         'Limits the amount of stack trace lines that will be recorded in the stacktrace.',
     },
-    repeat: RepeatOptionsSchema,
+    parent: JobParentSchema,
+    sizeLimit: {
+      type: 'integer',
+    },
   },
 };
+
+const JobOptionsSchema = { ...BulkJobsOptionsSchema };
+JobOptionsSchema.properties['repeat'] = RepeatOptionsSchema;
+
+export { JobOptionsSchema };

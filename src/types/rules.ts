@@ -1,5 +1,3 @@
-import { SerializedAggregator } from './metrics';
-
 export enum RuleType {
   THRESHOLD = 'threshold',
   PEAK = 'peak',
