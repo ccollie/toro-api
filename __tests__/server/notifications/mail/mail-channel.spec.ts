@@ -1,9 +1,9 @@
-import { MailChannelConfig } from '../../../../src/types';
-import { MailChannel } from '../../../../src/server/notifications';
+import { MailChannelConfig } from '@src/types';
+import { MailChannel } from '@src/server/notifications';
 import { createNotificationContext } from '../helpers';
 import { nanoid } from 'nanoid';
-import * as mailer from '../../../../src/server/lib/mail';
-import { registerHelpers } from '../../../../src/server/lib/hbs';
+import * as mailer from '@lib/mail';
+import { registerHelpers } from '@lib/hbs';
 
 describe('MailChannel', () => {
   registerHelpers();

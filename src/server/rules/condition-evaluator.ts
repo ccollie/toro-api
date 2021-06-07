@@ -14,36 +14,36 @@ import { EvaluationResult } from './rule-evaluator';
 
 export const OperatorNames = {
   short: {
-    [RuleOperator.eq]: '==',
-    [RuleOperator.ne]: '!=',
-    [RuleOperator.lt]: '<',
-    [RuleOperator.lte]: '<=',
-    [RuleOperator.gt]: '>',
-    [RuleOperator.gte]: '>=',
+    [RuleOperator.EQ]: '==',
+    [RuleOperator.NE]: '!=',
+    [RuleOperator.LT]: '<',
+    [RuleOperator.LTE]: '<=',
+    [RuleOperator.GT]: '>',
+    [RuleOperator.GTE]: '>=',
   },
   long: {
-    [RuleOperator.eq]: 'is equal to',
-    [RuleOperator.ne]: 'is not equal to',
-    [RuleOperator.lt]: 'falls below',
-    [RuleOperator.lte]: 'is less than or equal to',
-    [RuleOperator.gt]: 'exceeds',
-    [RuleOperator.gte]: 'is greater than or equal to',
+    [RuleOperator.EQ]: 'is equal to',
+    [RuleOperator.NE]: 'is not equal to',
+    [RuleOperator.LT]: 'falls below',
+    [RuleOperator.LTE]: 'is less than or equal to',
+    [RuleOperator.GT]: 'exceeds',
+    [RuleOperator.GTE]: 'is greater than or equal to',
   },
 };
 
 export function compare(operator: RuleOperator, a: number, b: number): boolean {
   switch (operator) {
-    case RuleOperator.eq:
+    case RuleOperator.EQ:
       return a == b;
-    case RuleOperator.ne:
+    case RuleOperator.NE:
       return a != b;
-    case RuleOperator.gt:
+    case RuleOperator.GT:
       return a > b;
-    case RuleOperator.gte:
+    case RuleOperator.GTE:
       return a >= b;
-    case RuleOperator.lt:
+    case RuleOperator.LT:
       return a < b;
-    case RuleOperator.lte:
+    case RuleOperator.LTE:
       return a <= b;
   }
   return false;
@@ -57,6 +57,7 @@ export class ConditionEvaluator {
   constructor(metric: BaseMetric) {
     this.metric = metric;
     this.state = Object.create(null);
+    this.state['unit'] = getStaticProp(this.metric, 'unit');
   }
 
   destroy(): void {
@@ -91,7 +92,6 @@ export class ThresholdConditionEvaluator extends ConditionEvaluator {
   constructor(metric: BaseMetric, options: ThresholdCondition) {
     super(metric);
     this.options = options;
-    this.state['unit'] = getStaticProp(this.metric, 'unit');
     this.state['ruleType'] = RuleType.THRESHOLD;
   }
 
@@ -128,7 +128,7 @@ const DefaultPeakDetectorOptions: PeakCondition = {
   influence: 0.5,
   lag: 0,
   direction: PeakSignalDirection.BOTH,
-  operator: RuleOperator.gt,
+  operator: RuleOperator.GT,
 };
 
 export class PeakConditionEvaluator extends ThresholdConditionEvaluator {

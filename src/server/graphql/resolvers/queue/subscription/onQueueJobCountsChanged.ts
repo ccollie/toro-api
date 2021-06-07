@@ -1,11 +1,11 @@
 import ms from 'ms';
 import { throttle, isEmpty } from 'lodash';
-import { diff } from '../../../../lib';
+import { diff } from '@lib/utils';
 import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
-import { JobStatusEnum, QueueEventsEnum } from '../../../imports';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
+import { JobStatusEnum, QueueEventsEnum } from '@src/types';
 
 const DEFAULT_COUNT_INTERVAL = ms('1.5 s');
 const JOB_STATES = Object.values(JobStatusEnum);

@@ -1,10 +1,10 @@
 import { normalizeGranularity } from '../../helpers';
 import { FieldConfig } from '../';
-import { HostManager } from '../../../hosts';
+import { HostManager } from '@server/hosts';
 import { getClient } from './utils';
 import { StatsGranularityEnum } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
-import { StatsGranularity } from '../../../../types';
+import { StatsGranularity } from '@src/types';
 
 const StatsSpanPayload = schemaComposer.createObjectTC({
   name: 'StatsSpanPayload',

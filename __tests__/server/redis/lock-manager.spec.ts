@@ -1,4 +1,4 @@
-import { LockManager } from '../../../src/server/redis';
+import { LockManager } from '@src/server/redis';
 import { clearDb, createClient } from '../../factories';
 import { delay } from '../utils';
 import { RedisClient } from 'bullmq';

@@ -1,10 +1,6 @@
-import {
-  FailedCountMetric,
-  Events,
-  BaseMetric,
-} from '../../../src/server/metrics';
+import { FailedCountMetric, Events, BaseMetric } from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
-import { QueueMetricOptions } from '../../../src/types';
+import { QueueMetricOptions } from '@src/types';
 
 describe('FailedCountMetric', () => {
   const defaultOptions: QueueMetricOptions = {};

@@ -1,4 +1,4 @@
-import { EWMA, TimeUnit } from '../../../src/server/stats';
+import { EWMA, TimeUnit } from '@src/server/stats';
 
 const PRECISION_DIGITS = 5;
 

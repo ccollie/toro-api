@@ -4,7 +4,7 @@ import {
   Rule,
   RuleAlerter,
   RuleStorage,
-} from '../../../src/server/rules';
+} from '@src/server/rules';
 import { delay, getRandomBool } from '../utils';
 import { createQueueManager, createRule, clearDb } from '../../factories';
 import {
@@ -12,9 +12,9 @@ import {
   RuleAlert,
   RuleConfigOptions,
   RuleState,
-} from '../../../src/types';
-import { QueueManager } from '../../../src/server/queues';
-import { ManualClock } from '../../../src/server/lib';
+} from '@src/types';
+import { QueueManager } from '@src/server/queues';
+import { ManualClock } from '@src/server/lib';
 import nanoid from 'nanoid';
 
 describe('RuleEAlerter', () => {

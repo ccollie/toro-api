@@ -19,7 +19,7 @@ export function createRuleOptions(
     condition: {
       type: RuleType.THRESHOLD,
       errorThreshold: 20,
-      operator: RuleOperator.gt,
+      operator: RuleOperator.GT,
     },
     ...options,
   };

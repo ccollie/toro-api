@@ -1,17 +1,13 @@
 import { StatsRateQueryInputTC } from './types';
 import { aggregateRates, getClient } from './utils';
 import { MeterTC } from './MeterTC';
-import {
-  MeterSummary,
-  StatsGranularity,
-  StatsRateType,
-} from '../../../../types';
+import { MeterSummary, StatsGranularity, StatsRateType } from '@src/types';
 import { FieldConfig } from '../';
 import { Queue } from 'bullmq';
 import { getStatsListener } from '../../helpers';
 import { QueueStats } from '../../../stats';
 import boom from '@hapi/boom';
-import { HostManager } from '../../../hosts';
+import { HostManager } from '@server/hosts';
 
 export function getQueueRatesResolver(type: StatsRateType): FieldConfig {
   function getInstantRate(queue: Queue, jobName?: string) {
@@ -64,6 +60,7 @@ export function getHostRatesResolver(type: StatsRateType): FieldConfig {
 
   return {
     type: MeterTC.NonNull,
+    // eslint-disable-next-line max-len
     description: `Gets the current job ${type} rates for a host based on an exponential moving average`,
     args: {
       input: StatsRateQueryInputTC,

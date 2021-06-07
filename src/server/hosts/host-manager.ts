@@ -38,7 +38,7 @@ import {
   getHostConfig,
   removeQueueConfig,
 } from './host-config';
-import { getHostBusKey, getHostKey, getLockKey } from '../lib/keys';
+import { getHostBusKey, getHostKey, getLockKey } from '@lib/keys';
 import { Channel, NotificationManager } from '../notifications';
 import { getHostUri } from '../lib';
 

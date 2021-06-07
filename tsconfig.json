@@ -1,43 +1,49 @@
 {
   "compilerOptions": {
     "incremental": true,
-    "noEmit": true,
-    /* Basic Options */
-    "target": "es2019",                       /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017','ES2018' or 'ESNEXT'. */
-    "module": "commonjs",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
+    "target": "es2019",
+    "module": "commonjs",
     "lib": [
       "es2020",
       "esnext",
       "dom",
       "es6"
-    ],                 /* Specify library files to be included in the compilation. */
-    "allowJs": true,                          /* Allow javascript files to be compiled. */
-    "checkJs": false,                         /* Report errors in .js files. */
-    "declaration": true,                      /* Generates corresponding '.d.ts' file. */
-    "declarationDir": "./dist",               /* Output directory for generated declaration files. */
-    "sourceMap": true,                        /* Generates corresponding '.map' file. */
-    "outDir": "./dist/",                      /* Redirect output structure to the directory. */
-    "importHelpers": true,                    /* Import emit helpers from 'tslib'. */
-    "diagnostics": true,                      /* Show diagnostic information */
+    ],
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": true,
+    "declarationDir": "./dist",
+    "sourceMap": true,
+    "outDir": "./dist/",
+    "importHelpers": true,
+    "diagnostics": true,
+    "strict": false,
+    "alwaysStrict": true,
 
-    /* Strict Type-Checking Options */
-    "strict": false,                          /* Enable all strict type-checking options. */
-    "alwaysStrict": true,                     /* Parse in strict mode and emit "use strict" for each source file. */
-
-    /* Module Resolution Options */
-    "moduleResolution": "node",               /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */
-    "baseUrl": "./",                          /* Base directory to resolve non-absolute module names. */
-    "paths": {                                /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
       "@src/*": ["src/*"],
+      "@server/*": ["src/server/*"],
+      "@resolvers/*": ["src/server/resolvers/*"],
+      "@lib/*": ["src/server/lib/*"],
+      "@types/*": ["src/types/*"],
       "@tests/*": ["__tests__/*"],
       "tslib" : ["node_modules/tslib/tslib.d.ts"]
     },
-    /* List of root folders whose combined content represents the structure of the project at runtime. */
+    // Note: In order to transform *both* js and d.ts files, you need to add both of the below lines to plugins
+    "plugins": [
+      // Transform paths in output .js files
+      { "transform": "typescript-transform-paths" },
+
+      // Transform paths in output .d.ts files (Include this line if you output declarations files)
+      { "transform": "typescript-transform-paths", "afterDeclarations": true }
+    ],
     "rootDirs": [
       "src/server"
     ],
-    "allowSyntheticDefaultImports": true,  /* Allow default imports from modules with no default export. This does not affect code emit, just typechecking. */
-    "esModuleInterop": true,                  /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
   },
   "include": [
     "./src/**/*.ts",

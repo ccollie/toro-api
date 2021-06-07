@@ -13,8 +13,8 @@ import {
   validateJobOptions,
   validateBySchema,
   validateJobData,
-} from '../../../src/server/queues';
-import { getJobSchemaKey } from '../../../src/server/lib';
+} from '@src/server/queues';
+import { getJobSchemaKey } from '@src/server/lib';
 
 describe('jobSchema', function () {
   let queue, queueName, client;
@@ -87,7 +87,7 @@ describe('jobSchema', function () {
     it('it should throw for invalid options', () => {
       // Typescript catches dev errors, but we'll be getting this info as a JSON
       // blob from the client, so we force the cast to test
-      const opts = (invalidJobOption as any) as JobsOptions;
+      const opts = invalidJobOption as any as JobsOptions;
       expect(() => validateJobOptions(opts)).toThrow();
     });
   });
@@ -339,7 +339,7 @@ describe('jobSchema', function () {
       const input = { name: 'valid_name', value: 'valid value' };
       // Typescript catches dev errors, but we'll be getting this info as a JSON
       // blob from the client, so we force the cast to test
-      const opts = (invalidJobOption as any) as JobsOptions;
+      const opts = invalidJobOption as any as JobsOptions;
       expect(() => validateBySchema('test', schema, input, opts)).toThrow();
     });
   });
@@ -362,7 +362,7 @@ describe('jobSchema', function () {
       const data = { name: 'name', value: 'test_value' };
       // Typescript catches dev errors, but we'll be getting this info as a JSON
       // blob from the client, so we force the cast to test
-      const opts = (invalidJobOption as any) as JobsOptions;
+      const opts = invalidJobOption as any as JobsOptions;
       await expect(
         validateJobData(queue, 'test', data, opts),
       ).rejects.toThrow();

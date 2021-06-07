@@ -1,9 +1,9 @@
 import boom from '@hapi/boom';
-import { MailChannelConfig, NotificationContext } from '../../../types';
 import { Channel } from '../channel';
-import { sendMail } from '../../lib/mail';
+import { sendMail } from '@lib/mail';
 import { validateEmail } from '../../lib';
 import { getMessage } from './templates';
+import { MailChannelConfig, NotificationContext } from '@src/types';
 
 export class MailChannel extends Channel<MailChannelConfig> {
   constructor(options: MailChannelConfig) {

@@ -1,13 +1,13 @@
 'use strict';
 import boom from '@hapi/boom';
 import handlebars from 'handlebars';
-import { NotificationContext } from '../../../../types';
+import { NotificationContext } from '@src/types';
 import mjml2html from 'mjml';
 import path from 'path';
 import fs from 'fs';
 import { getTitle } from '../../utils';
 import Mail from 'nodemailer/lib/mailer';
-import { logger, markdownToHtml, systemClock } from '../../../lib';
+import { logger, markdownToHtml, systemClock } from '@src/server/lib';
 import { handlebarsHelpers } from './helpers';
 
 type TemplateFn = handlebars.TemplateDelegate<any>;

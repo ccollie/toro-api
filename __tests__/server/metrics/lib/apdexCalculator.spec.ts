@@ -1,6 +1,6 @@
 import random from 'lodash/random';
 import unirand from 'unirand';
-import { ApdexCalculator } from '../../../../src/server/stats';
+import { ApdexCalculator } from '@src/server/stats';
 
 describe('ApdexCalculator', () => {
   it('calculates the apdex score', () => {

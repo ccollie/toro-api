@@ -25,6 +25,7 @@ export type JobCounts = Record<JobCountStates, number>;
 
 export interface AppJob {
   id: string;
+  parentKey?: string;
   timestamp: number;
   /** The timestamp at which a worker started processing the job */
   processedOn: number | null;

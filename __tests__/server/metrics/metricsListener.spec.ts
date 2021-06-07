@@ -6,8 +6,8 @@ import {
   JobRateMetric,
   LatencyMetric,
   MetricsListener,
-} from '../../../src/server/metrics';
-import { QueueListener } from '../../../src/server/queues';
+} from '@src/server/metrics';
+import { QueueListener } from '@src/server/queues';
 import { QueueListenerHelper, createQueueListener } from '../../factories';
 import { delay } from '../utils';
 
@@ -126,7 +126,7 @@ describe('MetricsListener', () => {
         interval,
       });
       sut.registerMetric(metric);
-      let ts = Date.now();
+      const ts = Date.now();
       await helper.postFinishedEvent(true, {
         ts,
       });
@@ -134,8 +134,9 @@ describe('MetricsListener', () => {
 
       const updateSpy = jest.spyOn(metric, 'checkUpdate');
 
-      let rate = metric.value;
-      const newTs = ts + interval + 1;
+      const rate = metric.value;
+      const timerInterval = sut.calcTimerInterval();
+      const newTs = ts + timerInterval + 1;
       // Fast-forward until all timers have been executed
       // jest.advanceTimersByTime(interval + 10);
       await helper.postCompletedEvent({

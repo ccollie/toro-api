@@ -5,7 +5,7 @@ import {
   MetricCategory,
   MetricValueType,
   MetricTypes,
-  PollingMetricOptions,
+  MetricOptions,
 } from '../../types/metrics';
 import { RedisClient } from 'bullmq';
 
@@ -13,13 +13,9 @@ export class RedisMetric extends PollingMetric {
   private client: Promise<RedisClient>;
   private readonly fieldName: string;
 
-  constructor(options: PollingMetricOptions, fieldName: string) {
+  constructor(options: MetricOptions, fieldName: string) {
     super(options);
     this.fieldName = fieldName;
-  }
-
-  get interval(): number {
-    return (this.options as PollingMetricOptions).interval;
   }
 
   async checkUpdate(): Promise<void> {
@@ -50,7 +46,7 @@ export class RedisMetric extends PollingMetric {
 }
 
 export class UsedMemoryMetric extends RedisMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, 'used_memory_rss');
   }
 
@@ -68,7 +64,7 @@ export class UsedMemoryMetric extends RedisMetric {
 }
 
 export class ConnectedClientsMetric extends RedisMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, 'connected_clients');
   }
 
@@ -86,7 +82,7 @@ export class ConnectedClientsMetric extends RedisMetric {
 }
 
 export class PeakMemoryMetric extends RedisMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, 'used_memory_peak');
   }
 
@@ -104,7 +100,7 @@ export class PeakMemoryMetric extends RedisMetric {
 }
 
 export class FragmentationRatioMetric extends RedisMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, 'mem_fragmentation_ratio');
   }
 
@@ -122,7 +118,7 @@ export class FragmentationRatioMetric extends RedisMetric {
 }
 
 export class InstantaneousOpsMetric extends RedisMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, 'instantaneous_ops_per_sec');
   }
 

@@ -3,7 +3,7 @@ import {
   KeyspaceNotification,
   KeyspaceNotificationType,
   KeyspaceNotifier,
-} from '../../../src/server/redis';
+} from '@src/server/redis';
 import {
   clearDb,
   createClient,

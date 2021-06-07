@@ -1,19 +1,19 @@
-import { ConnectedClientsMetric } from '../../../src/server/metrics';
+import { ConnectedClientsMetric } from '@src/server/metrics';
 import { delay } from '../utils';
 import { MetricTestHelper } from './metricTestHelper';
-import { getRedisInfo } from '../../../src/server/redis';
-import { PollingMetricOptions } from '../../../src/types';
+import { getRedisInfo } from '@src/server/redis';
+import { MetricOptions } from '@src/types';
 
 describe('ConnectedClientsMetric', () => {
   describe('constructor', () => {
     it('constructs a ConnectedClientsMetric', () => {
-      const options: PollingMetricOptions = {
-        interval: 250,
+      const options: MetricOptions = {
+        sampleInterval: 250,
       };
       const sut = new ConnectedClientsMetric(options);
       expect(sut).toBeDefined();
       expect(sut.id).toBeDefined();
-      expect(sut.interval).toBe(options.interval);
+      expect(sut.sampleInterval).toBe(options.sampleInterval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
@@ -23,8 +23,8 @@ describe('ConnectedClientsMetric', () => {
   describe('.checkUpdate', () => {
     it('updates the value at the given interval', async () => {
       const interval = 50;
-      const options: PollingMetricOptions = {
-        interval,
+      const options: MetricOptions = {
+        sampleInterval: 50,
       };
       const sut = new ConnectedClientsMetric(options);
       const helper = MetricTestHelper.forMetric(sut);

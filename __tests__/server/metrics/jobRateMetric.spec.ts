@@ -7,7 +7,7 @@ import {
   RateMetricOptions,
   DefaultRateMetricOptions,
   Events,
-} from '../../../src/server/metrics';
+} from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRandomNumberArray } from './helpers';
 
@@ -15,7 +15,7 @@ const EVENT_NAME = Events.FINISHED;
 
 describe('JobRateMetric', () => {
   let helper: MetricTestHelper;
-  let defaultOptions: RateMetricOptions = DefaultRateMetricOptions;
+  const defaultOptions: RateMetricOptions = DefaultRateMetricOptions;
 
   afterEach(async () => {
     if (helper) {

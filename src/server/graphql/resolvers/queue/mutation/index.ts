@@ -11,6 +11,3 @@ export { queueJobSchemaDelete } from './queueJobSchemaDelete';
 export { queueJobFilterDelete } from './queueJobFilterDelete';
 export { queueJobFilterUpdate } from './queueJobFilterUpdate';
 export { queueStatsDelete } from './queueStatsDelete';
-export { queueMetricCreate } from './queueMetricCreate';
-export { queueMetricDelete } from './queueMetricDelete';
-export { queueMetricUpdate } from './queueMetricUpdate';

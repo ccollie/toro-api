@@ -4,22 +4,22 @@ import {
   PeakConditionEvaluator,
   RuleEvaluator,
   ThresholdConditionEvaluator,
-} from '../../../src/server/rules';
+} from '@src/server/rules';
 import { delay, randomString } from '../utils';
 import {
   BaseMetric,
   LatencyMetric,
   MetricsListener,
   P90Aggregator,
-} from '../../../src/server/metrics';
+} from '@src/server/metrics';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
   RuleConfigOptions,
   RuleOperator,
   RuleType,
-} from '../../../src/types';
-import { QueueListener } from '../../../src/server/queues';
+} from '@src/types';
+import { QueueListener } from '@src/server/queues';
 import {
   QueueListenerHelper,
   clearDb,
@@ -107,9 +107,9 @@ describe('RuleEvaluator', () => {
           changeType: ChangeTypeEnum.CHANGE,
           timeShift: 1000,
           windowSize: 10000,
-          aggregationType: ChangeAggregationType.Avg,
+          aggregationType: ChangeAggregationType.AVG,
           errorThreshold: 20,
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
         },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(ChangeConditionEvaluator);
@@ -120,9 +120,9 @@ describe('RuleEvaluator', () => {
           changeType: ChangeTypeEnum.CHANGE,
           timeShift: 1000,
           windowSize: 10000,
-          aggregationType: ChangeAggregationType.Avg,
+          aggregationType: ChangeAggregationType.AVG,
           errorThreshold: 20,
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
         },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(ChangeConditionEvaluator);
@@ -131,7 +131,7 @@ describe('RuleEvaluator', () => {
         condition: {
           type: RuleType.PEAK,
           errorThreshold: 3.5,
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
         },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(PeakConditionEvaluator);
@@ -140,7 +140,7 @@ describe('RuleEvaluator', () => {
         condition: {
           type: RuleType.THRESHOLD,
           errorThreshold: 20,
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
         },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(ThresholdConditionEvaluator);

@@ -1,5 +1,5 @@
-import { MovingAverage as MA } from '../../../src/server/stats/moving-average';
-import { ManualClock } from '../../../src/server/lib';
+import { MovingAverage as MA } from '@src/server/stats/moving-average';
+import { ManualClock } from '@src/server/lib';
 
 describe('MovingAverage', () => {
   const clock = new ManualClock();

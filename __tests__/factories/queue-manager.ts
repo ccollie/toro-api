@@ -1,12 +1,15 @@
 import { createQueue } from './queue';
-import { QueueConfig } from '../../src/types';
+import { QueueConfig } from '@src/types';
 import { nanoid } from 'nanoid';
-import { QueueManager } from '../../src/server/queues';
-import { HostManager } from '../../src/server/hosts';
+import { QueueManager } from '@src/server/queues';
+import { HostManager } from '@src/server/hosts';
 import { Queue } from 'bullmq';
 import { createHostManager } from './host-manager';
 
-export function createQueueManager(queue?: Queue, host?: HostManager) {
+export function createQueueManager(
+  queue?: Queue,
+  host?: HostManager,
+): QueueManager {
   host = host ?? createHostManager();
   queue =
     queue ??

@@ -1,11 +1,6 @@
 /* eslint-env mocha */
-import { ManualClock, systemClock } from '../../../../src/server/lib';
-import {
-  Meter,
-  MeterProperties,
-  SECONDS,
-  TimeUnit,
-} from '../../../../src/server/stats';
+import { ManualClock, systemClock } from '@src/server/lib';
+import { Meter, MeterProperties, SECONDS, TimeUnit } from '@src/server/stats';
 
 describe('Meter', () => {
   let clock: ManualClock;

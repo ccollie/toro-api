@@ -1,5 +1,5 @@
-import { NotificationContext } from '../../../src/types';
-import config, { getValue } from '../../../src/server/config';
+import { NotificationContext } from '@src/types';
+import config, { getValue } from '@src/server/config';
 import { nanoid } from 'nanoid';
 
 export function createNotificationContext(): NotificationContext {

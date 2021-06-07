@@ -280,7 +280,7 @@ export function fromStreamId(id: string): Date {
 export function roundDate(
   time: DateLike,
   precision: number,
-  direction = 'down',
+  direction: 'up' | 'down' = 'down',
 ): number {
   time = toDate(time);
   if (direction === 'down') {

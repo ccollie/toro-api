@@ -1,5 +1,5 @@
-import { systemClock, ManualClock } from '../../../../src/server/lib';
-import { SlidingWindowCounter } from '../../../../src/server/metrics';
+import { systemClock, ManualClock } from '@src/server/lib';
+import { SlidingWindowCounter } from '@src/server/metrics';
 
 describe('SlidingWindowCounter', () => {
   describe('Constructor', () => {

@@ -1,7 +1,7 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
 import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
-import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
 
 export class StandardDeviationAggregator extends StatsBasedAggregator {
   constructor(clock: Clock, window: SlidingWindowOptions) {

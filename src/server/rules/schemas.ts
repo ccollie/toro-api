@@ -14,7 +14,7 @@ import {
 export const ruleAlertOptionsSchema = Joi.object().keys({
   warmupWindow: DurationSchema.optional(),
   recoveryWindow: DurationSchema.optional().default(0),
-  maxAlertsPerEvent: Joi.number().integer().positive().optional().default(0),
+  maxAlertsPerEvent: Joi.number().integer().positive().optional().default(1),
   alertOnReset: Joi.boolean().optional().default(true),
   notifyInterval: DurationSchema.optional(),
   failureThreshold: Joi.number().integer().positive().optional().default(1),
@@ -29,12 +29,12 @@ export const notificationThresholdSchema = Joi.object().keys({
 export const thresholdConditionSchema = notificationThresholdSchema.keys({
   type: Joi.string().required().valid(RuleType.THRESHOLD),
   operator: Joi.string().valid(
-    RuleOperator.eq,
-    RuleOperator.ne,
-    RuleOperator.gt,
-    RuleOperator.gte,
-    RuleOperator.lt,
-    RuleOperator.lte,
+    RuleOperator.EQ,
+    RuleOperator.NE,
+    RuleOperator.GT,
+    RuleOperator.GTE,
+    RuleOperator.LT,
+    RuleOperator.LTE,
   ),
 });
 
@@ -54,25 +54,25 @@ export const peakConditionSchema = thresholdConditionSchema.keys({
       PeakSignalDirection.BELOW,
     )
     .default(PeakSignalDirection.BOTH),
-  measurement: Joi.string().optional().valid('count', 'percent'),
+  changeType: Joi.string().optional().valid('count', 'percent'),
 });
 
 export const changeConditionSchema = thresholdConditionSchema.keys({
   type: Joi.string().required().valid(RuleType.CHANGE),
   changeType: Joi.string().valid('PCT', 'CHANGE').default('CHANGE'),
-  timeWindow: DurationSchema,
+  windowSize: DurationSchema,
   timeShift: DurationSchema,
   aggregationType: Joi.string()
     .valid(
-      ChangeAggregationType.Avg,
-      ChangeAggregationType.Min,
-      ChangeAggregationType.Max,
+      ChangeAggregationType.AVG,
+      ChangeAggregationType.MIN,
+      ChangeAggregationType.MAX,
       ChangeAggregationType.P90,
       ChangeAggregationType.P95,
       ChangeAggregationType.P99,
-      ChangeAggregationType.Sum,
+      ChangeAggregationType.SUM,
     )
-    .default(ChangeAggregationType.Avg),
+    .default(ChangeAggregationType.AVG),
 });
 
 export const serializedAggregatorSchema = Joi.object().keys({
@@ -110,12 +110,14 @@ export const ruleConfigSchema = Joi.object().keys({
   name: Joi.string().required(),
   state: Joi.string()
     .optional()
+    .valid(...Object.values(RuleState))
     .valid(
       RuleState.WARNING,
       RuleState.MUTED,
       RuleState.NORMAL,
       RuleState.ERROR,
-    ),
+    )
+    .default(RuleState.NORMAL),
   queueId: Joi.string().optional().allow(null, ''),
   description: Joi.string().optional().allow(null, ''),
   message: Joi.string().optional().allow(null, ''),
@@ -133,6 +135,7 @@ export const ruleConfigSchema = Joi.object().keys({
     .default(Severity.WARNING),
   channels: Joi.array().items(Joi.string()).single().default([]),
   lastAlertAt: Joi.date().optional(),
+  totalFailures: Joi.number().integer().optional().default(0),
 });
 
 export function parseRuleCondition(

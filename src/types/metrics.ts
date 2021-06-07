@@ -1,58 +1,56 @@
 export enum MetricTypes {
-  None = 'None',
-  Apdex = 'Apdex',
-  ConnectedClients = 'ConnectedClients',
-  ConsecutiveFailures = 'ConsecutiveFailures',
-  Completed = 'Completed',
-  CompletedRate = 'CompletedRate',
-  ActiveJobs = 'ActiveJobs',
-  CurrentCompletedCount = 'CurrentCompletedCount',
-  DelayedJobs = 'DelayedJobs',
-  CurrentFailedCount = 'CurrentFailedCount',
-  Waiting = 'Waiting',
-  ErrorRate = 'ErrorRate',
-  ErrorPercentage = 'ErrorPercentage',
-  Failures = 'Failures',
-  Finished = 'Finished',
-  FragmentationRatio = 'FragmentationRatio',
-  JobRate = 'JobRate',
-  Latency = 'Latency',
-  UsedMemory = 'UsedMemory',
-  PeakMemory = 'PeakMemory',
-  InstantaneousOps = 'InstantaneousOps',
-  WaitTime = 'WaitTime',
+  None,
+  Apdex,
+  ActiveJobs,
+  ConnectedClients,
+  ConsecutiveFailures,
+  Completed,
+  CompletedRate,
+  CurrentCompletedCount,
+  CurrentFailedCount,
+  DelayedJobs,
+  ErrorRate,
+  ErrorPercentage,
+  Failures,
+  Finished,
+  FragmentationRatio,
+  InstantaneousOps,
+  JobRate,
+  Latency,
+  PeakMemory,
+  UsedMemory,
+  Waiting,
+  WaitTime,
 }
 
 export enum AggregatorTypes {
-  None = 'None',
-  Identity = 'Identity',
-  Ewma1Min = 'Ewma1Min',
-  Ewma5Min = 'Ewma5Min',
-  Ewma15Min = 'Ewma15Min',
-  Latest = 'Latest',
-  Min = 'Min',
-  Max = 'Max',
-  Mean = 'Mean',
-  Sum = 'Sum',
-  StdDev = 'StdDev',
-  Quantile = 'Quantile',
-  P75 = 'P75',
-  P90 = 'P90',
-  P95 = 'P95',
-  P99 = 'P99',
-  P995 = 'P995',
+  None,
+  Identity,
+  Ewma,
+  Latest,
+  Min,
+  Max,
+  Mean,
+  Sum,
+  StdDev,
+  Quantile,
+  P75,
+  P90,
+  P95,
+  P99,
+  P995,
 }
 
 export enum MetricValueType {
-  Count = 'Count',
-  Gauge = 'Gauge',
-  Rate = 'Rate',
+  Count,
+  Gauge,
+  Rate,
 }
 
 export enum MetricCategory {
-  Queue = 'Queue',
-  Host = 'Host',
-  Redis = 'Redis',
+  Queue,
+  Host,
+  Redis,
 }
 
 export interface SlidingWindowOptions {
@@ -64,18 +62,12 @@ export interface MetricsFilter {
   jobNames?: string[];
 }
 
-type MetricOptions = Record<string, any>;
+export interface MetricOptions {
+  sampleInterval?: number;
+}
 
-export interface QueueMetricOptions {
+export interface QueueMetricOptions extends MetricOptions {
   jobNames?: string[];
-}
-
-export interface PollingMetricOptions {
-  interval: number;
-}
-
-export interface QueuePollingMetricOptions extends QueueMetricOptions {
-  interval: number;
 }
 
 export enum MetricsEventsEnum {
@@ -93,7 +85,7 @@ export interface SerializedAggregator {
 }
 
 export interface SerializedMetric {
-  id: string;
+  id?: string;
   type: MetricTypes;
   name?: string;
   description?: string;

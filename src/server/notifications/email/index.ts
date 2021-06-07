@@ -3,7 +3,7 @@ import {
   MailChannelConfig,
   NotificationChannelPlugin,
   NotificationChannel,
-} from '../../../types';
+} from '@src/types/notifications';
 import { MailChannel } from './mail-channel';
 
 function createChannel(options: MailChannelConfig): NotificationChannel {

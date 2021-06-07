@@ -4,12 +4,12 @@ import {
   getQueueById,
   createSubscriptionResolver,
 } from '../../../helpers';
-import { debounce } from '../../../../lib';
+import { debounce } from '@server/lib';
 import { GraphQLFieldResolver } from 'graphql';
 import {
   getKeyspaceNotifier,
   releaseKeyspaceNotifier,
-} from '../../../../redis/keyspace-utils';
+} from '@server/redis/keyspace-utils';
 import { FieldConfig, JobTC } from '../../index';
 import { fieldsList } from 'graphql-fields-list';
 import { schemaComposer } from 'graphql-compose';

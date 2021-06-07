@@ -2,7 +2,7 @@ import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobOptionsInputTC, JobTC, FieldConfig } from '../../index';
 import boom from '@hapi/boom';
-import { createBulkJobs } from '../../../../queues';
+import { createBulkJobs } from '@server/queues';
 import { publishJobAdded } from '../subscription/onJobAdded';
 
 export const jobAddBulk: FieldConfig = {

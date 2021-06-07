@@ -1,6 +1,6 @@
 import { Channel } from './channel';
 import { ChannelStorage, ChannelEvents } from './channel-storage';
-import { NotificationChannel } from '../../types';
+import { NotificationChannel } from '@src/types';
 import { MailChannel } from './email';
 import { WebhookChannel } from './webhook';
 import { SlackChannel } from './slack';

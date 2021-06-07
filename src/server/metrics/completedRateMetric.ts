@@ -1,6 +1,6 @@
 import { Events } from './constants';
 import { RateMetric } from './rateMetric';
-import { MetricTypes } from '../../types';
+import { MetricTypes } from '@src/types';
 
 export class CompletedRateMetric extends RateMetric {
   get validEvents(): string[] {

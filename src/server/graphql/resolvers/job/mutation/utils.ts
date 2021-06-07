@@ -1,15 +1,12 @@
 import boom from '@hapi/boom';
-import {
-  bulkJobHandler,
-  createJob,
-  JobCreationOptions,
-} from '../../../imports';
 import { isString } from 'lodash';
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig, QueueTC } from '../../index';
 import { Job, Queue } from 'bullmq';
 import { publishJobAdded } from '../subscription/onJobAdded';
+import { JobCreationOptions } from '@src/types';
+import { bulkJobHandler, createJob } from '@server/queues';
 
 export async function addJob(
   queue: Queue,

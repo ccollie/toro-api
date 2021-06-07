@@ -10,8 +10,6 @@ export const onJobProgress: FieldConfig = {
     fields: {
       job: JobTC.NonNull,
       queue: QueueTC.NonNull,
-      queueId: 'String!',
-      jobId: 'String!',
       progress: JobProgress,
     },
   }).NonNull,
@@ -23,8 +21,6 @@ export const onJobProgress: FieldConfig = {
     const queue = getQueueById(queueId);
     const result = {
       queue,
-      queueId,
-      jobId,
       progress: parent.progress,
     };
     if (needsJob(info)) {

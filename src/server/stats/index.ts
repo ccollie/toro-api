@@ -12,4 +12,5 @@ export * from './online-normal-estimator';
 export * from './quantile-estimator';
 export * from './units';
 export * from './timer';
+export * from './percentile-distribution';
 export { QueueStats };

@@ -1,16 +1,16 @@
 import Joi, { ObjectSchema } from 'joi';
 import boom from '@hapi/boom';
 import { SimpleMeter, TimeUnit } from '../stats';
-import { pollingMetricSchema, QueuePollingMetric } from './baseMetric';
+import {
+  BaseMetricSchema,
+  QueueBasedMetricSchema,
+  QueuePollingMetric,
+} from './baseMetric';
 import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metrics-listener';
-import {
-  MetricValueType,
-  PollingMetricOptions,
-  QueueMetricOptions,
-} from '../../types';
+import { MetricValueType, QueueMetricOptions } from '../../types';
 
 /**
  * @interface RateMetricOptions
@@ -22,10 +22,9 @@ import {
  * @example
  * const meter = new RateMetric({ rateUnit: 1000, interval: 5000})
  */
-export interface RateMetricOptions
-  extends PollingMetricOptions,
-    QueueMetricOptions {
+export interface RateMetricOptions extends QueueMetricOptions {
   timePeriod: number;
+  interval: number;
   rateUnit?: TimeUnit;
 }
 
@@ -36,9 +35,17 @@ export const DefaultRateMetricOptions: RateMetricOptions = {
   interval: 5 * units.SECONDS,
 };
 
-const schema = pollingMetricSchema.append({
+const schema = BaseMetricSchema.append({
   timePeriod: DurationSchema,
   rateUnit: Joi.number().integer().default(units.MINUTES),
+});
+
+const QueueBasedRateSchema = QueueBasedMetricSchema.append({
+  timePeriod: DurationSchema,
+  rateUnit: Joi.number().integer().default(units.MINUTES),
+  interval: Joi.number()
+    .integer()
+    .default(30 * units.SECONDS),
 });
 
 export class RateMetric extends QueuePollingMetric {
@@ -91,7 +98,7 @@ export class RateMetric extends QueuePollingMetric {
   }
 
   static get schema(): ObjectSchema {
-    return schema;
+    return QueueBasedRateSchema;
   }
 
   static get type(): MetricValueType {

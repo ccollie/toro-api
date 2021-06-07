@@ -5,8 +5,8 @@ import {
   RuleMetric,
   RuleOperator,
   RuleType,
-} from '../../../src/types';
-import { Rule, RuleManager } from '../../../src/server/rules';
+} from '@src/types';
+import { Rule, RuleManager } from '@src/server/rules';
 import { HostManager, nanoid, QueueManager } from '../common';
 import {
   clearDb,
@@ -27,7 +27,7 @@ describe('Rule Message Interpolation', () => {
   const condition: RuleCondition = {
     type: RuleType.THRESHOLD,
     errorThreshold: 1000,
-    operator: RuleOperator.gt,
+    operator: RuleOperator.GT,
   };
 
   const metric: RuleMetric = {

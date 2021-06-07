@@ -1,12 +1,12 @@
-import { QueueEventsEnum as Enum } from '../../../../types';
+import { QueueEventsEnum as Enum } from '@src/types';
 import { GraphQLEnumType } from 'graphql';
 
 export const QueueEventsEnum = new GraphQLEnumType({
   name: 'QueueEventsEnum',
   values: {
-    [Enum.CLEANED]: { value: Enum.CLEANED },
-    [Enum.DRAINED]: { value: Enum.DRAINED },
-    [Enum.PAUSED]: { value: Enum.PAUSED },
-    [Enum.RESUMED]: { value: Enum.RESUMED },
+    CLEANED: { value: Enum.CLEANED },
+    DRAINED: { value: Enum.DRAINED },
+    PAUSED: { value: Enum.PAUSED },
+    RESUMED: { value: Enum.RESUMED },
   },
 });

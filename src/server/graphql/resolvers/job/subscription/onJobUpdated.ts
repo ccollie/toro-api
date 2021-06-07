@@ -8,7 +8,6 @@ const JobUpdatedPayloadTC = schemaComposer.createObjectTC({
   name: 'OnJobUpdatedPayload',
   description: 'Holds the changes to the state of a job',
   fields: {
-    jobId: 'String!',
     event: {
       type: 'String!', // todo: make an enum
       description: 'The event which triggered the update',
@@ -21,7 +20,7 @@ const JobUpdatedPayloadTC = schemaComposer.createObjectTC({
     job: JobTC,
     queue: {
       type: QueueTC.NonNull,
-      description: 'The job\'s queue',
+      description: "The job's queue",
     },
   },
 });
@@ -38,7 +37,6 @@ export const onJobUpdated: FieldConfig = {
     const result = {
       queue,
       event,
-      jobId,
       timestamp: ts,
       data: rest,
     };

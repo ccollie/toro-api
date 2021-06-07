@@ -1,9 +1,9 @@
 export const Events = {
-  FINISHED: 'job.FINISHED',
-  COMPLETED: 'job.COMPLETED',
-  FAILED: 'job.FAILED',
-  PROGRESS: 'job.PROGRESS',
-  ACTIVE: 'job.ACTIVE',
-  DELAYED: 'job.DELAYED',
-  STALLED: 'job.STALLED',
+  FINISHED: 'job.finished',
+  COMPLETED: 'job.completed',
+  FAILED: 'job.failed',
+  PROGRESS: 'job.progress',
+  ACTIVE: 'job.active',
+  DELAYED: 'job.delayed',
+  STALLED: 'job.stalled',
 };

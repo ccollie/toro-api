@@ -1,12 +1,12 @@
 import { FieldConfig } from '../index';
-import { getClassMetadata, metricsMap } from '../../../metrics';
+import { getClassMetadata, metricsMap } from '@src/server/metrics';
 import { schemaComposer } from 'graphql-compose';
 import {
   MetricCategory as MetricCategoryTC,
   MetricValueTypeTC,
   MetricTypeTC,
-} from '../metrics';
-import { MetricInfo } from '../../imports';
+} from '../metric';
+import { MetricInfo } from '@src/types';
 
 const MetricsInfoTC = schemaComposer.createObjectTC({
   name: 'MetricInfo',
@@ -26,8 +26,10 @@ const MetricsInfoTC = schemaComposer.createObjectTC({
 
 export const availableMetrics: FieldConfig = {
   type: MetricsInfoTC.NonNull.List.NonNull,
-  description: 'Get the list of metrics available',
+  description: 'Get the list of available metric types',
   resolve(): MetricInfo[] {
-    return Array.from(metricsMap.values()).map(getClassMetadata);
+    return Object.values(metricsMap)
+      .filter((x) => !!x)
+      .map(getClassMetadata);
   },
 };

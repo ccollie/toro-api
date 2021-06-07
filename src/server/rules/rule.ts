@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
 import { clone, isNil, isString } from 'lodash';
-import { parseTimestamp } from '../lib/datetime';
+import { parseTimestamp } from '@lib/datetime';
 import { systemClock } from '../lib';
 import {
   ruleAlertOptionsSchema,
@@ -12,7 +12,6 @@ import {
   RuleCondition,
   RuleConfigOptions,
   RuleState,
-  SerializedMetric,
   Severity,
 } from '../../types';
 
@@ -46,6 +45,7 @@ export class Rule {
   public payload: Record<string, any>;
   public severity: Severity;
   public lastTriggeredAt?: number;
+  public totalFailures = 0;
 
   /**
    * Constructs a {@link Rule}. A Rule sets conditions for actions based
@@ -70,6 +70,8 @@ export class Rule {
       description,
       state,
       lastTriggeredAt,
+      queueId,
+      totalFailures = 0,
     } = opts;
 
     /**
@@ -77,9 +79,12 @@ export class Rule {
      */
     this.id = id;
     this.state = state ?? RuleState.NORMAL;
+    this.queueId = queueId;
+    this.totalFailures = totalFailures;
+
     this.options = {
       notifyInterval: 0,
-      maxAlertsPerEvent: 0,
+      maxAlertsPerEvent: 1,
       ...config.options,
     };
 
@@ -200,6 +205,7 @@ export class Rule {
       channels: [...this.channels],
       severity: this.severity,
       state: this.state,
+      totalFailures: this.totalFailures,
       lastTriggeredAt: this.lastTriggeredAt,
     };
   }

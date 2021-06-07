@@ -1,8 +1,8 @@
-import { RuleManager } from '../../src/server/rules';
+import { RuleManager } from '@src/server/rules';
 import { randomString } from '../server/utils';
-import { QueueConfig } from '../../src/types';
+import { QueueConfig } from '@src/types';
 import { createHostManager } from './host-manager';
-import { HostManager } from '../../src/server/hosts';
+import { HostManager } from '@src/server/hosts';
 
 export async function createRuleManager(
   host?: HostManager,
@@ -14,10 +14,9 @@ export async function createRuleManager(
   };
 
   if (!host) {
-    const hostManager = createHostManager({
+    host = createHostManager({
       queues: [queueConfig],
     });
-    host = hostManager;
   }
 
   await host.waitUntilReady();

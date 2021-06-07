@@ -2,7 +2,7 @@ import {
   convertToRPN,
   parse,
   toInfix,
-} from '../../../../src/server/lib/expressions/parse';
+} from '@src/server/lib/expressions/parse';
 
 describe('Expressions', () => {
   describe('parse', () => {

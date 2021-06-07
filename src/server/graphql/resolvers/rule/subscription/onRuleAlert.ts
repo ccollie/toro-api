@@ -1,9 +1,8 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { RuleAlert } from '../../../../../types';
+import { RuleAlert } from '@src/types';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getRuleManager } from '../../../helpers';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSubscriptionResolver, getRuleManager } from '../../../helpers';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_: unknown, { input }): string {

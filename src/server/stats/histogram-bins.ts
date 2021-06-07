@@ -2,7 +2,7 @@
 'use strict';
 import { decodeFromCompressedBase64, JsHistogram } from 'hdr-histogram-js';
 import RecordedValuesIterator from 'hdr-histogram-js/dist/RecordedValuesIterator';
-import { StatisticalSnapshot } from '../../types';
+import { StatisticalSnapshot } from '@src/types';
 
 export enum HistogramBinningMethod {
   Auto = 'Auto',

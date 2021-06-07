@@ -1,11 +1,12 @@
 import { Queue } from 'bullmq';
 import boom from '@hapi/boom';
-import { HostManager } from '../../../../hosts';
-import { QueueConfig } from '../../../../../types';
+import { HostManager } from '@server/hosts';
+import { QueueConfig } from '@src/types';
 import { getHostById } from '../../../helpers';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { QUEUE_REGISTERED_PREFIX } from '../../../helpers';
+import { RegisterQueueInput } from '@src/server/graphql/typings';
 
 async function queueExists(
   host: HostManager,
@@ -59,7 +60,11 @@ export const queueRegister: FieldConfig = {
       },
     }),
   },
-  async resolve(_: unknown, { input }, { publish }): Promise<Queue> {
+  async resolve(
+    _: unknown,
+    { input }: { input: RegisterQueueInput },
+    { publish },
+  ): Promise<Queue> {
     const {
       hostId,
       prefix = 'bull',

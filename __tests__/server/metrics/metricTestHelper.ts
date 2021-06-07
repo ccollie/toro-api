@@ -1,10 +1,10 @@
-import { BaseMetric, MetricsListener } from '../../../src/server/metrics';
+import { BaseMetric, MetricsListener } from '@src/server/metrics';
 import { createQueueListener, QueueListenerHelper } from '../../factories';
-import { QueueListener } from '../../../src/server/queues';
+import { QueueListener } from '@src/server/queues';
 import { UnsubscribeFn } from 'emittery';
 import { Queue, RedisClient } from 'bullmq';
-import { Clock } from '../../../src/server/lib';
-import { MetricTypes } from '../../../src/types';
+import { Clock } from '@src/server/lib';
+import { MetricTypes } from '@src/types';
 const BASE_UNIT = 'base_unit';
 const BASE_DESCRIPTION = 'base_description';
 

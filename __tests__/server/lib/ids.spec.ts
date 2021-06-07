@@ -1,4 +1,4 @@
-import { getTimestampFromId, getUniqueId } from '../../../src/server/lib';
+import { getTimestampFromId, getUniqueId } from '@src/server/lib';
 import { uniq } from 'lodash';
 
 describe('ids', () => {
@@ -21,7 +21,7 @@ describe('ids', () => {
       }
       const unique = uniq(generated);
       expect(unique.length).toBe(generated.length);
-    })
+    });
   });
 
   describe('getTimestampFromId', () => {

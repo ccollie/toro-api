@@ -1,10 +1,8 @@
 import { get } from 'lodash';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, graphql } from 'graphql';
-
+import { GraphQLJSONSchema } from '@src/server/graphql/resolvers/scalars';
+import { JobOptionsSchema } from '@src/server/queues';
 // eslint-disable-next-line import/no-named-as-default
-import { GraphQLJSONSchema } from '../../../../src/server/graphql/resolvers/scalars';
-import { JobsOptionsSchema } from '../../../../src/server/queues';
-
 const INVALID_SCHEMA = {
   type: 'object',
   properties: {
@@ -14,7 +12,7 @@ const INVALID_SCHEMA = {
   additionalProperties: false,
 };
 
-const FIXTURE = JobsOptionsSchema;
+const FIXTURE = JobOptionsSchema;
 
 function createSchema(type) {
   return new GraphQLSchema({
@@ -107,7 +105,7 @@ describe('GraphQLJSONSchema', () => {
       graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JSONSchema!) {
+          query ($arg: JSONSchema!) {
             value(arg: $arg)
           }
         `,
@@ -125,7 +123,7 @@ describe('GraphQLJSONSchema', () => {
       graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JSONSchema!) {
+          query ($arg: JSONSchema!) {
             value(arg: $arg)
           }
         `,
@@ -145,7 +143,7 @@ describe('GraphQLJSONSchema', () => {
       graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JSONSchema!) {
+          query ($arg: JSONSchema!) {
             value(arg: $arg)
           }
         `,
@@ -167,7 +165,7 @@ describe('GraphQLJSONSchema', () => {
       graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JSONSchema!) {
+          query ($arg: JSONSchema!) {
             value(arg: $arg)
           }
         `,

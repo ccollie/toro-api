@@ -1,7 +1,7 @@
 import { random } from 'lodash';
-import { FinishedCountMetric, Events } from '../../../src/server/metrics';
+import { FinishedCountMetric, Events } from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
-import { QueueMetricOptions } from '../../../src/types';
+import { QueueMetricOptions } from '@src/types';
 
 describe('FinishedCountMetric', () => {
   let testHelper: MetricTestHelper;

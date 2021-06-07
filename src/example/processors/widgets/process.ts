@@ -3,7 +3,7 @@ import { Job } from 'bullmq';
 import ms from 'ms';
 import { chooseGerund } from './utils';
 import { getCatastrophe } from './errors';
-import { getLatencies } from '../latencies';
+import { gaussianBM } from '../latencies';
 import { getRandDistArray, getRandomString, sleep } from '../utils';
 
 const options = {
@@ -12,12 +12,14 @@ const options = {
   mean: ms('0.5 mins'),
 };
 
-const latencies = getLatencies(options);
+function getRuntime(): number {
+  return gaussianBM(options.min, options.max);
+}
 
 export const process = async (job: Job): Promise<any> => {
   const { data, id } = job;
   const { product, parts, orderNumber, queue } = data;
-  const makeTime = Math.floor((<any>latencies.next()).value);
+  const makeTime = Math.floor(getRuntime());
 
   const logMsg = `${queue} #${orderNumber}: ${product} materializing for ${ms(
     makeTime,

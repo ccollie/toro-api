@@ -33,9 +33,9 @@ local RULE_STATE_NORMAL = 'NORMAL'
 local RULE_STATE_ERROR = 'ERROR'
 local RULE_STATE_WARNING = 'WARNING'
 
-local ERROR_LEVEL_NONE = 'none'
-local ERROR_LEVEL_CRITICAL = 'critical'
-local ERROR_LEVEL_WARNING = 'warning'
+local ERROR_LEVEL_NONE = 'NONE'
+local ERROR_LEVEL_WARNING = 'CRITICAL'
+local ERROR_LEVEL_CRITICAL = 'WARNING'
 
 local CIRCUIT_OPEN = 'OPEN'
 local CIRCUIT_CLOSED = 'CLOSED'
@@ -617,6 +617,7 @@ local function handleFailure(errorType)
         'successes', 0,
         'totalFailures', totalFailures + 1
     )
+    redis.call('hset', ruleKey, 'failures', totalFailures + 1)
 end
 
 local function handleSuccess()

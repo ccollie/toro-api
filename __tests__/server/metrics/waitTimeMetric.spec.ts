@@ -4,7 +4,7 @@ import {
   Events,
   QueueMetricOptions,
   WaitTimeMetric,
-} from '../../../src/server/metrics';
+} from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
 
 const EVENT_NAME = Events.FINISHED;

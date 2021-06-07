@@ -9,7 +9,6 @@ export const onJobDelayed: FieldConfig = {
       job: JobTC,
       queue: QueueTC.NonNull,
       jobId: 'String!',
-      queueName: 'String!',
       delay: 'Int',
     },
   }).NonNull,
@@ -27,7 +26,6 @@ export const onJobDelayed: FieldConfig = {
       job,
       queue,
       jobId,
-      queueName: queue.name,
       delay: parseInt(delay),
     };
   },

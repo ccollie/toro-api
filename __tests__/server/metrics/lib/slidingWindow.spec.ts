@@ -1,7 +1,7 @@
 /* global test, expect */
 import { random } from 'lodash';
-import { systemClock, ManualClock } from '../../../../src/server/lib';
-import { SlidingTimeWindow } from '../../../../src/server/stats';
+import { systemClock, ManualClock } from '@src/server/lib';
+import { SlidingTimeWindow } from '@src/server/stats';
 
 const defaultWindowSize = 30000;
 

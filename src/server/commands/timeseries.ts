@@ -1,9 +1,8 @@
 import { Pipeline } from 'ioredis';
-import { DateLike, parseTimestamp, roundDown, roundUp } from '../lib/datetime';
+import { DateLike, parseTimestamp, roundDown, roundUp } from '@lib/datetime';
 import toDate from 'date-fns/toDate';
-import isNumber from 'lodash/isNumber';
 import isDate from 'lodash/isDate';
-import { Timespan } from '../../types';
+import { Timespan } from '@src/types';
 import { systemClock } from '../lib';
 import { deserializePipeline } from '../redis';
 import { RedisClient } from 'bullmq';
@@ -103,9 +102,9 @@ function parseRangeParameters(
   count?: number,
 ): string[] {
   const args = [stringifyTimestamp(start), stringifyData(end)];
-  if (isNumber(offset)) {
+  if (typeof offset === 'number') {
     args.push('LIMIT', offset.toString(10));
-    if (isNumber(count)) {
+    if (typeof count === 'number') {
       args.push(count.toString(10));
     }
   }

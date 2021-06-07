@@ -3,7 +3,7 @@ import { createSubscriptionResolver, getQueueManager } from '../../../helpers';
 import boom from '@hapi/boom';
 import { FieldConfig } from '@src/server/graphql/resolvers';
 import { schemaComposer } from 'graphql-compose';
-import { TimeseriesDataPoint } from '../../../../../types';
+import { TimeseriesDataPoint } from '@src/types';
 
 export type MetricsInput = {
   queueId: string;

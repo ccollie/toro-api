@@ -2,9 +2,9 @@ import { FieldConfig } from '../../index';
 import {
   WebhookNotificationChannelTC,
   WebhookNotificationChannelInputTC,
-} from '../scalars';
+} from '../scalars/notifications';
 import { addChannel } from './utils';
-import { WebhookChannel } from '../../../../notifications';
+import { WebhookChannel } from '@server/notifications';
 import { schemaComposer } from 'graphql-compose';
 
 const WebhookNotificationChannelAddInput = schemaComposer.createInputTC({

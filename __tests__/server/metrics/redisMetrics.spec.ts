@@ -1,14 +1,14 @@
-import { RedisMetric } from '../../../src/server/metrics/redisMetrics';
+import { RedisMetric } from '@src/server/metrics/redisMetrics';
 import { MetricTestHelper } from './metricTestHelper';
-import { getRedisInfo } from '../../../src/server/redis';
-import { PollingMetricOptions } from '../../../src/types';
+import { getRedisInfo } from '@src/server/redis';
+import { MetricOptions } from '@src/types';
 import { createQueue } from '../../factories';
 
 describe('RedisMetric', () => {
   describe('constructor', () => {
-    const sut = new RedisMetric({ interval: 100 }, 'connected_count');
+    const sut = new RedisMetric({ sampleInterval: 100 }, 'connected_count');
     expect(sut).toBeDefined();
-    expect(sut.interval).toBe(100);
+    expect(sut.sampleInterval).toBe(100);
   });
 
   describe('.checkUpdate', () => {
@@ -17,8 +17,8 @@ describe('RedisMetric', () => {
       const client = await queue.client;
 
       const interval = 8000;
-      const options: PollingMetricOptions = {
-        interval,
+      const options: MetricOptions = {
+        sampleInterval: interval,
       };
       const sut = new RedisMetric(options, 'total_system_memory');
       const helper = MetricTestHelper.forMetric(sut, queue);

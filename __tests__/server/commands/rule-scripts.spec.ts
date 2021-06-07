@@ -1,4 +1,4 @@
-import { Rule, RuleStorage } from '../../../src/server/rules';
+import { Rule, RuleStorage } from '@server/rules';
 import { delay } from '../utils';
 import { clearDb, createQueueManager, createRule } from '../../factories';
 import {
@@ -7,14 +7,14 @@ import {
   RuleConfigOptions,
   RuleEventsEnum,
   RuleState,
-} from '../../../src/types';
-import { QueueManager } from '../../../src/server/queues';
+} from '@src/types';
+import { QueueManager } from '@server/queues';
 import {
   getRuleStateKey,
   getUniqueId,
   ManualClock,
   randomString,
-} from '../../../src/server/lib';
+} from '@server/lib';
 import {
   AlertData,
   CheckAlertResult,
@@ -22,7 +22,7 @@ import {
   MarkNotifyResult,
   RuleAlertState,
   RuleScripts,
-} from '../../../src/server/commands';
+} from '@server/commands';
 import { Queue } from 'bullmq';
 import { random } from 'lodash';
 
@@ -111,7 +111,7 @@ describe('RuleScripts', () => {
     const ruleStateKey = getRuleStateKey(queue, id);
     const client = await queue.client;
     const fromRedis = await client.hgetall(ruleStateKey);
-    return (fromRedis as unknown) as RuleAlertState;
+    return fromRedis as unknown as RuleAlertState;
   }
 
   async function getState(rule: Rule): Promise<RuleAlertState> {
@@ -355,6 +355,7 @@ describe('RuleScripts', () => {
       expect(alert.message).toBe(alertData.message);
       expect(alert.failures).toBe(1);
       expect(alert.severity).toBe(rule.severity);
+      expect(alert.isRead).toBe(false);
     });
 
     it('updates the rule state', async () => {

@@ -1,9 +1,10 @@
 'use strict';
 import { getQueueById } from '../../../helpers';
-import { addJobSchema } from '../../../../queues';
+import { addJobSchema } from '@server/queues';
 import { FieldConfig, JobOptionsInputTC } from '../../index';
-import { JobSchemaTC } from '../../job/query/Job.schema';
+import { JobSchemaTC } from '../../job/model/Job.schema';
 import { schemaComposer } from 'graphql-compose';
+import { JobSchema } from '../../../typings';
 
 const JobSchemaInputTC = schemaComposer.createInputTC({
   name: 'JobSchemaInput',
@@ -21,7 +22,7 @@ export const queueJobSchemaSet: FieldConfig = {
   args: {
     input: JobSchemaInputTC.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }): Promise<JobSchema> => {
     const { queueId, jobName, schema, defaultOpts } = input;
     const queue = await getQueueById(queueId);
 

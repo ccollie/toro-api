@@ -1,7 +1,7 @@
 import boom from '@hapi/boom';
 import { GraphQLScalarType, Kind, print } from 'graphql';
-import { validateFilterExpression } from '../../../queues';
-import { safeParse } from '../../../lib';
+import { validateFilterExpression } from '@server/queues';
+import { safeParse } from '@lib/utils';
 import isObject from 'lodash/isObject';
 
 function validate(query) {

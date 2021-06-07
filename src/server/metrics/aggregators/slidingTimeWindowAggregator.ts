@@ -1,17 +1,18 @@
 import { InfiniteWindow, SlidingTimeWindow, TickEventData } from '../../stats';
 import { Clock } from '../../lib';
-import { BaseAggregator } from './aggregator';
-import { SlidingWindowOptions } from '../../../types';
+import { BaseAggregator, WindowedAggregator } from './aggregator';
+import { SlidingWindowOptions } from '@src/types';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../../validation/schemas';
 
 export const SlidingWindowOptionSchema = Joi.object().keys({
-  interval: DurationSchema.required(),
+  windowSize: DurationSchema.required(),
 });
 
-export class SlidingTimeWindowAggregator<
-  TSlice = number
-> extends BaseAggregator {
+export class SlidingTimeWindowAggregator<TSlice = number>
+  extends BaseAggregator
+  implements WindowedAggregator
+{
   protected readonly options: SlidingWindowOptions;
   protected readonly slidingWindow: SlidingTimeWindow<TSlice>;
   protected _value: number | undefined;
@@ -42,7 +43,7 @@ export class SlidingTimeWindowAggregator<
     return this.slidingWindow.interval;
   }
 
-  get duration(): number {
+  get windowSize(): number {
     return this.slidingWindow.duration;
   }
 
@@ -69,6 +70,10 @@ export class SlidingTimeWindowAggregator<
   update(value: number): number {
     this.slidingWindow.tickIfNeeded();
     return this.handleUpdate(value);
+  }
+
+  static get isWindowed(): boolean {
+    return true;
   }
 
   static get schema(): ObjectSchema {

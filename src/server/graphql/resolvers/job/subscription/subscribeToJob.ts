@@ -5,10 +5,10 @@ import { diff, isNumber, systemClock } from '../../../../lib';
 import {
   getQueueById,
   getQueueListener,
-  createSubscriptionResolver
+  createSubscriptionResolver,
 } from '../../../helpers';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
-import { AppJob, JobStatusEnum } from '../../../../../types';
+import { AppJob, JobStatusEnum } from '@src/types';
 import { fieldsList } from 'graphql-fields-list';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
@@ -86,7 +86,6 @@ const JobStateChangePayload = schemaComposer.createObjectTC({
   fields: {
     job: JobTC.NonNull,
     queue: QueueTC.NonNull,
-    jobId: 'String!',
   },
 });
 
@@ -103,7 +102,6 @@ export function createStateSubscription(state: JobStatusEnum): FieldConfig {
       const queue = getQueueById(queueId);
       const result = {
         queue,
-        jobId,
       };
       if (needsJob(info)) {
         result['job'] = await queue.getJob(jobId);

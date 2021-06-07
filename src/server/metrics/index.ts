@@ -40,36 +40,12 @@ import {
 import { createAggregator } from './aggregators';
 import { Clock, hashObject, parseBool, systemClock, titleCase } from '../lib';
 import { ApdexMetric, ApdexMetricOptions } from './apdexMetric';
-import { parseTimestamp } from '../lib/datetime';
+import { parseTimestamp } from '@lib/datetime';
 import { isNil, isObject, isString } from 'lodash';
 
 export * from './constants';
 export * from './metrics-listener';
 export * from './sliding-window-counter';
-
-const metrics = [
-  ApdexMetric,
-  ConnectedClientsMetric,
-  ConsecutiveFailuresMetric,
-  CompletedCountMetric,
-  CompletedRateMetric,
-  ErrorRateMetric,
-  ErrorPercentageMetric,
-  FailedCountMetric,
-  FinishedCountMetric,
-  FragmentationRatioMetric,
-  JobRateMetric,
-  LatencyMetric,
-  PeakMemoryMetric,
-  InstantaneousOpsMetric,
-  UsedMemoryMetric,
-  WaitTimeMetric,
-  CurrentActiveCountMetric,
-  CurrentCompletedCountMetric,
-  CurrentDelayedCountMetric,
-  CurrentFailedCountMetric,
-  CurrentWaitingCountMetric,
-];
 
 export type MetricConstructor = Constructor<BaseMetric>;
 
@@ -98,20 +74,42 @@ const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
   [MetricTypes.WaitTime]: WaitTimeMetric,
 };
 
-export const metricsMap = metrics.reduce((res, clazz) => {
-  res.set(clazz.key, clazz);
-  return res;
-}, new Map<string, MetricConstructor>());
+export const metricsMap: {
+  [key in keyof typeof MetricTypes]: MetricConstructor | null;
+} = {
+  None: null,
+  Apdex: ApdexMetric,
+  ConnectedClients: ConnectedClientsMetric,
+  Completed: CompletedCountMetric,
+  CompletedRate: CompletedRateMetric,
+  ConsecutiveFailures: ConsecutiveFailuresMetric,
+  ActiveJobs: CurrentActiveCountMetric,
+  CurrentCompletedCount: CurrentCompletedCountMetric,
+  DelayedJobs: CurrentDelayedCountMetric,
+  CurrentFailedCount: CurrentFailedCountMetric,
+  Waiting: CurrentWaitingCountMetric,
+  ErrorRate: ErrorRateMetric,
+  ErrorPercentage: ErrorPercentageMetric,
+  Failures: FailedCountMetric,
+  Finished: FinishedCountMetric,
+  FragmentationRatio: FragmentationRatioMetric,
+  JobRate: JobRateMetric,
+  Latency: LatencyMetric,
+  UsedMemory: UsedMemoryMetric,
+  PeakMemory: PeakMemoryMetric,
+  InstantaneousOps: InstantaneousOpsMetric,
+  WaitTime: WaitTimeMetric,
+};
 
 export function getMetricByKey(type: string | MetricTypes): MetricConstructor {
   let ctor: MetricConstructor;
   if (typeof type === 'string') {
-    ctor = metricsMap.get(type);
+    ctor = metricsMap[type];
     if (!ctor) {
       if (!type.endsWith('Metric')) {
         type = titleCase(type) + 'Metric';
       }
-      const ctors = Array.from(metricsMap.values());
+      const ctors = Object.create(metricsMap);
       ctor = ctors.find((v) => v.name === type);
     }
   } else {
@@ -149,6 +147,7 @@ export function createMetricFromJSON(
 ): BaseMetric {
   /// TODO: Hackish handling of createdAt, updatedAt
   const {
+    id,
     type,
     name,
     options: _options,
@@ -172,6 +171,7 @@ export function createMetricFromJSON(
 
   const metric = createMetric(type, options);
 
+  metric.id = id;
   metric.name = name;
 
   if (createdAt) {

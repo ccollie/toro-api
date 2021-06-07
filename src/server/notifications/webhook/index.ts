@@ -2,7 +2,7 @@ import {
   NotificationChannelPlugin,
   NotificationChannel,
   WebhookChannelConfig,
-} from '../../../types';
+} from '@src/types';
 import schema from './schema';
 import { WebhookChannel } from './webhook-channel';
 

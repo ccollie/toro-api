@@ -1,7 +1,6 @@
-import { createSubscriptionResolver } from '../../../helpers/subscriptionManager';
+import { createSubscriptionResolver, getQueueListener } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
-import { QueueEventsEnum } from '../../../../../types';
-import { getQueueListener } from '../../../helpers';
+import { QueueEventsEnum } from '@src/types';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 

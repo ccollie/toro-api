@@ -1,10 +1,10 @@
-import { NotificationChannel } from '../../../../../types';
-import { HostManager } from '../../../../hosts';
+import { NotificationChannel } from '@src/types';
+import { HostManager } from '@server/hosts';
 import {
   getHostById,
   NOTIFICATION_CHANNEL_ADDED_PREFIX,
 } from '../../../helpers';
-import { Channel } from '../../../../../server/notifications';
+import { Channel } from '@server/notifications';
 
 export function publishCreatedEvent(
   context: any,

@@ -72,10 +72,6 @@ type WebHookMethod = 'get' | 'GET' | 'post' | 'POST';
 /** Configuration options for the webhook channel */
 export interface WebhookChannelConfig extends ChannelConfig {
   readonly type: 'webhook';
-  id?: string;
-  name: string;
-  enabled?: boolean;
-
   /* Webhook target url */
   url: string;
 

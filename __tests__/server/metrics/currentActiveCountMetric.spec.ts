@@ -1,22 +1,20 @@
-import { CurrentActiveCountMetric } from '../../../src/server/metrics';
+import { CurrentActiveCountMetric } from '@src/server/metrics';
 import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { PollingMetricOptions } from '../../../src/types';
+import { MetricOptions } from '@src/types';
 import { delay, randomString } from '../utils';
 
 describe('CurrentActiveCountMetric', () => {
   describe('constructor', () => {
     it('constructs a CurrentActiveCountMetric', () => {
-      const options: PollingMetricOptions = {
-        jobNames: [randomString()],
-        interval: 250,
+      const options: MetricOptions = {
+        sampleInterval: 250,
       };
       const sut = new CurrentActiveCountMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.jobNames).toBe(options.jobNames);
-      expect(sut.interval).toBe(options.interval);
+      expect(sut.sampleInterval).toBe(options.sampleInterval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
@@ -41,8 +39,8 @@ describe('CurrentActiveCountMetric', () => {
       const queue = await createQueue();
 
       const interval = 25000;
-      const options: PollingMetricOptions = {
-        interval,
+      const options: MetricOptions = {
+        sampleInterval: interval,
       };
       const sut = new CurrentActiveCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);

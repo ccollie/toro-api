@@ -1,7 +1,7 @@
-import { HostManager } from '../../../src/server/hosts';
-import { QueueManager } from '../../../src/server/queues';
+import { HostManager } from '@src/server/hosts';
+import { QueueManager } from '@src/server/queues';
 import { createQueue, createHostManager, clearDb } from '../../factories';
-import { QueueConfig } from '../../../src/types';
+import { QueueConfig } from '@src/types';
 import { nanoid } from 'nanoid';
 
 describe('QueueManager', () => {

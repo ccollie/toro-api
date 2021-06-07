@@ -7,7 +7,7 @@ import {
   logger,
   getUniqueId,
 } from '../lib';
-import { ChannelConfig } from '../../types';
+import { ChannelConfig } from '@src/types';
 import { Channel } from './channel';
 import { EventBus, BusEventHandler, UnsubscribeFn } from '../redis';
 import { HostManager } from '../hosts';

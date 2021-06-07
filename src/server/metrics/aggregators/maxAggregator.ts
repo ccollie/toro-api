@@ -4,7 +4,7 @@ import {
 } from './slidingTimeWindowAggregator';
 import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
-import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
 import { TickEventData } from '../../stats';
 import { ObjectSchema } from 'joi';
 

@@ -1,7 +1,7 @@
 'use strict';
 import { random } from 'lodash';
 import { randomString } from '../utils';
-import { Rule } from '../../../src/server/rules';
+import { Rule } from '@src/server/rules';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
@@ -9,8 +9,8 @@ import {
   RuleConfigOptions,
   RuleOperator,
   RuleType,
-} from '../../../src/types';
-import { getUniqueId } from '../../../src/server/lib';
+} from '@src/types';
+import { getUniqueId } from '@src/server/lib';
 
 describe('Rule', () => {
   function createRule(options: Partial<RuleConfigOptions> = {}): Rule {
@@ -20,7 +20,7 @@ describe('Rule', () => {
       id: getUniqueId(),
       condition: {
         type: RuleType.THRESHOLD,
-        operator: RuleOperator.gt,
+        operator: RuleOperator.GT,
         errorThreshold: 50,
       },
       ...options,
@@ -32,7 +32,7 @@ describe('Rule', () => {
     it('can be initialized with condition and names', () => {
       const condition: RuleCondition = {
         type: RuleType.THRESHOLD,
-        operator: RuleOperator.lt,
+        operator: RuleOperator.LT,
         errorThreshold: 40,
       };
       const opts = {
@@ -52,8 +52,8 @@ describe('Rule', () => {
       type: RuleType.CHANGE,
       changeType: ChangeTypeEnum.CHANGE,
       windowSize: 0,
-      aggregationType: ChangeAggregationType.Avg,
-      operator: RuleOperator.eq,
+      aggregationType: ChangeAggregationType.AVG,
+      operator: RuleOperator.EQ,
       errorThreshold: 10,
     };
 

@@ -1,8 +1,8 @@
 import { getQueueById } from '../../helpers';
-import { inferJobSchema, JobSchema } from '../../../queues';
+import { inferJobSchema, JobSchema } from '@src/server/queues';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobSchemaTC } from '../job/query/Job.schema';
+import { JobSchemaTC } from '../job/model/Job.schema';
 
 export const jobSchemaInfer: FieldConfig = {
   type: JobSchemaTC,

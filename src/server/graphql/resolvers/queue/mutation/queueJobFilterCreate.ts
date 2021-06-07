@@ -1,9 +1,9 @@
 'use strict';
 import { getQueueById } from '../../../helpers';
-import { addJobFilter } from '../../../../queues';
+import { addJobFilter } from '@server/queues';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobFilterTC } from '../../job/query/Job.filter';
+import { JobFilterTC } from '../../job/model/Job.filter';
 
 const JobFilterInputTC = schemaComposer.createInputTC({
   name: 'JobFilterInput',

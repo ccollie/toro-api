@@ -1,4 +1,4 @@
-import { TimeTicker, ManualClock } from '../../../../src/server/lib';
+import { TimeTicker, ManualClock } from '@src/server/lib';
 import random from 'lodash/random';
 
 describe('TimeTicker', () => {

@@ -2,7 +2,7 @@ import { random } from 'lodash';
 
 export function getRandomBoolArray(count?: number): boolean[] {
   count = count || random(5, 20);
-  let result = new Array(count);
+  const result = new Array(count);
   for (let i = 0; i < count; i++) {
     result[i] = random(1, 10) % 2 === 0;
   }

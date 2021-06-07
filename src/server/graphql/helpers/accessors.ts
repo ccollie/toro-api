@@ -11,6 +11,8 @@ import { Job, Queue } from 'bullmq';
 import { fieldsList } from 'graphql-fields-list';
 import { createAsyncIterator } from '../../lib';
 
+const queueIdMap = new WeakMap<Queue, string>();
+
 export function getSupervisor(): Supervisor {
   return Supervisor.getInstance();
 }
@@ -26,6 +28,29 @@ export function getHostById(id: string): HostManager {
 
 export function getQueueById(id: string): Queue {
   return getSupervisor().getQueueById(id);
+}
+
+export function getQueueId(queue: Queue): string {
+  let id = queueIdMap.get(queue);
+  if (!id) {
+    const hosts = getSupervisor().hosts;
+    for (let i = 0; i < hosts.length; i++) {
+      const managers = hosts[i].queueManagers;
+      for (let j = 0; j < managers.length; j++) {
+        const manager = managers[j];
+        if (queue === manager.queue) {
+          id = manager.id;
+          queueIdMap.set(queue, id);
+          return id;
+        }
+        // do useful work
+        if (!queueIdMap.get(manager.queue)) {
+          queueIdMap.set(manager.queue, manager.id);
+        }
+      }
+    }
+  }
+  return id;
 }
 
 export async function getJobById(queueId: string, jobId: string): Promise<Job> {

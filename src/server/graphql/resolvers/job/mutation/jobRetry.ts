@@ -1,7 +1,7 @@
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
-import { processJobCommand } from '../../../../queues';
+import { processJobCommand } from '@server/queues';
 import { JobLocatorInput } from './jobLocatorInput';
 
 export const jobRetry: FieldConfig = {

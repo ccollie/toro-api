@@ -1,16 +1,11 @@
 import OnlineNormalEstimator from './online-normal-estimator';
 import { Clock } from '../lib';
 
-export enum PeakSignal {
-  NONE,
-  ABOVE,
-  BELOW = -1,
-}
-
 /**
  * "Smoothed zero-score algorithm" shamelessly copied from
- *  https://stackoverflow.com/a/22640362/6029703
- *  Uses a rolling mean and a rolling deviation (separate) to identify peaks in a vector
+ * Brakel, J.P.G. van (2014). "Robust peak detection algorithm using z-scores".
+ * Stack Overflow. Available at: https://stackoverflow.com/questions/22583391/peak-signal-detection-in-realtime-timeseries-data/22640362#22640362 (version: 2020-11-08).
+ * Uses a rolling mean and a rolling deviation (separate) to identify peaks in a vector
  *
  * @param lag - The lag time (in ms) of the moving window how much your data will be smoothed
  * and how adaptive the algorithm is to changes in the long-term average of the data.
@@ -30,7 +25,7 @@ export class StreamingPeakDetector {
   private readonly lagEnd: number;
   private readonly stats: OnlineNormalEstimator;
 
-  constructor(clock: Clock, lag: number, threshold: number, influence: number) {
+  constructor(clock: Clock, lag: number, threshold = 3.5, influence = 0.5) {
     this.clock = clock;
     this.lag = lag;
     this.threshold = threshold;

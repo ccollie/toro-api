@@ -1,7 +1,7 @@
 import { FieldConfig } from '../index';
 import { getQueueManager } from '../../helpers';
-import { MetricTC } from '../metrics';
-import { SerializedMetric } from '../../../../types';
+import { MetricTC } from '../metric/model';
+import { SerializedMetric } from '@src/types';
 import boom from '@hapi/boom';
 
 export const metric: FieldConfig = {

@@ -3,7 +3,7 @@ import {
   SlidingWindowOptionSchema,
 } from './slidingTimeWindowAggregator';
 import { Clock } from '../../lib';
-import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
 import { ObjectSchema } from 'joi';
 
 class SumBucket {

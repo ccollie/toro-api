@@ -1,5 +1,5 @@
-import { MaxAggregator, LatencyMetric } from '../../../../src/server/metrics';
-import { systemClock, ManualClock } from '../../../../src/server/lib';
+import { MaxAggregator, LatencyMetric } from '@src/server/metrics';
+import { systemClock, ManualClock } from '@src/server/lib';
 import random from 'lodash/random';
 import { getRandomIntArray } from '../../utils';
 
@@ -94,7 +94,7 @@ describe('MaxAggregator', () => {
       const tickSpy = jest.spyOn(instance, 'onTick');
 
       for (let i = 0; i < sliceCount; i++) {
-        let count = random(5, 100);
+        const count = random(5, 100);
         const slice = getRandomIntArray(count);
         numberSlices.push(slice);
         slice.forEach((x) => instance.update(x));

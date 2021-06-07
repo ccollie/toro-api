@@ -1,9 +1,8 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { getQueueManager } from '../../../helpers';
+import { getQueueManager, createSubscriptionResolver } from '../../../helpers';
 import { logger } from '../../../../lib';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { createSubscriptionResolver } from '../../../helpers';
 
 const POLLING_INTERVAL = 2500; // todo: get from config
 

@@ -1,9 +1,9 @@
 import { getQueueById } from '../../helpers';
-import { getJobFilter } from '../../../queues';
+import { getJobFilter } from '@server/queues';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
 import boom from '@hapi/boom';
-import { JobFilterTC } from '../job/query/Job.filter';
+import { JobFilterTC } from '../job/model/Job.filter';
 
 export const queueJobFilter: FieldConfig = {
   type: JobFilterTC,

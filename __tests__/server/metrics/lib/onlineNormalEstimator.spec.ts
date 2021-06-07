@@ -1,5 +1,5 @@
 import { random } from 'lodash';
-import OnlineNormalEstimator from '../../../../src/server/stats/online-normal-estimator';
+import OnlineNormalEstimator from '@src/server/stats/online-normal-estimator';
 
 function randomArray(length: number) {
   const xs = new Array<number>(length);

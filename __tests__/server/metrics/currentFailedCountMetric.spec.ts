@@ -1,22 +1,24 @@
-import { CurrentFailedCountMetric } from '../../../src/server/metrics';
+import {
+  CurrentFailedCountMetric,
+  QueueMetricOptions,
+} from '@src/server/metrics';
 import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { QueuePollingMetricOptions } from '../../../src/types';
 import { randomString } from '../utils';
 
 describe('CurrentFailedCountMetric', () => {
   describe('constructor', () => {
     it('constructs a CurrentFailedCountMetric', () => {
-      const options: QueuePollingMetricOptions = {
+      const options: QueueMetricOptions = {
         jobNames: [randomString()],
-        interval: 250,
+        sampleInterval: 250,
       };
       const sut = new CurrentFailedCountMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.jobNames).toBe(options.jobNames);
-      expect(sut.interval).toBe(options.interval);
+      expect(sut.jobNames.sort()).toEqual(options.jobNames.sort());
+      expect(sut.sampleInterval).toBe(options.sampleInterval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
@@ -43,8 +45,8 @@ describe('CurrentFailedCountMetric', () => {
       const queue = await createQueue();
 
       const interval = 8000;
-      const options: QueuePollingMetricOptions = {
-        interval,
+      const options: QueueMetricOptions = {
+        sampleInterval: interval,
       };
       const sut = new CurrentFailedCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);

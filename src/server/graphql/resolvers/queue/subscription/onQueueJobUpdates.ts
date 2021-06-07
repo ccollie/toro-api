@@ -1,12 +1,12 @@
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { isEmpty, isNumber } from 'lodash';
-import { isFinishedStatus, diff, hashObject } from '../../../../lib';
+import { isFinishedStatus, diff, hashObject } from '@lib/utils';
 import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { getQueueListener } from '../../../helpers';
-import { JobStatusEnum } from '../../../imports';
-import { createJobNameFilter } from '../../../../metrics/utils';
+import { JobStatusEnum } from '@src/types';
+import { createJobNameFilter } from '@server/metrics/utils';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 

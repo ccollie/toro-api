@@ -3,11 +3,11 @@ import {
   Events,
   MaxAggregator,
   NullAggregator,
-} from '../../../src/server/metrics';
+} from '@src/server/metrics';
 import { delay, randomString } from '../utils';
 import { createJobEvent } from '../../factories';
 import { random } from 'lodash';
-import { systemClock } from '../../../src/server/lib';
+import { systemClock } from '@src/server/lib';
 
 function getRandomStringArray(len = 4): string[] {
   const result = new Array<string>(len);

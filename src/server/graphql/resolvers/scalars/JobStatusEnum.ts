@@ -1,15 +1,15 @@
-import { JobStatusEnum } from '../../../../types';
+import { JobStatusEnum } from '@src/types';
 import { GraphQLEnumType } from 'graphql';
 
 export const JobStatusEnumType = new GraphQLEnumType({
   name: 'JobStatus',
   values: {
-    [JobStatusEnum.COMPLETED]: { value: JobStatusEnum.COMPLETED },
-    [JobStatusEnum.WAITING]: { value: JobStatusEnum.WAITING },
-    [JobStatusEnum.ACTIVE]: { value: JobStatusEnum.ACTIVE },
-    [JobStatusEnum.DELAYED]: { value: JobStatusEnum.DELAYED },
-    [JobStatusEnum.FAILED]: { value: JobStatusEnum.FAILED },
+    COMPLETED: { value: JobStatusEnum.COMPLETED },
+    WAITING: { value: JobStatusEnum.WAITING },
+    ACTIVE: { value: JobStatusEnum.ACTIVE },
+    DELAYED: { value: JobStatusEnum.DELAYED },
+    FAILED: { value: JobStatusEnum.FAILED },
     // eslint-disable-next-line max-len
-    [JobStatusEnum.PAUSED]: { value: JobStatusEnum.PAUSED }, //TODO: в bull написано что устарело, теперь все WAITING
+    PAUSED: { value: JobStatusEnum.PAUSED }, //TODO: в bull написано что устарело, теперь все WAITING
   },
 });

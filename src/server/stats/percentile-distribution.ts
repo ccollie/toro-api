@@ -1,5 +1,5 @@
 import { DefaultPercentiles } from './utils';
-import { StatisticalSnapshot } from '../../types';
+import { StatisticalSnapshot } from '@src/types';
 import { build, decodeFromCompressedBase64, Histogram } from 'hdr-histogram-js';
 
 export type PercentileDistribution = {

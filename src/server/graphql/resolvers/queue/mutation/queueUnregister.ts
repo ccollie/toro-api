@@ -1,7 +1,7 @@
 import boom from '@hapi/boom';
 import { FieldConfig, HostTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { Supervisor } from '../../../../supervisor';
+import { Supervisor } from '@server/supervisor';
 import { getQueueManager, QUEUE_UNREGISTERED_PREFIX } from '../../../helpers';
 
 export const queueUnregister: FieldConfig = {

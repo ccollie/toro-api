@@ -2,7 +2,7 @@ import { ObjectSchema } from 'joi';
 import { BaseMetric } from '../baseMetric';
 import { BaseAggregator } from './aggregator';
 import { getStaticProp } from '../../lib';
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '@src/types';
 
 export class NullAggregator extends BaseAggregator {
   protected _value: number | undefined;

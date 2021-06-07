@@ -2,7 +2,7 @@ import { get } from 'lodash';
 import { graphql, GraphQLInt, GraphQLObjectType, GraphQLSchema } from 'graphql';
 
 // eslint-disable-next-line import/no-named-as-default
-import { GraphQLJobFilterQuery } from '../../../../src/server/graphql/resolvers/scalars';
+import { GraphQLJobFilterQuery } from '@server/graphql/resolvers/scalars';
 
 const INVALID_FILTER = { $invalid: [234], '<': 30 };
 
@@ -115,7 +115,7 @@ describe('GraphQLJobFilterQuery', () => {
       const { data, errors } = await graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JobFilterQuery!) {
+          query ($arg: JobFilterQuery!) {
             value(arg: $arg)
           }
         `,
@@ -133,7 +133,7 @@ describe('GraphQLJobFilterQuery', () => {
       const { data, errors } = await graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JobFilterQuery!) {
+          query ($arg: JobFilterQuery!) {
             value(arg: $arg)
           }
         `,
@@ -153,7 +153,7 @@ describe('GraphQLJobFilterQuery', () => {
       const { data, errors } = await graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JobFilterQuery!) {
+          query ($arg: JobFilterQuery!) {
             value(arg: $arg)
           }
         `,
@@ -175,7 +175,7 @@ describe('GraphQLJobFilterQuery', () => {
       const { data, errors } = await graphql(
         schema,
         /* GraphQL */ `
-          query($arg: JobFilterQuery!) {
+          query ($arg: JobFilterQuery!) {
             value(arg: $arg)
           }
         `,

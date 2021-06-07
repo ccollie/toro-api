@@ -4,8 +4,8 @@ import {
   RuleAlert,
   RuleEventsEnum,
   Severity,
-} from '../../../../src/types';
-import { getMessage } from '../../../../src/server/notifications/slack/messages';
+} from '@src/types';
+import { getMessage } from '@src/server/notifications/slack/messages';
 import { createNotificationContext } from '../helpers';
 import { random } from 'lodash';
 import ms from 'ms';

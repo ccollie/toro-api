@@ -2,7 +2,7 @@ import {
   NotificationChannelPlugin,
   SlackChannelConfig,
   NotificationChannel,
-} from '../../../types';
+} from '@src/types';
 
 import schema from './schema';
 import { SlackChannel } from './slack-channel';

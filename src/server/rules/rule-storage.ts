@@ -7,14 +7,14 @@ import {
   isObject,
   isString,
 } from 'lodash';
-import { parseTimestamp } from '../lib/datetime';
+import { parseTimestamp } from '@lib/datetime';
 import {
   checkMultiErrors,
   convertTsForStream,
   EventBus,
   parseMessageResponse,
 } from '../redis';
-import { getAlertsKey, getRuleKey, getRuleStateKey } from '../lib/keys';
+import { getAlertsKey, getRuleKey, getRuleStateKey } from '@lib/keys';
 
 import { Rule } from './rule';
 import { Queue, RedisClient } from 'bullmq';
@@ -25,7 +25,6 @@ import {
   RuleState,
   Severity,
 } from '../../types';
-import { Redis } from 'ioredis';
 import { getUniqueId, parseBool, systemClock } from '../lib';
 import {
   AlertData,
@@ -76,7 +75,7 @@ export class RuleStorage {
     return getAlertsKey(this.queue, getRuleId(rule));
   }
 
-  async createRule(opts: RuleConfigOptions): Promise<Rule> {
+  async createRule(opts: RuleConfigOptions, queueId?: string): Promise<Rule> {
     let isNew = false;
     let id = opts.id;
     if (!id) {
@@ -98,6 +97,7 @@ export class RuleStorage {
       }
     }
     const rule = new Rule(opts);
+    rule.queueId = queueId;
     return this.saveRule(rule);
   }
 
@@ -402,6 +402,35 @@ export class RuleStorage {
     return deserializeAlert(data);
   }
 
+  async markAlertAsRead(
+    rule: Rule | string,
+    id: string,
+    value: boolean,
+  ): Promise<RuleAlert> {
+    const ruleId = getRuleId(rule);
+    const key = this.getAlertsKey(rule);
+    const client = await this.getClient();
+    const data = await TimeSeries.get(client, key, id);
+    if (!data) {
+      throw boom.notFound(`Unable to locate alert id#"${id}"`);
+    }
+    if (data) data['ruleId'] = ruleId;
+    const old = deserializeAlert(data);
+    const oldIsRead = old.isRead;
+    if (oldIsRead !== value) {
+      old.isRead = value;
+      await Promise.all([
+        await TimeSeries.updateJson(client, key, id, { isRead: value }),
+        await this.bus.emit(RuleEventsEnum.ALERT_UPDATED, {
+          ruleId,
+          id,
+          data: { isRead: value },
+        }),
+      ]);
+    }
+    return old;
+  }
+
   async deleteAlert(rule: Rule | string, id: string): Promise<boolean> {
     const client = await this.getClient();
     const alertsKey = this.getAlertsKey(rule);
@@ -626,7 +655,6 @@ function deserializeRule(data?: any): Rule {
   if (isEmpty(data)) return null;
   data.options = deserializeObject(data.options);
   data.payload = deserializeObject(data.payload);
-  data.metric = deserializeObject(data.metric);
   data.condition = deserializeObject(data.condition);
   if (data.createdAt) {
     data.createdAt = parseInt(data.createdAt);
@@ -678,7 +706,10 @@ function deserializeAlert(data: any): RuleAlert {
   alertData.raisedAt = parseTimestamp(data['raisedAt']);
   alertData.resetAt = parseTimestamp(data['resetAt']);
   alertData.state = deserializeObject(data['state']);
+  alertData.payload = deserializeObject(data['payload']);
   alertData.failures = data['failures'] || 0;
+  alertData.isRead = parseBool(data['isRead'], false);
+
   return alertData as RuleAlert;
 }
 

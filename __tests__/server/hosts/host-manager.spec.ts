@@ -1,6 +1,6 @@
-import { HostConfig } from '../../../src/types';
-import { getUniqueId } from '../../../src/server/lib';
-import { HostManager } from '../../../src/server/hosts';
+import { HostConfig } from '@src/types';
+import { getUniqueId } from '@src/server/lib';
+import { HostManager } from '@src/server/hosts';
 import { clearDb, DEFAULT_CLIENT_OPTIONS } from '../../factories';
 import { nanoid } from 'nanoid';
 
