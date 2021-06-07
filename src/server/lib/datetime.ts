@@ -43,7 +43,7 @@ import {
   endOfWeek,
   endOfYear,
 } from 'date-fns';
-import { Timespan } from '@src/types';
+import { Timespan } from '../../types';
 
 export type DateLike = Date | number;
 

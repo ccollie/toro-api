@@ -6,7 +6,11 @@ import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metrics-listener';
-import { MetricValueType, PollingMetricOptions } from '../../types';
+import {
+  MetricValueType,
+  PollingMetricOptions,
+  QueueMetricOptions,
+} from '../../types';
 
 /**
  * @interface RateMetricOptions
@@ -18,7 +22,9 @@ import { MetricValueType, PollingMetricOptions } from '../../types';
  * @example
  * const meter = new RateMetric({ rateUnit: 1000, interval: 5000})
  */
-export interface RateMetricOptions extends PollingMetricOptions {
+export interface RateMetricOptions
+  extends PollingMetricOptions,
+    QueueMetricOptions {
   timePeriod: number;
   rateUnit?: TimeUnit;
 }

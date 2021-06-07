@@ -30,7 +30,7 @@ export class WriteCache {
   public readonly client: RedisClient;
   private readonly flushInterval: number;
   private pendingMulti: Pipeline | null = null;
-  private timer: NodeJS.Timeout = null;
+  private timer: ReturnType<typeof setTimeout> = null;
   private _changed: boolean;
   private buffer: {
     zset: Map<string, any[]>;

@@ -8,8 +8,7 @@ import {
   MetricsListener,
 } from '../../../src/server/metrics';
 import { QueueListener } from '../../../src/server/queues';
-import { QueueListenerHelper } from '../../factories';
-import { createQueueListener } from '../factories';
+import { QueueListenerHelper, createQueueListener } from '../../factories';
 import { delay } from '../utils';
 
 describe('MetricsListener', () => {

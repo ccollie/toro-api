@@ -3,7 +3,7 @@ import boom from '@hapi/boom';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { MetricTC, MetricInputTC } from '../../metrics';
-import { MetricOptions } from '../../../../../types';
+import { QueueMetricOptions } from '../../../../../types';
 import { createAggregator } from '../../../../metrics';
 
 export const queueMetricUpdate: FieldConfig = {
@@ -13,15 +13,8 @@ export const queueMetricUpdate: FieldConfig = {
     input: MetricInputTC.NonNull,
   },
   resolve: async (_, { input }) => {
-    const {
-      queueId,
-      id,
-      name,
-      description,
-      isActive,
-      options,
-      aggregator,
-    } = input;
+    const { queueId, id, name, description, isActive, options, aggregator } =
+      input;
     const manager = getQueueManager(queueId);
     const metric = await manager.metricManager.getMetric(id);
 
@@ -52,7 +45,7 @@ export const queueMetricUpdate: FieldConfig = {
     }
 
     if (options !== undefined) {
-      metric.setOptions(options as MetricOptions);
+      metric.setOptions(options as QueueMetricOptions);
     }
 
     // TODO: should we remove present data

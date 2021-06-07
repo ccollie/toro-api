@@ -1,6 +1,6 @@
 'use strict';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import { ConnectionOptions } from '@src/types';
+import { ConnectionOptions } from '../../types';
 import { createClient, waitUntilReady } from './utils';
 import { createDebug } from '../lib/debug';
 import { RedisClient } from 'bullmq';

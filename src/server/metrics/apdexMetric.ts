@@ -1,16 +1,16 @@
-import { baseMetricSchema, QueueBasedMetric } from './baseMetric';
+import { QueueBasedMetric, QueueBasedMetricSchema } from './baseMetric';
 import { ObjectSchema } from 'joi';
 import { Events } from './constants';
 import { DurationSchema } from '../validation/schemas';
 import { JobFinishedEventData } from '../queues';
 import { ApdexCalculator } from '../stats';
-import { MetricOptions, MetricTypes } from '../../types';
+import { MetricTypes, QueueMetricOptions } from '../../types';
 
-export interface ApdexMetricOptions extends MetricOptions {
+export interface ApdexMetricOptions extends QueueMetricOptions {
   threshold: number;
 }
 
-const schema = baseMetricSchema.append({
+const schema = QueueBasedMetricSchema.append({
   threshold: DurationSchema.required(),
 });
 

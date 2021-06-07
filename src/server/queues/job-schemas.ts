@@ -1,19 +1,26 @@
 import boom from '@hapi/boom';
 import fnv from 'fnv-plus';
 import { isEmpty } from 'lodash';
-import { Queue, JobsOptions } from 'bullmq';
+import { JobsOptions, Queue } from 'bullmq';
 import { ValidateFunction } from 'ajv';
 import { JobOptionsSchema } from './job-options-schema';
-import { getJobSchemaKey, objToString, safeParse } from '../lib';
+import { getJobSchemaKey, hashObject, objToString, safeParse } from '../lib';
+import toJsonSchema from 'to-json-schema';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
+import { getIterator } from './job-iterator';
+import { JobStatusEnum } from '../../types';
 
 const jobsOptionsValidator = ajv.compile(JobOptionsSchema);
 
+const INFER_SAMPLE_SIZE = 25;
+
 export type JobSchema = {
+  jobName: string;
   schema: any;
   defaultOpts?: Partial<JobsOptions>;
   validate?: ValidateFunction;
+  inferred?: boolean;
   hash?: string;
 };
 
@@ -57,6 +64,7 @@ export function compileSchema(
 
   const hash = hashSchema(schema);
   return {
+    jobName: name,
     schema,
     hash,
     validate,
@@ -115,6 +123,83 @@ export async function addJobSchema(
   await client.hset(key, jobName, toStore);
 
   return updateLocalCache(queue, jobName, schema);
+}
+
+function inferOptions(recs: Record<string, any>[]): Partial<JobsOptions> {
+  if (!recs.length) return {};
+  const hashMap = new Map<string, JobsOptions>();
+  const counts = new Map<string, number>();
+  for (let i = 0; i < recs.length; i++) {
+    const obj = recs[i];
+    const hash = hashObject(obj);
+    hashMap.set(hash, obj);
+    let count = 1;
+    if (counts.has(hash)) {
+      count = counts.get(hash) + 1;
+    }
+    counts.set(hash, count);
+  }
+  const item = Array.from(counts).sort((a, b) => {
+    return b[1] - a[1];
+  })?.[0];
+  if (item) {
+    return hashMap.get(item[0]) || {};
+  }
+  return {};
+}
+
+export async function inferJobSchema(
+  queue: Queue,
+  jobName: string,
+): Promise<JobSchema> {
+  // get a list of items from completed list
+  const it = getIterator(queue, JobStatusEnum.COMPLETED, [
+    'data',
+    'opts',
+    'jobName',
+  ]);
+  const sampleSize = INFER_SAMPLE_SIZE;
+  const jobs: Record<string, any>[] = [];
+  const opts: Record<string, any>[] = [];
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/label
+  mainLoop: for await (const jobs of it.generator()) {
+    for (const job of jobs) {
+      if (!jobName || jobName === job['jobName']) {
+        const data = safeParse(job['data']);
+        const jobOpts = safeParse(job['opts']);
+        if (data) {
+          jobs.push(data);
+        }
+        if (jobOpts) {
+          opts.push(jobOpts);
+        }
+      }
+      if (jobs.length >= sampleSize) {
+        break mainLoop;
+      }
+    }
+  }
+  it.destroy();
+
+  if (!jobs.length) {
+    throw boom.badData('Cannot infer schema. No completed jobs found.');
+  }
+
+  const res = toJsonSchema(jobs, { arrays: { mode: 'all' } });
+  const schema = res?.type === 'array' ? res?.items : res;
+
+  const options = inferOptions(opts);
+
+  validateJobOptions(options);
+
+  const hash = hashSchema(schema);
+  return {
+    jobName,
+    schema,
+    hash,
+    // validate,
+    ...(options && { defaultOpts: options }),
+  };
 }
 
 export async function getJobSchema(

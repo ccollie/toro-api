@@ -64,11 +64,17 @@ export interface MetricsFilter {
   jobNames?: string[];
 }
 
-export interface MetricOptions {
+type MetricOptions = Record<string, any>;
+
+export interface QueueMetricOptions {
   jobNames?: string[];
 }
 
-export interface PollingMetricOptions extends MetricOptions {
+export interface PollingMetricOptions {
+  interval: number;
+}
+
+export interface QueuePollingMetricOptions extends QueueMetricOptions {
   interval: number;
 }
 

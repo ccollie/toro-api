@@ -4,7 +4,6 @@ import { QueueListener } from '../../../src/server/queues';
 import { UnsubscribeFn } from 'emittery';
 import { Queue, RedisClient } from 'bullmq';
 import { Clock } from '../../../src/server/lib';
-import * as IORedis from 'ioredis';
 import { MetricTypes } from '../../../src/types';
 const BASE_UNIT = 'base_unit';
 const BASE_DESCRIPTION = 'base_description';

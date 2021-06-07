@@ -2,7 +2,7 @@ import { random } from 'lodash';
 import {
   CompletedCountMetric,
   Events,
-  MetricOptions,
+  QueueMetricOptions,
 } from '../../../src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
 
@@ -15,7 +15,7 @@ describe('CompletedCountMetric', () => {
     }
   });
 
-  const defaultOptions: MetricOptions = {
+  const defaultOptions: QueueMetricOptions = {
     jobNames: [],
   };
 

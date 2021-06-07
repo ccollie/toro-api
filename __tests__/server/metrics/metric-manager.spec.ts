@@ -142,7 +142,6 @@ describe('MetricManager', () => {
   function createMetric(): BaseMetric {
     const metric = new InstantaneousOpsMetric({
       interval: INTERVAL,
-      jobNames: [],
     });
 
     metric.name = `name-${randomString(4)}`;

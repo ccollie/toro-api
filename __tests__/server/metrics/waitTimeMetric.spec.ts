@@ -1,13 +1,17 @@
 /* global test, expect */
 import pMap from 'p-map';
-import { Events, MetricOptions, WaitTimeMetric } from '../../../src/server/metrics';
+import {
+  Events,
+  QueueMetricOptions,
+  WaitTimeMetric,
+} from '../../../src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
 
 const EVENT_NAME = Events.FINISHED;
 
 describe('WaitTimeMetric', () => {
   let testHelper: MetricTestHelper;
-  const defaultOptions: MetricOptions = {};
+  const defaultOptions: QueueMetricOptions = {};
 
   afterEach(async () => {
     if (testHelper) {
@@ -52,6 +56,5 @@ describe('WaitTimeMetric', () => {
       });
       expect(subject.value).toBe(100);
     });
-
   });
 });

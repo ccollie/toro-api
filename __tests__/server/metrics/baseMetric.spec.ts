@@ -2,7 +2,6 @@ import {
   BaseMetric,
   Events,
   MaxAggregator,
-  MetricOptions,
   NullAggregator,
 } from '../../../src/server/metrics';
 import { delay, randomString } from '../utils';
@@ -37,10 +36,9 @@ describe('BaseMetric', () => {
     });
 
     it('copies values from constructor args', () => {
-      const options: MetricOptions = {
+      const options = {
         id: randomString(),
         name: randomString(),
-        jobNames: getRandomStringArray(),
       };
       const metric = new BaseMetric(options);
       expect(metric.id).toBe(options.id);
@@ -58,7 +56,7 @@ describe('BaseMetric', () => {
 
     it('filters events according to job names', () => {
       const validJobNames = ['valid', 'job', 'name'];
-      const options: MetricOptions = {
+      const options = {
         id: randomString(),
         name: randomString(),
         jobNames: validJobNames,
@@ -179,10 +177,9 @@ describe('BaseMetric', () => {
 
   describe('serialization', () => {
     it('can serialize to json', () => {
-      const options: MetricOptions = {
+      const options = {
         id: randomString(),
         name: randomString(),
-        jobNames: getRandomStringArray(),
       };
       const metric = new BaseMetric(options);
       const key = getKey(metric);

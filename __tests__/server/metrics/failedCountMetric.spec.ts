@@ -1,15 +1,20 @@
-import { FailedCountMetric, MetricOptions, Events, BaseMetric } from '../../../src/server/metrics';
+import {
+  FailedCountMetric,
+  Events,
+  BaseMetric,
+} from '../../../src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
+import { QueueMetricOptions } from '../../../src/types';
 
 describe('FailedCountMetric', () => {
-  const defaultOptions: MetricOptions = {};
+  const defaultOptions: QueueMetricOptions = {};
   let testHelper: MetricTestHelper;
 
   afterEach(async () => {
     if (testHelper) {
       await testHelper.destroy();
     }
-  })
+  });
 
   function ensureHelper(): MetricTestHelper {
     testHelper = testHelper || new MetricTestHelper();

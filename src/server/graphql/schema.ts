@@ -18,7 +18,7 @@ import {
 import { MetricCategory } from './resolvers/metrics';
 
 import { schemaComposer } from 'graphql-compose';
-import * as query from './resolvers/query';
+import * as query from './resolvers/root';
 import host from './resolvers/host';
 import queue from './resolvers/queue';
 import job from './resolvers/job';
@@ -60,5 +60,6 @@ schemaComposer.Subscription.addFields({
 });
 
 const schema = schemaComposer.buildSchema();
+const toSDL = () => schemaComposer.toSDL();
 
-export { schema };
+export { schema, toSDL };

@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { MetricTC } from '../../metrics';
-import { SerializedMetric } from '@src/types';
+import { SerializedMetric } from '../../../../../types';
 
 export const queueMetrics: FieldConfig = {
   type: MetricTC.NonNull.List.NonNull,

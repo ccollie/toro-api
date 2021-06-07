@@ -2,7 +2,7 @@ import nconf from 'nconf';
 import path from 'path';
 import { packageInfo } from '../packageInfo';
 import { isString, isObject } from 'lodash';
-import { AppInfo } from '@src/types';
+import { AppInfo } from '../../types';
 //const debug = require('debug')('toro:config');
 
 nconf.argv({

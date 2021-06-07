@@ -40,7 +40,7 @@ interface HostRollupMeta {
   jobName: string;
   start: number;
   metric: StatsMetricType;
-  timeout?: NodeJS.Timeout;
+  timeout?: ReturnType<typeof setTimeout>;
 }
 
 const HostRollupCache = new Map<string, HostRollupMeta>();

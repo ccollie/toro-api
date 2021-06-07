@@ -1,5 +1,6 @@
 import { FieldConfig, RuleTC, RuleAddInputTC } from '../../index';
 import { getQueueManager } from '../../../helpers';
+import { Rule } from '../../../../rules';
 
 export const ruleAdd: FieldConfig = {
   type: RuleTC.NonNull,
@@ -7,9 +8,11 @@ export const ruleAdd: FieldConfig = {
   args: {
     input: RuleAddInputTC.NonNull,
   },
-  async resolve(_, args): Promise<any> {
-    const { queueId, ...options } = args;
+  async resolve(_, { input }): Promise<Rule> {
+    const { queueId, ...options } = input;
     const manager = getQueueManager(queueId);
     return manager.addRule(options);
   },
 };
+
+function convertCondition() {}

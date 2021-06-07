@@ -34,6 +34,10 @@ const BaseFields = {
     type: 'String',
     description: 'A description of the metric being measured.',
   },
+  sampleInterval: {
+    type: 'Int!',
+    description: 'The metric sampling interval.',
+  },
   isActive: {
     type: 'Boolean!',
     description: 'Is the metric active (i.e. is data being collected).',
@@ -87,7 +91,7 @@ export const MetricInputTC = schemaComposer
       ...InputFields,
     },
   })
-  .makeFieldNullable(['name', 'options', 'aggregator']);
+  .makeFieldNullable(['name', 'options', 'aggregator', 'sampleInterval']);
 
 export const MetricCreateTC = schemaComposer
   .createInputTC({
@@ -97,4 +101,5 @@ export const MetricCreateTC = schemaComposer
       ...InputFields,
     },
   })
+  .makeOptional('sampleInterval')
   .makeRequired(['name', 'queueId']);

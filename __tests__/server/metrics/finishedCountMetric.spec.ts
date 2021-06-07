@@ -1,14 +1,11 @@
 import { random } from 'lodash';
-import {
-  FinishedCountMetric,
-  MetricOptions,
-  Events,
-} from '../../../src/server/metrics';
+import { FinishedCountMetric, Events } from '../../../src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
+import { QueueMetricOptions } from '../../../src/types';
 
 describe('FinishedCountMetric', () => {
   let testHelper: MetricTestHelper;
-  const defaultOptions: MetricOptions = {};
+  const defaultOptions: QueueMetricOptions = {};
 
   afterEach(async () => {
     if (testHelper) {
@@ -35,8 +32,8 @@ describe('FinishedCountMetric', () => {
 
       const count = random(2, 15);
       for (let i = 0; i < count; i++) {
-        const success = (random(0, 99) % 2) === 0;
-        await testHelper.emitFinishedEvent(success, {})
+        const success = random(0, 99) % 2 === 0;
+        await testHelper.emitFinishedEvent(success, {});
       }
       expect(subject.value).toBe(count);
     });

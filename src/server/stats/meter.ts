@@ -1,7 +1,7 @@
 import { Clock, TimeTicker } from '../lib';
 import * as units from './units';
 import { EWMA, TimeUnit } from './ewma';
-import { MeteredRates, MeterSummary } from '@src/types';
+import { MeteredRates, MeterSummary } from '../../types';
 import ms from 'ms';
 
 const RATE_UNIT = TimeUnit.MINUTES;

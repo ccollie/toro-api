@@ -17,3 +17,4 @@ export { rule } from './rule';
 export { ruleAlert } from './ruleAlert';
 export { queueJobSchema } from './queueJobSchema';
 export { bulkJobOptionsSchema } from './bulkJobOptionsSchema';
+export { jobSchemaInfer } from './jobSchemaInfer';

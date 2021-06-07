@@ -5,9 +5,11 @@ import config from '../config';
 import { Supervisor } from '../supervisor';
 import { packageInfo } from '../packageInfo';
 import { publish, pubsub, createSubscriptionResolver } from './helpers';
+import { parseBool } from '../lib';
 
 const supervisor = Supervisor.getInstance();
 const env = config.get('env');
+const debug = parseBool(process.env.DEBUG) && env !== 'production';
 
 export const context = {
   env,
@@ -19,7 +21,7 @@ export const context = {
   createResolver: createSubscriptionResolver,
 };
 
-export function createServer(middleware): ApolloServer {
+export function createServer(): ApolloServer {
   const server = new ApolloServer({
     schema,
     // resolvers,
@@ -29,7 +31,18 @@ export function createServer(middleware): ApolloServer {
       return { ...context };
     },
     formatError: formatGraphqlError,
+    debug, // TODO
+    subscriptions: {
+      onConnect: (connectionParams, webSocket, context) => {
+        console.log('Connected!');
+      },
+      onDisconnect: (webSocket, context) => {
+        console.log('Disconnected!');
+      },
+      path: '/subscriptions',
+      // ...other options...
+    },
+    // tracing: process.env.NODE_ENV !== 'production',
   });
-  server.applyMiddleware(middleware);
   return server;
 }

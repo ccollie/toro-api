@@ -6,6 +6,7 @@ import compression from 'compression';
 import config from './config';
 import path from 'path';
 import http from 'http';
+import cors from 'cors';
 import { Supervisor } from './supervisor';
 
 import { createServer as createApolloServer } from './graphql';
@@ -47,27 +48,12 @@ app.use(
 
 app.use(logger(env));
 app.use(cookieParser());
+app.use(cors());
 
 const supervisor = Supervisor.getInstance();
 
 const middleware = {
   app,
-  cors: {
-    origin: function (
-      origin: string,
-      callback: (err: Error | null, pass?: boolean) => void,
-    ) {
-      if (isDevelopment) {
-        return callback(null, true);
-      }
-      if (OriginWhitelist.indexOf(origin) >= 0 || !origin) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  },
   ...(isProd
     ? {}
     : {
@@ -79,7 +65,8 @@ const middleware = {
       }),
 };
 
-const server = createApolloServer(middleware);
+const server = createApolloServer();
+server.applyMiddleware(middleware);
 
 const publicPath = path.resolve(__dirname, '../dist');
 const staticConf = { maxAge: '1hr', etag: true };

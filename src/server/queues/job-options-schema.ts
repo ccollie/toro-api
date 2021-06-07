@@ -29,6 +29,14 @@ const RepeatOptionsSchema = {
       description:
         'Repeat every millis (cron setting cannot be used together with this setting.)',
     },
+    immediately: {
+      type: 'boolean',
+      description:
+        'Repeated job should start right now (works only with every settings)',
+    },
+    offset: {
+      type: 'integer',
+    },
   },
   additionalProperties: false,
   //  errorMessage: 'Options for repeatable job creation',
