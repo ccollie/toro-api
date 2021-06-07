@@ -1,5 +1,6 @@
 import boom from '@hapi/boom';
 import Emittery from 'emittery';
+import ms from 'ms';
 import crypto from 'crypto';
 import Joi, { ObjectSchema } from 'joi';
 import { JobEventData } from '../queues';
@@ -10,15 +11,17 @@ import { MetricsListener } from './metrics-listener';
 import { DurationSchema } from '../validation/schemas';
 import {
   MetricCategory,
-  MetricOptions,
   MetricValueType,
   MetricTypes,
   PollingMetricOptions,
   Predicate,
   SerializedMetric,
   TimeseriesDataPoint,
+  QueueMetricOptions,
+  QueuePollingMetricOptions,
 } from '../../types';
 import { createJobNameFilter } from './utils';
+import { parseDuration } from '../lib/datetime';
 
 export interface MetricUpdateEvent {
   ts: number;
@@ -28,7 +31,20 @@ export interface MetricUpdateEvent {
 
 export type MetricUpdateEventHandler = (eventData?: MetricUpdateEvent) => void;
 
-export const baseMetricSchema = Joi.object().keys({
+const DEFAULT_SAMPLE_INTERVAL = ms('1 min'); // todo: get from config
+
+function getSampleInterval(): number {
+  const baseValue = process.env.METRIC_SAVE_INTERVAL;
+  return baseValue
+    ? parseDuration(baseValue, DEFAULT_SAMPLE_INTERVAL)
+    : DEFAULT_SAMPLE_INTERVAL;
+}
+
+export const BaseMetricSchema = Joi.object().keys({
+  sampleInterval: DurationSchema.optional().default(getSampleInterval()),
+});
+
+export const QueueBasedMetricSchema = BaseMetricSchema.append({
   jobNames: Joi.array().items(Joi.string()).single().optional().default([]),
 });
 
@@ -45,6 +61,7 @@ export abstract class BaseMetric {
   private _aggregator: BaseAggregator;
   private _prev: number;
   protected _value: number;
+  protected _sampleInterval?: number;
   public isActive = true;
   public createdAt: number;
   public updatedAt: number;
@@ -54,6 +71,7 @@ export abstract class BaseMetric {
   protected constructor(options: any) {
     this._prev = null;
     this._value = -1;
+    this._sampleInterval = getSampleInterval();
     this.setOptions(options);
     this._aggregator = new NullAggregator();
     const key = (this.constructor as any).key;
@@ -88,7 +106,7 @@ export abstract class BaseMetric {
     return options as T;
   }
 
-  setOptions(options: MetricOptions): void {
+  setOptions(options: any): void {
     this.options = this.validateOptions(options);
   }
 
@@ -99,8 +117,23 @@ export abstract class BaseMetric {
     this.emitter.clearListeners();
   }
 
-  get jobNames(): string[] {
-    return this.options.jobNames || [];
+  get sampleInterval(): number {
+    return this._sampleInterval;
+  }
+
+  set sampleInterval(value: number | string) {
+    let newValue: number;
+
+    if (typeof value === 'string') {
+      newValue = ms(value);
+      if (isNaN(newValue)) {
+        throw boom.badData('Invalid value for "sampleInterval"');
+      }
+    } else {
+      newValue = value;
+    }
+    // todo: set lower bound
+    this._sampleInterval = newValue;
   }
 
   static get key(): MetricTypes {
@@ -116,7 +149,7 @@ export abstract class BaseMetric {
   }
 
   static get schema(): ObjectSchema {
-    return baseMetricSchema;
+    return BaseMetricSchema;
   }
 
   static get unit(): string {
@@ -202,7 +235,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
   private _filter: Predicate<string>;
   private _jobNames: string[] = [];
 
-  constructor(options: MetricOptions) {
+  constructor(options: QueueMetricOptions) {
     super(options);
   }
 
@@ -210,7 +243,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
     return MetricCategory.Queue;
   }
 
-  setOptions(options: MetricOptions): void {
+  setOptions(options: QueueMetricOptions): void {
     this.options = this.validateOptions(options);
     this.jobNames = options.jobNames || [];
   }
@@ -228,6 +261,10 @@ export abstract class QueueBasedMetric extends BaseMetric {
     this._filter = createJobNameFilter(values);
   }
 
+  static get schema(): ObjectSchema {
+    return QueueBasedMetricSchema;
+  }
+
   abstract handleEvent(event?: JobEventData): void;
 
   accept(event: JobEventData): boolean {
@@ -236,7 +273,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
   }
 }
 
-export const pollingMetricSchema = baseMetricSchema.append({
+export const pollingMetricSchema = BaseMetricSchema.append({
   interval: DurationSchema.required(),
 });
 
@@ -256,7 +293,8 @@ export function isPollingMetric(arg: any): arg is IPollingMetric {
 
 export abstract class PollingMetric
   extends BaseMetric
-  implements IPollingMetric {
+  implements IPollingMetric
+{
   protected constructor(options: PollingMetricOptions) {
     super(options);
   }
@@ -276,8 +314,9 @@ export abstract class PollingMetric
 
 export abstract class QueuePollingMetric
   extends QueueBasedMetric
-  implements IPollingMetric {
-  protected constructor(options: PollingMetricOptions) {
+  implements IPollingMetric
+{
+  protected constructor(options: QueuePollingMetricOptions) {
     super(options);
   }
 

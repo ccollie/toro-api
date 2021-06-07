@@ -1,6 +1,6 @@
 import { Meter } from './meter';
 import { Clock } from '../lib';
-import { MeterSummary, StatisticalSnapshot } from '@src/types';
+import { MeterSummary, StatisticalSnapshot } from '../../types';
 import { Timer } from './timer';
 
 /**

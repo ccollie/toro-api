@@ -1,6 +1,6 @@
 import { FieldConfig } from '../../utils';
 import { HostManager } from '../../../../hosts';
-import { RedisMetrics } from '@src/types';
+import { RedisMetrics } from '../../../../../types';
 import { RedisInfoTC } from './RedisInfo';
 
 export const hostRedisFC: FieldConfig = {

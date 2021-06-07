@@ -4,7 +4,7 @@ import IORedis from 'ioredis';
 import pAll from 'p-all';
 import Emittery from 'emittery';
 import { parseObjectResponse, toKeyValueList, disconnect } from './utils';
-import { ConnectionOptions } from '@src/types';
+import { ConnectionOptions } from '../../types';
 import { getDeserializer } from './streams';
 import { createDebug, logger } from '../lib';
 import { RedisClient } from 'bullmq';

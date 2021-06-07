@@ -6,6 +6,8 @@ import { JobLocatorInput } from './jobLocatorInput';
 export const jobDiscard: FieldConfig = {
   type: schemaComposer.createObjectTC({
     name: 'JobDiscardPayload',
+    description:
+      'Marks a job to not be retried if it fails (even if attempts has been configured)',
     fields: {
       job: JobTC.NonNull,
     },

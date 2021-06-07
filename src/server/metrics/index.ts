@@ -33,8 +33,8 @@ import {
   AggregatorTypes,
   Constructor,
   MetricInfo,
-  MetricOptions,
   MetricTypes,
+  QueueMetricOptions,
   SerializedAggregator,
 } from '../../types';
 import { createAggregator } from './aggregators';
@@ -158,9 +158,14 @@ export function createMetricFromJSON(
     isActive,
   } = json as Record<string, any>;
 
-  let options: MetricOptions;
+  // todo: id ?
+
+  let options: Record<string, any>;
   if (typeof _options == 'string') {
-    options = JSON.parse(_options) as MetricOptions;
+    options = JSON.parse(_options);
+    if (!isObject(options)) {
+      throw boom.badRequest('Object expected for "options" field');
+    }
   } else {
     options = _options;
   }
@@ -243,7 +248,7 @@ export {
   ApdexMetric,
   ApdexMetricOptions,
   BaseMetric,
-  MetricOptions,
+  QueueMetricOptions,
   ConnectedClientsMetric,
   CompletedCountMetric,
   CompletedRateMetric,

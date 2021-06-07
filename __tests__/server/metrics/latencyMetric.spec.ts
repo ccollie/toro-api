@@ -1,13 +1,14 @@
 /* global test, expect */
 import pMap from 'p-map';
-import { Events, MetricOptions, LatencyMetric } from '../../../src/server/metrics';
+import { Events, LatencyMetric } from '../../../src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
+import { QueueMetricOptions } from '../../../src/types';
 
 const EVENT_NAME = Events.COMPLETED;
 
 describe('LatencyMetric', () => {
   let testHelper: MetricTestHelper;
-  const defaultOptions: MetricOptions = {};
+  const defaultOptions: QueueMetricOptions = {};
 
   afterEach(async () => {
     if (testHelper) {
@@ -41,5 +42,4 @@ describe('LatencyMetric', () => {
       expect(subject.value).toBe(data[data.length - 1]);
     });
   });
-
 });

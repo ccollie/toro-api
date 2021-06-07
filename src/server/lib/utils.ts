@@ -7,7 +7,7 @@ export function hash(data: any, algorithm = 'sha1'): string {
 
 export function objToString(hash: Record<string, any>): string {
   if (!isObject(hash)) {
-    return '' + hash;
+    return `${hash}`;
   }
   const keys = Object.keys(hash).sort();
   const parts = keys.map((key) => {

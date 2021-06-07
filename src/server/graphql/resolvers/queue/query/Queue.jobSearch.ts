@@ -24,8 +24,8 @@ const JobSearchInput = schemaComposer.createInputTC({
       type: 'String',
       defaultValue: null,
       description:
-        'The iterator cursor. Iteration starts when the cursor is set to null, and terminates when ' +
-        'the cursor returned by the server is null',
+        'The iterator cursor. Iteration starts when the cursor is set to null, ' +
+        'and terminates when the cursor returned by the server is null',
     },
     count: {
       type: 'Int!',
@@ -58,7 +58,12 @@ export const jobSearch: FieldConfig = {
   async resolve(queue: Queue, { filter }) {
     const { status, criteria, cursor, count } = filter;
 
-    const { jobs, cursor: nextCursor, total, current } = await processSearch(
+    const {
+      jobs,
+      cursor: nextCursor,
+      total,
+      current,
+    } = await processSearch(
       queue,
       status,
       criteria,

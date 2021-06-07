@@ -226,7 +226,7 @@ export class StatsListener extends StatsWriter {
 
     const TIMEOUT = 15000;
 
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
     function clearTimer(): void {
       if (timer) {

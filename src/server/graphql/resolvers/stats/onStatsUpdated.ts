@@ -5,7 +5,7 @@ import {
   normalizeGranularity,
 } from '../../helpers';
 import { firstChar } from '../../../lib';
-import { StatisticalSnapshot, StatsMetricType } from '@src/types';
+import { StatisticalSnapshot, StatsMetricType } from '../../../../types';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { GraphQLFieldResolver } from 'graphql';

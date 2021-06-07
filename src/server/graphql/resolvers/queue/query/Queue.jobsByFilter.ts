@@ -2,7 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { getJobsByFilterId } from '../../../../queues';
 import { Queue } from 'bullmq';
 import { JobSearchPayload } from './Queue.jobSearch';
-import { FilteredJobsResult } from '@src/types';
+import { FilteredJobsResult } from '../../../../../types';
 import { FieldConfig } from '../../';
 
 const JobsByFilterIdInput = schemaComposer.createInputTC({

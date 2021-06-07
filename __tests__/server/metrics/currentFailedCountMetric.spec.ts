@@ -3,13 +3,13 @@ import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { PollingMetricOptions } from '../../../src/types';
+import { QueuePollingMetricOptions } from '../../../src/types';
 import { randomString } from '../utils';
 
 describe('CurrentFailedCountMetric', () => {
   describe('constructor', () => {
     it('constructs a CurrentFailedCountMetric', () => {
-      const options: PollingMetricOptions = {
+      const options: QueuePollingMetricOptions = {
         jobNames: [randomString()],
         interval: 250,
       };
@@ -43,7 +43,7 @@ describe('CurrentFailedCountMetric', () => {
       const queue = await createQueue();
 
       const interval = 8000;
-      const options: PollingMetricOptions = {
+      const options: QueuePollingMetricOptions = {
         interval,
       };
       const sut = new CurrentFailedCountMetric(options);

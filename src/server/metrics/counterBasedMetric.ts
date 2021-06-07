@@ -1,11 +1,11 @@
 import { BaseMetric, QueueBasedMetric } from './baseMetric';
-import { MetricValueType, MetricOptions } from '../../types';
+import { MetricValueType, QueueMetricOptions } from '../../types';
 import { JobFinishedEventData } from '@src/server/queues';
 
 export class CounterBasedMetric extends BaseMetric {
   protected internalCount = 0;
 
-  constructor(options: MetricOptions) {
+  constructor(options: any) {
     super(options);
     this._value = 0;
   }
@@ -28,7 +28,7 @@ export class CounterBasedMetric extends BaseMetric {
 export class QueueCounterBasedMetric extends QueueBasedMetric {
   protected internalCount = 0;
 
-  constructor(options: MetricOptions) {
+  constructor(options: QueueMetricOptions) {
     super(options);
     this._value = 0;
   }

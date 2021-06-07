@@ -1,5 +1,5 @@
 import { getQueueById } from '../../helpers';
-import { getJobSchema } from '../../../queues';
+import { getJobSchema, JobSchema } from '../../../queues';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobSchemaTC } from '../job/query/Job.schema';
@@ -18,7 +18,7 @@ export const queueJobSchema: FieldConfig = {
       },
     }),
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }): Promise<JobSchema> {
     const { queueId, jobName } = input;
     const queue = getQueueById(queueId);
 
@@ -27,10 +27,6 @@ export const queueJobSchema: FieldConfig = {
       throw boom.notFound(`No schema found for job name ${jobName}`);
     }
 
-    return {
-      jobName,
-      schema: schema.schema,
-      defaultOpts: schema.defaultOpts,
-    };
+    return schema;
   },
 };

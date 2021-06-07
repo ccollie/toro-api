@@ -21,7 +21,7 @@ export const jobOptionsValidate: FieldConfig = {
       errors: [],
     };
     try {
-      const opts = (input as any) as JobsOptions;
+      const opts = input as any as JobsOptions;
       validate(opts);
     } catch (err) {
       // todo: better formatting

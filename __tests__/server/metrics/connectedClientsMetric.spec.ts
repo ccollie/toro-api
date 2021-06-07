@@ -1,5 +1,5 @@
 import { ConnectedClientsMetric } from '../../../src/server/metrics';
-import { delay, randomString } from '../utils';
+import { delay } from '../utils';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../../src/server/redis';
 import { PollingMetricOptions } from '../../../src/types';
@@ -8,13 +8,11 @@ describe('ConnectedClientsMetric', () => {
   describe('constructor', () => {
     it('constructs a ConnectedClientsMetric', () => {
       const options: PollingMetricOptions = {
-        jobNames: [randomString()],
         interval: 250,
       };
       const sut = new ConnectedClientsMetric(options);
       expect(sut).toBeDefined();
       expect(sut.id).toBeDefined();
-      expect(sut.jobNames).toBe(options.jobNames);
       expect(sut.interval).toBe(options.interval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);

@@ -28,9 +28,24 @@ function GCF(a: number, b: number): number {
   return b === 0 ? a : GCF(b, a % b);
 }
 
-interface PollingMetricMetadata {
+function arrayGCF(...args: number[]): number {
+  if (args.length === 0) return 1;
+  let gcf = -1;
+  args.forEach((value) => {
+    if (gcf === -1) {
+      gcf = value;
+    } else if (gcf > 1) {
+      gcf = GCF(gcf, value);
+    }
+  });
+  return gcf;
+}
+
+interface MetricMetadata {
   lastTick: number;
   interval: number;
+  lastSave: number;
+  sampleInterval?: number;
 }
 
 const DEFAULT_SAVE_INTERVAL = ms('1 minute');
@@ -56,13 +71,11 @@ export class MetricsListener {
   private readonly _shouldDestroy: boolean;
   private readonly _metrics: BaseMetric[] = [];
   private activeMetrics: BaseMetric[] = [];
-  private readonly pollingMetrics = new Map<
-    IPollingMetric,
-    PollingMetricMetadata
-  >();
+  private readonly metricMeta = new Map<BaseMetric, MetricMetadata>();
+  private readonly pollingMetrics = new Map<IPollingMetric, MetricMetadata>();
   private readonly emitter: Emittery = new Emittery();
   private readonly handlerMap = new Map<string, Set<QueueBasedMetric>>();
-  private readonly _saveInterval = getSaveInterval();
+  private _saveInterval = getSaveInterval();
   private readonly _state: Record<string, any> = Object.create(null);
 
   private _rateTimer: AccurateInterval;
@@ -131,7 +144,7 @@ export class MetricsListener {
     if (checked.length) {
       this.workQueue
         .addAll(tasks)
-        .then(() => this.emitUpdate((checked as unknown) as BaseMetric[]))
+        .then(() => this.emitUpdate(checked as unknown as BaseMetric[]))
         .catch(this.onError);
     }
   }
@@ -139,12 +152,21 @@ export class MetricsListener {
   private async savePoll() {
     const active = this.activeMetrics;
     if (active.length) {
+      const now = this.clock.getTime();
       const client = await this.client;
       const pipeline = client.pipeline();
+
       for (const metric of active) {
-        const key = this.getDataKey(metric);
-        TimeSeries.multi.add(pipeline, key, this.clock.getTime(), metric.value);
+        const meta = this.metricMeta.get(metric);
+        const age = now - meta.lastSave;
+        if (age >= meta.sampleInterval) {
+          meta.lastSave = now;
+          // todo: round save time to sampleInterval
+          const key = this.getDataKey(metric);
+          TimeSeries.multi.add(pipeline, key, now, metric.value);
+        }
       }
+
       await pipeline.exec();
     }
   }
@@ -153,6 +175,7 @@ export class MetricsListener {
     if (this._saveTimer) {
       this._saveTimer.stop();
     }
+    this._saveInterval = this.calcSaveTimerInterval();
     this._saveTimer = createAccurateInterval(
       () => this.savePoll().catch(this.onError),
       this._saveInterval,
@@ -203,16 +226,6 @@ export class MetricsListener {
     return this.queueListener.queue.client;
   }
 
-  private addPollingMetric(metric: IPollingMetric): void {
-    const meta: PollingMetricMetadata = {
-      lastTick: Date.now(),
-      interval: metric.interval,
-    };
-    this.pollingMetrics.set(metric, meta);
-    this.updateActive();
-    this.running && this.initTimer();
-  }
-
   private removePollingMetric(metric: IPollingMetric): void {
     const meta = this.pollingMetrics.get(metric);
     if (meta) {
@@ -241,9 +254,16 @@ export class MetricsListener {
 
   registerMetric(metric: BaseMetric): void {
     if (this._metrics.indexOf(metric) > 0) return;
+    const meta: MetricMetadata = {
+      lastTick: Date.now(),
+      lastSave: 0,
+      interval: 0,
+      sampleInterval: metric.sampleInterval,
+    };
+    this.metricMeta.set(metric, meta);
     if (isPollingMetric(metric)) {
-      this.addPollingMetric(metric);
-      this._metrics.push(metric);
+      meta.interval = metric.interval;
+      this.pollingMetrics.set(metric, meta);
     } else if (metric instanceof QueueBasedMetric) {
       metric.validEvents.forEach((event) => {
         let metricsForEvent = this.handlerMap.get(event);
@@ -256,11 +276,12 @@ export class MetricsListener {
           this.queueListener.on(event, this.dispatch);
         }
       });
-      this._metrics.push(metric);
     }
+    this._metrics.push(metric);
     this.updateActive();
     // metric.onUpdate()
     metric.init(this);
+    this.running && this.initTimer();
   }
 
   unregisterMetric(metric: BaseMetric): void {
@@ -282,6 +303,7 @@ export class MetricsListener {
     const idx = this._metrics.indexOf(metric);
     if (idx >= 0) {
       this._metrics.splice(idx, 1);
+      this.metricMeta.delete(metric);
       if (isPollingMetric(metric)) {
         this.removePollingMetric(metric);
       }
@@ -322,6 +344,23 @@ export class MetricsListener {
         gcf = GCF(gcf, meta.interval);
       }
       if (meta.interval < val) val = meta.interval;
+    });
+    if (gcf > 1) {
+      return gcf;
+    }
+    return Math.min(1000, val);
+  }
+
+  private calcSaveTimerInterval(): number {
+    let val = Number.MAX_VALUE;
+    let gcf = -1;
+    this.metrics.forEach(({ sampleInterval }) => {
+      if (gcf === -1) {
+        gcf = sampleInterval;
+      } else if (gcf > 1) {
+        gcf = GCF(gcf, sampleInterval);
+      }
+      if (sampleInterval < val) val = sampleInterval;
     });
     if (gcf > 1) {
       return gcf;
