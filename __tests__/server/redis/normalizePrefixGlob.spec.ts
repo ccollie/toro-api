@@ -1,4 +1,4 @@
-import { normalizePrefixGlob } from '../../../src/server/redis';
+import { normalizePrefixGlob } from '@src/server/redis';
 
 describe('normalizePrefixGlob', () => {
   it('check empty mask', () => {
@@ -20,7 +20,11 @@ describe('normalizePrefixGlob', () => {
   });
 
   it('check mask with prefix which contains semicolons', () => {
-    expect(normalizePrefixGlob('my:service:bull:metrics')).toBe('my:service:bull:metrics:meta');
-    expect(normalizePrefixGlob('my:service*:bull:metrics*')).toBe('my:service*:bull:metrics*:meta');
+    expect(normalizePrefixGlob('my:service:bull:metrics')).toBe(
+      'my:service:bull:metrics:meta',
+    );
+    expect(normalizePrefixGlob('my:service*:bull:metrics*')).toBe(
+      'my:service*:bull:metrics*:meta',
+    );
   });
 });

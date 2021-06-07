@@ -3,6 +3,26 @@ import { normal, laplace, beta, sample } from 'unirand';
 
 // see https://statisticsblog.com/probability-distributions/
 
+// eslint-disable-next-line max-len
+// https://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve/36481059#36481059
+export function gaussianBM(min: number, max: number, skew = 0): number {
+  let u = 0,
+    v = 0;
+  while (u === 0) u = Math.random(); //Converting [0,1) to (0,1)
+  while (v === 0) v = Math.random();
+  let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+
+  num = num / 10.0 + 0.5; // Translate to 0 -> 1
+  if (num > 1 || num < 0) num = gaussianBM(min, max, skew);
+  // resample between 0 and 1 if out of range
+  else {
+    num = Math.pow(num, skew); // Skew
+    num *= max - min; // Stretch to fill range
+    num += min; // offset to min
+  }
+  return num;
+}
+
 export function generateRange(n: number, options): number[] {
   const { mean, max, min = 10, sd = 2, scale = 2 } = options;
 

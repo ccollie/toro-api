@@ -17,7 +17,7 @@ export function makeAsyncIterator<T>(properties: Record<string, any>) {
 export interface IteratorBatchOptions<
   TEvent = any,
   TTransformed = TEvent,
-  TOutput = TTransformed
+  TOutput = TTransformed,
 > {
   /***
    * The batch interval in milliseconds
@@ -33,7 +33,7 @@ export interface IteratorBatchOptions<
 export interface IteratorOptions<
   TEvent,
   TTransformed = TEvent,
-  TOutput = TTransformed
+  TOutput = TTransformed,
 > {
   eventNames: string | string[];
   filter?: (eventName: string, value?: TEvent) => boolean;
@@ -47,7 +47,7 @@ export interface IteratorOptions<
 export function createAsyncIterator<
   TEvent = any,
   TTransformed = TEvent,
-  TOutput = TTransformed
+  TOutput = TTransformed,
 >(
   emitter: Emittery | EventEmitter,
   options: IteratorOptions<TEvent, TTransformed, TOutput>,

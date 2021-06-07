@@ -1,12 +1,12 @@
 import { keyBy } from 'lodash';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSubscriptionResolver, getQueueManager } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
-import { getQueueManager } from '../../../helpers';
-import { QueueWorker } from '../../../../../types';
-import { logger, QueueManager } from '../../../imports';
+import { QueueWorker } from '@src/types';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { QueueWorkerTC } from '../query/Queue.workers';
+import { QueueWorkerTC } from '../model/Queue.workers';
+import { QueueManager } from '@server/queues';
+import { logger } from '@lib/index';
 
 const POLLING_INTERVAL = 4500; // todo: get from config
 

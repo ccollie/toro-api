@@ -1,5 +1,5 @@
 import { getQueueById } from '../../../helpers';
-import { deleteJobSchema } from '../../../../queues';
+import { deleteJobSchema } from '@server/queues';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import boom from '@hapi/boom';

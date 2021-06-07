@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../index';
-import { publish } from '../../../helpers';
+import { publish } from '../../../pubsub';
 import { Job, Queue } from 'bullmq';
 
 function getChannelName(queueId: string): string {

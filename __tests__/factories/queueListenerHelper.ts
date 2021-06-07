@@ -2,17 +2,17 @@ import {
   JobEventData,
   JobFinishedEventData,
   QueueListener,
-} from '../../src/server/queues';
+} from '@src/server/queues';
 import isNumber from 'lodash/isNumber';
 import random from 'lodash/random';
 import defaultsDeep from 'lodash/defaultsDeep';
-import { ManualClock } from '../../src/server/lib';
+import { ManualClock } from '@src/server/lib';
 import { randomString } from '../server/utils';
-import { Events } from '../../src/server/metrics';
+import { Events } from '@src/server/metrics';
 
 function ensureJob(data: Record<string, any>, currentTime?: number): void {
   data.job = data.job || Object.create(null);
-  let timestamp = data.job.timestamp;
+  const timestamp = data.job.timestamp;
   if (!timestamp) {
     const age = random(100, 60000);
     const now = data.ts || currentTime || Date.now();
@@ -32,7 +32,7 @@ function ensureDurations(
   }
   data.job.finishedOn = now;
   data.job.processedOn = now - latency;
-  let wait = data.wait;
+  const wait = data.wait;
   if (!isNumber(wait) || wait < 0) {
     data.wait = data.job.processedOn - data.job.timestamp;
   } else {
@@ -103,23 +103,29 @@ export class QueueListenerHelper {
     return this.listener.clock.getTime();
   }
 
-  async postJobEvent(event: string, data: Record<string, any> = {}) {
+  async postJobEvent(
+    event: string,
+    data: Record<string, any> = {},
+  ): Promise<void> {
     const eventData = createJobEvent(event, data, this.now);
     this.setTime(eventData.ts);
     return this.listener.emit(event, eventData);
   }
 
-  async postFinishedEvent(successful: boolean, data: Record<string, any> = {}) {
+  async postFinishedEvent(
+    successful: boolean,
+    data: Record<string, any> = {},
+  ): Promise<void> {
     const event = createFinishedEvent(successful, data, this.now);
     this.setTime(event.ts);
     return this.listener.emit(Events.FINISHED, event);
   }
 
-  async postFailedEvent(data: Record<string, any> = {}) {
+  async postFailedEvent(data: Record<string, any> = {}): Promise<void> {
     return this.postJobEvent(Events.FAILED, data);
   }
 
-  async postCompletedEvent(data: Record<string, any> = {}) {
+  async postCompletedEvent(data: Record<string, any> = {}): Promise<void> {
     return this.postJobEvent(Events.COMPLETED, data);
   }
 }

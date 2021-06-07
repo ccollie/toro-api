@@ -1,7 +1,7 @@
 import { QueueBasedMetric } from './baseMetric';
 import { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
-import { MetricTypes } from '../../types';
+import { MetricTypes } from '@src/types';
 
 export class LatencyMetric extends QueueBasedMetric {
   get validEvents(): string[] {

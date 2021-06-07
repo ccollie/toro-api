@@ -1,13 +1,13 @@
 import { JobFinishedEventData, QueueListener, QueueManager } from '../queues';
 import { StatisticalSnapshotOptions, StatsMetricType } from '../../types';
-import { DateLike, roundDown, roundInterval, roundUp } from '../lib/datetime';
+import { DateLike, roundDown, roundInterval, roundUp } from '@lib/datetime';
 import QueueStats from './queue-stats';
 import { systemClock, Clock, isNumber } from '../lib';
 import { isAfter, toDate } from 'date-fns';
 import { StatsWriter } from './stats-writer';
 import Emittery from 'emittery';
 import logger from '../lib/logger';
-import { TimeSeries } from '../commands/timeseries';
+import { TimeSeries } from '@server/commands';
 import { CONFIG, getSnapshotInterval } from './utils';
 import { StatsClient } from './stats-client';
 

@@ -1,13 +1,13 @@
 export enum RuleType {
-  THRESHOLD = 'threshold',
-  PEAK = 'peak',
-  CHANGE = 'change',
+  THRESHOLD = 'THRESHOLD',
+  PEAK = 'PEAK',
+  CHANGE = 'CHANGE',
 }
 
 export enum PeakSignalDirection {
-  ABOVE = 'above',
-  BELOW = 'below',
-  BOTH = 'both',
+  ABOVE = 'ABOVE',
+  BELOW = 'BELOW',
+  BOTH = 'BOTH',
 }
 
 export enum RuleState {
@@ -18,16 +18,16 @@ export enum RuleState {
 }
 
 export enum Severity {
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-  CRITICAL = 'critical',
+  INFO = 'INFO',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+  CRITICAL = 'CRITICAL',
 }
 
 export enum ErrorLevel {
-  WARNING = 'warning',
-  CRITICAL = 'critical',
-  NONE = 'none',
+  NONE = 'NONE',
+  WARNING = 'WARNING',
+  CRITICAL = 'CRITICAL',
 }
 
 /**
@@ -45,12 +45,12 @@ export interface NotificationThresholds {
 }
 
 export enum RuleOperator {
-  eq = '==',
-  ne = '!=',
-  gt = '>',
-  lt = '<',
-  gte = '>=',
-  lte = '<=',
+  EQ = 'EQ',
+  NE = 'NE',
+  GT = 'GT',
+  LT = 'LT',
+  GTE = 'GTE',
+  LTE = 'LTE',
 }
 
 export interface RuleConditionThresholds extends NotificationThresholds {
@@ -82,13 +82,13 @@ export interface PeakCondition extends RuleConditionThresholds {
 }
 
 export enum ChangeAggregationType {
-  Max = 'max',
-  Min = 'min',
-  Avg = 'avg',
-  Sum = 'sum',
-  P90 = 'p90',
-  P95 = 'p95',
-  P99 = 'p99',
+  MAX = 'MAX',
+  MIN = 'MIN',
+  AVG = 'AVG',
+  SUM = 'SUM',
+  P90 = 'P90',
+  P95 = 'P95',
+  P99 = 'P99',
 }
 
 export enum ChangeTypeEnum {
@@ -134,6 +134,7 @@ export enum RuleEventsEnum {
   ALERT_TRIGGERED = 'alert.triggered',
   ALERT_RESET = 'alert.reset',
   ALERT_DELETED = 'alert.deleted',
+  ALERT_UPDATED = 'alert.updated',
   RULE_ADDED = 'rule.added',
   RULE_DELETED = 'rule.deleted',
   RULE_UPDATED = 'rule.updated',
@@ -216,6 +217,7 @@ export interface RuleConfigOptions {
   severity?: Severity;
   state?: RuleState;
   lastTriggeredAt?: number;
+  totalFailures?: number;
 }
 
 /**
@@ -246,4 +248,5 @@ export interface RuleAlert {
   readonly state?: Record<string, any>;
   readonly errorLevel: ErrorLevel;
   severity: Severity;
+  isRead: boolean;
 }

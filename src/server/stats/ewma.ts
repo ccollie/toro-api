@@ -96,7 +96,7 @@ export class EWMA {
    *
    * @return a fifteen-minute EWMA
    */
-  public static fifteenMinuteEWMA() {
+  public static fifteenMinuteEWMA(): EWMA {
     return new EWMA(EWMA.M15_ALPHA, INTERVAL, TimeUnit.SECONDS);
   }
 
@@ -105,7 +105,7 @@ export class EWMA {
    *
    * @param n the new value
    */
-  public update(n: number) {
+  update(n: number): void {
     this.uncounted += n;
   }
 
@@ -133,7 +133,7 @@ export class EWMA {
     }
   }
 
-  reset() {
+  reset(): void {
     this.uncounted = 0;
     this.initialized = false;
     this._rate = 0;

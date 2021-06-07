@@ -1,5 +1,5 @@
 import { Queue, RedisClient } from 'bullmq';
-import { DateLike } from '../lib/datetime';
+import { DateLike } from '@lib/datetime';
 import { getHostStatsKey, getQueueMetaKey, getStatsKey } from '../lib';
 import {
   MeterSummary,
@@ -357,7 +357,7 @@ export class StatsClient extends Emittery {
       ? this.getHostKey(jobName, type, unit)
       : this.getKey(jobName, type, unit);
 
-    const multi = this.writer.multi;
+    const multi = this.writer.pipeline;
     const event = (isHost ? 'host.' : '') + 'stats.cleanup';
     const data = {
       key,

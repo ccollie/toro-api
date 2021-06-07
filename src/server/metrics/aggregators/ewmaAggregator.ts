@@ -1,28 +1,29 @@
-import { BaseAggregator } from './aggregator';
+import { BaseAggregator, WindowedAggregator } from './aggregator';
 import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
 import { IMovingAverage, MovingAverage } from '../../stats/moving-average';
-import { AggregatorTypes } from '../../../types';
-import Joi from 'joi';
-import { DurationSchema } from '../../validation/schemas';
-
-export const schema = Joi.object().keys({
-  interval: DurationSchema.required(),
-});
+import { ObjectSchema } from 'joi';
+import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
+import { SlidingWindowOptionSchema } from './slidingTimeWindowAggregator';
 
 /***
  * Returns the Exponentially Weighted Moving Avg of a stream
  * of values
  */
-export class EWMAAggregator extends BaseAggregator {
+export class EWMAAggregator
+  extends BaseAggregator
+  implements WindowedAggregator
+{
   private readonly ewma: IMovingAverage;
+  public readonly windowSize: number;
 
   /**
    * Construct a EWMAAggregator
    */
-  constructor(clock: Clock, interval: number) {
-    super(clock, { interval });
-    this.ewma = MovingAverage(interval, clock);
+  constructor(clock: Clock, options: SlidingWindowOptions) {
+    super(clock, options);
+    this.windowSize = options.duration;
+    this.ewma = MovingAverage(options.duration, clock);
   }
 
   getDescription(metric: BaseMetric, short = false): string {
@@ -31,6 +32,10 @@ export class EWMAAggregator extends BaseAggregator {
       return super.getDescription(metric, true);
     }
     return `${type} EWMA`;
+  }
+
+  static get key(): AggregatorTypes {
+    return AggregatorTypes.Ewma;
   }
 
   static get description(): string {
@@ -53,48 +58,8 @@ export class EWMAAggregator extends BaseAggregator {
   reset(): void {
     this.ewma.reset();
   }
-}
 
-const ONE_MINUTE = 1000 * 60;
-
-export class EWMA1MinAggregator extends EWMAAggregator {
-  constructor(clock: Clock) {
-    super(clock, ONE_MINUTE);
-  }
-
-  static get key(): AggregatorTypes {
-    return AggregatorTypes.Ewma1Min;
-  }
-
-  static get description(): string {
-    return '1 min EWMA';
-  }
-}
-
-export class EWMA5MinAggregator extends EWMAAggregator {
-  constructor(clock: Clock) {
-    super(clock, 5 * ONE_MINUTE);
-  }
-
-  static get key(): AggregatorTypes {
-    return AggregatorTypes.Ewma5Min;
-  }
-
-  static get description(): string {
-    return '5 min EWMA';
-  }
-}
-
-export class EWMA15MinAggregator extends EWMAAggregator {
-  constructor(clock: Clock) {
-    super(clock, 15 * ONE_MINUTE);
-  }
-
-  static get key(): AggregatorTypes {
-    return AggregatorTypes.Ewma15Min;
-  }
-
-  static get description(): string {
-    return '15 min EWMA';
+  static get schema(): ObjectSchema {
+    return SlidingWindowOptionSchema;
   }
 }

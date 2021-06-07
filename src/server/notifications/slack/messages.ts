@@ -1,5 +1,5 @@
 import { getTitle } from '../utils';
-import { NotificationContext, RuleEventsEnum } from '../../../types';
+import { NotificationContext, RuleEventsEnum } from '@src/types';
 import { isEmpty } from 'lodash';
 import {
   getObjectFieldsBlock,
@@ -18,7 +18,7 @@ import {
   Field,
   TextBlock,
 } from './slack.types';
-import { DateLike } from '../../lib/datetime';
+import { DateLike } from '@lib/datetime';
 import toDate from 'date-fns/toDate';
 import { systemClock } from '../../lib';
 

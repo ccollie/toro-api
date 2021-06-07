@@ -9,8 +9,8 @@ import {
   RuleOperator,
   RuleState,
   RuleType,
-} from '../../../src/types';
-import { Rule, RuleManager } from '../../../src/server/rules';
+} from '@src/types';
+import { Rule, RuleManager } from '@src/server/rules';
 import {
   getUniqueId,
   HostManager,
@@ -37,6 +37,7 @@ function createAlert(rule, data = {}): RuleAlert {
     state: {},
     severity: undefined,
     failures: 0,
+    isRead: false,
     ...data,
   };
 }
@@ -286,7 +287,7 @@ describe('RuleManager', () => {
       type: RuleType.THRESHOLD,
       errorThreshold: ERROR_TRIGGER_VALUE - 100,
       warningThreshold: WARNING_TRIGGER_VALUE - 100,
-      operator: RuleOperator.gt,
+      operator: RuleOperator.GT,
     };
 
     let metricId: string;
@@ -425,7 +426,7 @@ describe('RuleManager', () => {
       type: RuleType.THRESHOLD,
       errorThreshold: 1000,
       warningThreshold: 500,
-      operator: RuleOperator.gt,
+      operator: RuleOperator.GT,
     };
 
     const TriggerData = { latency: 2000 };
@@ -456,7 +457,7 @@ describe('RuleManager', () => {
     const condition: RuleCondition = {
       type: RuleType.THRESHOLD,
       errorThreshold: 1000,
-      operator: RuleOperator.gt,
+      operator: RuleOperator.GT,
     };
 
     const TriggerData = { latency: 2000 };

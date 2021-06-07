@@ -1,6 +1,5 @@
 import { Queue } from 'bullmq';
 import get from 'lodash/get';
-import isempty from 'lodash/isEmpty';
 import { Readable } from 'stream';
 import { JobStatusEnum } from '../../types';
 import { safeParse } from '../lib';
@@ -94,7 +93,7 @@ class ListIterator extends AbstractIterator {
     while (true) {
       try {
         const ids = this._nextChunk;
-        if (isempty(ids)) {
+        if (ids?.length === 0) {
           return;
         }
         const data = await this._extractJobsData(ids);

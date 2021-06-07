@@ -6,7 +6,7 @@ import {
 } from './slidingTimeWindowAggregator';
 import { TickEventData } from '../../stats';
 import { BaseMetric } from '../baseMetric';
-import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
 import { ObjectSchema } from 'joi';
 
 const DEFAULT_VALUE = Number.POSITIVE_INFINITY;

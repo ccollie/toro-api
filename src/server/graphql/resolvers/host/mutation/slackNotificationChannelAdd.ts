@@ -2,9 +2,9 @@ import { FieldConfig } from '../../index';
 import {
   SlackNotificationChannelTC,
   SlackNotificationChannelInputTC,
-} from '../scalars';
+} from '../scalars/notifications';
 import { addChannel } from './utils';
-import { SlackChannel } from '../../../../notifications';
+import { SlackChannel } from '@server/notifications';
 import { schemaComposer } from 'graphql-compose';
 
 const SlackNotificationChannelAddInput = schemaComposer.createInputTC({

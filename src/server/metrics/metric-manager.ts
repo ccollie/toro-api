@@ -1,7 +1,7 @@
 import boom from '@hapi/boom';
 import { isEmpty, isNil, isNumber, isString } from 'lodash';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
-import { getMetricsDataKey, getMetricsKey } from '../lib/keys';
+import { getMetricsDataKey, getMetricsKey } from '@lib/keys';
 
 import { Queue, RedisClient } from 'bullmq';
 import {
@@ -17,7 +17,7 @@ import {
   MetricsListener,
   serializeMetric,
 } from './index';
-import { QueueListener } from '../queues/queue-listener';
+import { QueueListener } from '@server/queues';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -360,18 +360,34 @@ export class MetricManager {
     start = convertTsForStream(start);
     end = convertTsForStream(end);
 
+    const rest = [];
+    if (typeof limit === 'number') {
+      rest.push(0, limit);
+    }
     const data = await TimeSeries.getRange<number>(
       client,
       key,
       start,
       end,
-      0,
-      limit,
+      ...rest,
     );
+
     return data.map((x) => ({
       ts: parseInt(x.timestamp),
       value: x.value,
     }));
+  }
+
+  async refreshMetricData(
+    metric: BaseMetric | string,
+    start?: number,
+    end?: number,
+  ): Promise<void> {
+    if (typeof metric === 'string') {
+      metric = await this.getMetric(metric);
+    }
+
+    return MetricsListener.refreshData(this.queue, metric, start, end);
   }
 
   async getMetricDataCount(metric: BaseMetric | string): Promise<number> {
@@ -427,13 +443,13 @@ export class MetricManager {
 
 function getMetricId(metric: BaseMetric | string): string {
   let id;
-  if (metric instanceof BaseMetric) {
-    id = metric.id;
-  } else {
+  if (typeof metric === 'string') {
     id = metric;
+  } else if (metric.id) {
+    id = metric.id;
   }
   if (!id) {
-    throw boom.badRequest('Expected a metric');
+    throw boom.badRequest('Expected a metric or metric id');
   }
   return id;
 }

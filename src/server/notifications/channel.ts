@@ -10,7 +10,8 @@ import { systemClock } from '../lib';
  * This class holds metadata for a channel instance
  */
 export class Channel<TConfig extends ChannelConfig = ChannelConfig>
-  implements NotificationChannel {
+  implements NotificationChannel
+{
   public options: TConfig;
   public createdAt: number;
   public updatedAt: number;

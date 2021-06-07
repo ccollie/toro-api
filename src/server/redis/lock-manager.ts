@@ -2,9 +2,9 @@
 import { EventEmitter } from 'events';
 import logger from '../lib/logger';
 import RedLock from 'redlock';
-import Timeout = NodeJS.Timeout;
-import { parseDuration } from '../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 import { RedisClient } from 'bullmq';
+import { setTimeout, setInterval } from 'timers';
 
 export interface LockOptions {
   key: string;
@@ -39,6 +39,9 @@ function getLockTTL(): number {
   return parseDuration(process.env.LOCK_TTL, DEFAULT_LOCK_TTL);
 }
 
+type TTimeout = ReturnType<typeof setTimeout>;
+type TInterval = ReturnType<typeof setInterval>;
+
 /**
  * Class to maintain a distributed redlock to control writing to the db
  */
@@ -50,8 +53,8 @@ export class LockManager extends EventEmitter {
   public readonly waitTime: number;
   public readonly renewTime: number;
   private lock: any;
-  private renewId: Timeout = null;
-  private electId: Timeout = null;
+  private renewId: TInterval = null;
+  private electId: TTimeout = null;
 
   static ACQUIRED = 'elected';
   static RELEASED = 'released';
@@ -135,7 +138,10 @@ export class LockManager extends EventEmitter {
 
       // console.log('Lock acquired: ' + this.key);
       this.clearTimers();
-      this.renewId = setInterval(() => this.renew(), this.renewTime) as Timeout;
+      this.renewId = setInterval(
+        () => this.renew(),
+        this.renewTime,
+      ) as TInterval;
       this.emit(LockManager.ACQUIRED, this);
       this.emit(LockManager.STATE_CHANGED, this.isOwner);
     } catch (error) {

@@ -1,6 +1,5 @@
 import logger from './logger';
 import request from './request';
-import RefCountCache from './refcount-cache';
 export * from './accurate-interval';
 export * from './chunked-associative-array';
 export * from './clock';
@@ -18,4 +17,4 @@ export * from './mail';
 export * from './markdown';
 export * from './time-ticker';
 export * as objectMapper from './object-mapper';
-export { logger, request, RefCountCache };
+export { logger, request };

@@ -1,7 +1,7 @@
 import { FieldConfig } from '../index';
 import { getHostById } from '../../helpers';
-import { Channel } from '../../../notifications';
-import { NotificationChannelTC } from '../host/scalars';
+import { Channel } from '@server/notifications';
+import { NotificationChannelTC } from '../host/scalars/notifications';
 
 export const notificationChannel: FieldConfig = {
   type: NotificationChannelTC,

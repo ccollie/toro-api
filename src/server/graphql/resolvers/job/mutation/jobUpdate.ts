@@ -1,7 +1,7 @@
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
-import { validateJobData } from '../../../../queues';
+import { validateJobData } from '@server/queues';
 import boom from '@hapi/boom';
 
 const JobUpdateInput = schemaComposer.createInputTC({

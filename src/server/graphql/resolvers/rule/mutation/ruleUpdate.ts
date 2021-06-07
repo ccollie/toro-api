@@ -1,7 +1,8 @@
+import boom from '@hapi/boom';
 import { FieldConfig, RuleTC, RuleUpdateInputTC } from '../../index';
 import { getQueueManager } from '../../../helpers';
-import { RuleConfigOptions } from '../../../../../types';
-import boom from '@hapi/boom';
+import { RuleUpdateInput } from '../../../typings';
+import { convertCondition, translateSeverity } from './utils';
 
 export const ruleUpdate: FieldConfig = {
   type: RuleTC.NonNull,
@@ -9,8 +10,8 @@ export const ruleUpdate: FieldConfig = {
   args: {
     input: RuleUpdateInputTC.NonNull,
   },
-  async resolve(_, args): Promise<any> {
-    const { queueId, id, ...rest } = args;
+  async resolve(_, { input }: { input: RuleUpdateInput }): Promise<any> {
+    const { queueId, id } = input;
     const manager = getQueueManager(queueId);
     const rule = await manager.getRule(id);
     if (!rule) {
@@ -18,41 +19,41 @@ export const ruleUpdate: FieldConfig = {
         `No rule with id "${id}" found in queue "${manager.name}"`,
       );
     }
-    const opts = rest as RuleConfigOptions;
-    if (opts.metricId) {
-      const metric = await manager.findMetric(opts.metricId);
+
+    if (input.metricId) {
+      const metric = await manager.findMetric(input.metricId);
       if (!metric) {
         throw boom.notFound(
-          `Invalid metric ${opts.metricId} is required for a rule`,
+          `Invalid metric ${input.metricId} is required for a rule`,
         );
       }
-      rule.metricId = opts.metricId;
+      rule.metricId = input.metricId;
     }
-    if (opts.name) {
+    if (input.name) {
       const names = await manager.ruleManager.storage.getRuleNames();
       console.log(names);
       // todo: make sure we dont duplicate names
     }
-    if (opts.message) {
-      rule.message = opts.message;
+    if (input.message) {
+      rule.message = input.message;
     }
-    if (opts.description !== undefined) {
-      rule.description = opts.description;
+    if (input.description !== undefined) {
+      rule.description = input.description;
     }
-    if (opts.isActive !== undefined) {
-      rule.isActive = !!opts.isActive;
+    if (input.isActive !== undefined) {
+      rule.isActive = !!input.isActive;
     }
-    if (opts.payload !== undefined) {
-      rule.payload = opts.payload;
+    if (input.payload !== undefined) {
+      rule.payload = input.payload;
     }
-    if (opts.condition !== undefined) {
-      rule.condition = opts.condition;
+    if (input.condition !== undefined) {
+      rule.condition = convertCondition(input.condition);
     }
-    if (opts.severity !== undefined) {
-      rule.severity = opts.severity;
+    if (input.severity !== undefined) {
+      rule.severity = translateSeverity(input.severity);
     }
-    if (opts.options !== undefined) {
-      rule.alertOptions = opts.options;
+    if (input.options !== undefined) {
+      rule.alertOptions = input.options;
     }
     // channels
     return manager.updateRule(rule);

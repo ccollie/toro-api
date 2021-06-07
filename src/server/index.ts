@@ -8,16 +8,41 @@ import path from 'path';
 import http from 'http';
 import cors from 'cors';
 import { Supervisor } from './supervisor';
-
-import { createServer as createApolloServer } from './graphql';
 import ms from 'ms';
+import { ApolloServer } from 'apollo-server-express';
+import { schema, createContext, formatGraphqlError } from './graphql';
+import { parseBool } from './lib';
 
 const app = express();
 
 const port = config.get('port') || 4000;
 const env = process.env.NODE_ENV || 'dev';
 const isProd = env === 'production';
-const isDevelopment = env === 'dev' || env === 'development';
+const debug = parseBool(process.env.DEBUG) && env !== 'production';
+
+function createServer(): ApolloServer {
+  const server = new ApolloServer({
+    schema,
+    // resolvers,
+    // mocks: true,
+    // mockEntireSchema: true,
+    context: createContext,
+    formatError: formatGraphqlError,
+    debug, // TODO
+    subscriptions: {
+      onConnect: (connectionParams, webSocket, context) => {
+        console.log('Connected!');
+      },
+      onDisconnect: (webSocket, context) => {
+        console.log('Disconnected!');
+      },
+      path: '/subscriptions',
+      // ...other options...
+    },
+    // tracing: process.env.NODE_ENV !== 'production',
+  });
+  return server;
+}
 
 // TODO: get from config ?
 const OriginWhitelist = [
@@ -65,7 +90,7 @@ const middleware = {
       }),
 };
 
-const server = createApolloServer();
+const server = createServer();
 server.applyMiddleware(middleware);
 
 const publicPath = path.resolve(__dirname, '../dist');

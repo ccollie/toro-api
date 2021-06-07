@@ -3,8 +3,7 @@ import ms from 'ms';
 import LRUCache from 'lru-cache';
 import Emittery from 'emittery';
 import logger from '../lib/logger';
-import { isFinishedStatus, isNumber } from '../lib';
-import { parseTimestamp } from '../lib/datetime';
+import { parseTimestamp } from '@lib/datetime';
 import { parseStreamId, timestampFromStreamId } from '../redis';
 import { AppJob, JobStatusEnum } from '../../types';
 import {
@@ -13,9 +12,11 @@ import {
   ManualClock,
   createAsyncIterator,
   IteratorOptions,
+  isFinishedStatus,
+  isNumber,
 } from '../lib';
 
-const FINISHED_EVENT = 'job.finished';
+export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');
 
 const DEFAULT_FIELDS_TO_FETCH = [
@@ -79,11 +80,11 @@ export class QueueListener extends Emittery {
     this._handlerMap = {
       [JobStatusEnum.ACTIVE]: this.makeHandler(
         JobStatusEnum.ACTIVE,
-        this.handleActive,
+        QueueListener.handleActive,
       ),
       [JobStatusEnum.WAITING]: this.makeHandler(
         JobStatusEnum.WAITING,
-        this.handleWaiting,
+        QueueListener.handleWaiting,
       ),
       [JobStatusEnum.COMPLETED]: this.makeHandler(
         JobStatusEnum.COMPLETED,
@@ -95,13 +96,13 @@ export class QueueListener extends Emittery {
       ),
       [JobStatusEnum.DELAYED]: this.makeHandler(
         JobStatusEnum.DELAYED,
-        this.handleDelayed,
+        QueueListener.handleDelayed,
       ),
       [JobStatusEnum.STALLED]: this.makeHandler(
         JobStatusEnum.STALLED,
-        this.handleStalled,
+        QueueListener.handleStalled,
       ),
-      progress: this.makeHandler('progress', this.handleProgress),
+      progress: this.makeHandler('progress', QueueListener.handleProgress),
       removed: this.makeHandler('removed', this.handleRemoved),
     };
 
@@ -236,7 +237,7 @@ export class QueueListener extends Emittery {
     this.cache.del(job.id);
   }
 
-  private handleActive(data: JobEventData, { prev }): void {
+  private static handleActive(data: JobEventData, { prev }): void {
     const { job, ts } = data;
     if (!job.timestamp && !prev) {
       job.timestamp = ts;
@@ -256,7 +257,7 @@ export class QueueListener extends Emittery {
     return this.markFinished(data);
   }
 
-  private handleWaiting(data: JobEventData): void {
+  private static handleWaiting(data: JobEventData): void {
     const { job, ts } = data;
     if (!data.prevState) {
       // we're new
@@ -272,7 +273,7 @@ export class QueueListener extends Emittery {
     }
   }
 
-  private handleDelayed(event: JobEventData, { delay }): void {
+  private static handleDelayed(event: JobEventData, { delay }): void {
     const { job } = event;
     if (!event.prevState && !job.timestamp) {
       // we're new
@@ -281,11 +282,11 @@ export class QueueListener extends Emittery {
     job.delay = parseInt(delay);
   }
 
-  private handleStalled(event: JobEventData): void {
+  private static handleStalled(event: JobEventData): void {
     event.job.isStalled = true;
   }
 
-  private handleProgress(jobData: JobEventData, { data }): void {
+  private static handleProgress(jobData: JobEventData, { data }): void {
     const { job } = jobData;
     job.progress = isNumber(data) ? parseInt(data) : data;
   }
@@ -373,13 +374,8 @@ export class QueueListener extends Emittery {
       }
       const jobData = item[1];
       if (Array.isArray(jobData) && jobData.length) {
-        const [
-          timestamp,
-          processedOn,
-          finishedOn,
-          name,
-          attemptsMade,
-        ] = jobData;
+        const [timestamp, processedOn, finishedOn, name, attemptsMade] =
+          jobData;
         const job = jobs[index];
         job.timestamp = parseInt(timestamp);
         job.name = name;
@@ -413,7 +409,7 @@ export class QueueListener extends Emittery {
     }
   }
 
-  async startListening(ts = '$'): Promise<void> {
+  async startListening(ts: number | string = '$'): Promise<void> {
     if (this.queueEvents) {
       await this.queueEvents.close();
       this.queueEvents = null;

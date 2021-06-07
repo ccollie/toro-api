@@ -1,8 +1,8 @@
-import { SlackChannelConfig } from '../../../../src/types';
-import { SlackChannel } from '../../../../src/server/notifications';
+import { SlackChannelConfig } from '@src/types';
+import { SlackChannel } from '@src/server/notifications';
 import { createNotificationContext } from '../helpers';
 import { nanoid } from 'nanoid';
-import { POST_MESSAGE_URL } from '../../../../src/server/notifications/slack/slack-channel';
+import { POST_MESSAGE_URL } from '@src/server/notifications/slack/slack-channel';
 import nock = require('nock');
 
 describe('SlackChannel', () => {

@@ -2,7 +2,7 @@ import { FieldConfig } from '../../index';
 import {
   SlackNotificationChannelTC,
   SlackNotificationChannelUpdateTC,
-} from '../scalars';
+} from '../scalars/notifications';
 import { updateChannel } from './utils';
 import { schemaComposer } from 'graphql-compose';
 

@@ -1,6 +1,6 @@
 import { StatsClient } from '../../stats';
 import { getQueueManager } from './accessors';
-import { StatsGranularity } from '../../../types';
+import { StatsGranularity } from '@src/types';
 import { Queue } from 'bullmq';
 
 export function getStatsClient(queue: string | Queue): StatsClient {

@@ -1,5 +1,5 @@
 import { createStateSubscription } from './subscribeToJob';
-import { JobStatusEnum } from '../../../../../types';
+import { JobStatusEnum } from '@src/types';
 
 export { onJobAdded } from './onJobAdded';
 export { onJobUpdated } from './onJobUpdated';

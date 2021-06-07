@@ -1,7 +1,6 @@
-import { QUEUE_UNREGISTERED_PREFIX } from '../../../helpers';
+import { QUEUE_UNREGISTERED_PREFIX, getHostById } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getHostById } from '../../../helpers';
 
 export const onQueueUnregistered: FieldConfig = {
   type: schemaComposer.createObjectTC({

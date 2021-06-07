@@ -23,9 +23,9 @@ import {
   RuleConfigOptions,
 } from '../../types';
 import cronstrue from 'cronstrue/i18n';
-import { getQueueBusKey } from '../lib/keys';
+import { getQueueBusKey } from '@lib/keys';
 import { MetricManager } from '../metrics/metric-manager';
-import { parseDuration } from '../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 import { BaseMetric } from '../metrics';
 
 const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
@@ -112,6 +112,7 @@ export class QueueManager {
       });
     }
     this.lock.on(LockManager.ACQUIRED, this.handleLockEvent);
+    this.metricManager.start().catch(this.onError);
   }
 
   async destroy(): Promise<void> {

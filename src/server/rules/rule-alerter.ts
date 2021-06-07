@@ -177,6 +177,10 @@ export class RuleAlerter {
     if (response.state === CircuitState.CLOSED) {
       this._lastFailedAt = 0;
     }
+
+    if (!result.success && response.status === 'ok') {
+      this.rule.totalFailures++;
+    }
   }
 
   async handleResult(result: EvaluationResult): Promise<void> {

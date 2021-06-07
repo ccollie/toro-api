@@ -1,8 +1,8 @@
 import boom from '@hapi/boom';
-import { NotificationContext, WebhookChannelConfig } from '../../../types';
+import { NotificationContext, WebhookChannelConfig } from '@src/types';
 import { createDebug, validateUrl } from '../../lib';
 import { Channel } from '../channel';
-import { HttpClient } from '../../lib/http-client';
+import { HttpClient } from '@lib/http-client';
 
 const debug = createDebug('notifications:webhook');
 

@@ -8,10 +8,10 @@ import { QueueManager, QueueListener } from '../queues';
 import { logger } from '../lib';
 import config from '../config';
 import { getHosts, HostManager } from '../hosts';
-import { AppInfo } from '../../types';
-import { registerHelpers } from '../lib/hbs';
+import { AppInfo } from '@src/types';
+import { registerHelpers } from '@lib/hbs';
 import ms from 'ms';
-import { parseDuration } from '../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 
 let _isInit = false;
 

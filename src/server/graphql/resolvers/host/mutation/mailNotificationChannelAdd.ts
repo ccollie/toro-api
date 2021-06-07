@@ -2,9 +2,9 @@ import { FieldConfig } from '../../index';
 import {
   MailNotificationChannelTC,
   MailNotificationChannelInputTC,
-} from '../scalars';
+} from '../scalars/notifications';
 import { addChannel } from './utils';
-import { MailChannel } from '../../../../notifications';
+import { MailChannel } from '@server/notifications';
 import { schemaComposer } from 'graphql-compose';
 
 const MailNotificationChannelAddInput = schemaComposer.createInputTC({

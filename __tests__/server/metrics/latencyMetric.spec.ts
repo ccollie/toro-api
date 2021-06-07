@@ -1,8 +1,8 @@
 /* global test, expect */
 import pMap from 'p-map';
-import { Events, LatencyMetric } from '../../../src/server/metrics';
+import { Events, LatencyMetric } from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
-import { QueueMetricOptions } from '../../../src/types';
+import { QueueMetricOptions } from '@src/types';
 
 const EVENT_NAME = Events.COMPLETED;
 

@@ -1,7 +1,7 @@
 import { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
 import { QueueCounterBasedMetric } from './counterBasedMetric';
-import { MetricTypes } from '../../types';
+import { MetricTypes } from '@src/types';
 
 export class ConsecutiveFailuresMetric extends QueueCounterBasedMetric {
   handleEvent(event?: JobFinishedEventData): void {

@@ -1,4 +1,4 @@
-import { binarySearch } from '../../../../src/server/lib/binary-search';
+import { binarySearch } from '@src/server/lib/binary-search';
 
 describe('binarySearch', () => {
   test('it can search', () => {

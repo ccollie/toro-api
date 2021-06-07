@@ -8,7 +8,7 @@ import {
   ContextBlock,
   Block,
 } from './slack.types';
-import { DateLike } from '../../lib/datetime';
+import { DateLike } from '@lib/datetime';
 import toDate from 'date-fns/toDate';
 import { humanize, titleCase } from '../utils';
 import { flatten, map, isObject } from 'lodash';

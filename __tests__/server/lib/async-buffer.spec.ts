@@ -1,5 +1,4 @@
-import { AsyncIterationBuffer, CancelFn } from '../../../src/server/lib';
-
+import { AsyncIterationBuffer, CancelFn } from '@src/server/lib';
 
 describe('AsyncIterationBuffer', () => {
   describe('constructor', () => {
@@ -11,7 +10,7 @@ describe('AsyncIterationBuffer', () => {
     it('creates an instance with an initial set of data', async () => {
       const initValues = [1, 2, 3, 5];
       const sut = new AsyncIterationBuffer({
-        data: initValues
+        data: initValues,
       });
 
       let result = [];
@@ -26,9 +25,9 @@ describe('AsyncIterationBuffer', () => {
     it('supports a cancel callback', async () => {
       const spy = jest.fn();
       const sut = new AsyncIterationBuffer<number>({
-        cancel: spy as CancelFn
+        cancel: spy as CancelFn,
       });
-      const values = [1, 3, 4]
+      const values = [1, 3, 4];
       sut.push(1);
       sut.push(3);
       sut.done(4);
@@ -42,7 +41,7 @@ describe('AsyncIterationBuffer', () => {
 
       expect(spy).toHaveBeenCalledTimes(1);
     });
-  })
+  });
 
   describe('iteration', () => {
     it('handles iteration using next()', async () => {
@@ -76,7 +75,7 @@ describe('AsyncIterationBuffer', () => {
         for await (const datum of sut) {
           count++;
         }
-      } catch(err) {
+      } catch (err) {
         e = err;
       }
       expect(e).not.toBeDefined();
@@ -99,11 +98,11 @@ describe('AsyncIterationBuffer', () => {
         for await (const datum of sut) {
           count++;
         }
-      } catch(err) {
+      } catch (err) {
         e = err;
       }
       expect(e).toBeInstanceOf(TypeError);
       expect(count).toBe(3);
     });
   });
-})
+});

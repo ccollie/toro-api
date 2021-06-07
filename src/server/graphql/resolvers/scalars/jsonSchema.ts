@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
 import { GraphQLScalarType, Kind, print } from 'graphql';
-import { ajv } from '../../../validation/ajv';
+import { ajv } from '@server/validation/ajv';
 
 function validate(schema) {
   try {

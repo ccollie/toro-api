@@ -50,6 +50,7 @@ export interface RuleAlertState {
   lastTriggeredAt?: number;
   lastNotify?: number;
   notifyPending?: boolean;
+  isRead: boolean;
 }
 
 export interface MarkNotifyResult {
@@ -69,7 +70,7 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | Record<string, any>,
+    parameter?: string | number | Record<string, any>,
     timestamp?: number,
   ): Promise<any> {
     timestamp = timestamp || systemClock.getTime();
@@ -175,6 +176,7 @@ export class RuleScripts {
     const res = parseObjectResponse(response);
 
     const result: RuleAlertState = res as RuleAlertState;
+    result.isRead = parseBool(res['isRead'], true);
     result.isActive = parseBool(res['isActive'], true);
     result.notifyPending = has(res, 'notifyPending')
       ? parseBool(res.notifyPending)
@@ -237,6 +239,26 @@ export class RuleScripts {
       'mark-notify',
       alertId,
       timestamp,
+    );
+    const res = parseObjectResponse(response);
+    return {
+      ...res,
+      notified: parseBool(res['notified']),
+      alertCount: res['alertCount'],
+    };
+  }
+
+  static async markAlertAsRead(
+    queue: Queue,
+    rule: Rule | string,
+    alertId: string,
+    isRead: boolean,
+  ): Promise<MarkNotifyResult> {
+    const response = await RuleScripts.execRuleAction(
+      queue,
+      rule,
+      isRead ? 'mark-read' : 'mark-unread',
+      alertId,
     );
     const res = parseObjectResponse(response);
     return {

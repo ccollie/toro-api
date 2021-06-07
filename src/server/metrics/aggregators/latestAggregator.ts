@@ -2,7 +2,7 @@ import { ObjectSchema } from 'joi';
 import { BaseMetric } from '../baseMetric';
 import { BaseAggregator } from './aggregator';
 import { getStaticProp } from '../../lib';
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '@src/types';
 
 /**
  * An aggregator which returns the latest value

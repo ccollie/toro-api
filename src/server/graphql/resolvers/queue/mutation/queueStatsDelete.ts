@@ -1,4 +1,4 @@
-import { deleteQueueStats } from '../../../../queues';
+import { deleteQueueStats } from '@server/queues';
 import { FieldConfig } from '../../utils';
 import { QueueTC } from '../../index';
 import { getQueueById } from '../../../helpers';

@@ -1,7 +1,7 @@
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
-import { JobOptionsEveryInputTC } from '../query/Job.opts';
+import { JobOptionsEveryInputTC } from '../model/Job.opts';
 import { addJob } from './utils';
 
 const JobAddEveryInput = schemaComposer.createInputTC({

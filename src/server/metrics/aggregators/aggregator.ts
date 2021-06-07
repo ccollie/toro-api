@@ -2,9 +2,9 @@ import boom from '@hapi/boom';
 import { isEqual } from 'lodash';
 import { EventEmitter } from 'events';
 import { ObjectSchema } from 'joi';
-import { Clock, getStaticProp, systemClock } from '../../lib';
+import { Clock, getStaticProp, systemClock } from '@src/server/lib';
 import { BaseMetric } from '../baseMetric';
-import { AggregatorTypes, SerializedAggregator } from '../../../types';
+import { AggregatorTypes, SerializedAggregator } from '@src/types';
 
 export interface Aggregator {
   /** The number of samples added so far */
@@ -25,6 +25,23 @@ export interface Aggregator {
    * Reset the states of the aggregator.
    */
   reset(): void;
+}
+
+export interface WindowedAggregator extends Aggregator {
+  windowSize: number;
+}
+
+function isAggregator(arg: any): arg is Aggregator {
+  return (
+    arg &&
+    typeof arg.count == 'number' &&
+    typeof arg.value === 'number' &&
+    typeof arg.update === 'function'
+  );
+}
+
+function isWindowedAggregator(arg: any): arg is WindowedAggregator {
+  return isAggregator(arg) && typeof (arg as any).windowSize === 'number';
 }
 
 export class BaseAggregator extends EventEmitter implements Aggregator {
@@ -92,6 +109,10 @@ export class BaseAggregator extends EventEmitter implements Aggregator {
 
   static get schema(): ObjectSchema {
     return null;
+  }
+
+  static get isWindowed(): boolean {
+    return false;
   }
 
   toJSON(): SerializedAggregator {

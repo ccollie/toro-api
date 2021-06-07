@@ -1,5 +1,5 @@
 import { deserializePipeline, EventBus } from '../redis';
-import { DateLike, endOf, parseTimestamp, startOf } from '../lib/datetime';
+import { DateLike, endOf, parseTimestamp, startOf } from '@lib/datetime';
 import {
   StatisticalSnapshot,
   StatisticalSnapshotOptions,
@@ -281,7 +281,7 @@ export class StatsWriter extends StatsClient {
       ? this.getHostKey(jobName, metric, unit)
       : this.getKey(jobName, metric, unit);
 
-    const multi = this.writer.multi;
+    const multi = this.writer.pipeline;
 
     const eventData = {
       jobName,

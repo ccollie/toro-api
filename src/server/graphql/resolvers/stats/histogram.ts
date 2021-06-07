@@ -4,7 +4,7 @@ import {
   DefaultHistogramOptions,
   HistogramBinningMethod,
   HistogramOptions,
-} from '../../../stats/histogram-bins';
+} from '@server/stats/histogram-bins';
 import isNumber from 'lodash/isNumber';
 import { GraphQLEnumType } from 'graphql';
 import { StatsMetricsTypeEnum } from '../scalars';

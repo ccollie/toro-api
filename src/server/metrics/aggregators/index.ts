@@ -6,11 +6,7 @@ import { MaxAggregator } from './maxAggregator';
 import { SumAggregator } from './sumAggregator';
 import { MeanAggregator } from './meanAggregator';
 import { LatestAggregator } from './latestAggregator';
-import {
-  EWMA15MinAggregator,
-  EWMA1MinAggregator,
-  EWMA5MinAggregator,
-} from './ewmaAggregator';
+import { EWMAAggregator } from './ewmaAggregator';
 import { StandardDeviationAggregator } from './standardDeviationAggregator';
 import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import {
@@ -23,44 +19,57 @@ import {
   QuantileAggregator,
 } from './quantileAggregator';
 import { Clock } from '../../lib';
-import { AggregatorTypes, Constructor } from '../../../types';
+import { AggregatorTypes, Constructor } from '@src/types';
 
 export type AggregatorClass = Constructor<BaseAggregator>;
 
-export const aggregateMap: Record<AggregatorTypes, AggregatorClass | null> = {
-  [AggregatorTypes.None]: null,
-  [AggregatorTypes.Identity]: NullAggregator,
-  [AggregatorTypes.Ewma1Min]: EWMA1MinAggregator,
-  [AggregatorTypes.Ewma5Min]: EWMA5MinAggregator,
-  [AggregatorTypes.Ewma15Min]: EWMA15MinAggregator,
-  [AggregatorTypes.Latest]: LatestAggregator,
-  [AggregatorTypes.Min]: MinAggregator,
-  [AggregatorTypes.Max]: MaxAggregator,
-  [AggregatorTypes.Mean]: MeanAggregator,
-  [AggregatorTypes.Quantile]: QuantileAggregator,
-  [AggregatorTypes.Sum]: SumAggregator,
-  [AggregatorTypes.StdDev]: StandardDeviationAggregator,
-  [AggregatorTypes.P75]: P75Aggregator,
-  [AggregatorTypes.P90]: P90Aggregator,
-  [AggregatorTypes.P95]: P95Aggregator,
-  [AggregatorTypes.P99]: P99Aggregator,
-  [AggregatorTypes.P995]: P995Aggregator,
+export const aggregateMap = new Map<AggregatorTypes, AggregatorClass | null>();
+
+aggregateMap[AggregatorTypes.None] = null;
+aggregateMap[AggregatorTypes.Identity] = NullAggregator;
+aggregateMap[AggregatorTypes.Ewma] = EWMAAggregator;
+aggregateMap[AggregatorTypes.Latest] = LatestAggregator;
+aggregateMap[AggregatorTypes.Min] = MinAggregator;
+aggregateMap[AggregatorTypes.Max] = MaxAggregator;
+aggregateMap[AggregatorTypes.Mean] = MeanAggregator;
+aggregateMap[AggregatorTypes.Quantile] = QuantileAggregator;
+aggregateMap[AggregatorTypes.Sum] = SumAggregator;
+aggregateMap[AggregatorTypes.StdDev] = StandardDeviationAggregator;
+aggregateMap[AggregatorTypes.P75] = P75Aggregator;
+aggregateMap[AggregatorTypes.P90] = P90Aggregator;
+aggregateMap[AggregatorTypes.P95] = P95Aggregator;
+aggregateMap[AggregatorTypes.P99] = P99Aggregator;
+aggregateMap[AggregatorTypes.P995] = P995Aggregator;
+
+const aggregatesByName: {
+  [key in keyof typeof AggregatorTypes]: AggregatorClass | null;
+} = {
+  None: null,
+  Identity: NullAggregator,
+  Ewma: EWMAAggregator,
+  Latest: LatestAggregator,
+  Min: MinAggregator,
+  Max: MaxAggregator,
+  Mean: MeanAggregator,
+  Quantile: QuantileAggregator,
+  Sum: SumAggregator,
+  StdDev: StandardDeviationAggregator,
+  P75: P75Aggregator,
+  P90: P90Aggregator,
+  P95: P95Aggregator,
+  P99: P99Aggregator,
+  P995: P995Aggregator,
 };
 
 function findAggregator(
   type: string | AggregatorTypes = AggregatorTypes.Identity,
 ): AggregatorClass {
-  let ctor = aggregateMap[type];
-  if (!ctor) {
-    const entries = Object.values(aggregateMap);
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
-      const aggType = (entry as any).key;
-      if (type === aggType) {
-        ctor = entry;
-        break;
-      }
-    }
+  let ctor: AggregatorClass;
+
+  if (typeof type === 'string') {
+    ctor = aggregatesByName[type];
+  } else {
+    ctor = aggregateMap[type];
   }
   if (!ctor) {
     throw boom.badRequest(`Invalid aggregator type "${type}"`);
@@ -88,9 +97,7 @@ export function validateAggregatorOpts(
 
 export {
   BaseAggregator,
-  EWMA1MinAggregator,
-  EWMA5MinAggregator,
-  EWMA15MinAggregator,
+  EWMAAggregator,
   LatestAggregator,
   NullAggregator,
   MinAggregator,

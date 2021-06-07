@@ -3,7 +3,7 @@ import { isObject, isEmpty } from 'lodash';
 
 import logger from '../lib/logger';
 import { LockManager } from './lock-manager';
-import { parseDuration } from '../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 import { RedisClient } from 'bullmq';
 
 const DEFAULT_FLUSH_INTERVAL = 1000;
@@ -76,7 +76,7 @@ export class WriteCache {
     return this.lock.isOwner;
   }
 
-  get multi(): Pipeline {
+  get pipeline(): Pipeline {
     return this.pendingMulti || (this.pendingMulti = this.client.multi());
   }
 
@@ -235,7 +235,7 @@ export class WriteCache {
     let current,
       len = 0;
     if (this.isChanged) {
-      current = this.multi;
+      current = this.pipeline;
       this.pendingMulti = null;
       this.processBuffer(current);
       this._clearBuffer();

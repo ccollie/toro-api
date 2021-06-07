@@ -1,6 +1,6 @@
 import { normalizeGranularity } from '../../helpers';
 import { FieldConfig } from '../';
-import { HostManager } from '../../../hosts';
+import { HostManager } from '@server/hosts';
 import { getClient } from './utils';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
@@ -8,7 +8,7 @@ import {
   StatsMetricType,
   StatsGranularity,
   StatisticalSnapshot,
-} from '../../../../types';
+} from '@src/types';
 import { StatsSnapshotTC } from './types';
 
 export const StatsLatestInputTC = schemaComposer.createInputTC({

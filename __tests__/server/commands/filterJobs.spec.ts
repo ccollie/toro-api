@@ -1,7 +1,7 @@
 import { clearDb, createClient, createQueue } from '../../factories';
 import { Job, Queue } from 'bullmq';
-import { Scripts } from '../../../src/server/commands/scripts';
-import { convertToRPN } from '../../../src/server/lib/expressions';
+import { Scripts } from '@server/commands/scripts';
+import { convertToRPN } from '@lib/expressions';
 import ms from 'ms';
 
 const Person = {

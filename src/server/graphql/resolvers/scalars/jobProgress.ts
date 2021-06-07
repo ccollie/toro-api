@@ -1,6 +1,6 @@
 import { GraphQLScalarType, Kind } from 'graphql';
 import { isObject, isString } from 'lodash';
-import { isNumber, safeParse } from '../../../lib';
+import { isNumber, safeParse } from '@lib/utils';
 
 export const JobProgress = new GraphQLScalarType({
   name: 'JobProgress',

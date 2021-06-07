@@ -5,8 +5,8 @@ import {
   MailChannel,
   SlackChannel,
   WebhookChannel,
-} from '../../../src/server/notifications';
-import { EventBus } from '../../../src/server/redis';
+} from '@src/server/notifications';
+import { EventBus } from '@src/server/redis';
 import { delay, randomId } from '../utils';
 import {
   ChannelConfig,
@@ -14,9 +14,9 @@ import {
   MailChannelConfig,
   SlackChannelConfig,
   WebhookChannelConfig,
-} from '../../../src/types';
+} from '@src/types';
 import random from 'lodash/random';
-import { HostManager } from '../../../src/server/hosts';
+import { HostManager } from '@src/server/hosts';
 import { clearDb, DEFAULT_CLIENT_OPTIONS } from '../../factories';
 import { RedisClient } from 'bullmq';
 

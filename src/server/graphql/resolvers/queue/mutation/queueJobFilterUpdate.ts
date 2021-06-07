@@ -1,10 +1,10 @@
 'use strict';
 import boom from '@hapi/boom';
 import { getQueueById } from '../../../helpers';
-import { getJobFilter, updateJobFilter } from '../../../../queues';
+import { getJobFilter, updateJobFilter } from '@src/server/queues';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobFilterTC } from '../../job/query/Job.filter';
+import { JobFilterTC } from '../../job/model/Job.filter';
 
 const JobFilterUpdateTC = schemaComposer.createInputTC({
   name: 'JobFilterUpdateInput',
@@ -46,7 +46,7 @@ export const queueJobFilterUpdate: FieldConfig = {
     filter.status = status;
     filter.name = name;
 
-    const isUpdated = updateJobFilter(queue, filter);
+    const isUpdated = await updateJobFilter(queue, filter);
     return {
       filter,
       isUpdated,

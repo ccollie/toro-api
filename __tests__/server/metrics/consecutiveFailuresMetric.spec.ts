@@ -1,7 +1,7 @@
-import { ConsecutiveFailuresMetric, Events } from '../../../src/server/metrics';
+import { ConsecutiveFailuresMetric, Events } from '@src/server/metrics';
 
 import { MetricTestHelper } from './metricTestHelper';
-import { QueueMetricOptions } from '../../../src/types';
+import { QueueMetricOptions } from '@src/types';
 
 describe('ConsecutiveFailuresMetric', () => {
   let testHelper: MetricTestHelper;

@@ -11,6 +11,7 @@ import { QueueListener, QueueManager } from '../queues';
 import { Clock, IteratorOptions, logger } from '../lib';
 import { RuleEvaluator } from './rule-evaluator';
 import { RuleAlerter } from './rule-alerter';
+import { RuleAlertState, RuleScripts } from '@server/commands';
 
 type RuleLike = Rule | RuleConfigOptions | string;
 
@@ -135,7 +136,8 @@ export class RuleManager {
   }
 
   async addRule(options: RuleConfigOptions): Promise<Rule> {
-    const rule = await this.storage.createRule(options);
+    const queueId = this.queueManager.id;
+    const rule = await this.storage.createRule(options, queueId);
     this._registerRule(rule);
     return rule;
   }
@@ -169,7 +171,8 @@ export class RuleManager {
   }
 
   async createRule(opts: RuleConfigOptions): Promise<Rule> {
-    const rule = await this.storage.createRule(opts);
+    const queueId = this.queueManager.id;
+    const rule = await this.storage.createRule(opts, queueId);
     this._registerRule(rule);
     return rule;
   }
@@ -234,6 +237,10 @@ export class RuleManager {
     return isDeleted;
   }
 
+  async getRuleStatus(rule: Rule | string): Promise<RuleAlertState> {
+    return RuleScripts.getState(this.queue, rule);
+  }
+
   /**
    * Return rules from storage
    * @param {String} sortBy {@link Rule} field to sort by
@@ -270,6 +277,14 @@ export class RuleManager {
 
   async deleteAlert(rule: Rule | string, id: string): Promise<boolean> {
     return this.storage.deleteAlert(rule, id);
+  }
+
+  async markAlertAsRead(
+    rule: Rule | string,
+    id: string,
+    value: boolean,
+  ): Promise<RuleAlert> {
+    return this.storage.markAlertAsRead(rule, id, value);
   }
 
   /**

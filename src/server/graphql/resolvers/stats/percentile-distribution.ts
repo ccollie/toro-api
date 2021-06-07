@@ -1,7 +1,7 @@
 import { FieldConfig } from '../';
 import { StatsMetricsTypeEnum } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
-import { getSnapshotPercentileDistribution } from '../../../stats/percentile-distribution';
+import { getSnapshotPercentileDistribution } from '@server/stats';
 import { aggregateStats } from './utils';
 
 const PercentileDistributionInput = schemaComposer.createInputTC({

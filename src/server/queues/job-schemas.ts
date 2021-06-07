@@ -9,7 +9,7 @@ import toJsonSchema from 'to-json-schema';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
 import { getIterator } from './job-iterator';
-import { JobStatusEnum } from '../../types';
+import { JobStatusEnum } from '@src/types';
 
 const jobsOptionsValidator = ajv.compile(JobOptionsSchema);
 
@@ -255,6 +255,10 @@ export async function deleteJobSchema(
   if (!!deleted) {
     const validatorMap = validatorsByQueue.get(queue);
     if (validatorMap) {
+      const schema = validatorMap.get(jobName);
+      if (schema) {
+        ajv.removeSchema(schema);
+      }
       validatorMap.delete(jobName);
       if (validatorMap.size === 0) {
         validatorsByQueue.delete(queue);
@@ -274,7 +278,12 @@ export async function deleteAllSchemas(queue: Queue): Promise<number> {
   const items = response[0][1];
   const count = items ? items.length : 0;
   const deleted = !!response[1][1];
-  validatorsByQueue.delete(queue);
+  const map = validatorsByQueue.get(queue);
+  if (map) {
+    validatorsByQueue.delete(queue);
+    map.forEach(({ schema }) => ajv.removeSchema(schema));
+  }
+
   return deleted ? count : 0;
 }
 

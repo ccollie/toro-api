@@ -1,21 +1,23 @@
 import {
-  ChangeAggregationEnumType,
+  ChangeAggregationEnum,
   Duration,
   ErrorLevelEnum,
   GraphQLDateTime,
+  GraphQLEmailAddress,
   GraphQLJSONSchema,
+  GraphQLURL,
   HttpMethodType,
   JobProgress,
   JobRemoveOption,
   JobStatusEnumType,
   OrderEnumType,
-  PeakSignalDirectionType,
-  RuleOperatorType,
-  RuleStateType,
+  PeakSignalDirectionEnum,
+  RuleOperatorEnum,
+  RuleStateEnum,
   SeverityType,
 } from './resolvers/scalars';
 
-import { MetricCategory } from './resolvers/metrics';
+import { MetricCategory } from './resolvers/metric';
 
 import { schemaComposer } from 'graphql-compose';
 import * as query from './resolvers/root';
@@ -23,21 +25,24 @@ import host from './resolvers/host';
 import queue from './resolvers/queue';
 import job from './resolvers/job';
 import rule from './resolvers/rule';
+import metric from './resolvers/metric';
 
 // Scalars
-schemaComposer.add(ChangeAggregationEnumType);
+schemaComposer.add(ChangeAggregationEnum);
 schemaComposer.add(Duration);
 schemaComposer.add(ErrorLevelEnum);
 schemaComposer.add(GraphQLDateTime);
+schemaComposer.add(GraphQLEmailAddress);
 schemaComposer.add(GraphQLJSONSchema);
+schemaComposer.add(GraphQLURL);
 schemaComposer.add(HttpMethodType);
 schemaComposer.add(JobProgress);
 schemaComposer.add(JobRemoveOption);
 schemaComposer.add(JobStatusEnumType);
 schemaComposer.add(OrderEnumType);
-schemaComposer.add(PeakSignalDirectionType);
-schemaComposer.add(RuleOperatorType);
-schemaComposer.add(RuleStateType);
+schemaComposer.add(PeakSignalDirectionEnum);
+schemaComposer.add(RuleOperatorEnum);
+schemaComposer.add(RuleStateEnum);
 schemaComposer.add(SeverityType);
 schemaComposer.add(MetricCategory);
 
@@ -46,6 +51,7 @@ schemaComposer.Query.addFields({
 });
 
 schemaComposer.Mutation.addFields({
+  ...metric.Mutation,
   ...host.Mutation,
   ...job.Mutation,
   ...queue.Mutation,
@@ -57,9 +63,8 @@ schemaComposer.Subscription.addFields({
   ...job.Subscription,
   ...queue.Subscription,
   ...rule.Subscription,
+  ...metric.Subscription,
 });
 
-const schema = schemaComposer.buildSchema();
-const toSDL = () => schemaComposer.toSDL();
-
-export { schema, toSDL };
+export const schema = schemaComposer.buildSchema();
+export const toSDL = () => schemaComposer.toSDL();

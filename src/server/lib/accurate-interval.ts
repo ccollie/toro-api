@@ -1,5 +1,4 @@
 import { Clock, systemClock } from './clock';
-import Timeout = NodeJS.Timeout;
 
 export interface AccurateInterval {
   start: () => void;
@@ -38,7 +37,7 @@ export function createAccurateInterval(
   let nextAt: number;
   let stopped = false;
   let now: number;
-  let timeout: Timeout = null;
+  let timeout: ReturnType<typeof setTimeout> = null;
 
   opts = {
     ...defaultOpts,
@@ -97,7 +96,6 @@ export function createAccurateInterval(
 
       const delay = Math.max(0, nextAt - now);
 
-      // @ts-ignore
       timeout = setTimeout(tick, delay);
       if (timeout.unref) timeout.unref();
       nextAt += interval;

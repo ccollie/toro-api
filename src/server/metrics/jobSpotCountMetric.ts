@@ -1,15 +1,21 @@
 import { Queue } from 'bullmq';
-import { QueuePollingMetric } from './baseMetric';
+import {
+  BaseMetricSchema,
+  QueueBasedMetricSchema,
+  QueuePollingMetric,
+} from './baseMetric';
 import { MetricsListener } from './metrics-listener';
 import {
   JobStatusEnum,
   MetricValueType,
   MetricTypes,
-  PollingMetricOptions,
+  QueueMetricOptions,
+  MetricOptions,
 } from '../../types';
 import { JobEventData } from '../queues';
+import { ObjectSchema } from 'joi';
 
-export interface JobSpotCountMetricOptions extends PollingMetricOptions {
+export interface JobSpotCountMetricOptions extends QueueMetricOptions {
   status: JobStatusEnum;
 }
 
@@ -22,11 +28,9 @@ export interface JobSpotCountMetricOptions extends PollingMetricOptions {
 abstract class JobSpotCountMetric extends QueuePollingMetric {
   private queue: Queue;
   private readonly status: JobStatusEnum;
-  private readonly _interval: number;
 
-  protected constructor(props: PollingMetricOptions, status: JobStatusEnum) {
+  protected constructor(props: MetricOptions, status: JobStatusEnum) {
     super(props);
-    this._interval = props.interval;
     this.status = status;
   }
 
@@ -57,13 +61,17 @@ abstract class JobSpotCountMetric extends QueuePollingMetric {
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   handleEvent(event?: JobEventData) {}
+
+  static get schema(): ObjectSchema {
+    return QueueBasedMetricSchema;
+  }
 }
 
 /**
  * A metric tracking the number of currently ACTIVE jobs in a queue
  */
 export class CurrentActiveCountMetric extends JobSpotCountMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: QueueMetricOptions) {
     super(options, JobStatusEnum.ACTIVE);
   }
 
@@ -80,7 +88,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
  * A metric tracking the number of currently WAITING jobs in a queue
  */
 export class CurrentWaitingCountMetric extends JobSpotCountMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, JobStatusEnum.WAITING);
   }
 
@@ -97,7 +105,7 @@ export class CurrentWaitingCountMetric extends JobSpotCountMetric {
  * A metric tracking the number of currently WAITING jobs in a queue
  */
 export class CurrentCompletedCountMetric extends JobSpotCountMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, JobStatusEnum.COMPLETED);
   }
 
@@ -114,7 +122,7 @@ export class CurrentCompletedCountMetric extends JobSpotCountMetric {
  * A metric tracking the number of currently FAILED jobs in a queue
  */
 export class CurrentFailedCountMetric extends JobSpotCountMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, JobStatusEnum.FAILED);
   }
 
@@ -131,7 +139,7 @@ export class CurrentFailedCountMetric extends JobSpotCountMetric {
  * A metric tracking the number of currently FAILED jobs in a queue
  */
 export class CurrentDelayedCountMetric extends JobSpotCountMetric {
-  constructor(options: PollingMetricOptions) {
+  constructor(options: MetricOptions) {
     super(options, JobStatusEnum.DELAYED);
   }
 

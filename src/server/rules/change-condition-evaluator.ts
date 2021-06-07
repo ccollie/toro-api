@@ -1,5 +1,5 @@
 import { ChunkedAssociativeArray } from '../lib';
-import { BaseMetric } from '../metrics/baseMetric';
+import { BaseMetric } from '@server/metrics';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation/schemas';
 import { DDSketch } from 'sketches-js';
@@ -36,15 +36,15 @@ const optionsSchema = Joi.object().keys({
     .default(ChangeTypeEnum.CHANGE),
   aggregationType: Joi.string()
     .valid(
-      ChangeAggregationType.Avg,
-      ChangeAggregationType.Min,
-      ChangeAggregationType.Max,
+      ChangeAggregationType.AVG,
+      ChangeAggregationType.MIN,
+      ChangeAggregationType.MAX,
       ChangeAggregationType.P90,
       ChangeAggregationType.P95,
       ChangeAggregationType.P99,
-      ChangeAggregationType.Sum,
+      ChangeAggregationType.SUM,
     )
-    .default(ChangeAggregationType.Avg),
+    .default(ChangeAggregationType.AVG),
 });
 
 export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
@@ -227,16 +227,16 @@ export function getAggregationFunction(
   aggregationType: ChangeAggregationType,
 ): AggregateFunction {
   switch (aggregationType) {
-    case ChangeAggregationType.Avg:
+    case ChangeAggregationType.AVG:
       return (data: number[]): number => {
         const total = data.reduce((res, value) => res + value, 0);
         return data.length ? total / data.length : 0;
       };
-    case ChangeAggregationType.Max:
+    case ChangeAggregationType.MAX:
       return (data: number[]) => Math.max(...data);
-    case ChangeAggregationType.Min:
+    case ChangeAggregationType.MIN:
       return (data: number[]) => Math.min(...data);
-    case ChangeAggregationType.Sum:
+    case ChangeAggregationType.SUM:
       return (data: number[]) => data.reduce((res, value) => res + value, 0);
     case ChangeAggregationType.P90:
       return percentileFactory(0.9);

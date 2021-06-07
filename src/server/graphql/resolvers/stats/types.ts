@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
-import { StatsMetricsTypeEnum } from '../scalars';
+import { PeakSignalDirectionEnum, StatsMetricsTypeEnum } from '../scalars';
 import { GraphQLEnumType } from 'graphql';
-import { StatsRateType } from '../../../../types';
+import { StatsRateType } from '@src/types';
 
 const BaseFields = {
   count: {
@@ -87,6 +87,7 @@ export const StatsSnapshotTC = schemaComposer.createObjectTC({
     meanRate: {
       type: 'Float!',
       description:
+        // eslint-disable-next-line max-len
         'The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled, divided by the number of seconds the process has been running), it doesn’t offer a sense of recency.',
     },
     m1Rate: {
@@ -159,18 +160,37 @@ export const StatsRateQueryInputTC = schemaComposer.createInputTC({
   },
 });
 
-export const TimeseriesDataPointTC = schemaComposer.createObjectTC({
-  name: 'TimeseriesDataPoint',
+const TimeseriesDataFields = {
+  ts: {
+    type: 'DateTime!',
+    description: 'The timestamp of when the event occurred',
+  },
+  value: {
+    type: 'Float!',
+    description: 'The value at the given timestamp',
+  },
+};
+
+export const TimeseriesDataPointInterface = schemaComposer.createInterfaceTC({
+  name: 'TimeseriesDataPointInterface',
   description:
     'A data point representing the value of a metric in a time series.',
+  fields: TimeseriesDataFields,
+});
+
+export const TimeseriesDataPointTC = schemaComposer.createObjectTC({
+  name: 'TimeseriesDataPoint',
+  interfaces: [TimeseriesDataPointInterface],
+  fields: TimeseriesDataFields,
+});
+
+export const PeakDataPointTC = schemaComposer.createObjectTC({
+  name: 'PeakDataPoint',
+  interfaces: [TimeseriesDataPointInterface],
   fields: {
-    ts: {
-      type: 'DateTime!',
-      description: 'The timestamp of when the event occurred',
-    },
-    value: {
-      type: 'Float!',
-      description: 'The value at the given timestamp',
+    ...TimeseriesDataFields,
+    signal: {
+      type: PeakSignalDirectionEnum.NonNull,
     },
   },
 });

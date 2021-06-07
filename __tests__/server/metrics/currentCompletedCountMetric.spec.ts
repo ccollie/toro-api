@@ -1,20 +1,19 @@
-import { CurrentCompletedCountMetric } from '../../../src/server/metrics';
+import { CurrentCompletedCountMetric } from '@src/server/metrics';
 import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { PollingMetricOptions } from '../../../src/types';
+import { MetricOptions } from '@src/types';
 import { randomString } from '../utils';
 
 describe('CurrentCompletedCountMetric', () => {
   describe('constructor', () => {
     it('constructs a CurrentCompletedCountMetric', () => {
-      const options: PollingMetricOptions = {
-        interval: 250,
+      const options: MetricOptions = {
+        sampleInterval: 250,
       };
       const sut = new CurrentCompletedCountMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.interval).toBe(options.interval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
       expect(MetricTestHelper.hasUnit(sut)).toBe(true);
@@ -39,8 +38,8 @@ describe('CurrentCompletedCountMetric', () => {
       const queue = await createQueue();
 
       const interval = 25000;
-      const options: PollingMetricOptions = {
-        interval,
+      const options: MetricOptions = {
+        sampleInterval: interval,
       };
       const sut = new CurrentCompletedCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);

@@ -4,14 +4,14 @@ import {
   getStatsListener,
   normalizeGranularity,
 } from '../../helpers';
-import { firstChar } from '../../../lib';
-import { StatisticalSnapshot, StatsMetricType } from '../../../../types';
+import { firstChar } from '@lib/utils';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig } from '../';
 import { StatsSnapshotTC } from './types';
-import { StatsListener } from '../../../stats';
+import { StatsListener } from '@server/stats';
+import { StatisticalSnapshot, StatsMetricType } from '@src/types';
 
 function getStatsUpdatedResolver(
   isHost: boolean,

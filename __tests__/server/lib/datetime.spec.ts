@@ -1,4 +1,4 @@
-import * as DateTime from '../../../src/server/lib/datetime';
+import * as DateTime from '@lib/datetime';
 import { startOfDay, endOfDay } from 'date-fns';
 
 describe('datetime', () => {

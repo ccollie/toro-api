@@ -1,9 +1,9 @@
-import { WebhookChannelConfig } from '../../../../src/types';
-import { WebhookChannel } from '../../../../src/server/notifications';
+import { WebhookChannelConfig } from '@src/types';
+import { WebhookChannel } from '@src/server/notifications';
 import createTestServer from 'create-test-server';
 import { createNotificationContext } from '../helpers';
 import { nanoid } from 'nanoid';
-import { registerHelpers } from '../../../../src/server/lib/hbs';
+import { registerHelpers } from '@src/server/lib/hbs';
 
 describe('WebhookChannel', () => {
   const URL = 'http://localhost:4000/hooks/rule-alerts';

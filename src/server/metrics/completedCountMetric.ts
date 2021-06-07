@@ -1,6 +1,6 @@
 import { QueueCounterBasedMetric } from './counterBasedMetric';
 import { Events } from './constants';
-import { MetricTypes } from '../../types';
+import { MetricTypes } from '@src/types';
 
 export class CompletedCountMetric extends QueueCounterBasedMetric {
   get validEvents(): string[] {

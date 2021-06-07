@@ -1,6 +1,6 @@
 import { GraphQLScalarType, Kind } from 'graphql';
 import { isString, isBoolean } from 'lodash';
-import { isNumber, safeParse } from '../../../lib';
+import { isNumber, safeParse } from '@lib/utils';
 
 function isBool(value): boolean {
   return isString(value) && ['true', 'false'].includes(value);

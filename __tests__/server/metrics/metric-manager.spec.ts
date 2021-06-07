@@ -3,8 +3,8 @@ import {
   createHostManager,
   QueueListenerHelper,
 } from '../../factories';
-import { HostManager } from '../../../src/server/hosts';
-import { QueueListener, QueueManager } from '../../../src/server/queues';
+import { HostManager } from '@src/server/hosts';
+import { QueueListener, QueueManager } from '@src/server/queues';
 import { delay, randomString } from '../utils';
 import {
   AggregatorTypes,
@@ -12,14 +12,14 @@ import {
   MetricTypes,
   QueueConfig,
   SerializedMetric,
-} from '../../../src/types';
-import { MetricManager } from '../../../src/server/metrics/metric-manager';
+} from '@src/types';
+import { MetricManager } from '@src/server/metrics/metric-manager';
 import {
   BaseMetric,
   InstantaneousOpsMetric,
   LatencyMetric,
   P90Aggregator,
-} from '../../../src/server/metrics';
+} from '@src/server/metrics';
 import ms from 'ms';
 import nanoid = require('nanoid');
 import { RedisClient } from 'bullmq';
@@ -66,7 +66,7 @@ describe('MetricManager', () => {
   });
 
   describe('start', () => {
-    it('load all metrics', async () => {});
+    it('loads all metrics', async () => {});
   });
 
   describe('createMetric', () => {
@@ -141,7 +141,7 @@ describe('MetricManager', () => {
 
   function createMetric(): BaseMetric {
     const metric = new InstantaneousOpsMetric({
-      interval: INTERVAL,
+      sampleInterval: INTERVAL,
     });
 
     metric.name = `name-${randomString(4)}`;

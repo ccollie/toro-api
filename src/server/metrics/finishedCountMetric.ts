@@ -1,6 +1,6 @@
 import { QueueCounterBasedMetric } from './counterBasedMetric';
 import { Events } from './constants';
-import { MetricTypes } from '../../types';
+import { MetricTypes } from '@src/types';
 
 /**
  * Tracks the number of finished jobs (i.e. Completed or Failed)

@@ -1,20 +1,22 @@
 import ms from 'ms';
-import { getLatencies } from '../latencies';
+import { gaussianBM } from '../latencies';
 import { Job } from 'bullmq';
 
 const options = {
   min: ms('10 secs'),
-  max: ms('1.5 mins'),
+  max: ms('1.25 mins'),
   mean: ms('25 secs'),
 };
 
-const latencies = getLatencies(options);
+function getLatency(): number {
+  return gaussianBM(options.min, options.max);
+}
 
 export const process = async (job: Job): Promise<any> => {
   const { data } = job;
   const { queue } = data;
   const { protein, salsa, orderNumber } = data;
-  const cookTime = Math.floor(latencies.next().value);
+  const cookTime = getLatency();
 
   const logMsg = `queue: ${queue} #${orderNumber}: ${protein}, ${salsa} cooking for ${(
     cookTime / 1000
@@ -31,7 +33,7 @@ export const process = async (job: Job): Promise<any> => {
 
     const maybeThrow = (): void => {
       const dice = Math.random();
-      if (dice < 0.2) {
+      if (dice < 0.0725) {
         return reject(new Error(`taco #${job.id} burned`));
       }
     };

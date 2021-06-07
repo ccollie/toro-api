@@ -8,7 +8,7 @@ import {
   AggregatorTypes,
   SerializedAggregator,
   SlidingWindowOptions,
-} from '../../../types';
+} from '@src/types';
 import { round } from 'lodash';
 
 function quantileToString(q: number): string {

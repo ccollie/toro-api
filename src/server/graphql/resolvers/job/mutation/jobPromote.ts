@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { getQueueById } from '../../../helpers';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
-import { processJobCommand } from '../../../../queues';
+import { processJobCommand } from '@server/queues';
 import { JobLocatorInput } from './jobLocatorInput';
 
 export const jobPromote: FieldConfig = {

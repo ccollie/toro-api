@@ -2,9 +2,9 @@ import { schemaComposer } from 'graphql-compose';
 import { getQueueById } from '../../../helpers';
 import { JobStatusEnumType } from '../../index';
 import { FieldConfig } from '../../index';
-import { JobStatusEnum } from '../../../../../types';
+import { JobStatusEnum } from '@src/types';
 import { Duration } from '../../scalars';
-import { parseDuration } from '../../../../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 import boom from '@hapi/boom';
 
 export const queueClean: FieldConfig = {

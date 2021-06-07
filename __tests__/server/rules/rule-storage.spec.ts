@@ -3,8 +3,8 @@ import {
   RuleAlert,
   RuleConfigOptions,
   RuleEventsEnum,
-} from '../../../src/types';
-import { Rule, RuleStorage } from '../../../src/server/rules';
+} from '@src/types';
+import { Rule, RuleStorage } from '@src/server/rules';
 import {
   EventBus,
   getQueueBusKey,
@@ -21,6 +21,7 @@ import {
   createRuleOptions,
   DEFAULT_CLIENT_OPTIONS,
 } from '../../factories';
+import { fa } from 'cronstrue/dist/i18n/locales/fa';
 
 describe('RuleStorage', () => {
   // jest.setTimeout(5000);
@@ -208,6 +209,7 @@ describe('RuleStorage', () => {
         state: {},
         severity: data.severity,
         failures: 0,
+        isRead: false,
         ...data,
       };
     }
@@ -336,6 +338,69 @@ describe('RuleStorage', () => {
         retrieved = sortList(retrieved);
 
         expect(savedRules).toStrictEqual(retrieved);
+      });
+    });
+
+    describe('.markAlertAsRead', async () => {
+      it('throws if an alert is not found', async () => {
+        const rule = await addRule();
+        const alert = createAlert(rule);
+
+        const newAlert = await storage.addAlert(rule, alert);
+        expect(newAlert).toBeDefined();
+
+        await expect(
+          storage.markAlertAsRead(rule, '12345', true),
+        ).rejects.toEqual({
+          error: `Unable to locate alert id#"12345"`,
+        });
+      });
+
+      it('marks an alert as read', async () => {
+        const rule = await addRule();
+        const alert = createAlert(rule);
+
+        const newAlert = await storage.addAlert(rule, alert);
+        expect(newAlert).toBeDefined();
+
+        const modified = await storage.markAlertAsRead(rule, alert.id, true);
+        expect(modified.id).toBe(newAlert.id);
+        expect(modified.isRead).toBe(true);
+      });
+
+      it('marks an alert as unread', async () => {
+        const rule = await addRule();
+        const alert = createAlert(rule, { isRead: true });
+
+        const newAlert = await storage.addAlert(rule, alert);
+        expect(newAlert).toBeDefined();
+
+        const modified = await storage.markAlertAsRead(rule, alert.id, false);
+        expect(modified.id).toBe(newAlert.id);
+        expect(modified.isRead).toBe(false);
+      });
+
+      it('raises an alert on state change', async () => {
+        const rule = await addRule();
+        const alert = createAlert(rule);
+
+        await storage.addAlert(rule, alert);
+
+        let eventData = null;
+
+        bus.on(RuleEventsEnum.ALERT_UPDATED, (evt) => {
+          eventData = evt;
+        });
+
+        await storage.markAlertAsRead(rule, alert.id, true);
+
+        await delay(200);
+
+        expect(eventData).not.toBeUndefined();
+        expect(eventData.ruleId).toEqual(rule.id);
+        expect(eventData.id).toEqual(alert.id);
+        expect(typeof eventData.data).toBe('object');
+        expect(eventData.data?.isRead).toBe(true);
       });
     });
   });

@@ -1,7 +1,7 @@
 import { FieldConfig, RuleAlertTC } from '../index';
 import { getQueueManager } from '../../helpers';
 import boom from '@hapi/boom';
-import { RuleAlert } from '../../../../types';
+import { RuleAlert } from '@src/types';
 
 export const ruleAlert: FieldConfig = {
   type: RuleAlertTC,

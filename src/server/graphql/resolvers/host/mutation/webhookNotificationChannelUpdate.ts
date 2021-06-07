@@ -2,7 +2,7 @@ import { FieldConfig } from '../../index';
 import {
   WebhookNotificationChannelTC,
   WebhookNotificationChannelUpdateTC,
-} from '../scalars';
+} from '../scalars/notifications';
 import { updateChannel } from './utils';
 import { schemaComposer } from 'graphql-compose';
 

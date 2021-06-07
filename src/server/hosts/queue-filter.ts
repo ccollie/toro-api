@@ -3,11 +3,17 @@ import { Queue } from 'bullmq';
 import { escapeRegExp } from '../lib';
 import { checkMultiErrors } from '../redis';
 
+export enum QueueFilterStatus {
+  Active = 'ACTIVE',
+  Inactive = 'INACTIVE',
+  Paused = 'PAUSED',
+  Running = 'RUNNING',
+}
+
 export interface QueueFilter {
   search?: string;
   prefix?: string;
-  isActive?: boolean;
-  isPaused?: boolean;
+  statuses?: QueueFilterStatus[];
 }
 
 export async function getFilteredQueues(
@@ -16,10 +22,11 @@ export async function getFilteredQueues(
 ): Promise<Queue[]> {
   let queues = manager.getQueues();
   if (!filter) return queues;
-  const { search, isActive, isPaused, prefix } = filter;
-  if (!search && !prefix && isActive === undefined && isPaused === undefined) {
+  const { search, prefix, statuses } = filter;
+  if (!search && !prefix && !statuses?.length) {
     return queues;
   }
+
   if (search) {
     const regex = new RegExp(escapeRegExp(search), 'i');
     queues = queues.filter((queue) => queue.name.match(regex));
@@ -29,31 +36,49 @@ export async function getFilteredQueues(
       return queue.opts.prefix?.startsWith(prefix);
     });
   }
-  if (isActive !== undefined || isPaused !== undefined) {
+  // queues = queues.filter((queue) => excludeSet.has(queue.id));
+  if (statuses && statuses.length) {
     const pipeline = manager.client.pipeline();
     const valid = new Set(Array.from(queues));
 
-    if (isPaused !== undefined) {
+    const checkPaused = statuses.includes(QueueFilterStatus.Paused);
+    const checkRunning = statuses.includes(QueueFilterStatus.Running);
+
+    const checkActive = statuses.includes(QueueFilterStatus.Active);
+    const checkInactive = statuses.includes(QueueFilterStatus.Inactive);
+
+    if (checkPaused || checkRunning) {
       queues.forEach((queue) => {
         pipeline.hexists(queue.keys.meta, 'paused');
       });
     }
-    if (isActive !== undefined) {
+    if ((checkActive || checkInactive) && !(checkActive && checkInactive)) {
       pipeline.client('list');
       // count active jobs
     }
+    let isValid = true;
+
     const response = await pipeline.exec().then(checkMultiErrors);
-    if (isPaused !== undefined) {
+    if (checkPaused || checkRunning) {
       queues.forEach((queue) => {
         const paused = 1 === response.shift();
-        if (paused !== isPaused) valid.delete(queue);
+        if (paused) {
+          isValid = checkPaused;
+        } else {
+          isValid = checkRunning;
+        }
+        if (!isValid) valid.delete(queue);
       });
     }
-    if (isActive !== undefined) {
+
+    if (checkInactive && checkInactive) {
+      return Array.from(valid);
+    } else {
       const clientList = response[response.length - 1];
       const list = queues.length !== valid.size ? Array.from(valid) : queues;
       const queuesWithWorkers = parseClientList(list, clientList);
-      if (!!isActive) {
+
+      if (checkActive) {
         return queuesWithWorkers;
       } else {
         queuesWithWorkers.forEach((queue) => {
@@ -67,6 +92,7 @@ export async function getFilteredQueues(
   return queues;
 }
 
+// todo: cache this. Do workers change frequently ?
 function parseClientList(queues: Queue[], list: string): Queue[] {
   const resultSet = new Set<Queue>();
   const result: Queue[] = [];

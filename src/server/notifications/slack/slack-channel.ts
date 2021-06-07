@@ -1,9 +1,9 @@
 import boom from '@hapi/boom';
-import { NotificationContext, SlackChannelConfig } from '../../../types';
+import { NotificationContext, SlackChannelConfig } from '@src/types';
 import { validateUrl } from '../../lib';
 import { Channel } from '../channel';
 import { getMessage } from './messages';
-import { HttpClientConfig, HttpClient } from '../../lib/http-client';
+import { HttpClientConfig, HttpClient } from '@lib/http-client';
 
 export const POST_MESSAGE_URL = 'https://slack.com/api/chat.postMessage';
 

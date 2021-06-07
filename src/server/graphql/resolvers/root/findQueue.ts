@@ -1,5 +1,5 @@
 import { QueueTC, FieldConfig } from '../index';
-import { Supervisor } from '../../../supervisor';
+import { Supervisor } from '@server/supervisor';
 import { Queue } from 'bullmq';
 
 export const findQueue: FieldConfig = {

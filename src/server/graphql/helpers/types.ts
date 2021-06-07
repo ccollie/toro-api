@@ -13,6 +13,8 @@ export function createEnumFromTS<E>(
   const keys = Object.keys(enumType);
 
   keys.forEach((k) => {
+    // ignore numeric keys
+    if (!isNaN(parseInt(k))) return;
     values[k] = { value: enumType[k] };
   });
   return schemaComposer.createEnumTC({

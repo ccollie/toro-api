@@ -3,7 +3,7 @@ import {
   CompletedCountMetric,
   Events,
   QueueMetricOptions,
-} from '../../../src/server/metrics';
+} from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
 
 describe('CompletedCountMetric', () => {

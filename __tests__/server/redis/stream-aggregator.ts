@@ -1,5 +1,5 @@
 import { isObject } from 'lodash';
-import { RedisStreamAggregator } from '../../../src/server/redis';
+import { RedisStreamAggregator } from '@src/server/redis';
 const redisUri = global.process.env.REDIS_URI || 'localhost:6379';
 const blockingInterval = 100;
 

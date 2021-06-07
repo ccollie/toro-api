@@ -1,17 +1,17 @@
 import isEmpty from 'lodash/isEmpty';
-import { LatencyMetric } from '../../../src/server/metrics';
+import { LatencyMetric } from '@src/server/metrics';
 import {
   ErrorLevel,
   PeakCondition,
   PeakSignalDirection,
+  RuleOperator,
   RuleType,
   ThresholdCondition,
-} from '../../../src/types';
+} from '@src/types';
 import {
   PeakConditionEvaluator,
   ThresholdConditionEvaluator,
-} from '../../../src/server/rules';
-import { RuleOperator } from '../../../src/types';
+} from '@src/server/rules';
 
 describe('Condition Evaluation', () => {
   describe('ThresholdConditionEvaluator', () => {
@@ -21,7 +21,7 @@ describe('Condition Evaluation', () => {
       const defaults: ThresholdCondition = {
         type: RuleType.THRESHOLD,
         errorThreshold: 0,
-        operator: RuleOperator.gt,
+        operator: RuleOperator.GT,
       };
       const opts = { ...defaults, ...(options || {}) };
       const metric = new LatencyMetric({});
@@ -34,7 +34,7 @@ describe('Condition Evaluation', () => {
         const options: ThresholdCondition = {
           type: RuleType.THRESHOLD,
           errorThreshold: 0,
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
         };
         const sut = new ThresholdConditionEvaluator(metric, options);
         expect(sut).toBeDefined();
@@ -47,7 +47,7 @@ describe('Condition Evaluation', () => {
       it('returns success for errorThreshold', () => {
         const sut = createEvaluator({
           errorThreshold: 10,
-          operator: RuleOperator.lt,
+          operator: RuleOperator.LT,
         });
         const result = sut.evaluate(5);
         expect(result.success).toBe(true);
@@ -63,7 +63,7 @@ describe('Condition Evaluation', () => {
         const sut = createEvaluator({
           errorThreshold: 20,
           warningThreshold: 10,
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
         });
         const result = sut.evaluate(12);
         expect(result.success).toBe(true);
@@ -78,32 +78,32 @@ describe('Condition Evaluation', () => {
       it('properly handles comparisons', () => {
         const testData = [
           {
-            options: { errorThreshold: 10, operator: RuleOperator.eq },
+            options: { errorThreshold: 10, operator: RuleOperator.EQ },
             value: 10,
             expected: true,
           },
           {
-            options: { errorThreshold: 11, operator: RuleOperator.ne },
+            options: { errorThreshold: 11, operator: RuleOperator.NE },
             value: 11,
             expected: false,
           },
           {
-            options: { errorThreshold: 100, operator: RuleOperator.gt },
+            options: { errorThreshold: 100, operator: RuleOperator.GT },
             value: 110,
             expected: true,
           },
           {
-            options: { errorThreshold: 99, operator: RuleOperator.gte },
+            options: { errorThreshold: 99, operator: RuleOperator.GTE },
             value: 99,
             expected: true,
           },
           {
-            options: { errorThreshold: 50, operator: RuleOperator.lt },
+            options: { errorThreshold: 50, operator: RuleOperator.LT },
             value: 51,
             expected: false,
           },
           {
-            options: { errorThreshold: 73, operator: RuleOperator.lte },
+            options: { errorThreshold: 73, operator: RuleOperator.LTE },
             value: 73,
             expected: true,
           },
@@ -134,7 +134,7 @@ describe('Condition Evaluation', () => {
       options?: Partial<PeakCondition>,
     ): PeakConditionEvaluator {
       const defaults: PeakCondition = {
-        operator: RuleOperator.gt,
+        operator: RuleOperator.GT,
         type: RuleType.PEAK,
         influence: 0.5,
         lag: 0,
@@ -149,7 +149,7 @@ describe('Condition Evaluation', () => {
       it('can construct an instance', () => {
         const metric = new LatencyMetric({});
         const options: PeakCondition = {
-          operator: RuleOperator.gt,
+          operator: RuleOperator.GT,
           type: RuleType.PEAK,
           errorThreshold: 3.5,
           influence: 0,
@@ -194,32 +194,32 @@ describe('Condition Evaluation', () => {
       it('properly handles comparisons', () => {
         const testData = [
           {
-            options: { errorThreshold: 10, operator: RuleOperator.eq },
+            options: { errorThreshold: 10, operator: RuleOperator.EQ },
             value: 10,
             expected: true,
           },
           {
-            options: { errorThreshold: 11, operator: RuleOperator.ne },
+            options: { errorThreshold: 11, operator: RuleOperator.NE },
             value: 11,
             expected: false,
           },
           {
-            options: { errorThreshold: 100, operator: RuleOperator.gt },
+            options: { errorThreshold: 100, operator: RuleOperator.GT },
             value: 110,
             expected: true,
           },
           {
-            options: { errorThreshold: 99, operator: RuleOperator.gte },
+            options: { errorThreshold: 99, operator: RuleOperator.GTE },
             value: 99,
             expected: true,
           },
           {
-            options: { errorThreshold: 50, operator: RuleOperator.lt },
+            options: { errorThreshold: 50, operator: RuleOperator.LT },
             value: 51,
             expected: false,
           },
           {
-            options: { errorThreshold: 73, operator: RuleOperator.lte },
+            options: { errorThreshold: 73, operator: RuleOperator.LTE },
             value: 73,
             expected: true,
           },

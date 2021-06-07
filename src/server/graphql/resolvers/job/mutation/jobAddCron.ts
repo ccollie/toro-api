@@ -1,7 +1,7 @@
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
-import { JobOptionsCronInputTC } from '../query/Job.opts';
+import { JobOptionsCronInputTC } from '../model/Job.opts';
 import { addJob } from './utils';
 
 const JobAddCronInput = schemaComposer.createInputTC({

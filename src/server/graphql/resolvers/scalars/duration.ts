@@ -1,6 +1,6 @@
 import { GraphQLScalarType, Kind } from 'graphql';
 import { isNumber } from 'lodash';
-import { parseDuration } from '../../../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 
 export const Duration = new GraphQLScalarType({
   name: 'Duration',

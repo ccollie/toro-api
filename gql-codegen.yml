@@ -1,0 +1,11 @@
+overwrite: true
+schema: './src/server/graphql/sdl/sdl.graphql'
+generates:
+  ./src/server/graphql/typings/gql.ts:
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+    config:
+      skipTypename: true
+      useIndexSignature: true
+      defaultMapper: Partial<{T}>

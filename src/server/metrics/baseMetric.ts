@@ -1,7 +1,6 @@
 import boom from '@hapi/boom';
 import Emittery from 'emittery';
 import ms from 'ms';
-import crypto from 'crypto';
 import Joi, { ObjectSchema } from 'joi';
 import { JobEventData } from '../queues';
 import { BaseAggregator, NullAggregator } from './aggregators';
@@ -13,15 +12,14 @@ import {
   MetricCategory,
   MetricValueType,
   MetricTypes,
-  PollingMetricOptions,
   Predicate,
   SerializedMetric,
   TimeseriesDataPoint,
   QueueMetricOptions,
-  QueuePollingMetricOptions,
+  MetricOptions,
 } from '../../types';
 import { createJobNameFilter } from './utils';
-import { parseDuration } from '../lib/datetime';
+import { parseDuration } from '@lib/datetime';
 
 export interface MetricUpdateEvent {
   ts: number;
@@ -53,7 +51,7 @@ export const QueueBasedMetricSchema = BaseMetricSchema.append({
  */
 export abstract class BaseMetric {
   private readonly emitter: Emittery = new Emittery();
-  public readonly id: string;
+  public id: string;
   public queueId: string;
   public name: string;
   public description: string;
@@ -74,8 +72,6 @@ export abstract class BaseMetric {
     this._sampleInterval = getSampleInterval();
     this.setOptions(options);
     this._aggregator = new NullAggregator();
-    const key = (this.constructor as any).key;
-    this.id = key.toLowerCase() + '-' + crypto.randomBytes(6).toString('hex');
     this.createdAt = this.clock.getTime();
     this.updatedAt = this.createdAt;
   }
@@ -108,6 +104,7 @@ export abstract class BaseMetric {
 
   setOptions(options: any): void {
     this.options = this.validateOptions(options);
+    this._sampleInterval = this.options.sampleInterval;
   }
 
   destroy(): void {
@@ -233,19 +230,15 @@ export abstract class BaseMetric {
 
 export abstract class QueueBasedMetric extends BaseMetric {
   private _filter: Predicate<string>;
-  private _jobNames: string[] = [];
+  private _jobNames: string[];
 
   constructor(options: QueueMetricOptions) {
     super(options);
+    this.jobNames = options.jobNames || [];
   }
 
   static get category(): MetricCategory {
     return MetricCategory.Queue;
-  }
-
-  setOptions(options: QueueMetricOptions): void {
-    this.options = this.validateOptions(options);
-    this.jobNames = options.jobNames || [];
   }
 
   get validEvents(): string[] {
@@ -273,12 +266,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
   }
 }
 
-export const pollingMetricSchema = BaseMetricSchema.append({
-  interval: DurationSchema.required(),
-});
-
 export interface IPollingMetric {
-  interval: number;
   checkUpdate: () => Promise<void>;
 }
 
@@ -295,20 +283,12 @@ export abstract class PollingMetric
   extends BaseMetric
   implements IPollingMetric
 {
-  protected constructor(options: PollingMetricOptions) {
+  protected constructor(options: MetricOptions) {
     super(options);
-  }
-
-  get interval(): number {
-    return (this.options as PollingMetricOptions).interval;
   }
 
   checkUpdate(): Promise<void> {
     throw boom.notImplemented('checkUpdate');
-  }
-
-  static get schema(): ObjectSchema {
-    return pollingMetricSchema;
   }
 }
 
@@ -316,12 +296,8 @@ export abstract class QueuePollingMetric
   extends QueueBasedMetric
   implements IPollingMetric
 {
-  protected constructor(options: QueuePollingMetricOptions) {
+  protected constructor(options: QueueMetricOptions) {
     super(options);
-  }
-
-  get interval(): number {
-    return (this.options as PollingMetricOptions).interval;
   }
 
   checkUpdate(): Promise<void> {
@@ -329,6 +305,6 @@ export abstract class QueuePollingMetric
   }
 
   static get schema(): ObjectSchema {
-    return pollingMetricSchema;
+    return QueueBasedMetricSchema;
   }
 }

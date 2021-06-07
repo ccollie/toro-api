@@ -1,10 +1,11 @@
 import { FieldConfig } from '../index';
-import { aggregateMap } from '../../../metrics';
+import { aggregateMap } from '@server/metrics';
 import { schemaComposer } from 'graphql-compose';
-import { AggregatorTypes } from '../../../../types';
+import { AggregatorTypes } from '@src/types';
 
 export interface AggregateInfo {
   type: AggregatorTypes;
+  isWindowed: boolean;
   description: string;
 }
 
@@ -14,6 +15,7 @@ export const aggregates: FieldConfig = {
     fields: {
       type: 'AggregateTypeEnum!',
       description: 'String!',
+      isWindowed: 'Boolean!',
     },
   }).List.NonNull,
   description: 'Get the list of aggregate types available for metrics',
@@ -23,7 +25,8 @@ export const aggregates: FieldConfig = {
     for (const [key, ctor] of Object.entries(aggregateMap)) {
       if (ctor) {
         result.push({
-          type: key as AggregatorTypes,
+          type: (ctor as any).key,
+          isWindowed: !!(ctor as any).isWindowed,
           description: (ctor as any).description,
         });
       }

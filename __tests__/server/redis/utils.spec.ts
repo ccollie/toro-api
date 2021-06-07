@@ -1,6 +1,6 @@
 import { groupBy, sample } from 'lodash';
 import { createClient } from '../../factories';
-import { deleteAllQueueData, discoverQueues } from '../../../src/server/queues';
+import { deleteAllQueueData, discoverQueues } from '@src/server/queues';
 import { Queue } from 'bullmq';
 import pMap from 'p-map';
 

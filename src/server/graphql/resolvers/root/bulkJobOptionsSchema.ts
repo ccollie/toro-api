@@ -1,4 +1,4 @@
-import { BulkJobsOptionsSchema as schema } from '../../../queues';
+import { BulkJobsOptionsSchema as schema } from '@src/server/queues';
 import { FieldConfig } from '../index';
 
 export const bulkJobOptionsSchema: FieldConfig = {

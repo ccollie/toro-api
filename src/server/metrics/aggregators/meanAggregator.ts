@@ -1,6 +1,6 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
 import { Clock, getStaticProp } from '../../lib';
-import { AggregatorTypes, SlidingWindowOptions } from '../../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
 import { BaseMetric } from '../baseMetric';
 import { ObjectSchema } from 'joi';
 import { SlidingWindowOptionSchema } from './slidingTimeWindowAggregator';

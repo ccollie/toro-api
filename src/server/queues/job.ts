@@ -9,6 +9,7 @@ import { Scripts } from '../commands/scripts';
 export const JobFields = [
   'id',
   'name',
+  'parentKey',
   'data',
   'opts',
   'progress',
@@ -122,8 +123,8 @@ export async function bulkJobHandler(
   });
 
   if (jobs.length) {
-    const jids = jobs.map((job) => job.id);
-    const states = await Scripts.multiGetJobState(queue, jids);
+    const ids = jobs.map((job) => job.id);
+    const states = await Scripts.multiGetJobState(queue, ids);
     const promises = jobs.map((job, index) => {
       const state = states[index] as JobStatusEnum;
       return processJobInternal(queue, action, job, state);
@@ -164,4 +165,14 @@ export async function bulkPromoteJobs(
   ids: string[],
 ): Promise<BulkActionResult[]> {
   return bulkJobHandler('promote', queue, ids);
+}
+
+export function getJobKeyProperties(jobData: string) {
+  if (!jobData) return {};
+  const [, queueName, id] = jobData.split(':');
+
+  return {
+    id,
+    queueName,
+  };
 }

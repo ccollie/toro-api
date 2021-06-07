@@ -2,7 +2,7 @@ import { getQueueById } from '../../helpers';
 import { getJobSchema, JobSchema } from '../../../queues';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobSchemaTC } from '../job/query/Job.schema';
+import { JobSchemaTC } from '../job/model/Job.schema';
 import boom from '@hapi/boom';
 
 export const queueJobSchema: FieldConfig = {

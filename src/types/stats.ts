@@ -7,6 +7,16 @@ export interface TimeseriesDataPoint {
   value?: number;
 }
 
+export enum PeakSignal {
+  NONE,
+  ABOVE,
+  BELOW = -1,
+}
+
+export interface PeakDataPoint extends TimeseriesDataPoint {
+  signal: PeakSignal;
+}
+
 export enum StatsRateType {
   Throughput = 'Throughput',
   Errors = 'Errors',
