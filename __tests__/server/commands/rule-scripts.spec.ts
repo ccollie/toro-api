@@ -206,7 +206,7 @@ describe('RuleScripts', () => {
         options: { recoveryWindow: 100 },
       });
 
-      let result = await postFailure(rule);
+      const result = await postFailure(rule);
       expect(result.state).toBe(CircuitState.OPEN);
       clock.advanceBy(50);
       let state = await RuleScripts.getState(queue, rule, clock.getTime());
@@ -223,7 +223,7 @@ describe('RuleScripts', () => {
         options: { recoveryWindow: 100 },
       });
 
-      let result = await postFailure(rule);
+      const result = await postFailure(rule);
       clock.advanceBy(50);
       expect(result.state).toBe(CircuitState.OPEN);
       await postFailure(rule);
@@ -294,7 +294,7 @@ describe('RuleScripts', () => {
       await postFailure(rule, ErrorLevel.CRITICAL, now);
       await postFailure(rule);
 
-      let result = await postSuccess(rule);
+      const result = await postSuccess(rule);
       const state = await RuleScripts.getState(queue, rule, now);
       expect(state.state).toBe(CircuitState.CLOSED);
       expect(state.failures).toBe(0);
@@ -372,6 +372,25 @@ describe('RuleScripts', () => {
       expect(fromRedis.state).toBe(RuleState.WARNING);
     });
 
+    it('updates the queue alert count', async () => {
+      const rule = await addRule({ isActive: true });
+      const now = clock.getTime();
+
+      await postFailure(rule);
+
+      let alertData = createAlertData();
+      alertData.errorLevel = ErrorLevel.WARNING;
+      const alert = await RuleScripts.writeAlert(queue, rule, alertData, now);
+
+      let count = await RuleScripts.getQueueAlertCount(queue);
+      expect(count).toBe(1);
+
+      alertData = createAlertData();
+      await RuleScripts.writeAlert(queue, rule, alertData, now);
+      count = await RuleScripts.getQueueAlertCount(queue);
+      expect(count).toBe(2);
+    });
+
     it('emits an event', async () => {});
   });
 
@@ -420,7 +439,7 @@ describe('RuleScripts', () => {
         });
 
         await RuleScripts.startRule(queue, rule, clock.getTime());
-        let result = await postFailure(rule);
+        const result = await postFailure(rule);
 
         expect(result.status).toBe('warmup');
 

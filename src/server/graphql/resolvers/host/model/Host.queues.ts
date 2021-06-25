@@ -70,9 +70,7 @@ export const hostQueues: FieldConfig = {
       const excludeSet = new Set(exclude);
       return queues.filter((q) => {
         const id = getQueueId(q);
-        const valid =
-          (!include.length || includeSet.has(id)) && !excludeSet.has(id);
-        return valid;
+        return (!include.length || includeSet.has(id)) && !excludeSet.has(id);
       });
     }
     return queues;

@@ -2,8 +2,8 @@ import { schemaComposer } from 'graphql-compose';
 import { Queue } from 'bullmq';
 import { FieldConfig } from '../../utils';
 import { QueueWorker } from '@src/types';
-import { getQueueManager } from '../../../helpers';
 import toDate from 'date-fns/toDate';
+import { ResolverContext } from '@server/graphql';
 
 export const QueueWorkerTC = schemaComposer.createObjectTC({
   // see https://redis.io/commands/client-list
@@ -50,13 +50,17 @@ export const queueWorkers: FieldConfig = {
     limit: 'Int',
   },
   type: QueueWorkerTC.NonNull.List.NonNull,
-  async resolve(queue: Queue, args: any): Promise<QueueWorker[]> {
-    const manager = getQueueManager(queue);
-    let workers = await manager.getWorkers();
-    workers = workers.map((worker) => {
-      //worker.host = parent.host;
-      return worker;
-    });
+  async resolve(
+    queue: Queue,
+    args: any,
+    context: ResolverContext,
+  ): Promise<QueueWorker[]> {
+    const queueWorkersLoader = context.loaders.getLoader<
+      Queue,
+      QueueWorker[],
+      string
+    >('workers');
+    let workers = await queueWorkersLoader.load(queue);
     workers = workers.sort((a, b) => a.idle - b.idle);
     if (args.limit) {
       const limit = parseInt(args.limit);

@@ -693,7 +693,7 @@ export type Metric = {
   updatedAt: Scalars['Date'];
   aggregator: Aggregator;
   data: Array<Maybe<TimeseriesDataPoint>>;
-  /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in a vector */
+  /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
   dataPeaks: Array<Maybe<PeakDataPoint>>;
 };
 
@@ -741,16 +741,14 @@ export type MetricDataInput = {
 };
 
 export type MetricDataPeaksInput = {
-  start?: Maybe<Scalars['Date']>;
-  end?: Maybe<Scalars['Date']>;
+  start: Scalars['Date'];
+  end: Scalars['Date'];
   /** The lag time (in ms) of the moving window how much your data will be smoothed */
   lag?: Maybe<Scalars['Duration']>;
   /** The z-score at which the algorithm signals (i.e. how many standard deviations away from the moving mean a peak (or signal) is) */
   threshold?: Maybe<Scalars['Float']>;
   /** The influence (between 0 and 1) of new signals on the mean and standard deviation (how much a peak (or signal) should affect other values near it) */
   influence?: Maybe<Scalars['Float']>;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range?: Maybe<Scalars['String']>;
 };
 
 export type MetricDataRefreshInput = {

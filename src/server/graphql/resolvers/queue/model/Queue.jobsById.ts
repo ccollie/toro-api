@@ -17,6 +17,7 @@ export const jobsById: FieldConfig = {
   async resolve(queue: Queue, { input }): Promise<any> {
     const { ids = [] } = input;
     const manager = getQueueManager(queue);
+    // todo: use loader to take advantage of caching
     // todo: check out requested fields. If "states" is requested
     // use the optimized method to get states in bulk
     return manager.getMultipleJobsById(ids);

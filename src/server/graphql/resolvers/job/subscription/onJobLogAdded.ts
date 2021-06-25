@@ -24,7 +24,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     return `JOB_LOG_ADDED_${queueId}_${jobId}`;
   }
 
-  function onSubscribe(_, { queueId, jobId }, context, info) {
+  function onSubscribe(_, { queueId, jobId }, context) {
     const queueManager = getQueueManager(queueId);
     const hostManager = getQueueHost(queueId);
     const queue = queueManager.queue;

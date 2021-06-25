@@ -8,7 +8,7 @@ import { queueId } from './Queue.id';
 import { isPaused } from './Queue.isPaused';
 import { jobNames } from './Queue.jobNames';
 import { jobDurationAvg } from './Queue.jobDurationAvg';
-import { jobMemoryAvg } from './Queue.jobMemoryAvg';
+import { jobMemoryAvg, jobMemoryUsage } from './Queue.jobMemoryAvg';
 import { waitTimeAvg } from './Queue.waitTimeAvg';
 import { queueHostName as host } from './Queue.host';
 import { queueWorkerCount as workerCount } from './Queue.worker-count';
@@ -24,6 +24,8 @@ import { ruleAlerts } from './Queue.ruleAlerts';
 import { jobsById } from './Queue.jobsById';
 import { queueMetrics as metrics } from './Queue.metrics';
 import { metricCount } from './Queue.metricCount';
+import { waitingCount } from './Queue.waitingCount';
+import { waitingChildrenCount } from './Queue.waitingChildrenCount';
 
 import {
   histogram,
@@ -65,6 +67,7 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobsByFilter,
     jobDurationAvg,
     jobMemoryAvg,
+    jobMemoryUsage,
     lastStatsSnapshot,
     metrics,
     metricCount,
@@ -83,6 +86,8 @@ export const QueueTC = schemaComposer.createObjectTC({
     throughput,
     errorRate,
     errorPercentageRate,
+    waitingCount,
+    waitingChildrenCount,
     waitTimeAvg,
     workers,
     workerCount,

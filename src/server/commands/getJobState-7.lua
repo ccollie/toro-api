@@ -58,7 +58,11 @@ if isInList(KEYS[5]) then
 end
 
 if isInList(KEYS[6]) then
-    return "waiting"
+    return "paused"
+end
+
+if isInZSet(KEYS[7]) then
+    return "waiting-children"
 end
 
 return 'unknown'

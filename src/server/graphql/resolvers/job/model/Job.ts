@@ -8,6 +8,9 @@ import { Job } from 'bullmq';
 import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';
 import { parent } from './Job.parent';
+import { JobStatusEnum } from '@src/types';
+import { ResolverContext } from '@server/graphql';
+import { checkState } from './loaders';
 
 export const JobOptionsInputTC =
   JobOptionsTC.getITC().setTypeName('JobOptionsInput');
@@ -50,24 +53,37 @@ export const JobTC = schemaComposer.createObjectTC({
       type: 'Boolean!',
       async resolve(job: Job): Promise<boolean> {
         if (job.parentKey) return true;
+        // todo: move to loader
         // see if we have children
         const values = await job.getDependenciesCount();
         return values.processed + values.unprocessed > 0;
       },
     },
+    isWaiting: {
+      type: 'Boolean!',
+      description: 'returns true if this job is waiting.',
+      resolve(job: Job, args, context: ResolverContext): Promise<boolean> {
+        return checkState(
+          context,
+          job,
+          JobStatusEnum.WAITING,
+          JobStatusEnum.PAUSED,
+        );
+      },
+    },
     isWaitingChildren: {
       type: 'Boolean!',
       description: 'returns true if this job is waiting for children.',
-      resolve(parent: Job): Promise<boolean> {
-        return parent.isWaitingChildren();
+      resolve(job: Job, args, context: ResolverContext): Promise<boolean> {
+        return checkState(context, job, JobStatusEnum.WAITING_CHILDREN);
       },
     },
     childrenValues: {
       type: 'JSONObject!',
       description:
         'Get this jobs children result values as an object indexed by job key, if any.',
-      async resolve(parent: Job): Promise<Record<string, any>> {
-        const values = await parent.getChildrenValues();
+      async resolve(job: Job): Promise<Record<string, any>> {
+        const values = await job.getChildrenValues();
         return values ?? Object.create(null);
       },
     },

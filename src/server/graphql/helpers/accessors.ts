@@ -13,6 +13,11 @@ import { createAsyncIterator } from '../../lib';
 
 const queueIdMap = new WeakMap<Queue, string>();
 
+export function getQueueNameKey(manager: QueueManager): string {
+  const queue = manager.queue;
+  return `${manager.prefix}:${queue.name}`;
+}
+
 export function getSupervisor(): Supervisor {
   return Supervisor.getInstance();
 }
@@ -61,6 +66,24 @@ export async function getJobById(queueId: string, jobId: string): Promise<Job> {
     throw boom.notFound(msg);
   }
   return job;
+}
+
+export function getJobQueue(job: Job): Queue {
+  let queue = (job as any).queue as Queue;
+  if (!queue) {
+    const queueId = (job as any).queueId;
+    queue = getQueueById(queueId);
+  }
+  if (!queue) {
+    const msg = `No queue found for Job ${job.name}#${job.id}`;
+    throw boom.notFound(msg);
+  }
+  return queue;
+}
+
+export function getQueueHostManager(queue: Queue | string): HostManager {
+  const manager = getQueueManager(queue);
+  return manager.hostManager;
 }
 
 export function getQueueManager(queue: Queue | string): QueueManager {

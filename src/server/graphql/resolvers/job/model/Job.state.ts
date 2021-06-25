@@ -1,10 +1,10 @@
 import { Job } from 'bullmq';
 import { FieldConfig } from '../../utils';
-import { getState } from '../../../helpers';
+import { getJobState } from './loaders';
 
 export const jobStateFC: FieldConfig = {
   type: 'JobStatus!',
-  async resolve(parent: Job): Promise<string> {
-    return getState(parent);
+  async resolve(job: Job, args, context): Promise<string> {
+    return getJobState(context, job);
   },
 };

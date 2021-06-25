@@ -2,6 +2,7 @@ import { Queue } from 'bullmq';
 import { ErrorLevel, RuleAlert, RuleState } from '../../types';
 import {
   getAlertsKey,
+  getQueueAlertCountKey,
   getQueueBusKey,
   getRuleKey,
   getRuleStateKey,
@@ -219,12 +220,27 @@ export class RuleScripts {
       data,
       timestamp,
     );
+    // await RuleScripts.updateQueueAlertCount(queue);
     try {
       const temp = JSON.parse(val);
       return temp as RuleAlert;
     } catch (e) {
       return null;
     }
+  }
+
+  static async updateQueueAlertCount(queue: Queue): Promise<number> {
+    const ruleIndexKey = getRuleKey(queue);
+    const countsKey = getQueueAlertCountKey(queue);
+    const client = await queue.client;
+    return (client as any).updateQueueAlertCount(ruleIndexKey, countsKey);
+  }
+
+  static async getQueueAlertCount(queue: Queue): Promise<number> {
+    const countsKey = getQueueAlertCountKey(queue);
+    const client = await queue.client;
+    const count = await client.get(countsKey);
+    return parseInt(count ?? '0', 10);
   }
 
   static async markNotify(

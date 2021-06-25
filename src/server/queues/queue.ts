@@ -1,4 +1,3 @@
-import ms from 'ms';
 import { isEmpty, uniq } from 'lodash';
 import { Job, Queue, RedisClient } from 'bullmq';
 import { getQueueConfig } from '../hosts';
@@ -119,7 +118,7 @@ export async function discoverQueues(
 
 export async function discoverJobNames(
   queue: Queue,
-  expiration: number,
+  expiration?: number,
 ): Promise<string[]> {
   // Note: we also return names for which we have defined
   // schemas, even if no jobs of the type have been created
@@ -140,8 +139,7 @@ export async function getJobTypes(
   if (config && config.jobTypes && config.jobTypes.length) {
     return config.jobTypes;
   } else {
-    const expires = expiration || ms('5 sec');
-    return discoverJobNames(queue, expires);
+    return discoverJobNames(queue, expiration);
   }
 }
 
@@ -282,6 +280,7 @@ export function getPipelinedCounts(
       case 'failed':
       case 'delayed':
       case 'repeat':
+      case 'waiting-children':
         pipeline.zcard(key);
         break;
       case 'active':
@@ -293,4 +292,27 @@ export function getPipelinedCounts(
   });
 
   return pipeline;
+}
+
+export async function getPipelinePaused(
+  client: RedisClient,
+  queues: Queue[],
+): Promise<boolean[]> {
+  const pipeline = client.pipeline();
+  queues.forEach((queue) => {
+    pipeline.hexists(queue.keys.meta, 'paused');
+  });
+  const res = await pipeline.exec();
+  const result: boolean[] = [];
+
+  res.forEach((item, index) => {
+    if (item[0]) {
+      // error. Todo: throw
+      result.push(false);
+    } else {
+      result.push(item[1] === 1);
+    }
+  });
+
+  return result;
 }

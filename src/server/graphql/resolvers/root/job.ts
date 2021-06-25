@@ -3,7 +3,7 @@ import { getQueueById } from '../../helpers';
 import { Job } from 'bullmq';
 import boom from '@hapi/boom';
 import { fieldsList } from 'graphql-fields-list';
-import { Scripts } from '../../../commands/scripts';
+import { Scripts } from '@server/commands/scripts';
 
 export const job: FieldConfig = {
   type: JobTC.NonNull,

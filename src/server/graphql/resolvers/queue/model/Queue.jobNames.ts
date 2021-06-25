@@ -6,6 +6,7 @@ export const jobNames: FieldConfig = {
   type: '[String!]!',
   async resolve(queue: Queue): Promise<string[]> {
     const manager = getQueueManager(queue);
+    // todo: use loader
     return manager.getJobTypes();
   },
 };

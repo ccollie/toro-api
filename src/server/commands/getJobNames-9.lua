@@ -7,8 +7,9 @@
         KEYS[4]   ACTIVE key
         KEYS[5]   WAITING key
         KEYS[6]   PAUSED key
-        KEYS[7]   scratch key
-        KEYS[8]   destination key
+        KEYS[7]   WAITING-CHILDREN key
+        KEYS[8]   scratch key
+        KEYS[9]   destination key
 
         ARGV[1]   keyPrefix
         ARGV[2]   expiration (ms)
@@ -17,8 +18,8 @@
 ]]
 
 local keyPrefix = ARGV[1]
-local scratchKey = KEYS[7]
-local destination = KEYS[8]
+local scratchKey = KEYS[8]
+local destination = KEYS[9]
 
 local MAX_ITEMS = 160
 local function add_from_list (key, result, dedupe)
@@ -33,6 +34,8 @@ local function add_from_list (key, result, dedupe)
         items = redis.call("LRANGE", key, 0, -1)
     elseif type == "set" then
         items = redis.call("SMEMBERS", key)
+    elseif type == "hash" then
+        items = redis.call("HKEYS", key)
     else
         return
     end
@@ -56,7 +59,7 @@ local dedup = {}
 result = {}
 
 
-for i = 1, 6 do
+for i = 1, #KEYS-2 do
     if (#result < MAX_ITEMS) then
         add_from_list(KEYS[i], result, dedup)
     end

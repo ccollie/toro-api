@@ -218,6 +218,8 @@ export interface RuleConfigOptions {
   state?: RuleState;
   lastTriggeredAt?: number;
   totalFailures?: number;
+  /** Total (current) number of alerts */
+  alertCount?: number;
 }
 
 /**

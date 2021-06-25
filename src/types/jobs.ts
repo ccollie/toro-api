@@ -1,4 +1,18 @@
-import { JobsOptions, Job } from 'bullmq';
+import { JobsOptions, Job, Queue } from 'bullmq';
+
+export interface JobIdSpec {
+  queue: Queue | string;
+  id: string;
+}
+
+export function isJobIdSpec(arg: any): arg is JobIdSpec {
+  return (
+    arg !== undefined &&
+    arg.id &&
+    arg.queue &&
+    (typeof arg.queue === 'string' || arg.queue instanceof Queue)
+  );
+}
 
 export enum JobStatusEnum {
   ACTIVE = 'active',
@@ -8,6 +22,8 @@ export enum JobStatusEnum {
   DELAYED = 'delayed',
   PAUSED = 'paused',
   STALLED = 'stalled',
+  WAITING_CHILDREN = 'waiting-children',
+  UNKNOWN = 'unknown',
 }
 
 export type JobFinishedState = JobStatusEnum.COMPLETED | JobStatusEnum.FAILED;
@@ -19,7 +35,9 @@ export type JobCountStates =
   | JobStatusEnum.WAITING
   | JobStatusEnum.ACTIVE
   | JobStatusEnum.FAILED
-  | JobStatusEnum.PAUSED;
+  | JobStatusEnum.DELAYED
+  | JobStatusEnum.PAUSED
+  | JobStatusEnum.WAITING_CHILDREN;
 
 export type JobCounts = Record<JobCountStates, number>;
 

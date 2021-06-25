@@ -1,17 +1,17 @@
+import boom from '@hapi/boom';
 import { Job } from 'bullmq';
 import { FieldConfig } from '../../utils';
-import { getQueueManager } from '../../../helpers';
+import { getJobQueue, getQueueManager } from '../../../helpers';
 
 export const jobQueueIdFC: FieldConfig = {
   type: 'String!',
   makeNonNull: true,
   async resolve(parent: Job): Promise<string> {
-    let queueId = (parent as any).queueId;
-    if (!queueId) {
-      const queue = (parent as any).queue;
+    const queue = getJobQueue(parent);
+    if (queue) {
       const manager = getQueueManager(queue);
-      queueId = manager.id;
+      return manager.id;
     }
-    return queueId;
+    throw boom.notFound('Unexpected. Cannot find queue for job');
   },
 };

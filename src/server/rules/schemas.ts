@@ -136,6 +136,7 @@ export const ruleConfigSchema = Joi.object().keys({
   channels: Joi.array().items(Joi.string()).single().default([]),
   lastAlertAt: Joi.date().optional(),
   totalFailures: Joi.number().integer().optional().default(0),
+  alertCount: Joi.number().integer().optional().default(0),
 });
 
 export function parseRuleCondition(
