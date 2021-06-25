@@ -630,16 +630,22 @@ local function search(key, keyPrefix, criteria, cursor, count)
   local keyType = ''
 
   if (key ~= nil and #key > 0) then
-    redis.call("TYPE", key)
-    keyType = keyType["ok"]
+    keyType = redis.call("TYPE", key)
+    if type(keyType) ~= 'string' then
+      keyType = keyType["ok"]
+    end
   end
 
   if (keyType == 'zset') then
     scanResult = redis.call('zscan', key, cursor, "COUNT", count, 'MATCH', match)
   elseif keyType == 'set' then
     scanResult = redis.call('sscan', key, cursor, "COUNT", count, 'MATCH', match)
+  elseif keyType == 'hash' then
+    scanResult = redis.call('hscan', key, cursor, "COUNT", count, 'MATCH', match)
   else
     fullScan = true
+    --- todo: check version, and if > 6.0 uset the TYPE option
+    --- https://redis.io/commands/scan#the-type-option
     scanResult = redis.call('scan', cursor, "COUNT", count, 'MATCH', match)
   end
 

@@ -1,6 +1,6 @@
 import IORedis, { Pipeline } from 'ioredis';
 import { isObject, chunk, isNil, isString } from 'lodash';
-import { isValidDate } from '../lib/datetime';
+import { isValidDate } from '@lib/datetime';
 import { isNumber, logger } from '../lib';
 import { ConnectionOptions, RedisMetrics } from '../../types';
 import { loadScripts } from '../commands';

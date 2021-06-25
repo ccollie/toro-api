@@ -1,8 +1,13 @@
+import ms from 'ms';
 import { loadScripts } from './index';
-import { Job, JobJsonRaw, Queue } from 'bullmq';
+import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
 import isEmpty from 'lodash/isEmpty';
 import { JobFinishedState, JobStatusEnum } from '../../types';
 import { nanoid } from '../lib';
+import { Pipeline } from 'ioredis';
+import { job } from '@server/graphql/resolvers/root';
+
+const DEFAULT_JOBNAMES_TIMEOUT = ms('5 secs'); // TODO: get from config
 
 export interface ScriptFilteredJobsResult {
   cursor: number;
@@ -18,7 +23,24 @@ function parseScriptError(err: string): string {
   return err;
 }
 
+const DEFAULT_SAMPLE_SIZE = 50;
+const MAX_SAMPLE_SIZE = 1000;
+
 export class Scripts {
+  private static getStateKeys(queue: Queue): string[] {
+    return [
+      'completed',
+      'failed',
+      'delayed',
+      'active',
+      'wait',
+      'paused',
+      'waiting-children',
+    ].map(function (key: string) {
+      return queue.toKey(key);
+    });
+  }
+
   /**
    * Get the job states
    * @param {String} queue Queue names
@@ -32,18 +54,8 @@ export class Scripts {
     client = null,
   ): Promise<string> {
     client = client || (await queue.client);
-    const queueKeys = queue.keys;
-
-    const args = [
-      queueKeys.completed,
-      queueKeys.failed,
-      queueKeys.delayed,
-      queueKeys.active,
-      queueKeys.waiting,
-      queueKeys.paused,
-      id,
-    ];
-
+    const keys = Scripts.getStateKeys(queue);
+    const args = [...keys, id];
     return (client as any).getJobState(...args);
   }
 
@@ -52,85 +64,119 @@ export class Scripts {
     ids: string[],
   ): Promise<string[]> {
     const client = await queue.client;
-    const queueKeys = queue.keys;
     const multi = client.multi();
-
+    const keys = Scripts.getStateKeys(queue);
     ids.forEach((id) => {
-      const args = [
-        queueKeys.completed,
-        queueKeys.failed,
-        queueKeys.delayed,
-        queueKeys.active,
-        queueKeys.waiting,
-        queueKeys.paused,
-        id,
-      ];
+      const args = [...keys, id];
       (multi as any).getJobState(...args);
     });
 
-    const res = await multi.exec();
-    const result = new Array<string>(ids.length);
+    return parseListPipeline<string>(multi);
+  }
 
-    res.forEach((item, index) => {
-      if (item[0]) {
-        // err
-        result[index] = null;
-      } else {
-        result[index] = item[1];
-      }
-    });
+  static getIsInListsArgs(
+    queue: Queue,
+    id: string,
+    ...keys: string[]
+  ): [number, string[], string] {
+    return [keys.length, keys.map(queue.toKey), id];
+  }
 
-    return result;
+  static async isInLists(queue: Queue, id: string, ...states: string[]) {
+    const client = await queue.client;
+    const args = Scripts.getIsInListsArgs(queue, id, ...states);
+    return (client as any).idInLists(...args);
+  }
+
+  static getJobNamesArgs(
+    queue: Queue,
+    expiration: number = DEFAULT_JOBNAMES_TIMEOUT,
+  ): Array<number | string> {
+    const destKey = queue.toKey('jobTypes');
+    const scratchKey = queue.toKey(`scratch:${nanoid()}`);
+    const keyPrefix = queue.toKey('');
+
+    return [
+      ...Scripts.getStateKeys(queue),
+      scratchKey,
+      destKey,
+      keyPrefix,
+      expiration,
+    ];
   }
 
   static async getJobNames(
     queue: Queue,
-    expiration: number,
+    expiration?: number,
   ): Promise<string[]> {
     const client = await queue.client;
-    const destKey = queue.toKey('jobTypes');
-
-    const scratchKey = queue.toKey(`scratch:${nanoid()}`);
-    const keyPrefix = queue.toKey('');
-    const queueKeys = queue.keys;
-
-    const keys = [
-      queueKeys.completed,
-      queueKeys.failed,
-      queueKeys.delayed,
-      queueKeys.active,
-      queueKeys.waiting,
-      queueKeys.paused,
-      scratchKey,
-      destKey,
-    ];
-    const args = [...keys, keyPrefix, expiration];
+    const args = Scripts.getJobNamesArgs(queue, expiration);
     return (client as any).getJobNames(...args);
+  }
+
+  static getKeysMemoryUsageArgs(
+    queue: Queue,
+    status: JobStatusEnum,
+    limit: number = DEFAULT_SAMPLE_SIZE,
+    jobName: string = null,
+  ): Array<string | number> {
+    const prefix = queue.toKey('');
+    const key = queue.toKey(status);
+    const args = [key, prefix, Math.max(limit, MAX_SAMPLE_SIZE)];
+    if (jobName && jobName.length) {
+      args.push(jobName);
+    }
+    return args;
+  }
+
+  private static getAvgJobMemoryArgs(
+    queue: Queue,
+    jobName: string = null,
+    status: JobFinishedState,
+    limit: number,
+  ) {
+    const prefix = queue.toKey('');
+    const key = queue.toKey(status);
+    return [key, prefix, jobName, Math.max(limit, MAX_SAMPLE_SIZE)];
   }
 
   static async getAvgJobMemoryUsage(
     queue: Queue,
     jobName: string = null,
     status: JobFinishedState = JobStatusEnum.COMPLETED,
-    limit = 1000,
+    limit = 100,
   ): Promise<number> {
     const client = await queue.client;
-    const prefix = queue.toKey('');
-    const key = queue.toKey(status);
-    const args = [key, prefix, jobName, limit];
+    const args = Scripts.getAvgJobMemoryArgs(queue, jobName, status, limit);
     return (client as any).getAvgJobMemoryUsage(...args);
+  }
+
+  static async multiGetAvgJobMemoryUsage(
+    client: RedisClient,
+    queues: Queue[],
+    jobName: string = null,
+    status: JobFinishedState = JobStatusEnum.COMPLETED,
+    limit = 100,
+  ): Promise<number[]> {
+    const pipeline = client.pipeline();
+    queues.forEach((queue) => {
+      const args = Scripts.getAvgJobMemoryArgs(queue, jobName, status, limit);
+      (pipeline as any).getAvgJobMemoryUsage(...args);
+    });
+
+    return parseNumberListPipeline(pipeline);
   }
 
   static async getAvgJobDuration(
     queue: Queue,
     jobName: string = null,
     status: JobFinishedState,
-    limit = 1000,
+    limit = 100,
   ): Promise<number> {
     const client = await queue.client;
     const prefix = queue.toKey('');
     const key = queue.toKey(status);
-    const args = [key, prefix, jobName, limit];
+    const args = [key, prefix, jobName, Math.max(limit, MAX_SAMPLE_SIZE)];
     return (client as any).getDurationAverage(...args);
   }
 
@@ -143,7 +189,7 @@ export class Scripts {
     const client = await queue.client;
     const prefix = queue.toKey('');
     const key = queue.toKey(status);
-    const args = [key, prefix, jobName, limit];
+    const args = [key, prefix, jobName, Math.max(limit, MAX_SAMPLE_SIZE)];
     return (client as any).getWaitTimeAverage(...args);
   }
 
@@ -229,4 +275,25 @@ export class Scripts {
       jobs,
     };
   }
+}
+
+async function parseListPipeline<T = any>(pipeline: Pipeline) {
+  const res = await pipeline.exec();
+  const result = new Array<T>(res.length);
+
+  res.forEach((item, index) => {
+    if (item[0]) {
+      // err
+      result[index] = null;
+    } else {
+      result[index] = item[1] as T;
+    }
+  });
+
+  return result;
+}
+
+async function parseNumberListPipeline(pipeline: Pipeline): Promise<number[]> {
+  const result = await parseListPipeline<number>(pipeline);
+  return result.map((x) => x ?? 0);
 }

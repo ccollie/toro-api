@@ -4,7 +4,7 @@ import { processSearch } from '@server/queues';
 import { Queue } from 'bullmq';
 import { JobStatusEnum } from '@src/types';
 
-const JobSearchInput = schemaComposer.createInputTC({
+const JobSearchInputTC = schemaComposer.createInputTC({
   name: 'JobSearchInput',
   fields: {
     status: {
@@ -35,7 +35,7 @@ const JobSearchInput = schemaComposer.createInputTC({
   },
 });
 
-export const JobSearchPayload = schemaComposer.createObjectTC({
+export const JobSearchPayloadTC = schemaComposer.createObjectTC({
   name: 'JobSearchPayload',
   fields: {
     cursor: {
@@ -51,9 +51,9 @@ export const JobSearchPayload = schemaComposer.createObjectTC({
 export const jobSearch: FieldConfig = {
   description:
     'Incrementally iterate over a list of jobs filtered by query criteria',
-  type: JobSearchPayload.NonNull,
+  type: JobSearchPayloadTC.NonNull,
   args: {
-    filter: JobSearchInput.NonNull,
+    filter: JobSearchInputTC.NonNull,
   },
   async resolve(queue: Queue, { filter }) {
     const { status, criteria, cursor, count } = filter;

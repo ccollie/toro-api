@@ -10,7 +10,7 @@
 local key = KEYS[1]
 local prefix = ARGV[1]
 local jobName = ARGV[2]
-local limit = assert(tonumber(ARGV[3] or 1000), 'Invalid value for limit')
+local limit = assert(tonumber(ARGV[3] or 500), 'Invalid value for limit')
 local amount = 0
 local counter = 0
 

@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { getJobsByFilterId } from '@server/queues';
 import { Queue } from 'bullmq';
-import { JobSearchPayload } from './Queue.jobSearch';
+import { JobSearchPayloadTC } from './Queue.jobSearch';
 import { FilteredJobsResult } from '@src/types';
 import { FieldConfig } from '../../';
 
@@ -29,7 +29,7 @@ const JobsByFilterIdInput = schemaComposer.createInputTC({
 
 export const jobsByFilter: FieldConfig = {
   description: 'Fetch jobs based on a previously stored filter',
-  type: JobSearchPayload.NonNull,
+  type: JobSearchPayloadTC.NonNull,
   args: {
     filter: JobsByFilterIdInput.NonNull,
   },

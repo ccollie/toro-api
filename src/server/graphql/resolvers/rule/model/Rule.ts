@@ -9,7 +9,6 @@ import {
   RuleAlertOptionsTC,
 } from './RuleAlertOptions';
 import { ruleAlertsFC } from './Rule.alerts';
-import { ruleAlertCountFC } from './Rule.alert-count';
 import { ruleMetric } from './Rule.metric';
 import { ruleChannels } from './Rule.channels';
 import { ruleStatus } from './Rule.status';
@@ -81,7 +80,10 @@ export const RuleTC = schemaComposer.createObjectTC({
       description: 'Options controlling the generation of events',
     },
     alerts: ruleAlertsFC,
-    alertCount: ruleAlertCountFC,
+    alertCount: {
+      type: 'Int!',
+      description: 'The current count of alerts available for this rule',
+    },
     totalFailures: {
       type: 'Int!',
       description: 'The total number of failures',

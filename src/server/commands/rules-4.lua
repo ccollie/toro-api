@@ -388,8 +388,8 @@ local function fetchAlert(id)
         }
     elseif #ra > 1 then
         error(
-                'Multiple values for alert: "' .. id .. '". key: "' .. alertsKey ..'", ' ..
-                        'id: ' .. tostring(id)
+    'Multiple values for alert: "' .. id .. '". key: "' .. alertsKey ..'", ' ..
+            'id: ' .. tostring(id)
         )
     end
     return nil
@@ -402,7 +402,12 @@ local function setAlert(id, value)
     if (current ~= nil) then
         redis.call("zrem", alertsKey, current.raw_value)
     end
-    return store_value(id, value, false)
+
+    store_value(id, value, false)
+
+    local alertCount = redis.call('zcard', alertsKey)
+    --- update rule alert count
+    redis.call('hset', ruleKey, 'alertCount', alertCount)
 end
 
 local function getAlert(id)

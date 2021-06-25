@@ -360,8 +360,8 @@ export class TimeSeries {
   static async *getGapIterator(
     client: RedisClient,
     key: string,
-    start,
-    end,
+    start: PossibleTimestamp,
+    end: PossibleTimestamp,
     interval: number,
   ) {
     if (start === '-') {

@@ -127,8 +127,9 @@ export class Supervisor {
 
   getQueueManager(queue: Queue | string): QueueManager {
     const addToCache = (manager: QueueManager): void => {
+      const queue = manager.queue;
       this.queueManagersById.set(manager.id, manager);
-      queueManagerMap.set(manager.queue, manager);
+      queueManagerMap.set(queue, manager);
     };
 
     if (isNil(queue)) return null;

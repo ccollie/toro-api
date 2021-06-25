@@ -16,10 +16,11 @@ export const jobDurationAvg: ObjectTypeComposerFieldConfigDefinition<any, any> =
       limit: {
         type: 'Int',
         description: 'An optional upper limit of jobs to use in the average',
-        defaultValue: 1000,
+        defaultValue: 100,
       },
     },
     resolve: async (queue: Queue, { limit, jobName }) => {
+      // todo: use loader
       return Scripts.getAvgJobDuration(
         queue,
         jobName,

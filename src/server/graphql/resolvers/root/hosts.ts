@@ -1,6 +1,6 @@
 import { FieldConfig, HostTC } from '../index';
-import { HostManager } from '../../../hosts';
-import { Supervisor } from '../../../supervisor';
+import { HostManager } from '@server/hosts';
+import { Supervisor } from '@server/supervisor';
 
 export const hosts: FieldConfig = {
   type: HostTC.NonNull.List.NonNull,

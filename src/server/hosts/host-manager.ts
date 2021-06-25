@@ -320,16 +320,18 @@ export class HostManager {
     return this.notifications.getChannels();
   }
 
-  async getWorkers(): Promise<QueueWorker[]> {
+  async getQueueWorkers(): Promise<Map<Queue, QueueWorker[]>> {
     const queues = this.getQueues();
-    const clientNames = queues.map((queue) => {
-      // hack
-      return (queue as any).clientName();
+    const result = new Map<Queue, QueueWorker[]>();
+    const queueByClientName = new Map<string, Queue>();
+    queues.forEach((queue) => {
+      const clientName = (queue as any).clientName();
+      queueByClientName.set(clientName, queue);
+      result.set(queue, []);
     });
 
-    function parseClientList(list: string): QueueWorker[] {
+    function parseClientList(list: string): void {
       const lines = list.split('\n');
-      const workers: QueueWorker[] = [];
 
       lines.forEach((line: string) => {
         const client: { [index: string]: string } = {};
@@ -341,20 +343,28 @@ export class HostManager {
         });
         const name = client['name'];
         if (!name) return;
-        // only consider queues we're managing
-        for (let i = 0; i < queues.length; i++) {
-          if (name.startsWith(clientNames[i])) {
-            client['name'] = queues[i].name;
-            workers.push(convertWorker(client));
-          }
+        const queue = queueByClientName.get(name);
+        if (queue) {
+          const workers = result.get(queue);
+          client['name'] = queue.name;
+          workers.push(convertWorker(client));
         }
       });
-
-      return workers;
     }
 
     const clients = await this.client.client('list');
-    return parseClientList(clients);
+    parseClientList(clients);
+
+    return result;
+  }
+
+  async getWorkers(): Promise<QueueWorker[]> {
+    const workers = await this.getQueueWorkers();
+    const values = Array.from(workers.values()).reduce(
+      (res, items) => res.concat(items),
+      [],
+    );
+    return values;
   }
 
   async getJobCounts(states?: JobStatusEnum[]): Promise<JobCounts> {

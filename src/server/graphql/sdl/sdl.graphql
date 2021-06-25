@@ -930,7 +930,7 @@ type Metric {
   data(input: MetricDataInput!): [TimeseriesDataPoint]!
 
   """
-  Uses a rolling mean and a rolling deviation (separate) to identify peaks in a vector
+  Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
   """
   dataPeaks(input: MetricDataPeaksInput!): [PeakDataPoint]!
 }
@@ -2134,8 +2134,8 @@ input MetricDataInput {
 }
 
 input MetricDataPeaksInput {
-  start: Date
-  end: Date
+  start: Date!
+  end: Date!
 
   """
   The lag time (in ms) of the moving window how much your data will be smoothed
@@ -2151,9 +2151,6 @@ input MetricDataPeaksInput {
   The influence (between 0 and 1) of new signals on the mean and standard deviation (how much a peak (or signal) should affect other values near it)
   """
   influence: Float = 0.5
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String
 }
 
 input MetricDataRefreshInput {

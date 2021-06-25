@@ -46,6 +46,7 @@ export class Rule {
   public severity: Severity;
   public lastTriggeredAt?: number;
   public totalFailures = 0;
+  public alertCount = 0;
 
   /**
    * Constructs a {@link Rule}. A Rule sets conditions for actions based
@@ -72,6 +73,7 @@ export class Rule {
       lastTriggeredAt,
       queueId,
       totalFailures = 0,
+      alertCount = 0,
     } = opts;
 
     /**
@@ -81,6 +83,7 @@ export class Rule {
     this.state = state ?? RuleState.NORMAL;
     this.queueId = queueId;
     this.totalFailures = totalFailures;
+    this.alertCount = alertCount;
 
     this.options = {
       notifyInterval: 0,

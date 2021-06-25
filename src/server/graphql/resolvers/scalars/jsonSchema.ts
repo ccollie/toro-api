@@ -4,7 +4,7 @@ import { ajv } from '@server/validation/ajv';
 
 function validate(schema) {
   try {
-    ajv.compile(schema);
+    ajv.validateSchema(schema, true);
   } catch (err) {
     throw boom.badRequest('Invalid JSON Schema', ajv.errors);
   }

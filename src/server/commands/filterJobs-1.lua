@@ -2071,6 +2071,9 @@ local function search(key, keyPrefix, criteria, cursor, count)
     elseif keyType == 'set' then
         itemCount = redis.call('scard', key)
         scanResult = redis.call('sscan', key, cursor, "COUNT", count, 'MATCH', match)
+    elseif keyType == 'hash' then
+        itemCount = redis.call('hlen', key)
+        scanResult = redis.call('hscan', key, cursor, "COUNT", count, 'MATCH', match)
     else
         fullScan = true
         itemCount = redis.call('dbsize')
