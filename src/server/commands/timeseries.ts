@@ -400,6 +400,7 @@ export class TimeSeries {
     }
   }
 
+  // Truncate values so that only the last (latest - retention) values remain
   static async truncate(
     client: RedisClient,
     key: string,
@@ -410,42 +411,46 @@ export class TimeSeries {
 
   static multi = {
     add(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       ts: PossibleTimestamp,
       data: unknown,
     ): Pipeline {
       const _ts = stringifyTimestamp(ts);
       const _data = stringifyData(data);
-      return _pcall(client, 'add', key, _ts, _data);
+      return _pcall(pipeline, 'add', key, _ts, _data);
     },
     bulkAdd(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       data: TimeseriesBulkItem[],
     ): Pipeline {
       const _data = prepBulkItems(data);
-      return _pcall(client, 'bulkAdd', key, ..._data);
+      return _pcall(pipeline, 'bulkAdd', key, ..._data);
     },
-    del(client: Pipeline, key: string, ...ids: PossibleTimestamp[]): Pipeline {
+    del(
+      pipeline: Pipeline,
+      key: string,
+      ...ids: PossibleTimestamp[]
+    ): Pipeline {
       const _ids = ids.map(stringifyTimestamp);
-      return _pcall(client, 'del', key, ..._ids);
+      return _pcall(pipeline, 'del', key, ..._ids);
     },
-    get(client: Pipeline, key: string, ts: PossibleTimestamp): Pipeline {
-      return _pcall(client, 'get', key, stringifyTimestamp(ts));
+    get(pipeline: Pipeline, key: string, ts: PossibleTimestamp): Pipeline {
+      return _pcall(pipeline, 'get', key, stringifyTimestamp(ts));
     },
-    pop(client: Pipeline, key: string, ts: PossibleTimestamp): Pipeline {
-      return _pcall(client, 'pop', key, stringifyTimestamp(ts));
+    pop(pipeline: Pipeline, key: string, ts: PossibleTimestamp): Pipeline {
+      return _pcall(pipeline, 'pop', key, stringifyTimestamp(ts));
     },
     set(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       ts: PossibleTimestamp,
       data: unknown,
     ): Pipeline {
       const _ts = stringifyTimestamp(ts);
       const _data = stringifyData(data);
-      return _pcall(client, 'set', key, _ts, _data);
+      return _pcall(pipeline, 'set', key, _ts, _data);
     },
     size(client: Pipeline, key: string): Pipeline {
       return _pcall(client, 'size', key);
@@ -454,70 +459,86 @@ export class TimeSeries {
       return _pcall(client, 'exists', key, stringifyTimestamp(ts));
     },
     getGaps(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       start: PossibleTimestamp,
       end: PossibleTimestamp,
       interval: number,
     ): Pipeline {
       const args = [stringifyTimestamp(start), stringifyData(end), interval];
-      return _pcall(client, 'gaps', key, ...args);
+      return _pcall(pipeline, 'gaps', key, ...args);
     },
-    getSpan(client: Pipeline, key: string): Pipeline {
-      return _pcall(client, key, 'span');
+    getSpan(pipeline: Pipeline, key: string): Pipeline {
+      return _pcall(pipeline, key, 'span');
     },
     getCount(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       start: PossibleTimestamp,
       end: PossibleTimestamp,
     ): Pipeline {
       const _start = stringifyTimestamp(start);
       const _end = stringifyData(end);
-      return _pcall(client, 'count', key, _start, _end);
+      return _pcall(pipeline, 'count', key, _start, _end);
     },
     getRange(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       start: DateLike,
       end: DateLike,
       offset?: number,
       count?: number,
     ): Pipeline {
-      return multiRangeCmd(client, 'range', key, start, end, offset, count);
+      return multiRangeCmd(pipeline, 'range', key, start, end, offset, count);
     },
     getRevRange(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       start: DateLike,
       end: DateLike,
       offset?: number,
       count?: number,
     ): Pipeline {
-      return multiRangeCmd(client, 'revrange', key, start, end, offset, count);
+      return multiRangeCmd(
+        pipeline,
+        'revrange',
+        key,
+        start,
+        end,
+        offset,
+        count,
+      );
     },
     removeRange(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       start: DateLike,
       end: DateLike,
       offset?: number,
       count?: number,
     ): Pipeline {
-      return multiRangeCmd(client, 'remrange', key, start, end, offset, count);
+      return multiRangeCmd(
+        pipeline,
+        'remrange',
+        key,
+        start,
+        end,
+        offset,
+        count,
+      );
     },
-    truncate(client: Pipeline, key: string, retention: number): Pipeline {
-      return _pcall(client, 'truncate', key, retention);
+    truncate(pipeline: Pipeline, key: string, retention: number): Pipeline {
+      return _pcall(pipeline, 'truncate', key, retention);
     },
     updateJson(
-      client: Pipeline,
+      pipeline: Pipeline,
       key: string,
       ts: PossibleTimestamp,
       data: unknown,
     ): Pipeline {
       const _ts = stringifyTimestamp(ts);
       const _data = stringifyData(data);
-      return _pcall(client, 'updateJson', key, _ts, _data);
+      return _pcall(pipeline, 'updateJson', key, _ts, _data);
     },
   };
 }

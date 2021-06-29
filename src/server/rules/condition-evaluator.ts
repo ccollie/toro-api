@@ -10,7 +10,23 @@ import {
   ThresholdCondition,
 } from '../../types';
 import { UnsubscribeFn } from 'emittery';
-import { EvaluationResult } from './rule-evaluator';
+
+export interface EvaluationResult {
+  value: number;
+  triggered: boolean;
+  errorLevel: ErrorLevel;
+  state: Record<string, any>;
+}
+
+export interface RuleEvaluationState {
+  ruleType: RuleType;
+  errorLevel: ErrorLevel;
+  value: number;
+  errorThreshold: number;
+  warningThreshold?: number;
+  comparator: RuleOperator;
+  unit: string;
+}
 
 export const OperatorNames = {
   short: {
@@ -75,11 +91,11 @@ export class ConditionEvaluator {
 
   evaluate(value: number): EvaluationResult {
     const notificationType = this.handleEval(value);
-    const success = notificationType !== ErrorLevel.NONE;
+    const triggered = notificationType !== ErrorLevel.NONE;
     this.state['errorLevel'] = notificationType;
     return {
       value,
-      success,
+      triggered,
       errorLevel: notificationType,
       state: this.state,
     };

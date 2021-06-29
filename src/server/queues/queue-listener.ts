@@ -7,14 +7,15 @@ import { parseTimestamp } from '@lib/datetime';
 import { parseStreamId, timestampFromStreamId } from '../redis';
 import { AppJob, JobStatusEnum } from '../../types';
 import {
-  systemClock,
   Clock,
-  ManualClock,
   createAsyncIterator,
-  IteratorOptions,
   isFinishedStatus,
   isNumber,
+  IteratorOptions,
+  ManualClock,
+  systemClock,
 } from '../lib';
+import { Events } from '@server/metrics';
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');
@@ -248,13 +249,13 @@ export class QueueListener extends Emittery {
   private handleCompleted(data: JobEventData, { returnvalue }): any {
     const { job } = data;
     job.returnvalue = returnvalue;
-    return this.markFinished(data);
+    return this.markFinished(data, JobStatusEnum.COMPLETED);
   }
 
   private handleFailed(data: JobEventData, { failedReason }): any {
     const { job } = data;
     job.failedReason = failedReason;
-    return this.markFinished(data);
+    return this.markFinished(data, JobStatusEnum.FAILED);
   }
 
   private static handleWaiting(data: JobEventData): void {
@@ -291,22 +292,32 @@ export class QueueListener extends Emittery {
     job.progress = isNumber(data) ? parseInt(data) : data;
   }
 
-  async markFinished(data: JobEventData): Promise<void> {
-    const { job, event, ts } = data;
-    const failed = event === 'failed';
-    job.state = failed ? JobStatusEnum.FAILED : JobStatusEnum.COMPLETED;
+  async markFinished(
+    data: JobEventData,
+    status: JobStatusEnum.COMPLETED | JobStatusEnum.FAILED,
+  ): Promise<void> {
+    const { job, ts } = data;
+    const failed = status === JobStatusEnum.FAILED;
+    job.state = status;
     job.finishedOn = ts;
 
     const { latency, wait } = await this.getDurations(data);
 
-    return this.emit(FINISHED_EVENT, {
+    const evtData: JobFinishedEventData = {
       job,
       ts,
       latency,
       wait,
       success: !failed,
-      event: 'finished',
-    } as JobFinishedEventData);
+      event: status,
+    };
+
+    const finishedEvtData = { ...evtData, event: 'finished' };
+
+    await Promise.all([
+      this.emit(failed ? Events.FAILED : Events.COMPLETED, evtData),
+      this.emit(FINISHED_EVENT, finishedEvtData),
+    ]);
   }
 
   private static needsMeta(data: JobEventData): boolean {
@@ -336,7 +347,10 @@ export class QueueListener extends Emittery {
     };
   }
 
-  async fetchJobData(count: number, includeJob): Promise<any[]> {
+  private async fetchJobData(
+    count: number,
+    includeJob?: Partial<AppJob>,
+  ): Promise<any[]> {
     const jobs = [];
     const client = this._client || (await this.queue.client);
     const pipeline = client.multi();
@@ -392,10 +406,6 @@ export class QueueListener extends Emittery {
     });
 
     return result;
-  }
-
-  getCachedJob(id: string): any {
-    return this.cache.get(id);
   }
 
   listen(): Promise<void> {

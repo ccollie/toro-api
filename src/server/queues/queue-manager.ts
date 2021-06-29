@@ -90,16 +90,17 @@ export class QueueManager {
     this.queue = queue;
     this.config = config;
     this.queueListener = this.createQueueListener();
+    this.clock = this.queueListener.clock;
     this.bus = new EventBus(host.streamAggregator, getQueueBusKey(queue));
     this.statsClient = new StatsClient(this);
-    this.ruleManager = new RuleManager(this);
     this.statsListener = this.createStatsListener();
     this.metricManager = new MetricManager(
       this.id,
       this.queueListener,
       this.bus,
     );
-    this.clock = this.queueListener.clock;
+    this.ruleManager = new RuleManager(this);
+    this.dispatchMetrics = this.dispatchMetrics.bind(this);
     this.onError = this.onError.bind(this);
     this.handleLockEvent = this.handleLockEvent.bind(this);
     this.init();
@@ -112,7 +113,6 @@ export class QueueManager {
       });
     }
     this.lock.on(LockManager.ACQUIRED, this.handleLockEvent);
-    this.metricManager.start().catch(this.onError);
   }
 
   async destroy(): Promise<void> {
@@ -229,6 +229,10 @@ export class QueueManager {
     }
   }
 
+  protected dispatchMetrics({ metrics = [], state }): void {
+    metrics.forEach((metric) => this.ruleManager.handleMetricUpdate(metric));
+  }
+
   /**
    *
    * @param {Rule} rule
@@ -309,10 +313,12 @@ export class QueueManager {
 
   async listen(): Promise<void> {
     await Promise.all([
-      this.loadRules(),
       this.statsListener.startListening(),
       this.queueListener.startListening(),
     ]);
+    this.metricManager.onMetricsUpdated(this.dispatchMetrics);
+    await this.loadRules();
+    await this.metricManager.start();
   }
 
   async isPaused(): Promise<boolean> {

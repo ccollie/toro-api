@@ -24,8 +24,10 @@ describe('RuleEAlerter', () => {
   let successResult: EvaluationResult;
   let errorResult: EvaluationResult;
   let warningResult: EvaluationResult;
+  let hostName: string;
 
   beforeEach(async () => {
+    hostName = 'host-' + nanoid();
     queueManager = createQueueManager();
     storage = new RuleStorage(queueManager.queue, queueManager.bus);
     clock = new ManualClock();
@@ -54,15 +56,15 @@ describe('RuleEAlerter', () => {
   function createResult(
     opts: Partial<EvaluationResult> = {},
   ): EvaluationResult {
-    const success = opts.success ?? getRandomBool();
+    const triggered = opts.triggered ?? getRandomBool();
     let level = ErrorLevel.NONE;
     if (opts.errorLevel === undefined) {
-      level = success
+      level = !triggered
         ? ErrorLevel.NONE
         : [ErrorLevel.WARNING, ErrorLevel.CRITICAL][random(0, 1)];
     }
     return {
-      success,
+      triggered,
       errorLevel: level,
       value: random(10, 1000),
       state: {},
@@ -71,11 +73,11 @@ describe('RuleEAlerter', () => {
   }
 
   function createSuccessResult() {
-    return createResult({ success: true });
+    return createResult({ triggered: true });
   }
 
   function createFailResult(level?: ErrorLevel.WARNING | ErrorLevel.CRITICAL) {
-    return createResult({ success: false, errorLevel: level });
+    return createResult({ triggered: false, errorLevel: level });
   }
 
   async function postResult(

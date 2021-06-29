@@ -2,7 +2,6 @@ import { logger } from '../lib';
 import { BaseMetric } from '../metrics';
 import {
   ChangeCondition,
-  ErrorLevel,
   PeakCondition,
   RuleType,
   ThresholdCondition,
@@ -11,20 +10,13 @@ import { Rule } from './rule';
 import { parseRuleCondition } from './schemas';
 import {
   ConditionEvaluator,
+  EvaluationResult,
   PeakConditionEvaluator,
   ThresholdConditionEvaluator,
 } from './condition-evaluator';
 import { ChangeConditionEvaluator } from './change-condition-evaluator';
 
-export interface EvaluationResult {
-  value: number;
-  success: boolean;
-  errorLevel: ErrorLevel;
-  state: Record<string, any>;
-}
-
 export class RuleEvaluator {
-  public unsubscribe: () => void;
   protected evaluator: ConditionEvaluator;
   public readonly rule: Rule;
   public readonly metric: BaseMetric;
@@ -36,9 +28,8 @@ export class RuleEvaluator {
     this.evaluator = this.createEvaluator(this.metric, rule);
   }
 
-  destroy(): void {
-    this.unsubscribe?.();
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  destroy(): void {}
 
   private createEvaluator(metric: BaseMetric, rule: Rule): ConditionEvaluator {
     const condition = parseRuleCondition(rule.condition);

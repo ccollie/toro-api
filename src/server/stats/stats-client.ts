@@ -24,6 +24,14 @@ import {
 import { WriteCache } from '../redis';
 import { isEmpty } from 'lodash';
 
+export interface RangeOpts {
+  key: string;
+  start: DateLike;
+  end: DateLike;
+  offset?: number;
+  count?: number;
+}
+
 /**
  * Base class for manipulating and querying collected queue stats in redis
  */
@@ -39,7 +47,7 @@ export class StatsClient extends Emittery {
     this.onError = this.onError.bind(this);
     this.cache = new LRUCache({
       max: 200,
-      maxAge: 5000,
+      maxAge: 15000,
     });
   }
 
@@ -80,6 +88,11 @@ export class StatsClient extends Emittery {
     return results.map((x) => x.value);
   }
 
+  static pipelineGetRange(pipeline: Pipeline, range: RangeOpts): void {
+    const { key, start, end, offset, count } = range;
+    TimeSeries.multi.getRange(pipeline, key, start, end, offset, count);
+  }
+
   async getSpan(
     jobName: string,
     metric: StatsMetricType,
@@ -107,19 +120,40 @@ export class StatsClient extends Emittery {
     return TimeSeries.get<StatisticalSnapshot>(this.client, key, '+');
   }
 
+  private static getFetchManyArgs(
+    key: string,
+    start: DateLike,
+    end: DateLike,
+  ): { cacheKey: string; start: number; end: number } {
+    start = toDate(start).getTime();
+    end = toDate(end).getTime();
+    const cacheKey = `${key}:${start}-${end}`;
+    return { cacheKey, start, end };
+  }
+
   private async cachedFetchMany<T>(
     key: string,
     start: DateLike,
     end: DateLike,
   ): Promise<T[]> {
-    start = toDate(start).getTime();
-    end = toDate(end).getTime();
-    const cacheId = `${key}:${start}-${end}`;
+    const args = StatsClient.getFetchManyArgs(key, start, end);
+    const cacheId = args.cacheKey;
     let data = this.cache.get(cacheId) as T[];
     if (Array.isArray(data)) return data;
-    data = await this.getRange<T>(key, start, end);
+    data = await this.getRange<T>(key, args.start, args.end);
     this.cache.set(cacheId, data);
     return data;
+  }
+
+  getCachedArray<T = any>(key: string): T[] {
+    const data = this.cache.get(key) as T[];
+    if (Array.isArray(data)) return data;
+    return null;
+  }
+
+  getCachedRange<T>(range: RangeOpts): T[] {
+    const key = getRangeCacheKey(range);
+    return this.getCachedArray(key);
   }
 
   private async aggregateInternal<T>(
@@ -408,4 +442,11 @@ function getCursorKey(jobType: string, type: string, unit: string): string {
   jobType = jobType || '~QUEUE';
   const key = [jobType, type, unit].filter((value) => !!value).join('-');
   return `cursor:${key}`;
+}
+
+export function getRangeCacheKey(opts: RangeOpts): string {
+  const { offset = 0, count = -1 } = opts;
+  const start = toDate(opts.start).getTime();
+  const end = toDate(opts.end).getTime();
+  return `${opts.key}:${start}-${end}:${offset}:${count}`;
 }

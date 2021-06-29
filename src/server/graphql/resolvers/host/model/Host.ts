@@ -7,6 +7,7 @@ import { queueCount } from './Host.queueCount';
 import { hostRedisFC as redis } from './Host.redis';
 import { hostChannelsFC as channels } from './Host.channels';
 import { discoverQueues } from './Host.discoverQueues';
+import { hostAlertCount as alertCount } from './Host.alert-count';
 import { ping } from './Host.ping';
 import { hostUri as uri } from './Host.uri';
 
@@ -30,25 +31,26 @@ export const HostTC = schemaComposer.createObjectTC({
   name: 'QueueHost',
   fields: {
     id: 'ID!',
-    name: {
-      type: 'String!',
-      description: 'The name of the host',
-    },
+    alertCount,
+    channels,
     description: {
       type: 'String',
       description: 'An optional description of the host',
     },
-    queues,
-    queueCount,
-    channels,
     discoverQueues,
     errorPercentageRate,
     errorRate,
     histogram,
     jobCounts,
     lastStatsSnapshot,
+    name: {
+      type: 'String!',
+      description: 'The name of the host',
+    },
     percentileDistribution,
     ping,
+    queues,
+    queueCount,
     redis,
     stats,
     statsAggregate,

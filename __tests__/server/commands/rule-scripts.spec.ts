@@ -1,5 +1,5 @@
 import { Rule, RuleStorage } from '@server/rules';
-import { delay } from '../utils';
+import { delay, randomId } from '../utils';
 import { clearDb, createQueueManager, createRule } from '../../factories';
 import {
   ErrorLevel,
@@ -35,7 +35,7 @@ describe('RuleScripts', () => {
   beforeEach(async () => {
     queueManager = createQueueManager();
     queue = queueManager.queue;
-    storage = new RuleStorage(queue, queueManager.bus);
+    storage = new RuleStorage(queueManager.host, queue, queueManager.bus);
     clock = new ManualClock();
   });
 
@@ -338,6 +338,12 @@ describe('RuleScripts', () => {
   });
 
   describe('writeAlert', () => {
+    let hostName: string;
+
+    beforeEach(() => {
+      hostName = `host-${randomId(4)}`;
+    });
+
     it('writes an alert to redis', async () => {
       const rule = await addRule({ isActive: true });
       const now = clock.getTime();
@@ -345,7 +351,13 @@ describe('RuleScripts', () => {
       await postFailure(rule);
 
       const alertData = createAlertData();
-      const alert = await RuleScripts.writeAlert(queue, rule, alertData, now);
+      const alert = await RuleScripts.writeAlert(
+        hostName,
+        queue,
+        rule,
+        alertData,
+        now,
+      );
       expect(alert).toBeDefined();
       expect(alert.ruleId).toBe(rule.id);
       expect(alert.value).toBe(alertData.value);
@@ -366,7 +378,13 @@ describe('RuleScripts', () => {
 
       const alertData = createAlertData();
       alertData.errorLevel = ErrorLevel.WARNING;
-      const alert = await RuleScripts.writeAlert(queue, rule, alertData, now);
+      const alert = await RuleScripts.writeAlert(
+        hostName,
+        queue,
+        rule,
+        alertData,
+        now,
+      );
 
       const fromRedis = await getRule(rule.id);
       expect(fromRedis.state).toBe(RuleState.WARNING);
@@ -380,13 +398,19 @@ describe('RuleScripts', () => {
 
       let alertData = createAlertData();
       alertData.errorLevel = ErrorLevel.WARNING;
-      const alert = await RuleScripts.writeAlert(queue, rule, alertData, now);
+      const alert = await RuleScripts.writeAlert(
+        hostName,
+        queue,
+        rule,
+        alertData,
+        now,
+      );
 
       let count = await RuleScripts.getQueueAlertCount(queue);
       expect(count).toBe(1);
 
       alertData = createAlertData();
-      await RuleScripts.writeAlert(queue, rule, alertData, now);
+      await RuleScripts.writeAlert(hostName, queue, rule, alertData, now);
       count = await RuleScripts.getQueueAlertCount(queue);
       expect(count).toBe(2);
     });

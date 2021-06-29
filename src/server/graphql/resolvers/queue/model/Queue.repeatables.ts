@@ -7,6 +7,7 @@ import { SortOrderEnum, OrderEnumType } from '../../scalars';
 import { RepeatableJob } from '@src/types';
 import { getQueueManager } from '../../../helpers';
 import { Queue } from 'bullmq';
+import { getQueueRepeatableCount } from '@server/graphql/loaders/queue-repeatable-count';
 
 export const repeatableJob = schemaComposer.createObjectTC({
   name: 'RepeatableJob',
@@ -72,8 +73,7 @@ export const repeatableJobs: FieldConfig = {
 export const repeatableJobCount: FieldConfig = {
   type: 'Int!',
   description: 'Returns the number of repeatable jobs',
-  async resolve(queue: Queue): Promise<number> {
-    const manager = getQueueManager(queue);
-    return manager.getRepeatableCount();
+  async resolve(queue: Queue, args, { loaders }): Promise<number> {
+    return getQueueRepeatableCount(loaders, queue);
   },
 };

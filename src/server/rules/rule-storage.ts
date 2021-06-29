@@ -46,21 +46,43 @@ export interface RuleSortOpts {
   fields?: string[];
 }
 
+// move to types ???
+export interface RuleEventData {
+  ruleId: string;
+}
+
+export interface RuleAddedEventData extends RuleEventData {
+  data: Record<string, any>;
+}
+
+export interface RuleUpdatedEventData extends RuleEventData {
+  data: Record<string, any>;
+}
+
+export interface RuleActivatedEventData extends RuleEventData {}
+
+export interface RuleDeactivatedEventData extends RuleEventData {}
+
+export interface RuleDeletedEventData extends RuleEventData {}
+
 /**
  * Manages the storage of {@link Rule} and {@link RuleAlert} instances related to a queue
  */
 export class RuleStorage {
   private readonly queue: Queue;
   private readonly bus: EventBus;
+  private readonly host: string;
 
   /**
    * Construct a {@link RuleManager}
+   * @param {string} host the name of the host to which the queue belongs
    * @param {Queue} queue bull queue
    * @param {EventBus} bus queue bus
    */
-  constructor(queue: Queue, bus: EventBus) {
+  constructor(host: string, queue: Queue, bus: EventBus) {
     this.queue = queue;
     this.bus = bus;
+    this.host = host;
   }
 
   destroy(): void {
@@ -289,16 +311,22 @@ export class RuleStorage {
     const client = await this.getClient();
     const pipeline = client.pipeline();
 
-    const responses = await TimeSeries.multi
+    TimeSeries.multi
       .size(pipeline, alertsKey)
       .del(ruleKey, alertsKey, stateKey)
-      .zrem(this.rulesIndexKey, ruleId)
-      .exec()
-      .then(checkMultiErrors);
+      .zrem(this.rulesIndexKey, ruleId);
+
+    RuleScripts.pipelineAggregateAlertCounts(pipeline, this.host, this.queue);
+
+    const responses = await pipeline.exec().then(checkMultiErrors);
 
     const [hasAlerts, deleted] = responses;
     if (deleted) {
-      const calls = [this.bus.emit(RuleEventsEnum.RULE_DELETED, { ruleId })];
+      const ruleDeletedEvent: RuleDeletedEventData = { ruleId };
+      // todo: pipelined emits
+      const calls = [
+        this.bus.emit(RuleEventsEnum.RULE_DELETED, ruleDeletedEvent),
+      ];
       if (!!hasAlerts) {
         calls.push(
           this.bus.emit(RuleEventsEnum.RULE_ALERTS_CLEARED, { ruleId }),
@@ -384,7 +412,7 @@ export class RuleStorage {
       message: data.message,
     };
 
-    return RuleScripts.writeAlert(this.queue, rule, alertData);
+    return RuleScripts.writeAlert(this.host, this.queue, rule, alertData);
   }
 
   /**
@@ -433,13 +461,26 @@ export class RuleStorage {
 
   async deleteAlert(rule: Rule | string, id: string): Promise<boolean> {
     const client = await this.getClient();
+    const pipeline = client.pipeline();
     const alertsKey = this.getAlertsKey(rule);
-    const deleted = await TimeSeries.del(client, alertsKey, id);
+
+    TimeSeries.multi.del(pipeline, alertsKey, id);
+    RuleScripts.pipelineUpdateRuleAlertCount(pipeline, this.queue, rule);
+    RuleScripts.pipelineAggregateAlertCounts(pipeline, this.host, this.queue);
+
+    const res = await pipeline.exec();
+    const [err, deleted] = res[0];
+    const [, alertCount] = res[1];
+
     if (!!deleted) {
+      if (typeof rule !== 'string') {
+        rule.alertCount = alertCount;
+      }
       const ruleId = getRuleId(rule);
       await this.bus.emit(RuleEventsEnum.ALERT_DELETED, {
         ruleId,
         id,
+        alertCount,
       });
     }
     return !!deleted;
@@ -544,26 +585,29 @@ export class RuleStorage {
   }
 
   async getQueueAlertCount(): Promise<number> {
-    const [client, ruleIds] = await Promise.all([
-      this.getClient(),
-      this.getRuleIds(),
-    ]);
-    const pipeline = client.pipeline();
-    ruleIds.forEach((ruleId) => {
-      TimeSeries.multi.size(pipeline, this.getAlertsKey(ruleId));
-    });
-    const reply = await pipeline.exec().then(checkMultiErrors);
-
-    return reply.reduce((count, resp) => count + resp, 0);
+    return RuleScripts.getQueueAlertCount(this.queue);
   }
 
   async clearAlerts(rule: Rule | string): Promise<number> {
-    const count = this.getRuleAlertCount(rule);
     const client = await this.getClient();
+    const pipeline = client.pipeline();
+
     const key = this.getAlertsKey(rule);
-    await client.del(key);
+    TimeSeries.multi.size(pipeline, key);
+    pipeline.del(key);
+    RuleScripts.pipelineAggregateAlertCounts(pipeline, this.host, this.queue);
+    const response = await pipeline.exec();
+
+    const [, count] = response[0];
+
+    if (typeof rule !== 'string') {
+      rule.alertCount = 0;
+    }
+
+    // todo: put this in the pipeline
     await this.bus.emit(RuleEventsEnum.RULE_ALERTS_CLEARED, {
       ruleId: getRuleId(rule),
+      deletedCount: count,
     });
     return isNumber(count) ? count : 0;
   }
@@ -577,8 +621,21 @@ export class RuleStorage {
   async pruneAlerts(rule: Rule | string, retention: number): Promise<number> {
     // TODO: raise event
     const client = await this.getClient();
+    const pipeline = client.pipeline();
+
     const alertsKey = this.getAlertsKey(rule);
-    return TimeSeries.truncate(client, alertsKey, retention);
+
+    TimeSeries.multi.truncate(pipeline, alertsKey, retention);
+    RuleScripts.pipelineUpdateRuleAlertCount(pipeline, this.queue, rule);
+    RuleScripts.pipelineAggregateAlertCounts(pipeline, this.host, this.queue);
+
+    const response = await pipeline.exec();
+    const [, ctx] = response[0];
+    const [, alertCount] = response[1];
+    if (typeof rule !== 'string') {
+      rule.alertCount = alertCount;
+    }
+    return ctx;
   }
 
   async getRuleIds(): Promise<string[]> {
@@ -651,7 +708,7 @@ function serializeRule(rule): Record<string, any> {
   return data;
 }
 
-function deserializeRule(data?: any): Rule {
+export function deserializeRule(data?: any): Rule {
   if (isEmpty(data)) return null;
   data.options = deserializeObject(data.options);
   data.payload = deserializeObject(data.payload);
@@ -673,6 +730,8 @@ function deserializeRule(data?: any): Rule {
   data.isActive = parseBool(data.isActive, true);
   data.persist = parseBool(data.persist, true);
   data.state = (data.state ?? RuleState.NORMAL) as RuleState;
+  data.alertCount = parseInt(data.alertCount ?? '0', 10);
+  data.totalFailures = parseInt(data.totalFailures ?? '0', 10);
   if (typeof data.channels == 'string') {
     try {
       const channels = JSON.parse(data.channels);

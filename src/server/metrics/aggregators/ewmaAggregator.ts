@@ -15,6 +15,7 @@ export class EWMAAggregator
   implements WindowedAggregator
 {
   private readonly ewma: IMovingAverage;
+  private _count = 0;
   public readonly windowSize: number;
 
   /**
@@ -23,7 +24,7 @@ export class EWMAAggregator
   constructor(clock: Clock, options: SlidingWindowOptions) {
     super(clock, options);
     this.windowSize = options.duration;
-    this.ewma = MovingAverage(options.duration, clock);
+    this.ewma = MovingAverage(options.duration);
   }
 
   getDescription(metric: BaseMetric, short = false): string {
@@ -43,19 +44,21 @@ export class EWMAAggregator
   }
 
   get count(): number {
-    return this.ewma.count;
+    return this._count;
   }
 
   get value(): number {
-    return this.ewma.value; // should we divide this by 1 minute ??
+    return this.ewma.value;
   }
 
   update(newVal: number): number {
-    this.ewma.update(newVal);
+    this.ewma.update(this.clock.getTime(), newVal);
+    this._count++;
     return this.value;
   }
 
   reset(): void {
+    this._count = 0;
     this.ewma.reset();
   }
 

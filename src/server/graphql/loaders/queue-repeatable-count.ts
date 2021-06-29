@@ -1,16 +1,14 @@
 import { Queue } from 'bullmq';
 import { aggregateQueuesByHost, mapQueuesToIndex, queueCacheFn } from './utils';
 import { Pipeline } from 'ioredis';
-import { getQueueAlertCountKey } from '@lib/keys';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
 import { RegisterFn } from './types';
-import { RuleScripts } from '@server/commands';
 import { DataLoaderRegistry } from '@server/graphql/loaders/registry';
 
 function enqueueFetch(pipeline: Pipeline, queue: Queue) {
-  const key = getQueueAlertCountKey(queue);
-  pipeline.get(key);
+  const key = queue.toKey('repeat');
+  pipeline.zcard(key);
 }
 
 function parseResult(res: [Error | null, number]): number {
@@ -18,16 +16,21 @@ function parseResult(res: [Error | null, number]): number {
   return res[1] ?? 0;
 }
 
-async function getQueueAlertCounts(queues: Queue[]): Promise<number[]> {
+async function getSingle(queue: Queue): Promise<number[]> {
+  const repeat = await queue.repeat;
+  const count = await repeat.getRepeatableCount();
+  return [count];
+}
+
+async function getRepeatableCounts(queues: Queue[]): Promise<number[]> {
   if (queues.length === 1) {
-    const count = await RuleScripts.getQueueAlertCount(queues[0]);
-    return [count];
+    return getSingle(queues[0]);
   }
-  const queuesByHost = aggregateQueuesByHost(queues);
+  const hostQueues = aggregateQueuesByHost(queues);
   const queueIndexMap = mapQueuesToIndex(queues);
   const result = new Array<number>(queues.length).fill(0);
 
-  await pMap(queuesByHost, async ([host, queues]) => {
+  await pMap(hostQueues, async ([host, queues]) => {
     const pipeline = host.client.pipeline();
     queues.forEach((queue) => void enqueueFetch(pipeline, queue));
     const res = await pipeline.exec();
@@ -40,18 +43,18 @@ async function getQueueAlertCounts(queues: Queue[]): Promise<number[]> {
   });
   return result;
 }
-const LOADER_NAME = 'queueAlertCount';
+const LOADER_NAME = 'queueRepeatableCount';
 
 export default function registerLoaders(register: RegisterFn): void {
-  const queueAlertCountFactory = () =>
-    new DataLoader(getQueueAlertCounts, {
+  const factory = () =>
+    new DataLoader(getRepeatableCounts, {
       cacheKeyFn: queueCacheFn,
     });
 
-  register(LOADER_NAME, queueAlertCountFactory);
+  register(LOADER_NAME, factory);
 }
 
-export function getQueueAlertCount(
+export function getQueueRepeatableCount(
   loaders: DataLoaderRegistry,
   queue: Queue,
 ): Promise<number> {

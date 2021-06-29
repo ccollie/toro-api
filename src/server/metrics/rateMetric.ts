@@ -1,87 +1,62 @@
-import Joi, { ObjectSchema } from 'joi';
-import boom from '@hapi/boom';
-import { SimpleMeter, TimeUnit } from '../stats';
-import {
-  BaseMetricSchema,
-  QueueBasedMetricSchema,
-  QueuePollingMetric,
-} from './baseMetric';
+import { ObjectSchema } from 'joi';
+import { QueueBasedMetricSchema, QueuePollingMetric } from './baseMetric';
 import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metrics-listener';
 import { MetricValueType, QueueMetricOptions } from '../../types';
+import { IMovingAverage, MovingAverage } from '../stats/moving-average';
 
 /**
  * @interface RateMetricOptions
  * @typedef RateMetricOptions
  * @type {Object}
- * @property {number} rateUnit The rate unit. Defaults to 1000 (1 min).
- * @property {number} interval The interval in which the averages are updated.
- * Defaults to 5000 (5 sec).
+ * @property {number} timePeriod The measurement interval.
  * @example
- * const meter = new RateMetric({ rateUnit: 1000, interval: 5000})
+ * const meter = new RateMetric({ timePeriod: 60000 })
  */
 export interface RateMetricOptions extends QueueMetricOptions {
   timePeriod: number;
-  interval: number;
-  rateUnit?: TimeUnit;
 }
 
 export const DefaultRateMetricOptions: RateMetricOptions = {
   jobNames: [],
   timePeriod: units.MINUTES, // 1 minute
-  rateUnit: TimeUnit.MINUTES,
-  interval: 5 * units.SECONDS,
 };
 
-const schema = BaseMetricSchema.append({
-  timePeriod: DurationSchema,
-  rateUnit: Joi.number().integer().default(units.MINUTES),
-});
-
 const QueueBasedRateSchema = QueueBasedMetricSchema.append({
-  timePeriod: DurationSchema,
-  rateUnit: Joi.number().integer().default(units.MINUTES),
-  interval: Joi.number()
-    .integer()
-    .default(30 * units.SECONDS),
+  timePeriod: DurationSchema, // change name to timespan ???
 });
 
 export class RateMetric extends QueuePollingMetric {
-  private _meter: SimpleMeter;
+  private movingAverage: IMovingAverage;
+  private _count = 0;
 
   constructor(options: RateMetricOptions = DefaultRateMetricOptions) {
     super(options);
+    this.movingAverage = MovingAverage(options.timePeriod);
   }
 
   destroy(): any {
-    this._meter.destroy();
     return super.destroy();
   }
 
   init(listener: MetricsListener): void {
     super.init(listener);
-    const clock = listener.clock;
-    const options = this.options as RateMetricOptions;
-    this._meter = new SimpleMeter(clock, options);
+    this._count = 0;
+    this.movingAverage.reset();
   }
 
   async checkUpdate(): Promise<void> {
-    if (this.meter.tickIfNeeded()) {
-      this.update(this.meter.rate);
-    }
+    this.update(this.movingAverage.value);
   }
 
   get period(): number {
-    return this.meter.timePeriod;
+    return this.options.timePeriod;
   }
 
-  get meter(): SimpleMeter {
-    if (!this._meter) {
-      throw boom.badImplementation('internal states referenced before init');
-    }
-    return this._meter;
+  get count(): number {
+    return this._count;
   }
 
   get validEvents(): string[] {
@@ -89,12 +64,13 @@ export class RateMetric extends QueuePollingMetric {
   }
 
   handleEvent(): void {
-    this.meter.mark();
-    this.update(this.meter.rate);
+    this._count++;
+    this.movingAverage.update(this.clock.getTime(), 1);
+    this.update(this.movingAverage.value);
   }
 
   reset(): void {
-    this.meter.reset();
+    this.movingAverage.reset();
   }
 
   static get schema(): ObjectSchema {

@@ -1,11 +1,11 @@
-import { Clock, TimeTicker } from '../lib';
+import { Clock } from '../lib';
 import * as units from './units';
-import { EWMA, TimeUnit } from './ewma';
 import { MeteredRates, MeterSummary } from '../../types';
-import ms from 'ms';
+import { IMovingAverage, MovingAverage } from '@server/stats/moving-average';
+import { IntervalMillis, ONE_MINUTE, TimeUnit } from './units';
 
-const RATE_UNIT = TimeUnit.MINUTES;
-const TICK_INTERVAL = 10 * units.SECONDS;
+const FIVE_MINUTES = 5 * units.ONE_MINUTE;
+const FIFTEEN_MINUTES = 15 * units.ONE_MINUTE;
 
 /**
  *
@@ -20,7 +20,6 @@ const TICK_INTERVAL = 10 * units.SECONDS;
  */
 export interface MeterProperties {
   rateUnit?: TimeUnit;
-  interval?: number;
 }
 
 /**
@@ -34,26 +33,21 @@ export class BaseMeter {
    * @private
    * @type {number}
    */
-  private readonly _interval: number;
-  private readonly _rateUnit: TimeUnit;
+  private readonly _rateUnit?: TimeUnit;
   private _lastToJSON: number;
   private _startTime: number;
   private _count = 0;
-  private _currentSum = 0;
-  private readonly _rateUnitMillis: number;
-  private readonly _ticker: TimeTicker;
+  protected readonly rateMillis: number;
   private readonly clock: Clock;
 
   /**
    * @param clock
    * @param {MeterProperties} [properties] see {@link MeterProperties}.
    */
-  constructor(clock: Clock, properties: MeterProperties) {
-    this._rateUnit = properties.rateUnit || RATE_UNIT;
-    this._interval = properties.interval || TICK_INTERVAL;
+  constructor(clock: Clock, properties?: MeterProperties) {
+    this._rateUnit = properties?.rateUnit;
     this.clock = clock;
-    this._ticker = new TimeTicker(this._interval, clock);
-    this._rateUnitMillis = ms(`1 ${this._rateUnit}`);
+    this.rateMillis = this.rateUnit ? IntervalMillis[this.rateUnit] : 1;
     this._initializeState();
   }
 
@@ -65,15 +59,10 @@ export class BaseMeter {
     this._count = 0;
     this._startTime = now;
     this._lastToJSON = now;
-    this._ticker.reset();
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   destroy(): void {}
-
-  get interval(): number {
-    return this._interval;
-  }
 
   get rateUnit(): TimeUnit {
     return this._rateUnit;
@@ -96,25 +85,13 @@ export class BaseMeter {
    * @param {number} [n]
    */
   mark(n = 1): this {
-    this.tickIfNeeded();
     this._count += n;
-    this._currentSum += n;
     this.update(n);
     return this;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected update(n: number): this {
-    // abstract
-    return this;
-  }
-
-  /**
-   * Calls the {@link BaseMeter#tick} for each tick.
-   *
-   * @protected
-   */
-  tick(n = 1): this {
     // abstract
     return this;
   }
@@ -131,7 +108,7 @@ export class BaseMeter {
     if (this._count === 0) {
       return 0;
     }
-    return (this._count / this.elapsedTime) * this._rateUnitMillis;
+    return (this._count / this.elapsedTime) * this.rateMillis;
   }
 
   toJSON(): Record<string, any> {
@@ -140,16 +117,6 @@ export class BaseMeter {
       count: this.count,
     };
   }
-
-  /**
-   * Checks whether an update of the averages is needed and if so updates
-   * the {@link BaseMeter#lastTime}.
-   */
-  tickIfNeeded(): boolean {
-    const ticksNeeded = this._ticker.tickIfNeeded();
-    this.tick(ticksNeeded);
-    return !!ticksNeeded;
-  }
 }
 
 export interface SimpleMeterProperties extends MeterProperties {
@@ -157,43 +124,28 @@ export interface SimpleMeterProperties extends MeterProperties {
 }
 
 export class SimpleMeter extends BaseMeter {
-  protected _ewma: EWMA;
-  private readonly alpha: number;
+  protected readonly _ewma: IMovingAverage;
+  public readonly timePeriod: number;
 
   constructor(clock: Clock, properties: SimpleMeterProperties) {
     super(clock, properties);
-    this.alpha = 1 - Math.exp((-1 * this.interval) / this.timePeriod);
-    this._ewma = new EWMA(properties.timePeriod, this.interval);
+    this.timePeriod = properties.timePeriod;
+    this._ewma = MovingAverage(properties.timePeriod);
   }
 
   protected update(n: number): this {
-    this._ewma.update(n);
+    this._ewma.update(this.getTime(), n);
     return this;
-  }
-
-  /**
-   * Calls the {@link SimpleMeter#tick} for each tick.
-   *
-   * @protected
-   */
-  tick(n = 1): this {
-    this._ewma.tick(n);
-    // const elapsed = n * this._interval
-    // this._e
-    return this;
-  }
-
-  get timePeriod(): number {
-    return this.interval;
   }
 
   get rate(): number {
-    return this.getRate(this.rateUnit);
+    return this._ewma.value;
   }
 
   getRate(unit?: TimeUnit): number {
-    this.tickIfNeeded();
-    return this._ewma.rate(unit || this.rateUnit);
+    const millis = IntervalMillis[unit || this.rateUnit];
+    const conversion = this.timePeriod / millis;
+    return this._ewma.value * conversion;
   }
 
   toJSON(): Record<string, any> {
@@ -204,27 +156,19 @@ export class SimpleMeter extends BaseMeter {
   }
 }
 
-const DefaultMeterProperties: MeterProperties = {
-  interval: TICK_INTERVAL,
-  rateUnit: RATE_UNIT,
-};
-
 /**
  * Things that are measured as events / interval.
  */
 export class Meter extends BaseMeter {
-  private _m1Rate: EWMA;
-  private _m5Rate: EWMA;
-  private _m15Rate: EWMA;
+  private _m1Rate: IMovingAverage;
+  private _m5Rate: IMovingAverage;
+  private _m15Rate: IMovingAverage;
 
   /**
    * @param clock
    * @param {MeterProperties} [properties] see {@link MeterProperties}.
    */
-  constructor(
-    clock: Clock,
-    properties: MeterProperties = DefaultMeterProperties,
-  ) {
+  constructor(clock: Clock, properties?: MeterProperties) {
     super(clock, properties);
   }
 
@@ -234,28 +178,20 @@ export class Meter extends BaseMeter {
    */
   protected _initializeState(): void {
     super._initializeState();
-    this._m1Rate = EWMA.oneMinuteEWMA();
-    this._m5Rate = EWMA.fiveMinuteEWMA();
-    this._m15Rate = EWMA.fifteenMinuteEWMA();
+    this._m1Rate = MovingAverage(ONE_MINUTE);
+    this._m5Rate = MovingAverage(FIVE_MINUTES);
+    this._m15Rate = MovingAverage(FIFTEEN_MINUTES);
   }
 
   /**
    * Register n events as having just occurred. Defaults to 1.
    * @param {number} [n]
    */
-  protected update(n: number): this {
-    this._m1Rate.update(n);
-    this._m5Rate.update(n);
-    this._m15Rate.update(n);
-    return this;
-  }
-
-  tick(n = 1): this {
-    if (n) {
-      this._m1Rate.tick(n);
-      this._m5Rate.tick(n);
-      this._m15Rate.tick(n);
-    }
+  update(n: number): this {
+    const now = this.getTime();
+    this._m1Rate.update(now, n);
+    this._m5Rate.update(now, n);
+    this._m15Rate.update(now, n);
     return this;
   }
 
@@ -264,9 +200,8 @@ export class Meter extends BaseMeter {
    *
    * @returns {number}
    */
-  public get15MinuteRate(): number {
-    this.tickIfNeeded();
-    return this._m15Rate.rate(this.rateUnit);
+  get15MinuteRate(): number {
+    return convertRate(this._m15Rate, FIFTEEN_MINUTES, this.rateUnit);
   }
 
   /**
@@ -274,9 +209,17 @@ export class Meter extends BaseMeter {
    *
    * @returns {number}
    */
-  public get5MinuteRate(): number {
-    this.tickIfNeeded();
-    return this._m5Rate.rate(this.rateUnit);
+  get5MinuteRate(): number {
+    return convertRate(this._m5Rate, FIVE_MINUTES, this.rateUnit);
+  }
+
+  /**
+   * Updates the 1 minute average if needed and returns the rate per unit.
+   *
+   * @returns {number}
+   */
+  get1MinuteRate(): number {
+    return convertRate(this._m1Rate, ONE_MINUTE, this.rateUnit);
   }
 
   /**
@@ -292,16 +235,6 @@ export class Meter extends BaseMeter {
       5: this.get5MinuteRate(),
       1: this.get1MinuteRate(),
     };
-  }
-
-  /**
-   * Updates the 1 minute average if needed and returns the rate per unit.
-   *
-   * @returns {number}
-   */
-  public get1MinuteRate(): number {
-    this.tickIfNeeded();
-    return this._m1Rate.rate(this.rateUnit);
   }
 
   getSummary(): MeterSummary {
@@ -322,4 +255,16 @@ export class Meter extends BaseMeter {
       rates: this.rates,
     };
   }
+}
+
+export function convertRate(
+  ma: IMovingAverage,
+  timespan: number,
+  unit?: TimeUnit,
+): number {
+  const value = ma.value;
+  if (!unit) return value;
+  const millis = IntervalMillis[unit];
+  const conversion = timespan / millis;
+  return value * conversion;
 }

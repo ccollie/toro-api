@@ -1,10 +1,17 @@
-import { SortOrderEnum, OrderEnumType } from '../../scalars';
+import { OrderEnumType } from '../../scalars';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { RuleAlert } from '@src/types';
 import { RuleAlertTC } from './RuleAlert';
 import { Rule } from '@server/rules';
+import { RuleAlertsInput, SortOrderEnum } from '@server/graphql/typings';
+
+const DefaultInput: RuleAlertsInput = {
+  start: 0,
+  end: 10,
+  sortOrder: SortOrderEnum.Desc,
+};
 
 export const ruleAlertsFC: FieldConfig = {
   type: RuleAlertTC.List.NonNull,
@@ -22,14 +29,20 @@ export const ruleAlertsFC: FieldConfig = {
         },
         sortOrder: {
           type: OrderEnumType,
-          defaultValue: SortOrderEnum.ASC,
+          defaultValue: SortOrderEnum.Desc,
         },
       },
-    }).NonNull,
+    }),
   },
-  async resolve(parent: Rule, { input }): Promise<RuleAlert[]> {
-    const { start = 0, end, sortOrder = 'ASC' } = input;
-    const asc = sortOrder.toUpperCase() === 'ASC';
+  async resolve(
+    parent: Rule,
+    { input }: { input: RuleAlertsInput },
+  ): Promise<RuleAlert[]> {
+    const { start, end, sortOrder } = {
+      ...(input ?? {}),
+      ...DefaultInput,
+    } as RuleAlertsInput;
+    const asc = sortOrder === SortOrderEnum.Asc;
     const manager = getQueueManager(parent.queueId);
     const ruleManager = manager.ruleManager;
     return ruleManager.getRuleAlerts(parent, start, end, asc);

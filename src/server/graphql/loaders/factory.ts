@@ -5,6 +5,8 @@ import registerQueuePaused from './queue-paused';
 import registerQueueWorkers from './queue-workers';
 import registerQueueAlertCount from './queue-alert-count';
 import registerJobMemoryUsage from './job-memory';
+import registerRepeatableCount from './queue-repeatable-count';
+
 import { LoaderCtor, LoaderMetaData } from './types';
 
 const loaderMetaRegistry = new Map<string, LoaderMetaData>();
@@ -34,6 +36,7 @@ export function initialize(): void {
   registerQueueAlertCount(registerFn);
   registerQueuePaused(registerFn);
   registerJobMemoryUsage(registerFn);
+  registerRepeatableCount(registerFn);
 }
 
 export function getLoaderMeta(key: string): LoaderMetaData {

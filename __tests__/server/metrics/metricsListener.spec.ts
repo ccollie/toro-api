@@ -24,6 +24,7 @@ describe('MetricsListener', () => {
 
   afterEach(async () => {
     sut.destroy();
+    jest.useRealTimers();
     await queueListener.destroy();
   });
 
@@ -119,17 +120,20 @@ describe('MetricsListener', () => {
 
   describe('polling metrics handling', () => {
     it('polls to periodically refresh metric values', async () => {
-      const interval = ms('1 sec');
+      jest.useFakeTimers();
       const timePeriod = ms('1 min');
       const metric = new JobRateMetric({
         timePeriod,
-        interval,
       });
+
       sut.registerMetric(metric);
+      sut.start();
+
       const ts = Date.now();
       await helper.postFinishedEvent(true, {
         ts,
       });
+
       //await delay(10);
 
       const updateSpy = jest.spyOn(metric, 'checkUpdate');
@@ -137,13 +141,16 @@ describe('MetricsListener', () => {
       const rate = metric.value;
       const timerInterval = sut.calcTimerInterval();
       const newTs = ts + timerInterval + 1;
-      // Fast-forward until all timers have been executed
-      // jest.advanceTimersByTime(interval + 10);
+
       await helper.postCompletedEvent({
         ts: newTs,
       });
 
-      await delay(1010);
+      // Fast forward and exhaust only currently pending timers
+      // (but not any new timers that get created during that process)
+      jest.runOnlyPendingTimers();
+
+      // await delay(1010);
 
       const newRate = metric.value;
 

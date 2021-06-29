@@ -5,7 +5,6 @@ import isEmpty from 'lodash/isEmpty';
 import { JobFinishedState, JobStatusEnum } from '../../types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
-import { job } from '@server/graphql/resolvers/root';
 
 const DEFAULT_JOBNAMES_TIMEOUT = ms('5 secs'); // TODO: get from config
 
