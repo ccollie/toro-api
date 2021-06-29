@@ -4,14 +4,21 @@ import ms from 'ms';
 import { Rule } from './rule';
 import { Queue } from 'bullmq';
 import { RuleAlert, RuleConfigOptions, RuleEventsEnum } from '../../types';
-import { RuleAlertFilter, RuleStorage } from './rule-storage';
+import {
+  RuleAddedEventData,
+  RuleAlertFilter,
+  RuleDeletedEventData,
+  RuleEventData,
+  RuleStorage,
+} from './rule-storage';
 import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
-import { BaseMetric, MetricUpdateEvent } from '../metrics';
+import { BaseMetric } from '../metrics';
 import { QueueListener, QueueManager } from '../queues';
 import { Clock, IteratorOptions, logger } from '../lib';
 import { RuleEvaluator } from './rule-evaluator';
 import { RuleAlerter } from './rule-alerter';
 import { RuleAlertState, RuleScripts } from '@server/commands';
+import { DateLike } from '@lib/datetime';
 
 type RuleLike = Rule | RuleConfigOptions | string;
 
@@ -23,15 +30,20 @@ const getRuleId = (rule: RuleLike): string => {
 
 const DEFAULT_RETENTION = ms('2 weeks');
 
+interface RuleMeta {
+  rule: Rule;
+  evaluator?: RuleEvaluator;
+  alerter: RuleAlerter;
+}
+
 /**
  * Manages the storage of {@link Rule} and alert instances related to a queue
  */
 export class RuleManager {
   public readonly storage: RuleStorage;
   public readonly clock: Clock;
-  // RuleId to evaluator map
-  private readonly _evaluators = new Map<string, RuleEvaluator>();
-  private readonly _alerters = new Map<string, RuleAlerter>();
+  private readonly _metas = new Map<string, RuleMeta>();
+  private readonly metricRuleMap = new Map<string, Set<RuleMeta>>();
   private readonly queueManager: QueueManager;
 
   /**
@@ -40,18 +52,34 @@ export class RuleManager {
    */
   constructor(queueManager: QueueManager) {
     this.queueManager = queueManager;
-    this.storage = new RuleStorage(this.queue, this.bus);
+    this.storage = new RuleStorage(queueManager.host, this.queue, this.bus);
     this.onError = this.onError.bind(this);
     this.clock = queueManager.clock;
+    this.initSubscriptions();
   }
 
   destroy(): void {
-    for (const evaluator of this._evaluators.values()) {
-      evaluator.destroy();
+    for (const [_, meta] of this._metas) {
+      this.destroyMeta(meta);
     }
-    for (const handler of this._alerters.values()) {
-      handler.destroy();
+    this._metas.clear();
+  }
+
+  private removeMetricRule(metricId: string, meta: RuleMeta): void {
+    const metricRules = this.metricRuleMap.get(metricId);
+    if (metricRules) {
+      metricRules.delete(meta);
+      if (!metricRules.size) {
+        this.metricRuleMap.delete(metricId);
+      }
     }
+  }
+
+  private destroyMeta(meta: RuleMeta): void {
+    const { evaluator, alerter, rule } = meta;
+    evaluator?.destroy();
+    alerter.destroy();
+    this.removeMetricRule(rule.metricId, meta);
   }
 
   startListening(start?: string): Promise<void> {
@@ -75,10 +103,10 @@ export class RuleManager {
   }
 
   get rules(): Rule[] {
-    const rules = new Array<Rule>(this._evaluators.size);
+    const rules = new Array<Rule>(this._metas.size);
     let i = 0;
-    for (const [, evaluator] of this._evaluators) {
-      rules[i++] = evaluator.rule;
+    for (const [, { rule }] of this._metas) {
+      rules[i++] = rule;
     }
     return rules;
   }
@@ -95,43 +123,56 @@ export class RuleManager {
     return this.queueManager.findMetric(rule.metricId);
   }
 
+  private dispatchRule(metric: BaseMetric, meta: RuleMeta, hasLock: boolean) {
+    const { alerter, rule } = meta;
+    if (rule && rule.isActive) {
+      let evaluator = meta.evaluator;
+      if (!evaluator) {
+        evaluator = new RuleEvaluator(rule, metric);
+        meta.evaluator = evaluator;
+      }
+      const result = evaluator.evaluate(metric.value);
+      // put this check AFTER the above since evaluators may be stateful, and we
+      // need to maintain state in case we acquire the lock
+      if (!hasLock) return;
+      // todo: addWork()
+      alerter.handleResult(result).catch((err) => {
+        // handle delete
+        if (boom.isBoom(err, 404)) {
+          this.destroyMeta(meta);
+          this._metas.delete(rule.id);
+        }
+        this.onError(err);
+      });
+    }
+  }
+
+  handleMetricUpdate(metric: BaseMetric): void {
+    const metas = this.metricRuleMap.get(metric.id);
+    if (metas) {
+      const hasLock = this.hasLock;
+      metas.forEach((meta) => void this.dispatchRule(metric, meta, hasLock));
+    }
+  }
+
   private _registerRule(rule: Rule): void {
     const id = getRuleId(rule);
-    let evaluator = this._evaluators.get(id);
-    if (!evaluator) {
-      const metric = this.findMetric(rule);
-      if (!metric) {
-        // todo: throw
-        return;
+    let meta = this._metas.get(id);
+    if (!meta) {
+      const metricId = rule.metricId;
+      let metricRules = this.metricRuleMap.get(metricId);
+      if (!metricRules) {
+        metricRules = new Set<RuleMeta>();
+        this.metricRuleMap.set(metricId, metricRules);
       }
-      evaluator = new RuleEvaluator(rule, metric);
-      const alertHandler = new RuleAlerter(this.queueManager, rule, this.clock);
 
-      this._evaluators.set(id, evaluator);
-      this._alerters.set(id, alertHandler);
+      const alerter = new RuleAlerter(this.queueManager, rule, this.clock);
 
-      const dispatch = (evt: MetricUpdateEvent): void => {
-        const handler = this._alerters.get(id);
-        const rule = handler?.rule;
-        if (rule && rule.isActive) {
-          const result = evaluator.evaluate(evt.value);
-          // put this check AFTER the above since evaluators may be stateful, and we
-          // need to maintain state in case we acquire the lock
-          if (!this.hasLock) return;
-          handler.handleResult(result).catch((err) => {
-            // handle delete
-            if (boom.isBoom(err, 404)) {
-              this.removeRule(id);
-            }
-            this.onError(err);
-          });
-        }
-      };
+      meta = { rule, alerter };
+      this._metas.set(id, meta);
+      metricRules.add(meta);
 
-      metric.onUpdate(dispatch);
-      evaluator.unsubscribe = () => metric.offUpdate(dispatch);
-
-      this.queueManager.addWork(() => alertHandler.start());
+      this.queueManager.addWork(() => alerter.start());
     }
   }
 
@@ -148,7 +189,7 @@ export class RuleManager {
    * @returns {Promise<Rule>}
    */
   async getRule(id: string): Promise<Rule> {
-    let rule = this._evaluators.get(id)?.rule;
+    let rule = this._metas.get(id)?.rule;
     if (!rule) {
       rule = await this.storage.getRule(id);
       if (rule) {
@@ -160,11 +201,11 @@ export class RuleManager {
 
   hasRule(rule: Rule | string): boolean {
     const id = getRuleId(rule);
-    return !!this._evaluators.get(id);
+    return !!this._metas.get(id);
   }
 
   getRuleByName(name: string): Rule {
-    for (const [, v] of this._evaluators) {
+    for (const [, v] of this._metas) {
       if (v.rule.name === name) return v.rule;
     }
     return null;
@@ -216,15 +257,10 @@ export class RuleManager {
   private removeRule(rule: Rule | string): void {
     const id = getRuleId(rule);
     if (this.hasRule(rule)) {
-      const evaluator = this._evaluators.get(id);
-      if (evaluator) {
-        evaluator.destroy();
-        this._evaluators.delete(id);
-      }
-      const alertHandler = this._alerters.get(id);
-      if (alertHandler) {
-        alertHandler.destroy();
-        this._alerters.delete(id);
+      const meta = this._metas.get(id);
+      if (meta) {
+        this.destroyMeta(meta);
+        this._metas.delete(id);
       }
     }
   }
@@ -297,8 +333,8 @@ export class RuleManager {
    */
   async getRuleAlerts(
     rule: Rule | string,
-    start = 0,
-    end = '$',
+    start: DateLike = 0,
+    end: DateLike | string = '$',
     asc = true,
   ): Promise<RuleAlert[]> {
     return this.storage.getRuleAlerts(rule, start, end, asc);
@@ -384,5 +420,47 @@ export class RuleManager {
       filter,
     };
     return this.bus.createAsyncIterator<RuleAlert>(opts);
+  }
+
+  // events
+  private initSubscriptions() {
+    const { bus } = this.queueManager;
+    bus.on(RuleEventsEnum.RULE_ADDED, (data: RuleAddedEventData) =>
+      this.onRuleAdded(data),
+    );
+    bus.on(RuleEventsEnum.RULE_DELETED, (data: RuleDeletedEventData) =>
+      this.onRuleDeleted(data),
+    );
+    bus.on(RuleEventsEnum.RULE_ACTIVATED, (data: RuleEventData) =>
+      this.onRuleActivated(data),
+    );
+    bus.on(RuleEventsEnum.RULE_DEACTIVATED, (data: RuleEventData) =>
+      this.onRuleDeactivated(data),
+    );
+  }
+
+  private async onRuleAdded(event: RuleAddedEventData): Promise<void> {
+    try {
+      const rule = await this.getRule(event.ruleId);
+      if (rule) {
+        this._registerRule(rule);
+      }
+    } catch (e) {
+      this.onError(e);
+    }
+  }
+
+  private onRuleDeleted(event: RuleDeletedEventData): void {
+    this.removeRule(event.ruleId);
+  }
+
+  private onRuleActivated(event: RuleEventData): void {
+    const meta = this._metas.get(event.ruleId);
+    if (meta) meta.rule.isActive = true;
+  }
+
+  private onRuleDeactivated(event: RuleEventData): void {
+    const meta = this._metas.get(event.ruleId);
+    if (meta) meta.rule.isActive = false;
   }
 }

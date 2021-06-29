@@ -122,6 +122,10 @@ export function getQueueAlertCountKey(queue: Queue): string {
   return getKey(null, queue, null, 'alert-count');
 }
 
+export function getHostAlertCountKey(host: string): string {
+  return getHostKey(host, 'alertCount');
+}
+
 export function getJobSchemaKey(queue: Queue): string {
   return getKey(null, queue, null, 'job-schemas');
 }

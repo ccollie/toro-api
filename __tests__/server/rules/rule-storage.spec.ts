@@ -28,18 +28,20 @@ describe('RuleStorage', () => {
   let queue: Queue;
   let client: RedisClient;
   let queueName: string;
+  let hostName: string;
   let bus: EventBus;
   let aggregator: RedisStreamAggregator;
   let storage: RuleStorage;
 
   beforeEach(async function () {
-    queueName = 'q-' + randomId(6);
+    queueName = `q-${randomId(6)}`;
+    hostName = `host-${randomId(4)}`;
     client = await createClient();
     queue = new Queue(queueName, { connection: client });
     const opts = { connectionOptions: DEFAULT_CLIENT_OPTIONS };
     aggregator = new RedisStreamAggregator(opts);
     bus = new EventBus(aggregator, getQueueBusKey(queue));
-    storage = new RuleStorage(queue, bus);
+    storage = new RuleStorage(hostName, queue, bus);
     await bus.waitUntilReady();
   });
 
@@ -352,7 +354,7 @@ describe('RuleStorage', () => {
         await expect(
           storage.markAlertAsRead(rule, '12345', true),
         ).rejects.toEqual({
-          error: `Unable to locate alert id#"12345"`,
+          error: 'Unable to locate alert id#"12345"',
         });
       });
 

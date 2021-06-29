@@ -208,6 +208,7 @@ export class Rule {
       channels: [...this.channels],
       severity: this.severity,
       state: this.state,
+      alertCount: this.alertCount,
       totalFailures: this.totalFailures,
       lastTriggeredAt: this.lastTriggeredAt,
     };

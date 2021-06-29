@@ -568,6 +568,8 @@ local function resetAndCloseCircuit()
 end
 
 local function updateCircuit()
+    local ruleState = ruleState
+
     ruleState.state = ruleState.state or CIRCUIT_CLOSED
     local oldState = ruleState.state
     local state = calculateState()

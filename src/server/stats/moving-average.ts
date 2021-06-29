@@ -1,18 +1,16 @@
 'use strict';
 // copied from https://github.com/ZpmFred/moving-average
-import { Clock, systemClock } from '../lib';
 
 export interface IMovingAverage {
   reset: (value?: number) => void;
-  update: (value: number) => void;
+  update: (tm: number, value: number) => void;
   value: number;
   variance: number;
   deviation: number;
   forecast: number;
-  count: number;
 }
 
-export function MovingAverage(timespan: number, clock?: Clock): IMovingAverage {
+export function MovingAverage(timespan: number): IMovingAverage {
   if (typeof timespan !== 'number') {
     throw new Error(
       'must provide a timespan to the moving average constructor',
@@ -25,12 +23,10 @@ export function MovingAverage(timespan: number, clock?: Clock): IMovingAverage {
     );
   }
 
-  let ma: number; // moving average
+  let ma = 0; // moving average
   let v = 0; // variance
   let d = 0; // deviation
   let f = 0; // forecast
-  let n = 0; // count
-  const _clock: Clock = clock || systemClock;
 
   let previousTime;
   let firstTime;
@@ -51,8 +47,7 @@ export function MovingAverage(timespan: number, clock?: Clock): IMovingAverage {
     return 1 - Math.exp(-(t - pt) / localTimespan);
   }
 
-  function update(value: number) {
-    const tm = _clock.getTime();
+  function update(tm: number, value: number) {
     // todo: make sure time > previousTime;
     if (previousTime) {
       // calculate moving average
@@ -68,13 +63,11 @@ export function MovingAverage(timespan: number, clock?: Clock): IMovingAverage {
     } else {
       ma = value;
     }
-    n++;
     previousTime = tm;
   }
 
   function reset(value?: number) {
     primed = false;
-    n = 0;
     v = 0;
     f = 0;
     ma = 0;
@@ -100,9 +93,6 @@ export function MovingAverage(timespan: number, clock?: Clock): IMovingAverage {
     },
     get forecast() {
       return f;
-    },
-    get count() {
-      return n;
     },
   };
 }

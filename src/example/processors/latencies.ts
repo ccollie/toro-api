@@ -26,7 +26,12 @@ export function gaussianBM(min: number, max: number, skew = 0): number {
 export function generateRange(n: number, options): number[] {
   const { mean, max, min = 10, sd = 2, scale = 2 } = options;
 
-  const _gaussian = () => normal(mean, sd).distributionSync(n);
+  const _gaussian = () => {
+    const sample: number[] = [];
+    for (let i = 0; i < n; i++) sample.push(gaussianBM(min, max));
+    return sample;
+  };
+
   const _laplace = () => laplace(mean, scale).distributionSync(n);
 
   const _beta = async (): Promise<number[]> => {
@@ -47,7 +52,7 @@ export function generateRange(n: number, options): number[] {
 
 export function* getLatencies(options = {}): IterableIterator<number> {
   while (true) {
-    const n = rand(5, 50);
+    const n = rand(5, 30);
     const range = generateRange(n, options);
     for (let i = 0; i < range.length; i++) {
       yield range[i];

@@ -2,10 +2,14 @@ import { Queue } from 'bullmq';
 import { ErrorLevel, RuleAlert, RuleState } from '../../types';
 import {
   getAlertsKey,
+  getHostAlertCountKey,
+  getHostKey,
   getQueueAlertCountKey,
   getQueueBusKey,
   getRuleKey,
   getRuleStateKey,
+  getUniqueId,
+  logger,
   parseBool,
   safeParseInt,
   systemClock,
@@ -13,6 +17,8 @@ import {
 import { has } from 'lodash';
 import { Rule } from '../rules';
 import { parseObjectResponse } from '../redis';
+import { Pipeline } from 'ioredis';
+import { HostManager } from '@server/hosts';
 
 export enum CircuitState {
   CLOSED = 'CLOSED',
@@ -61,19 +67,19 @@ export interface MarkNotifyResult {
   nextEarliest?: number;
 }
 
-function getId(rule: Rule | string): string {
+function getRuleId(rule: Rule | string): string {
   if (typeof rule === 'string') return rule;
   return rule.id;
 }
 
 export class RuleScripts {
-  static async execRuleAction(
+  private static getRuleActionArgs(
     queue: Queue,
     rule: Rule | string,
     action: string,
     parameter?: string | number | Record<string, any>,
     timestamp?: number,
-  ): Promise<any> {
+  ): Array<string | number> {
     timestamp = timestamp || systemClock.getTime();
 
     if (parameter === undefined) {
@@ -82,8 +88,8 @@ export class RuleScripts {
       parameter = JSON.stringify(parameter);
     }
 
-    const id = getId(rule);
-    const args = [
+    const id = getRuleId(rule);
+    return [
       getRuleKey(queue, id),
       getRuleStateKey(queue, id),
       getAlertsKey(queue, id),
@@ -93,9 +99,44 @@ export class RuleScripts {
       action,
       parameter,
     ];
+  }
+
+  static async execRuleAction(
+    queue: Queue,
+    rule: Rule | string,
+    action: string,
+    parameter?: string | number | Record<string, any>,
+    timestamp?: number,
+  ): Promise<any> {
+    const args = this.getRuleActionArgs(
+      queue,
+      rule,
+      action,
+      parameter,
+      timestamp,
+    );
 
     const client = await queue.client;
     return (client as any).rules(...args);
+  }
+
+  static pipelineRuleAction(
+    pipeline: Pipeline,
+    queue: Queue,
+    rule: Rule | string,
+    action: string,
+    parameter?: string | number | Record<string, any>,
+    timestamp?: number,
+  ): Pipeline {
+    const args = this.getRuleActionArgs(
+      queue,
+      rule,
+      action,
+      parameter,
+      timestamp,
+    );
+    (pipeline as any).rules(...args);
+    return pipeline;
   }
 
   static async startRule(
@@ -134,7 +175,7 @@ export class RuleScripts {
 
     const res = parseObjectResponse(response);
 
-    const result: CheckAlertResult = {
+    return {
       status: res['status'],
       alertCount: res['alerts'] ?? 0,
       failures: res['failures'] ?? 0,
@@ -142,7 +183,6 @@ export class RuleScripts {
       state: (res['state'] ?? CircuitState.CLOSED) as CircuitState,
       notify: parseBool(res['notify'], false),
     };
-    return result;
   }
 
   static async signalSuccess(
@@ -208,38 +248,99 @@ export class RuleScripts {
   }
 
   static async writeAlert(
+    host: string,
     queue: Queue,
     rule: Rule | string,
     data: AlertData,
     timestamp?: number,
   ): Promise<RuleAlert> {
-    const val = await RuleScripts.execRuleAction(
+    const client = await queue.client;
+    const pipeline = client.pipeline();
+
+    RuleScripts.pipelineRuleAction(
+      pipeline,
       queue,
       rule,
       'alert',
       data,
       timestamp,
     );
-    // await RuleScripts.updateQueueAlertCount(queue);
+
+    RuleScripts.pipelineAggregateAlertCounts(pipeline, host, queue);
+
+    const res = await pipeline.exec();
     try {
-      const temp = JSON.parse(val);
+      const [err, alert] = res[0];
+      if (err) {
+        logger.error(err);
+        return null;
+      }
+      const temp = JSON.parse(alert);
       return temp as RuleAlert;
     } catch (e) {
+      logger.error(e);
       return null;
     }
   }
 
-  static async updateQueueAlertCount(queue: Queue): Promise<number> {
+  private static getUpdateQueueAlertCountArgs(
+    queue: Queue,
+  ): Array<string | number> {
     const ruleIndexKey = getRuleKey(queue);
     const countsKey = getQueueAlertCountKey(queue);
+
+    return [ruleIndexKey, countsKey];
+  }
+
+  private static getUpdateHostAlertCountArgs(host: string): Array<string> {
+    const queuesIndexKey = getHostKey(host, 'queues');
+    const destinationKey = getHostKey(host, 'alertCount');
+    const scratchKey = 'scratch-' + getUniqueId();
+    return [queuesIndexKey, destinationKey, scratchKey];
+  }
+
+  static pipelineUpdateRuleAlertCount(
+    pipeline: Pipeline,
+    queue: Queue,
+    rule: Rule | string,
+  ): Pipeline {
+    const ruleId = getRuleId(rule);
+    const ruleKey = getRuleKey(queue, ruleId);
+    const alertsKey = getAlertsKey(queue, ruleId);
+
+    (pipeline as any).updateRuleAlertCount(ruleKey, alertsKey);
+    return pipeline;
+  }
+
+  static pipelineAggregateAlertCounts(
+    pipeline: Pipeline,
+    host: string,
+    queue: Queue,
+  ): Pipeline {
+    const queueUpdateArgs = RuleScripts.getUpdateQueueAlertCountArgs(queue);
+    const hostUpdateArgs = RuleScripts.getUpdateHostAlertCountArgs(host);
+
+    (pipeline as any).updateQueueAlertCount(...queueUpdateArgs);
+    (pipeline as any).updateHostAlertCount(...hostUpdateArgs);
+    return pipeline;
+  }
+
+  static async updateQueueAlertCount(queue: Queue): Promise<number> {
+    const args = RuleScripts.getUpdateQueueAlertCountArgs(queue);
     const client = await queue.client;
-    return (client as any).updateQueueAlertCount(ruleIndexKey, countsKey);
+    return (client as any).updateQueueAlertCount(...args);
   }
 
   static async getQueueAlertCount(queue: Queue): Promise<number> {
     const countsKey = getQueueAlertCountKey(queue);
     const client = await queue.client;
     const count = await client.get(countsKey);
+    return parseInt(count ?? '0', 10);
+  }
+
+  static async getHostAlertCount(host: HostManager): Promise<number> {
+    const key = getHostAlertCountKey(host.name);
+    const count = await host.client.get(key);
     return parseInt(count ?? '0', 10);
   }
 

@@ -191,7 +191,7 @@ export class EventBus {
     if (!subscription) return;
     this._lastEventId = subscription.cursor;
     if (data) {
-      const [ts, other] = data;
+      const [, other] = data;
       const { __sid, __evt, ...rest } = other;
       // if __sid is set, it means it was already emitted locally
       // make sure we weren't the ones doing it

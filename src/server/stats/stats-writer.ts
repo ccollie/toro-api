@@ -9,7 +9,7 @@ import {
 import { StatsClient } from './stats-client';
 import QueueStats from './queue-stats';
 import { QueueManager } from '../queues';
-import { TimeSeries } from '../commands/timeseries';
+import { TimeSeries } from '@server/commands';
 import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
 import { HostManager } from '../hosts';
 import random from 'lodash/random';

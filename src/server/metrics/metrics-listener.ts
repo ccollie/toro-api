@@ -17,7 +17,10 @@ import { TimeSeries } from '../commands';
 import IORedis from 'ioredis';
 import { roundDown, roundUp } from '@lib/datetime';
 import { isAfter } from 'date-fns';
+import ms from 'ms';
 
+const MAX_INTERVAL = ms('2d');
+const DEFAULT_INTERVAL = ms('1 hr');
 const DEFAULT_CONCURRENCY = 16;
 const UPDATE_EVENT_NAME = 'metrics.updated';
 
@@ -45,7 +48,6 @@ export class MetricsListener {
   protected readonly workQueue: PQueue;
   private readonly _shouldDestroy: boolean;
   private readonly _metrics: BaseMetric[] = [];
-  private activeMetrics: BaseMetric[] = [];
   private readonly metricMeta = new Map<BaseMetric, MetricMetadata>();
   private readonly emitter: Emittery = new Emittery();
   private readonly handlerMap = new Map<string, Set<QueueBasedMetric>>();
@@ -64,14 +66,14 @@ export class MetricsListener {
     this.dispatch = this.dispatch.bind(this);
   }
 
-  public start(): void {
+  start(): void {
     if (!this.running) {
       this.running = true;
       this.initTimer();
     }
   }
 
-  public stop(): void {
+  stop(): void {
     if (this.running) {
       this.running = false;
       this.stopTimer();
@@ -80,10 +82,6 @@ export class MetricsListener {
 
   private getDataKey(metric: BaseMetric): string {
     return getMetricsDataKey(this.queue, metric.id);
-  }
-
-  private updateActive(): BaseMetric[] {
-    return (this.activeMetrics = this._metrics.filter((m) => m.isActive));
   }
 
   private initTimer(): void {
@@ -155,14 +153,15 @@ export class MetricsListener {
 
   private async poll() {
     const active = this.activeMetrics;
-
     if (active.length) {
       const now = this.clock.getTime();
       const client = await this.client;
       const pipeline = client.pipeline();
       await this.pollInternal(active, pipeline, now);
 
-      await pipeline.exec();
+      if (pipeline.length) {
+        await pipeline.exec();
+      }
     }
   }
 
@@ -177,10 +176,13 @@ export class MetricsListener {
     if (this._timer) {
       this._timer.stop();
     }
+
     this._timer = createAccurateInterval(
       () => this.poll(),
       this._timerInterval,
     );
+
+    this._timer.start();
   }
 
   get queue(): Queue {
@@ -193,6 +195,10 @@ export class MetricsListener {
 
   get metrics(): BaseMetric[] {
     return this._metrics;
+  }
+
+  get activeMetrics(): BaseMetric[] {
+    return this._metrics.filter((x) => x.isActive);
   }
 
   /**
@@ -250,7 +256,6 @@ export class MetricsListener {
       });
     }
     this._metrics.push(metric);
-    this.updateActive();
     // metric.onUpdate()
     metric.init(this);
   }
@@ -274,7 +279,6 @@ export class MetricsListener {
       this._metrics.splice(idx, 1);
       this.metricMeta.delete(metric);
     }
-    this.updateActive();
   }
 
   on(event: string, handler: (eventData?: any) => void): UnsubscribeFn {
@@ -301,9 +305,13 @@ export class MetricsListener {
   }
 
   calcTimerInterval(): number {
-    let val = Number.MAX_VALUE;
+    let val = Number.MAX_SAFE_INTEGER;
     let gcf = -1;
-    this.metrics.forEach(({ sampleInterval }) => {
+    const active = this.activeMetrics;
+    if (!active.length) {
+      return DEFAULT_INTERVAL;
+    }
+    active.forEach(({ sampleInterval }) => {
       if (gcf === -1) {
         gcf = sampleInterval;
       } else if (gcf > 1) {
@@ -315,6 +323,7 @@ export class MetricsListener {
       return gcf;
     }
     if (val < 1000) val = 1000;
+    val = Math.max(val, MAX_INTERVAL);
     return val;
   }
 
@@ -368,6 +377,10 @@ export class MetricsListener {
 
   clear(): void {
     this.emitter.clearListeners();
+    this.clearHandlerMap();
+  }
+
+  clearHandlerMap() {
     this.handlerMap.clear();
   }
 
@@ -375,8 +388,8 @@ export class MetricsListener {
     if (this._shouldDestroy) {
       this.workQueue.clear();
     }
-    this.stop();
     this.clear();
+    this.stop();
   }
 
   // populate metric data from job event stream

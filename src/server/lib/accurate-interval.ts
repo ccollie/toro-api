@@ -36,6 +36,7 @@ export function createAccurateInterval(
 ): AccurateInterval {
   let nextAt: number;
   let stopped = false;
+  let started = false;
   let now: number;
   let timeout: ReturnType<typeof setTimeout> = null;
 
@@ -45,9 +46,8 @@ export function createAccurateInterval(
   };
 
   function start(): void {
-    if (!stopped) {
-      return;
-    }
+    if (started) return;
+    started = true;
     stopped = false;
     now = opts.clock.getTime();
     nextAt = now;
@@ -69,6 +69,7 @@ export function createAccurateInterval(
 
   function stop(): void {
     stopped = true;
+    started = false;
     clearTimeout(timeout);
     timeout = null;
   }
@@ -97,7 +98,9 @@ export function createAccurateInterval(
       const delay = Math.max(0, nextAt - now);
 
       timeout = setTimeout(tick, delay);
-      if (timeout.unref) timeout.unref();
+      if (typeof (timeout as any).unref === 'function') {
+        timeout.unref();
+      }
       nextAt += interval;
       func();
     }

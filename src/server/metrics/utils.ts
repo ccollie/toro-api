@@ -9,6 +9,8 @@ export function createJobNameFilter(
     return () => true;
   } else if (isString(jobNames)) {
     return (name: string) => name === jobNames;
+  } else if (jobNames.length === 0) {
+    return () => true;
   } else if (jobNames.length === 1) {
     return (name: string) => name === jobNames[0];
   }

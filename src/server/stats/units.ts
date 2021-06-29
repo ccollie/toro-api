@@ -42,3 +42,22 @@ export const HOURS = 60 * MINUTES;
  * @type {number}
  */
 export const DAYS = 24 * HOURS;
+
+export const ONE_MINUTE = 1 * MINUTES;
+export const FIVE_MINUTES = 5 * MINUTES;
+export const FIFTEEN_MINUTES = 15 * MINUTES;
+export const DEFAULT_RATE_UNIT = ONE_MINUTE;
+
+export enum TimeUnit {
+  MILLISECONDS = 'Milliseconds',
+  MINUTES = 'Minutes',
+  SECONDS = 'Seconds',
+  HOURS = 'Hours',
+}
+
+export const IntervalMillis: Record<TimeUnit, number> = {
+  [TimeUnit.MILLISECONDS]: 1,
+  [TimeUnit.MINUTES]: ONE_MINUTE,
+  [TimeUnit.SECONDS]: 1 * SECONDS,
+  [TimeUnit.HOURS]: 1 * HOURS,
+};

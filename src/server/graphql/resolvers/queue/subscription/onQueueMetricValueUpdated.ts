@@ -12,6 +12,7 @@ export type MetricsInput = {
 
 // TODO: to review
 // TODO: monitor metric state. unsubscribe if removed
+// todo: add option to debounce update
 function createResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_, args: MetricsInput): string {
     const { queueId, metricId } = args;

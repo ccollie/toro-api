@@ -18,6 +18,7 @@ import {
   serializeMetric,
 } from './index';
 import { QueueListener } from '@server/queues';
+import { UnsubscribeFn } from 'emittery';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -31,6 +32,7 @@ export class MetricManager {
   private readonly listener: MetricsListener;
   private readonly clock: Clock;
   private running = false;
+  private metricsLoaded = false;
 
   /**
    * Construct a {@link MetricManager}
@@ -55,7 +57,7 @@ export class MetricManager {
   async start(): Promise<void> {
     if (!this.running) {
       this.running = true;
-      this.listener.clear();
+      this.listener.clearHandlerMap();
       const metrics = await this.loadMetrics();
       for (const metric of metrics) {
         this.listener.registerMetric(metric);
@@ -64,7 +66,7 @@ export class MetricManager {
     }
   }
 
-  public stop(): void {
+  stop(): void {
     if (this.running) {
       this.running = false;
       this.listener.stop();
@@ -333,6 +335,7 @@ export class MetricManager {
       }
     });
 
+    this.metricsLoaded = true;
     return result;
   }
 
@@ -438,6 +441,10 @@ export class MetricManager {
   async getMetricIds(): Promise<string[]> {
     const client = await this.getClient();
     return client.smembers(this.indexKey);
+  }
+
+  onMetricsUpdated(handler: (eventData?: any) => void): UnsubscribeFn {
+    return this.listener.onMetricsUpdated(handler);
   }
 }
 

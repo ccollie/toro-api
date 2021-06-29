@@ -1,12 +1,12 @@
 import { FieldConfig } from '../../utils';
 import { HostManager } from '@server/hosts';
+import { RuleScripts } from '@server/commands';
 
-export const hostWorkerCount: FieldConfig = {
+export const hostAlertCount: FieldConfig = {
   type: 'Int!',
   description:
-    'Returns the number of workers associated with managed queues on this host',
+    'Returns the number of alerts raised across all the queues associated with this host',
   async resolve(host: HostManager): Promise<number> {
-    const workers = await host.getWorkers();
-    return workers.length;
+    return RuleScripts.getHostAlertCount(host);
   },
 };

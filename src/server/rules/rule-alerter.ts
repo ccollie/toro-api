@@ -24,15 +24,15 @@ import { Rule } from './rule';
 import handlebars from 'handlebars';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
 import { QueueManager } from '../queues';
-import { EvaluationResult } from './rule-evaluator';
 import { NotificationManager } from '../notifications';
+import { EvaluationResult } from './condition-evaluator';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
 }
 
 function getRuleState(result: EvaluationResult): RuleState {
-  if (result.success) return RuleState.NORMAL;
+  if (!result.triggered) return RuleState.NORMAL;
   return result.errorLevel === ErrorLevel.WARNING
     ? RuleState.WARNING
     : RuleState.ERROR;
@@ -178,7 +178,7 @@ export class RuleAlerter {
       this._lastFailedAt = 0;
     }
 
-    if (!result.success && response.status === 'ok') {
+    if (result.triggered && response.status === 'ok') {
       this.rule.totalFailures++;
     }
   }
@@ -186,7 +186,7 @@ export class RuleAlerter {
   async handleResult(result: EvaluationResult): Promise<void> {
     if (!this.isActive || this.isWarmingUp) return;
 
-    if (result.success) {
+    if (!result.triggered) {
       if (this._ruleState === RuleState.NORMAL) return;
     }
 
@@ -213,7 +213,7 @@ export class RuleAlerter {
       this._alert = null;
     }
 
-    if (result.success) {
+    if (!result.triggered) {
       this.handleReset();
     } else {
       this._lastFailedAt = now;
@@ -288,13 +288,14 @@ export class RuleAlerter {
 
   protected async writeAlert(result: EvaluationResult): Promise<RuleAlert> {
     const data = this.createAlertData(result);
-    return RuleScripts.writeAlert(this.queue, this.rule, data);
+    const host = this.queueManager.host;
+    return RuleScripts.writeAlert(host, this.queue, this.rule, data);
   }
 
   protected notifyAlert(result: EvaluationResult): void {
-    const event = result.success
-      ? RuleEventsEnum.ALERT_RESET
-      : RuleEventsEnum.ALERT_TRIGGERED;
+    const event = result.triggered
+      ? RuleEventsEnum.ALERT_TRIGGERED
+      : RuleEventsEnum.ALERT_RESET;
     if (!this._shouldNotify) return;
     this.dispatchAlert(event, this._alert).catch(RuleAlerter.onError);
   }

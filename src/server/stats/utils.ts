@@ -16,7 +16,7 @@ import ms from 'ms';
 import { DDSketch } from 'sketches-js';
 import * as units from './units';
 import { ManualClock } from '../lib';
-import { IrregularMeter } from './irregular-meter';
+import { Meter } from '@server/stats/meter';
 
 export const CONFIG = {
   units: [
@@ -191,7 +191,7 @@ export function aggregateMeter(
   type: StatsRateType,
 ): MeterSummary {
   const clock = new ManualClock();
-  const meter = new IrregularMeter(clock);
+  const meter = new Meter(clock);
   recs.forEach((rec) => {
     let value = 0;
     switch (type) {

@@ -1,26 +1,9 @@
+import { IntervalMillis, TimeUnit } from '@server/stats/units';
+
 const SECONDS_PER_MINUTE = 60;
-const MINUTES_PER_HOUR = 60;
 const INTERVAL = 5; // seconds
-const INTERVAL_MILLIS = INTERVAL * 1000;
 const MILLIS_PER_SECOND = 1000;
 const MILLIS_PER_MINUTE = MILLIS_PER_SECOND * SECONDS_PER_MINUTE;
-const MILLIS_PER_HOUR = MILLIS_PER_MINUTE * MINUTES_PER_HOUR;
-
-const EPSILON = 0.000001;
-
-export enum TimeUnit {
-  MILLISECONDS = 'Milliseconds',
-  MINUTES = 'Minutes',
-  SECONDS = 'Seconds',
-  HOURS = 'Hours',
-}
-
-const IntervalMillis: Record<TimeUnit, number> = {
-  [TimeUnit.MILLISECONDS]: 1,
-  [TimeUnit.MINUTES]: MILLIS_PER_MINUTE,
-  [TimeUnit.SECONDS]: MILLIS_PER_SECOND,
-  [TimeUnit.HOURS]: MILLIS_PER_HOUR,
-};
 
 export function calcAlpha(period: number, interval = INTERVAL): number {
   const minutes = period / MILLIS_PER_MINUTE;

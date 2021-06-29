@@ -44,13 +44,13 @@ describe('Condition Evaluation', () => {
     });
 
     describe('.evaluate', () => {
-      it('returns success for errorThreshold', () => {
+      it('triggers on errorThreshold', () => {
         const sut = createEvaluator({
           errorThreshold: 10,
           operator: RuleOperator.LT,
         });
         const result = sut.evaluate(5);
-        expect(result.success).toBe(true);
+        expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 5,
           ruleType: RuleType.THRESHOLD,
@@ -59,14 +59,14 @@ describe('Condition Evaluation', () => {
         });
       });
 
-      it('returns success for warningThreshold', () => {
+      it('returns triggered for warningThreshold', () => {
         const sut = createEvaluator({
           errorThreshold: 20,
           warningThreshold: 10,
           operator: RuleOperator.GT,
         });
         const result = sut.evaluate(12);
-        expect(result.success).toBe(true);
+        expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 12,
           ruleType: RuleType.THRESHOLD,
@@ -117,7 +117,7 @@ describe('Condition Evaluation', () => {
           };
           const sut = createEvaluator(opts);
           const result = sut.evaluate(value);
-          expect(result.success).toBe(expected);
+          expect(result.triggered).toBe(expected);
           expect(result.state).toMatchObject({
             value,
             ruleType: RuleType.THRESHOLD,
@@ -164,10 +164,10 @@ describe('Condition Evaluation', () => {
     });
 
     describe('.evaluate', () => {
-      it('returns success for errorThreshold', () => {
+      it('triggers on errorThreshold', () => {
         const sut = createEvaluator({ errorThreshold: 10 });
         const result = sut.evaluate(5);
-        expect(result.success).toBe(true);
+        expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 5,
           ruleType: RuleType.THRESHOLD,
@@ -176,13 +176,13 @@ describe('Condition Evaluation', () => {
         });
       });
 
-      it('returns success for warningThreshold', () => {
+      it('triggers on warningThreshold', () => {
         const sut = createEvaluator({
           errorThreshold: 20,
           warningThreshold: 10,
         });
         const result = sut.evaluate(12);
-        expect(result.success).toBe(true);
+        expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 12,
           ruleType: RuleType.THRESHOLD,
@@ -232,7 +232,7 @@ describe('Condition Evaluation', () => {
           };
           const sut = createEvaluator(opts);
           const result = sut.evaluate(value);
-          expect(result.success).toBe(expected);
+          expect(result.triggered).toBe(expected);
           expect(result.state).toMatchObject({
             value,
             ruleType: RuleType.THRESHOLD,
