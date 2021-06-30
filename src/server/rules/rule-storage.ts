@@ -510,6 +510,26 @@ export class RuleStorage {
     });
   }
 
+  async getRuleAlertsByIndex(
+    rule: Rule | string,
+    start: number,
+    end: number,
+    asc = false,
+  ): Promise<RuleAlert[]> {
+    const client = await this.getClient();
+    const key = this.getAlertsKey(rule);
+    const reply = await TimeSeries.getRangeByIndex(
+      client,
+      key,
+      start,
+      end,
+      asc,
+    );
+
+    return reply.map(({ value }) => {
+      return deserializeAlert(value);
+    });
+  }
   async getRuleAlertCount(rule: Rule | string): Promise<number> {
     const client = await this.getClient();
     const key = this.getAlertsKey(rule);
@@ -672,11 +692,18 @@ function serializeObject(obj): string {
   return JSON.stringify(payload);
 }
 
-function deserializeObject(str: string): any {
+function deserializeObject(val: any): any {
+  const type = typeof val;
   const empty = Object.create(null);
-  if (isNil(str)) return empty;
+
+  if (type === 'object') return val;
+
+  if (['undefined', 'null'].includes(type)) {
+    return empty;
+  }
+
   try {
-    return isString(str) ? JSON.parse(str) : empty;
+    return type === 'string' ? JSON.parse(val) : empty;
   } catch {
     // console.log
     return empty;

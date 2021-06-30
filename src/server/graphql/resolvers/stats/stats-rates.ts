@@ -75,7 +75,7 @@ export function getHostRatesResolver(type: StatsRateType): FieldConfig {
           StatsGranularity.Minute,
         );
         if (timeSpan) {
-          range = `${timeSpan.start}-${timeSpan.end}`;
+          range = `${timeSpan.startTime}-${timeSpan.endTime}`;
         }
         return getRates(_, null, range, StatsGranularity.Minute);
       }

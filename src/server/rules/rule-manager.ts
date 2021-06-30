@@ -340,6 +340,15 @@ export class RuleManager {
     return this.storage.getRuleAlerts(rule, start, end, asc);
   }
 
+  async getRuleAlertsByIndex(
+    rule: Rule | string,
+    start: number,
+    end: number,
+    asc = false,
+  ): Promise<RuleAlert[]> {
+    return this.storage.getRuleAlertsByIndex(rule, start, end, asc);
+  }
+
   async getRuleAlertCount(rule?: Rule | string): Promise<number> {
     if (rule === undefined) {
       return this.storage.getQueueAlertCount();
@@ -357,13 +366,12 @@ export class RuleManager {
    * @returns {Promise<Number>}
    */
   async pruneAlerts(retention?: number): Promise<number> {
-    const ids = await this.storage.getRuleIds();
-    if (ids.length) {
+    const rules = this.rules;
+    if (rules.length) {
       retention = retention || DEFAULT_RETENTION;
-      const keys = ids.map((id) => this.storage.getRuleKey(id));
       const counts = await pMap(
-        keys,
-        (key) => this.storage.pruneAlerts(key, retention),
+        rules,
+        (rule) => this.storage.pruneAlerts(rule, retention),
         { concurrency: 4 },
       );
       return counts.reduce((res, count) => res + count, 0);

@@ -2,17 +2,9 @@ import { normalizeGranularity } from '../../helpers';
 import { FieldConfig } from '../';
 import { HostManager } from '@server/hosts';
 import { getClient } from './utils';
-import { StatsGranularityEnum } from '../scalars';
+import { StatsGranularityEnum, TimeSpanTC } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { StatsGranularity } from '@src/types';
-
-const StatsSpanPayload = schemaComposer.createObjectTC({
-  name: 'StatsSpanPayload',
-  fields: {
-    start: 'Date!',
-    end: 'Date!',
-  },
-});
 
 const StatsSpanInput = schemaComposer.createInputTC({
   name: 'StatsSpanInput',
@@ -27,7 +19,7 @@ const StatsSpanInput = schemaComposer.createInputTC({
 });
 
 export const statsDateRange: FieldConfig = {
-  type: StatsSpanPayload,
+  type: TimeSpanTC,
   description: 'Gets the time range of recorded stats for a queue/host',
   args: {
     input: StatsSpanInput.NonNull,

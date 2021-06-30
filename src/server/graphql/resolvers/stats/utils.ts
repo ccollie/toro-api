@@ -35,11 +35,11 @@ export async function getStats(
   const client = getClient(model);
   const unit = normalizeGranularity(granularity);
 
-  const { start, end } = parseRange(range);
+  const { startTime, endTime } = parseRange(range);
   if (model instanceof HostManager) {
-    return client.getHostStats(jobName, metric, unit, start, end);
+    return client.getHostStats(jobName, metric, unit, startTime, endTime);
   } else {
-    return client.getStats(jobName, metric, unit, start, end);
+    return client.getStats(jobName, metric, unit, startTime, endTime);
   }
 }
 
@@ -54,23 +54,23 @@ export async function aggregateStats(
   let snapshot: StatisticalSnapshot;
 
   const unit = normalizeGranularity(granularity);
-  const { start, end } = parseRange(range);
+  const { startTime, endTime } = parseRange(range);
 
   if (model instanceof HostManager) {
     snapshot = await client.getAggregateHostStats(
       jobName,
       metric,
       unit,
-      start,
-      end,
+      startTime,
+      endTime,
     );
   } else {
     snapshot = await client.getAggregateStats(
       jobName,
       metric,
       unit,
-      start,
-      end,
+      startTime,
+      endTime,
     );
   }
 
@@ -87,12 +87,18 @@ export async function aggregateRates(
   const client = getClient(model);
 
   const unit = normalizeGranularity(granularity);
-  const { start, end } = parseRange(range);
+  const { startTime, endTime } = parseRange(range);
 
   if (model instanceof HostManager) {
-    return client.getHostAggregateRates(jobName, unit, type, start, end);
+    return client.getHostAggregateRates(
+      jobName,
+      unit,
+      type,
+      startTime,
+      endTime,
+    );
   } else {
-    return client.getAggregateRates(jobName, unit, type, start, end);
+    return client.getAggregateRates(jobName, unit, type, startTime, endTime);
   }
 }
 

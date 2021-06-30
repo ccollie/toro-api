@@ -25,13 +25,16 @@ export class RuleEvaluator {
     this.rule = rule;
     this.onError = this.onError.bind(this);
     this.metric = metric;
-    this.evaluator = this.createEvaluator(this.metric, rule);
+    this.evaluator = RuleEvaluator.createEvaluator(this.metric, rule);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   destroy(): void {}
 
-  private createEvaluator(metric: BaseMetric, rule: Rule): ConditionEvaluator {
+  private static createEvaluator(
+    metric: BaseMetric,
+    rule: Rule,
+  ): ConditionEvaluator {
     const condition = parseRuleCondition(rule.condition);
 
     switch (condition.type) {

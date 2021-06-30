@@ -174,6 +174,7 @@ export function withCancel<T>(
       Promise.resolve({ value: undefined, done: true });
   }
 
+  // we can share iterators, so we maintain a list of cleanup functions per
   let dtors = iteratorDestructors.get(asyncIterator);
   if (!dtors?.length) {
     dtors = [];
@@ -191,7 +192,7 @@ export function withCancel<T>(
       return savedReturn();
     };
   }
-  dtors.push(onCancel);
+  dtors.unshift(onCancel);
 
   return asyncIterator;
 }

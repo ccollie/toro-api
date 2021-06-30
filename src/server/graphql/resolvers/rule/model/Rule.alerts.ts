@@ -1,5 +1,5 @@
 import { OrderEnumType } from '../../scalars';
-import { getQueueManager } from '../../../helpers';
+import { getQueueRuleManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { RuleAlert } from '@src/types';
@@ -43,8 +43,7 @@ export const ruleAlertsFC: FieldConfig = {
       ...DefaultInput,
     } as RuleAlertsInput;
     const asc = sortOrder === SortOrderEnum.Asc;
-    const manager = getQueueManager(parent.queueId);
-    const ruleManager = manager.ruleManager;
-    return ruleManager.getRuleAlerts(parent, start, end, asc);
+    const manager = getQueueRuleManager(parent.queueId);
+    return manager.getRuleAlertsByIndex(parent, start, end, asc);
   },
 };

@@ -3,9 +3,8 @@ import { getLoaderKeys, getLoaderMeta } from './factory';
 import boom from '@hapi/boom';
 
 /**
- * This allows data loaders to be registered together into a single place so
- * they can be dispatched as one.  It also allows you to retrieve data loaders by
- * name from a central place
+ * This allows data loaders to be registered together into a single place. It also allows
+ * you to retrieve data loaders by name from a central place
  */
 export class DataLoaderRegistry {
   private dataLoaders: Map<string, DataLoader<any, any, any>>;

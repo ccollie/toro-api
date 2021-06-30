@@ -1,19 +1,25 @@
 import { isNil, isString } from 'lodash';
 import { GraphQLFieldResolver } from 'graphql';
-import { logger, withCancel } from '../../lib';
+import { isPromise, logger, withCancel } from '../../lib';
 import { pubsub, FilterFn } from '../pubsub';
+import { ResolverContext } from '@server/graphql';
+import RefCountCache from '@lib/refcount-cache';
+
+export interface ResolverContextWithChannel extends ResolverContext {
+  channelName: string;
+}
 
 export type ChannelNameFn = (
   rootValue: any,
   args: any,
-  context: any,
+  context: ResolverContext,
   info: any,
 ) => string;
 
 export type SubscribeFn = (
   rootValue: any,
   args: any,
-  context: any,
+  context: ResolverContextWithChannel,
   info: any,
 ) => void | AsyncIterator<any> | Promise<void | AsyncIterator<any>>;
 
@@ -25,7 +31,7 @@ const defaultCreateSubscription: SubscribeFn = (_, args, context) =>
 export type UnsubscribeFn = (
   rootValue: any,
   args: any,
-  context: any,
+  context: ResolverContextWithChannel,
   info: any,
 ) => void;
 
@@ -40,7 +46,7 @@ function createFilteredIterator(
   asyncIterator: AsyncIterator<any>,
   filterFn: FilterFn,
   args: any,
-  context: any,
+  context: ResolverContext,
   info: any,
 ): AsyncIterator<any> {
   const getNextPromise = () => {
@@ -83,7 +89,7 @@ function createFilteredIterator(
   } as any;
 }
 
-const iteratorCache = new Map<string, AsyncIterator<any>>();
+const iteratorCache = new RefCountCache<AsyncIterator<any>>();
 
 export function createSubscriptionResolver(
   options: SubscriptionCreationOptions = {
@@ -94,18 +100,22 @@ export function createSubscriptionResolver(
   return async (
     rootValue: any,
     args: any,
-    context: any,
+    context: ResolverContext,
     info: any,
   ): Promise<any> => {
     const channelName = isString(options.channelName)
       ? options.channelName
       : options.channelName(rootValue, args, context, info);
 
-    function createIterator(): AsyncIterator<any> {
+    async function createIterator(): Promise<AsyncIterator<any>> {
       const _context = { ...context, channelName };
-      const initValue = options.onSubscribe(rootValue, args, _context, info);
+      let initValue = options.onSubscribe(rootValue, args, _context, info);
 
       let iterator;
+
+      if (isPromise(initValue)) {
+        initValue = await initValue;
+      }
 
       if (isNil(initValue)) {
         iterator = pubsub.asyncIterator(channelName);
@@ -114,23 +124,23 @@ export function createSubscriptionResolver(
         iterator = initValue as AsyncIterator<any>;
       }
 
-      if (options.onUnsubscribe) {
-        const dtor = () =>
-          options.onUnsubscribe(rootValue, args, _context, info);
-        iterator = withCancel(iterator, dtor);
-      }
-
       withCancel(iterator, () => {
-        iteratorCache.delete(channelName);
+        iteratorCache.removeReference(channelName);
       });
 
       return iterator;
     }
 
-    let iterator = iteratorCache.get(channelName);
+    let iterator = iteratorCache.getRef(channelName);
     if (!iterator) {
-      iterator = createIterator();
-      iteratorCache.set(channelName, iterator);
+      iterator = await createIterator();
+      iteratorCache.addEntry(channelName, iterator);
+    }
+
+    if (options.onUnsubscribe) {
+      const _context = { ...context, channelName };
+      const dtor = () => options.onUnsubscribe(rootValue, args, _context, info);
+      iterator = withCancel(iterator, dtor);
     }
 
     if (options.filter) {

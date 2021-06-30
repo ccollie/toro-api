@@ -269,7 +269,7 @@ export default class OnlineNormalEstimator {
   }
 
   /**
-   * The unbiased estimate of the variance of the samples.
+   * The unbiased (sample) estimate of the variance of the samples.
    * @returns {number}
    */
   get varianceUnbiased(): number {
@@ -286,7 +286,7 @@ export default class OnlineNormalEstimator {
   }
 
   /**
-   * The unbiased estimate of the standard deviation of the samples.
+   * The unbiased (sample) estimate of the standard deviation of the samples.
    * @return {number}
    */
   get standardDeviationUnbiased(): number {

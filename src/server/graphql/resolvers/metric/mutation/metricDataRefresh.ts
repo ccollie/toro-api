@@ -54,9 +54,9 @@ export const metricDataRefresh: FieldConfig = {
       _start = start;
       _end = end;
     } else if (range) {
-      const { start, end } = parseRange(range);
-      _start = start;
-      _end = end;
+      const { startTime, endTime } = parseRange(range);
+      _start = startTime;
+      _end = endTime;
     } else {
       throw boom.badRequest('Either start/end or range must be specified');
     }

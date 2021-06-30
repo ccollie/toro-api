@@ -6,6 +6,8 @@ import registerQueueWorkers from './queue-workers';
 import registerQueueAlertCount from './queue-alert-count';
 import registerJobMemoryUsage from './job-memory';
 import registerRepeatableCount from './queue-repeatable-count';
+import registerNetricDateRange from './metric-date-range';
+import registerMetricData from './metric-data';
 
 import { LoaderCtor, LoaderMetaData } from './types';
 
@@ -37,6 +39,8 @@ export function initialize(): void {
   registerQueuePaused(registerFn);
   registerJobMemoryUsage(registerFn);
   registerRepeatableCount(registerFn);
+  registerNetricDateRange(registerFn);
+  registerMetricData(registerFn);
 }
 
 export function getLoaderMeta(key: string): LoaderMetaData {

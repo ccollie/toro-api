@@ -43,7 +43,7 @@ import {
   endOfWeek,
   endOfYear,
 } from 'date-fns';
-import { Timespan } from '../../types';
+import { Timespan } from '@src/types';
 
 export type DateLike = Date | number;
 
@@ -366,8 +366,8 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
 
   function getRange(unit: string): Timespan {
     return {
-      start: startOf(reference, unit).getTime(),
-      end: endOf(reference, unit).getTime(),
+      startTime: startOf(reference, unit).getTime(),
+      endTime: endOf(reference, unit).getTime(),
     };
   }
 
@@ -375,16 +375,16 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
     const end = addMilliseconds(startOf(reference, unit), -1).getTime();
     const start = startOf(end, unit).getTime();
     return {
-      start,
-      end,
+      startTime: start,
+      endTime: end,
     };
   }
 
   const m = expr.match(NumericalRangeRegex);
   if (m?.length) {
     return {
-      start: parseInt(m[1]),
-      end: parseInt(m[2]),
+      startTime: parseInt(m[1]),
+      endTime: parseInt(m[2]),
     };
   }
   if (expr === 'today') {
@@ -424,8 +424,8 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
       const start = add(end, -1 * count, unit);
 
       return {
-        start: start.getTime(),
-        end: end.getTime(),
+        startTime: start.getTime(),
+        endTime: end.getTime(),
       };
     }
   }

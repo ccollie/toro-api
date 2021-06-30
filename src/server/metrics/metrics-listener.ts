@@ -213,7 +213,7 @@ export class MetricsListener {
     const key = this.getDataKey(metric);
     const client = await this.client;
     const span = await TimeSeries.getTimeSpan(client, key);
-    return span?.end ?? 0;
+    return span?.endTime ?? 0;
   }
 
   findMetricById(id: string): BaseMetric {

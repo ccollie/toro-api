@@ -109,8 +109,8 @@ export function getResolverFields(info): string[] {
   return fieldsList(info);
 }
 
-export function getRuleManager(id: string): RuleManager {
-  const manager = getQueueManager(id);
+export function getQueueRuleManager(queueId: string): RuleManager {
+  const manager = getQueueManager(queueId);
   return manager.ruleManager;
 }
 

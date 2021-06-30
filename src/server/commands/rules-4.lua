@@ -624,7 +624,7 @@ local function handleFailure(errorType)
         'successes', 0,
         'totalFailures', totalFailures + 1
     )
-    redis.call('hset', ruleKey, 'failures', totalFailures + 1)
+    -- redis.call('hset', ruleKey, 'failures', totalFailures + 1)
 end
 
 local function handleSuccess()

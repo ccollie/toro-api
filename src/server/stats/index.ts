@@ -1,5 +1,4 @@
 import QueueStats from './queue-stats';
-export * from './ewma';
 export * from './apdex-calculator';
 export * from './meter';
 export * from './stats-client';

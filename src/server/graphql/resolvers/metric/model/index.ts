@@ -1,7 +1,12 @@
 import { schemaComposer } from 'graphql-compose';
 import { metricDataFC } from './Metric.data';
-import { metricDataPeaksFC } from './Metric.dataPeaks';
+import { metricDataOutliersFC as outliers } from './Metric.outliers';
+import { metricDateRangeFC as dateRange } from './Metric.date-range';
 import { AggregatorTC, BaseFields } from '../scalars';
+import { metricHistogramFC as histogram } from './Metric.histogram';
+import { metricSummaryStatsFC as summaryStats } from './Metric.summary-stats';
+// eslint-disable-next-line max-len
+import { metricPercentileDistributionFC as percentileDistribution } from './Metric.percentile-distribution';
 
 export const MetricTC = schemaComposer.createObjectTC({
   name: 'Metric',
@@ -26,6 +31,10 @@ export const MetricTC = schemaComposer.createObjectTC({
     },
     aggregator: AggregatorTC.NonNull,
     data: metricDataFC,
-    dataPeaks: metricDataPeaksFC,
+    outliers,
+    histogram,
+    percentileDistribution,
+    summaryStats,
+    dateRange,
   },
 });

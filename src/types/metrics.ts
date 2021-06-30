@@ -18,8 +18,10 @@ export enum MetricTypes {
   JobRate,
   Latency,
   PeakMemory,
+  PendingCount,
   UsedMemory,
   Waiting,
+  WaitingChildren,
   WaitTime,
 }
 
