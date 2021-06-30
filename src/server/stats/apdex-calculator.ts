@@ -28,7 +28,7 @@ export class ApdexCalculator {
     }
   }
 
-  merge(other: ApdexCalculator) {
+  merge(other: ApdexCalculator): void {
     if (this.threshold !== other.threshold) {
       throw new Error('Can only merge apdexes of similar thresholds');
     }
@@ -38,7 +38,7 @@ export class ApdexCalculator {
     this.frustratedCount += other.frustratedCount;
   }
 
-  subtract(other: ApdexCalculator) {
+  subtract(other: ApdexCalculator): void {
     if (this.threshold !== other.threshold) {
       throw new Error('Can only subtract apdexes of similar thresholds');
     }

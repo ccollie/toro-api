@@ -10,6 +10,12 @@ import { GraphQLEnumType } from 'graphql';
 import { StatsMetricsTypeEnum } from '../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { aggregateStats } from './utils';
+import {
+  HistogramBinOptionsInput,
+  HistogramInput,
+} from '@server/graphql/typings';
+import { toDate } from 'date-fns';
+import { StatsMetricType } from '@src/types';
 
 const BinningMethod = new GraphQLEnumType({
   name: 'HistogramBinningMethod',
@@ -34,29 +40,10 @@ const BinningMethod = new GraphQLEnumType({
   },
 });
 
-const HistogramInput = schemaComposer.createInputTC({
-  name: 'HistogramInput',
-  description: 'Records histogram binning data',
+export const HistogramBinOptionsInputTC = schemaComposer.createInputTC({
+  name: 'HistogramBinOptionsInput',
+  description: 'Options for generating histogram bins',
   fields: {
-    jobName: {
-      type: 'String',
-      description: 'An optional job name to filter on',
-    },
-    metric: {
-      type: StatsMetricsTypeEnum,
-      makeRequired: true,
-      defaultValue: 'latency',
-      description: 'The metric requested',
-    },
-    granularity: {
-      type: 'StatsGranularity!',
-      description: 'Stats snapshot granularity',
-    },
-    range: {
-      type: 'String!',
-      description:
-        'An expression specifying the range to query e.g. yesterday, last_7days',
-    },
     pretty: {
       type: 'Boolean',
       defaultValue: true,
@@ -82,7 +69,41 @@ const HistogramInput = schemaComposer.createInputTC({
   },
 });
 
-const HistogramPayload = schemaComposer.createObjectTC({
+export const BaseHistogramInputFields = {
+  from: {
+    type: 'Date!',
+    description: 'The minimum date to consider',
+  },
+  to: {
+    type: 'Date!',
+    description: 'The maximum date to consider',
+  },
+  options: HistogramBinOptionsInputTC,
+};
+
+export const HistogramInputTC = schemaComposer.createInputTC({
+  name: 'HistogramInput',
+  description: 'Records histogram binning data',
+  fields: {
+    jobName: {
+      type: 'String',
+      description: 'An optional job name to filter on',
+    },
+    metric: {
+      type: StatsMetricsTypeEnum,
+      makeRequired: true,
+      defaultValue: 'latency',
+      description: 'The metric requested',
+    },
+    granularity: {
+      type: 'StatsGranularity!',
+      description: 'Stats snapshot granularity',
+    },
+    ...BaseHistogramInputFields,
+  },
+});
+
+export const HistogramPayloadTC = schemaComposer.createObjectTC({
   name: 'HistogramPayload',
   description: 'Records histogram binning data',
   fields: {
@@ -98,7 +119,7 @@ const HistogramPayload = schemaComposer.createObjectTC({
       type: 'Float!',
       description: 'The maximum value in the data range.',
     },
-    binWidth: {
+    width: {
       type: 'Float!',
       description: 'The width of the bins',
     },
@@ -119,34 +140,12 @@ const HistogramPayload = schemaComposer.createObjectTC({
   },
 });
 
-export const histogram: FieldConfig = {
-  type: HistogramPayload.NonNull,
-  description: 'Compute the histogram of job data.',
-  args: {
-    input: HistogramInput.NonNull,
-  },
-  async resolve(_, { input }) {
-    const {
-      jobName,
-      metric,
-      granularity,
-      range,
-      pretty,
-      binMethod,
-      binCount,
-      minValue,
-      maxValue,
-    } = input;
-
-    const snapshot = await aggregateStats(
-      _,
-      jobName,
-      range,
-      metric,
-      granularity,
-    );
-
-    const opts: HistogramOptions = DefaultHistogramOptions;
+export function parseHistogramBinningOptions(
+  options: HistogramBinOptionsInput,
+): HistogramOptions {
+  const opts: HistogramOptions = DefaultHistogramOptions;
+  if (options) {
+    const { binCount, binMethod, pretty, minValue, maxValue } = options;
     if (isNumber(binCount)) {
       opts.bins = binCount;
     } else if (binMethod !== undefined) {
@@ -159,6 +158,33 @@ export const histogram: FieldConfig = {
     if (isNumber(minValue) || isNumber(maxValue)) {
       opts.range = [minValue, maxValue];
     }
+  }
+  return opts;
+}
+
+export const histogram: FieldConfig = {
+  type: HistogramPayloadTC.NonNull,
+  description: 'Compute the histogram of job data.',
+  args: {
+    input: HistogramInputTC.NonNull,
+  },
+  async resolve(_, { input }: { input: HistogramInput }) {
+    const { jobName, metric, granularity, from, to, options } = input;
+
+    const startTime = toDate(from);
+    const endTime = toDate(to);
+
+    const range = `${startTime.getTime()}-${endTime.getTime()}`;
+
+    const snapshot = await aggregateStats(
+      _,
+      jobName,
+      range,
+      metric as unknown as StatsMetricType,
+      granularity,
+    );
+
+    const opts = parseHistogramBinningOptions(options);
     return computeHistogramBins(snapshot, opts);
   },
 };

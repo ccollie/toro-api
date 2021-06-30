@@ -2,7 +2,10 @@ import { GraphQLFieldResolver } from 'graphql';
 import { RuleAlert } from '@src/types';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { createSubscriptionResolver, getRuleManager } from '../../../helpers';
+import {
+  createSubscriptionResolver,
+  getQueueRuleManager,
+} from '../../../helpers';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_: unknown, { input }): string {
@@ -21,7 +24,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
 
   function onSubscribe(_: unknown, { input }): AsyncIterator<RuleAlert> {
     const { queueId, ruleIds = [] } = input || {};
-    const ruleManager = getRuleManager(queueId);
+    const ruleManager = getQueueRuleManager(queueId);
 
     return ruleManager.subscribeToAlerts({
       ruleIds,

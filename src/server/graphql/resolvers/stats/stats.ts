@@ -12,7 +12,6 @@ export const stats: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   async resolve(queue: Queue, { input }) {
     const { jobName, metric, granularity, range } = input;
 
-    const stats = await getStats(queue, jobName, range, metric, granularity);
-    return stats;
+    return getStats(queue, jobName, range, metric, granularity);
   },
 };

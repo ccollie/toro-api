@@ -26,6 +26,8 @@ export type Scalars = {
   JobProgress: any;
   /** Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action */
   JobRemoveOption: any;
+  /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
+  Timestamp: any;
   /** A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt. */
   URL: any;
 };
@@ -152,6 +154,20 @@ export type HistogramBin = {
   x1: Scalars['Float'];
 };
 
+/** Options for generating histogram bins */
+export type HistogramBinOptionsInput = {
+  /** Generate a "nice" bin count */
+  pretty?: Maybe<Scalars['Boolean']>;
+  /** Optional number of bins to select. */
+  binCount?: Maybe<Scalars['Int']>;
+  /** Method used to compute histogram bin count */
+  binMethod?: Maybe<HistogramBinningMethod>;
+  /** Optional minimum value to include in counts */
+  minValue?: Maybe<Scalars['Float']>;
+  /** Optional maximum value to include in counts */
+  maxValue?: Maybe<Scalars['Float']>;
+};
+
 /** The method used to calculate the optimal bin width (and consequently number of bins) for a histogram */
 export enum HistogramBinningMethod {
   /** Maximum of the ‘Sturges’ and ‘Freedman’ estimators. Provides good all around performance. */
@@ -170,18 +186,11 @@ export type HistogramInput = {
   metric?: Maybe<StatsMetricType>;
   /** Stats snapshot granularity */
   granularity: StatsGranularity;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range: Scalars['String'];
-  /** Generate a "nice" bin count */
-  pretty?: Maybe<Scalars['Boolean']>;
-  /** Optional number of bins to select. */
-  binCount?: Maybe<Scalars['Int']>;
-  /** Method used to compute histogram bin count */
-  binMethod?: Maybe<HistogramBinningMethod>;
-  /** Optional minimum value to include in counts */
-  minValue?: Maybe<Scalars['Float']>;
-  /** Optional maximum value to include in counts */
-  maxValue?: Maybe<Scalars['Float']>;
+  /** The minimum date to consider */
+  from: Scalars['DateTime'];
+  /** The maximum date to consider */
+  to: Scalars['DateTime'];
+  options?: Maybe<HistogramBinOptionsInput>;
 };
 
 /** Records histogram binning data */
@@ -238,6 +247,8 @@ export type Job = {
   logs: JobLogs;
   /** Returns true if this job is either a parent or child node in a flow. */
   isInFlow: Scalars['Boolean'];
+  /** returns true if this job is waiting. */
+  isWaiting: Scalars['Boolean'];
   /** returns true if this job is waiting for children. */
   isWaitingChildren: Scalars['Boolean'];
   /** Get this jobs children result values as an object indexed by job key, if any. */
@@ -301,12 +312,12 @@ export type JobAddInput = {
 
 /** The count of jobs according to status */
 export type JobCounts = {
-  completed: Scalars['Int'];
-  failed: Scalars['Int'];
-  delayed: Scalars['Int'];
-  active: Scalars['Int'];
-  waiting: Scalars['Int'];
-  paused: Scalars['Int'];
+  completed?: Maybe<Scalars['Int']>;
+  failed?: Maybe<Scalars['Int']>;
+  delayed?: Maybe<Scalars['Int']>;
+  active?: Maybe<Scalars['Int']>;
+  waiting?: Maybe<Scalars['Int']>;
+  paused?: Maybe<Scalars['Int']>;
 };
 
 export type JobDataValidateInput = {
@@ -402,6 +413,13 @@ export type JobLogAddPayload = {
 export type JobLogs = {
   count: Scalars['Int'];
   items: Array<Scalars['String']>;
+};
+
+export type JobMemoryUsagePayload = {
+  /** The total number of bytes consumed by the sampled jobs */
+  byteCount: Scalars['Int'];
+  /** The total number of jobs contributing to the byteCount */
+  jobCount: Scalars['Int'];
 };
 
 export type JobMoveToCompletedPayload = {
@@ -591,7 +609,9 @@ export enum JobStatus {
   Active = 'ACTIVE',
   Delayed = 'DELAYED',
   Failed = 'FAILED',
-  Paused = 'PAUSED'
+  Paused = 'PAUSED',
+  WaitingChildren = 'WAITING_CHILDREN',
+  Unknown = 'UNKNOWN'
 }
 
 export type JobUpdateDelta = {
@@ -616,6 +636,15 @@ export type JobsByFilterIdInput = {
   cursor?: Maybe<Scalars['Int']>;
   /** The maximum number of jobs to return per iteration */
   count: Scalars['Int'];
+};
+
+export type JobsMemoryAvgInput = {
+  /** Job status to consider. Defaults to COMPLETED */
+  status?: Maybe<JobStatus>;
+  /** Consider only jobs of this type (optional) */
+  jobName?: Maybe<Scalars['String']>;
+  /** An optional upper limit of jobs to sample for the average */
+  limit?: Maybe<Scalars['Int']>;
 };
 
 /** A channel which sends notifications through email */
@@ -694,7 +723,12 @@ export type Metric = {
   aggregator: Aggregator;
   data: Array<Maybe<TimeseriesDataPoint>>;
   /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
-  dataPeaks: Array<Maybe<PeakDataPoint>>;
+  outliers: Array<Maybe<PeakDataPoint>>;
+  histogram: HistogramPayload;
+  /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
+  summaryStats: SummaryStatistics;
+  /** Returns the timestamps of the first and last data items recorded for the metric */
+  dateRange?: Maybe<TimeSpan>;
 };
 
 
@@ -705,8 +739,20 @@ export type MetricDataArgs = {
 
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricDataPeaksArgs = {
-  input: MetricDataPeaksInput;
+export type MetricOutliersArgs = {
+  input: MetricDataOutliersInput;
+};
+
+
+/** Metrics are numeric samples of data collected over time */
+export type MetricHistogramArgs = {
+  input: MetricsHistogramInput;
+};
+
+
+/** Metrics are numeric samples of data collected over time */
+export type MetricSummaryStatsArgs = {
+  input: MetricDataInput;
 };
 
 export enum MetricCategory {
@@ -734,13 +780,11 @@ export type MetricCreateInput = {
 };
 
 export type MetricDataInput = {
-  start?: Maybe<Scalars['Date']>;
-  end?: Maybe<Scalars['Date']>;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range?: Maybe<Scalars['String']>;
+  start: Scalars['Date'];
+  end: Scalars['Date'];
 };
 
-export type MetricDataPeaksInput = {
+export type MetricDataOutliersInput = {
   start: Scalars['Date'];
   end: Scalars['Date'];
   /** The lag time (in ms) of the moving window how much your data will be smoothed */
@@ -826,8 +870,10 @@ export enum MetricType {
   JobRate = 'JobRate',
   Latency = 'Latency',
   PeakMemory = 'PeakMemory',
+  PendingCount = 'PendingCount',
   UsedMemory = 'UsedMemory',
   Waiting = 'Waiting',
+  WaitingChildren = 'WaitingChildren',
   WaitTime = 'WaitTime'
 }
 
@@ -836,6 +882,15 @@ export enum MetricValueType {
   Gauge = 'Gauge',
   Rate = 'Rate'
 }
+
+/** Compute a frequency distribution of a range of metric data. */
+export type MetricsHistogramInput = {
+  /** The minimum date to consider */
+  from: Scalars['DateTime'];
+  /** The maximum date to consider */
+  to: Scalars['DateTime'];
+  options?: Maybe<HistogramBinOptionsInput>;
+};
 
 export type Mutation = {
   metricDataRefresh: Array<Maybe<MetricDataRefreshPayload>>;
@@ -1381,7 +1436,7 @@ export type PeakConditionInput = {
 
 export type PeakDataPoint = TimeseriesDataPointInterface & {
   /** The timestamp of when the event occurred */
-  ts: Scalars['DateTime'];
+  ts: Scalars['Timestamp'];
   /** The value at the given timestamp */
   value: Scalars['Float'];
   signal: PeakSignalDirection;
@@ -1566,7 +1621,9 @@ export type Queue = {
   /** Get the average runtime duration of completed jobs in the queue */
   jobDurationAvg: Scalars['Int'];
   /** Get the average memory used by jobs in the queue */
-  jobMemoryAvg: Scalars['Int'];
+  jobMemoryAvg: Scalars['Float'];
+  /** Get the average memory used by jobs in the queue */
+  jobMemoryUsage: JobMemoryUsagePayload;
   /** Gets the last recorded queue stats snapshot for a metric */
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
   metrics: Array<Metric>;
@@ -1590,13 +1647,17 @@ export type Queue = {
   /** Aggregates queue statistics within a range */
   statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
-  statsDateRange?: Maybe<StatsSpanPayload>;
+  statsDateRange?: Maybe<TimeSpan>;
   /** Gets the current job Throughput rates based on an exponential moving average */
   throughput: Meter;
   /** Gets the current job Errors rates based on an exponential moving average */
   errorRate: Meter;
   /** Gets the current job ErrorPercentage rates based on an exponential moving average */
   errorPercentageRate: Meter;
+  /** Returns the number of jobs waiting to be processed. */
+  waitingCount: Scalars['Int'];
+  /** Returns the number of child jobs waiting to be processed. */
+  waitingChildrenCount: Scalars['Int'];
   /** Get the average time a job spends in the queue before being processed */
   waitTimeAvg: Scalars['Int'];
   workers: Array<QueueWorker>;
@@ -1636,8 +1697,12 @@ export type QueueJobDurationAvgArgs = {
 
 
 export type QueueJobMemoryAvgArgs = {
-  jobName?: Maybe<Scalars['String']>;
-  limit?: Maybe<Scalars['Int']>;
+  input?: Maybe<JobsMemoryAvgInput>;
+};
+
+
+export type QueueJobMemoryUsageArgs = {
+  input?: Maybe<JobsMemoryAvgInput>;
 };
 
 
@@ -1759,16 +1824,12 @@ export enum QueueFilterStatus {
 
 export type QueueHost = {
   id: Scalars['ID'];
-  /** The name of the host */
-  name: Scalars['String'];
-  /** An optional description of the host */
-  description?: Maybe<Scalars['String']>;
-  /** The queues registered for this host */
-  queues: Array<Queue>;
-  /** The count of queues registered for this host */
-  queueCount: Scalars['Int'];
+  /** Returns the number of alerts raised across all the queues associated with this host */
+  alertCount: Scalars['Int'];
   /** Notification channels for alerts */
   channels: Array<NotificationChannel>;
+  /** An optional description of the host */
+  description?: Maybe<Scalars['String']>;
   /** Discover Bull queues on the given host */
   discoverQueues: Array<DiscoverQueuesPayload>;
   /** Gets the current job ErrorPercentage rates for a host based on an exponential moving average */
@@ -1781,27 +1842,28 @@ export type QueueHost = {
   jobCounts: JobCounts;
   /** Gets the last recorded queue stats snapshot for a metric */
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
+  /** The name of the host */
+  name: Scalars['String'];
   /** Compute a percentile distribution. */
   percentileDistribution: PercentileDistribution;
   ping: PingPayload;
+  /** The queues registered for this host */
+  queues: Array<Queue>;
+  /** The count of queues registered for this host */
+  queueCount: Scalars['Int'];
   redis: RedisInfo;
   /** Queries for queue stats snapshots within a range */
   stats: Array<StatsSnapshot>;
   /** Aggregates queue statistics within a range */
   statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
-  statsDateRange?: Maybe<StatsSpanPayload>;
+  statsDateRange?: Maybe<TimeSpan>;
   /** Gets the current job Throughput rates for a host based on an exponential moving average */
   throughput: Meter;
   uri: Scalars['String'];
   /** Returns the number of workers associated with managed queues on this host */
   workerCount: Scalars['Int'];
   workers: Array<QueueWorker>;
-};
-
-
-export type QueueHostQueuesArgs = {
-  filter?: Maybe<HostQueuesFilter>;
 };
 
 
@@ -1833,6 +1895,11 @@ export type QueueHostLastStatsSnapshotArgs = {
 
 export type QueueHostPercentileDistributionArgs = {
   input: PercentileDistributionInput;
+};
+
+
+export type QueueHostQueuesArgs = {
+  filter?: Maybe<HostQueuesFilter>;
 };
 
 
@@ -2075,7 +2142,7 @@ export type Rule = {
   /** Options controlling the generation of events */
   options?: Maybe<RuleAlertOptions>;
   alerts: Array<Maybe<RuleAlert>>;
-  /** The total number of alerts raised for this rule */
+  /** The current count of alerts available for this rule */
   alertCount: Scalars['Int'];
   /** The total number of failures */
   totalFailures: Scalars['Int'];
@@ -2083,7 +2150,7 @@ export type Rule = {
 
 
 export type RuleAlertsArgs = {
-  input: RuleAlertsInput;
+  input?: Maybe<RuleAlertsInput>;
 };
 
 export type RuleActivateInput = {
@@ -2474,7 +2541,7 @@ export type StatsSnapshot = JobStatsInterface & {
   p99: Scalars['Float'];
   /** The 99.5th percentile */
   p995: Scalars['Float'];
-  /** The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled, divided by the number of seconds the process has been running), it doesn’t offer a sense of recency. */
+  /** The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled,divided by the number of seconds the process has been running), it doesn’t offer a sense of recency. */
   meanRate: Scalars['Float'];
   /** One minute exponentially weighted moving average */
   m1Rate: Scalars['Float'];
@@ -2489,11 +2556,6 @@ export type StatsSpanInput = {
   id: Scalars['ID'];
   jobName?: Maybe<Scalars['String']>;
   granularity?: Maybe<StatsGranularity>;
-};
-
-export type StatsSpanPayload = {
-  start: Scalars['Date'];
-  end: Scalars['Date'];
 };
 
 /** Filtering options for stats subscriptions. */
@@ -2685,6 +2747,31 @@ export type SubscriptionOnRuleAlertArgs = {
   ruleIds?: Maybe<Array<Scalars['String']>>;
 };
 
+/** Basic descriptive statistics */
+export type SummaryStatistics = {
+  /** The number of input values included in calculations */
+  count: Scalars['Int'];
+  /** The minimum value. */
+  min?: Maybe<Scalars['Float']>;
+  /** The maximum value. */
+  max?: Maybe<Scalars['Float']>;
+  /** The average value - the sum of all values over the number of values. */
+  mean: Scalars['Float'];
+  /** The median is the middle number of a list. This is often a good indicator of "the middle" when there are outliers that skew the mean value. */
+  median?: Maybe<Scalars['Float']>;
+  /** The variance is the sum of squared deviations from the mean. */
+  variance: Scalars['Float'];
+  /**
+   * The sample variance is the sum of squared deviations from the mean.
+   * The sample variance is distinguished from the variance by dividing the sum of squared deviations by (n - 1) instead of n. This corrects the bias in estimating a value from a sample set rather than the full population.
+   */
+  sampleVariance: Scalars['Float'];
+  /** The standard deviation is the square root of the variance. This is also known as the population standard deviation. It is useful for measuring the amount of variation or dispersion in a set of values. */
+  standardDeviation: Scalars['Float'];
+  /** The standard deviation is the square root of the sample variance. */
+  sampleStandardDeviation: Scalars['Float'];
+};
+
 export type ThresholdConditionInput = {
   /** The value needed to trigger an error notification */
   errorThreshold: Scalars['Float'];
@@ -2694,9 +2781,14 @@ export type ThresholdConditionInput = {
   operator: RuleOperator;
 };
 
+export type TimeSpan = {
+  startTime: Scalars['DateTime'];
+  endTime: Scalars['DateTime'];
+};
+
 export type TimeseriesDataPoint = TimeseriesDataPointInterface & {
   /** The timestamp of when the event occurred */
-  ts: Scalars['DateTime'];
+  ts: Scalars['Timestamp'];
   /** The value at the given timestamp */
   value: Scalars['Float'];
 };
@@ -2704,10 +2796,11 @@ export type TimeseriesDataPoint = TimeseriesDataPointInterface & {
 /** A data point representing the value of a metric in a time series. */
 export type TimeseriesDataPointInterface = {
   /** The timestamp of when the event occurred */
-  ts: Scalars['DateTime'];
+  ts: Scalars['Timestamp'];
   /** The value at the given timestamp */
   value: Scalars['Float'];
 };
+
 
 
 export type ValidateJobOptionsPayload = {

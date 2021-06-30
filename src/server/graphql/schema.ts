@@ -6,6 +6,7 @@ import {
   GraphQLEmailAddress,
   GraphQLJSONSchema,
   GraphQLURL,
+  GraphQLTimestamp,
   HttpMethodType,
   JobProgress,
   JobRemoveOption,
@@ -35,6 +36,7 @@ schemaComposer.add(GraphQLDateTime);
 schemaComposer.add(GraphQLEmailAddress);
 schemaComposer.add(GraphQLJSONSchema);
 schemaComposer.add(GraphQLURL);
+schemaComposer.add(GraphQLTimestamp);
 schemaComposer.add(HttpMethodType);
 schemaComposer.add(JobProgress);
 schemaComposer.add(JobRemoveOption);

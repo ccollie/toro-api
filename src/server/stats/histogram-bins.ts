@@ -1,5 +1,5 @@
 // modified from https://github.com/eoinmurray/histogram/blob/master/histogram.js
-'use strict';
+// todo: rewrite using d3 : see https://observablehq.com/@d3/d3-bin
 import { decodeFromCompressedBase64, JsHistogram } from 'hdr-histogram-js';
 import RecordedValuesIterator from 'hdr-histogram-js/dist/RecordedValuesIterator';
 import { StatisticalSnapshot } from '@src/types';
@@ -53,7 +53,7 @@ function binFunctionSturges(
 }
 
 function binFunctionAuto(range: number[], values: number[], n: number): number {
-  const sturges = Math.ceil(Math.log(n) / Math.LN2 + 1);
+  const sturges = binFunctionSturges(range, values, n);
   const fd = binFunctionFreedmanDiaconis(range, values, n);
   return Math.max(sturges, fd);
 }
@@ -67,11 +67,12 @@ function prettify(x: number): number {
   return scale * 10;
 }
 
-const binnerMap: Record<HistogramBinningMethod, HistogramBinningFunction> = {
-  [HistogramBinningMethod.Auto]: binFunctionAuto,
-  [HistogramBinningMethod.Sturges]: binFunctionSturges,
-  [HistogramBinningMethod.Freedman]: binFunctionFreedmanDiaconis,
-};
+const binFunctionMap: Record<HistogramBinningMethod, HistogramBinningFunction> =
+  {
+    [HistogramBinningMethod.Auto]: binFunctionAuto,
+    [HistogramBinningMethod.Sturges]: binFunctionSturges,
+    [HistogramBinningMethod.Freedman]: binFunctionFreedmanDiaconis,
+  };
 
 export type HistogramOptions = {
   bins?: number | HistogramBinningMethod;
@@ -98,23 +99,12 @@ export type BinnedHistogramValues = {
   bins: HistogramBin[];
 };
 
-export function computeHistogramBins(
-  snapshot: StatisticalSnapshot,
+export function computeBins<T = any>(
+  data: Iterable<T>,
+  valueAccessor: (element: T) => number,
+  countAccessor: (element?: T) => number,
   opts: HistogramOptions = DefaultHistogramOptions,
 ): BinnedHistogramValues {
-  const histogram = decodeFromCompressedBase64(snapshot.data, 32, false);
-  const iterator = new RecordedValuesIterator(histogram as JsHistogram);
-
-  if (histogram.totalCount === 0) {
-    return {
-      min: histogram.minNonZeroValue,
-      max: histogram.maxValue,
-      total: 0,
-      width: 0,
-      bins: [],
-    };
-  }
-
   let binningFunction: HistogramBinningFunction = binFunctionAuto;
   if (opts.bins !== undefined) {
     if (typeof opts.bins === 'number') {
@@ -125,7 +115,7 @@ export function computeHistogramBins(
         n: number,
       ): number => opts.bins as number;
     } else {
-      binningFunction = binnerMap[opts.bins as HistogramBinningMethod];
+      binningFunction = binFunctionMap[opts.bins as HistogramBinningMethod];
     }
   }
 
@@ -159,10 +149,11 @@ export function computeHistogramBins(
   const values: number[] = [];
   const counts: number[] = [];
 
-  while (iterator.hasNext()) {
-    const current = iterator.next();
-    values.push(current.valueIteratedTo);
-    counts.push(current.countAtValueIteratedTo);
+  for (const element of data) {
+    const value = valueAccessor(element);
+    const count = countAccessor(element);
+    values.push(value);
+    counts.push(count);
   }
 
   const n = values.length;
@@ -175,9 +166,20 @@ export function computeHistogramBins(
       range = opts.range(values, n);
     }
   } else {
+    values.sort();
     range = [values[0], values[n - 1]];
   }
   const [min = values[0], max = values[n - 1]] = range;
+
+  if (n === 0) {
+    return {
+      min,
+      max,
+      total: 0,
+      width: 0,
+      bins: [],
+    };
+  }
 
   let binCount = binningFunction(range, values, n);
   if (opts.pretty) {
@@ -208,4 +210,30 @@ export function computeHistogramBins(
     total,
     bins,
   };
+}
+
+export function computeHistogramBins(
+  snapshot: StatisticalSnapshot,
+  opts: HistogramOptions = DefaultHistogramOptions,
+): BinnedHistogramValues {
+  const histogram = decodeFromCompressedBase64(snapshot.data, 32, false);
+
+  if (histogram.totalCount === 0) {
+    return {
+      min: histogram.minNonZeroValue,
+      max: histogram.maxValue,
+      total: 0,
+      width: 0,
+      bins: [],
+    };
+  }
+
+  const iterator = new RecordedValuesIterator(histogram as JsHistogram);
+  const it = iterator[Symbol.iterator]();
+  return computeBins(
+    it,
+    (x) => x.valueIteratedTo,
+    (x) => x.countAtValueIteratedTo,
+    opts,
+  );
 }

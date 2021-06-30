@@ -9,9 +9,11 @@ export * from './jsonSchema';
 export * from './StatsMetricsTypeEnum';
 export * from './JobFilterQuery';
 export * from './QueueEventsEnum';
+export * from './timespan';
 
 export {
   GraphQLDateTime,
   GraphQLEmailAddress,
   GraphQLURL,
+  GraphQLTimestamp,
 } from 'graphql-scalars';

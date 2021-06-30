@@ -1,4 +1,4 @@
 export interface Timespan {
-  start: number;
-  end: number;
+  startTime: number;
+  endTime: number;
 }

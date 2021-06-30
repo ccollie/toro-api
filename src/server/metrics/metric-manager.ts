@@ -8,6 +8,7 @@ import {
   MetricsEventsEnum,
   SerializedMetric,
   TimeseriesDataPoint,
+  Timespan,
 } from '../../types';
 import { Clock, getUniqueId, nanoid, parseBool } from '../lib';
 import { PossibleTimestamp, TimeSeries } from '../commands';
@@ -19,6 +20,7 @@ import {
 } from './index';
 import { QueueListener } from '@server/queues';
 import { UnsubscribeFn } from 'emittery';
+import IORedis, { Pipeline } from 'ioredis';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -264,6 +266,7 @@ export class MetricManager {
     return false;
   }
 
+  // TODO: what to do with rules dependent on the metric ?
   async deleteMetric(metric: BaseMetric | string): Promise<boolean> {
     const metricId = getMetricId(metric);
     const key = this.getMetricKey(metric);
@@ -351,6 +354,44 @@ export class MetricManager {
     await TimeSeries.add(client, key, timestamp, strValue);
   }
 
+  private getMetricDataArgs(
+    metric: BaseMetric | string,
+    start: PossibleTimestamp = '-',
+    end: PossibleTimestamp = '+',
+    limit?: number,
+  ): Array<string | number> {
+    const key = this.getDataKey(metric);
+
+    start = convertTsForStream(start);
+    end = convertTsForStream(end);
+
+    const rest: Array<string | number> = [key, start, end];
+    if (typeof limit === 'number') {
+      rest.push(0, limit);
+    }
+
+    return rest;
+  }
+
+  pipelineGetMetricData(
+    pipeline: Pipeline,
+    metric: BaseMetric | string,
+    start: PossibleTimestamp = '-',
+    end: PossibleTimestamp = '+',
+    limit?: number,
+  ): Pipeline {
+    const key = this.getDataKey(metric);
+    start = convertTsForStream(start);
+    end = convertTsForStream(end);
+
+    const rest = [];
+    if (typeof limit === 'number') {
+      rest.push(0, limit);
+    }
+    TimeSeries.multi.getRange(pipeline, key, start, end, ...rest);
+    return pipeline;
+  }
+
   async getMetricData(
     metric: BaseMetric | string,
     start: PossibleTimestamp = '-',
@@ -391,6 +432,12 @@ export class MetricManager {
     }
 
     return MetricsListener.refreshData(this.queue, metric, start, end);
+  }
+
+  async getMetricDateRange(metric: BaseMetric | string): Promise<Timespan> {
+    const client = await this.getClient();
+    const key = this.getDataKey(metric);
+    return TimeSeries.getTimeSpan(client, key);
   }
 
   async getMetricDataCount(metric: BaseMetric | string): Promise<number> {

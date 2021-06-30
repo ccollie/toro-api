@@ -1,23 +1,14 @@
 import { Queue } from 'bullmq';
-import {
-  BaseMetricSchema,
-  QueueBasedMetricSchema,
-  QueuePollingMetric,
-} from './baseMetric';
+import { PollingMetric } from './baseMetric';
 import { MetricsListener } from './metrics-listener';
 import {
   JobStatusEnum,
-  MetricValueType,
-  MetricTypes,
-  QueueMetricOptions,
+  MetricCategory,
   MetricOptions,
+  MetricTypes,
+  MetricValueType,
+  QueueMetricOptions,
 } from '../../types';
-import { JobEventData } from '../queues';
-import { ObjectSchema } from 'joi';
-
-export interface JobSpotCountMetricOptions extends QueueMetricOptions {
-  status: JobStatusEnum;
-}
 
 /**
  * Base class to provide spot/instant values of job counts from a queue.
@@ -25,20 +16,19 @@ export interface JobSpotCountMetricOptions extends QueueMetricOptions {
  * meaning that they can work even on historical data. This class gets
  * current values from the queue.
  */
-abstract class JobSpotCountMetric extends QueuePollingMetric {
+abstract class JobSpotCountMetric extends PollingMetric {
   private queue: Queue;
-  private readonly status: JobStatusEnum;
+  private readonly statuses: JobStatusEnum[];
 
-  protected constructor(props: MetricOptions, status: JobStatusEnum) {
+  protected constructor(props: MetricOptions, statuses: JobStatusEnum[]) {
     super(props);
-    this.status = status;
+    this.statuses = statuses;
   }
 
   async checkUpdate(): Promise<void> {
     if (this.queue) {
-      const counts = await this.queue.getJobCounts(this.status);
-      const val = (counts || {})[this.status];
-      this.update(val);
+      const count = await this.queue.getJobCountByTypes(...this.statuses);
+      this.update(count);
     }
   }
 
@@ -47,23 +37,16 @@ abstract class JobSpotCountMetric extends QueuePollingMetric {
     this.queue = listener.queueListener.queue;
   }
 
-  get validEvents(): string[] {
-    return [];
-  }
-
   static get unit(): string {
     return 'jobs';
   }
 
-  static get type(): MetricValueType {
-    return MetricValueType.Count;
+  static get category(): MetricCategory {
+    return MetricCategory.Queue;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  handleEvent(event?: JobEventData) {}
-
-  static get schema(): ObjectSchema {
-    return QueueBasedMetricSchema;
+  static get type(): MetricValueType {
+    return MetricValueType.Count;
   }
 }
 
@@ -72,7 +55,7 @@ abstract class JobSpotCountMetric extends QueuePollingMetric {
  */
 export class CurrentActiveCountMetric extends JobSpotCountMetric {
   constructor(options: QueueMetricOptions) {
-    super(options, JobStatusEnum.ACTIVE);
+    super(options, [JobStatusEnum.ACTIVE]);
   }
 
   static get key(): MetricTypes {
@@ -89,7 +72,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
  */
 export class CurrentWaitingCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, JobStatusEnum.WAITING);
+    super(options, [JobStatusEnum.WAITING]);
   }
 
   static get key(): MetricTypes {
@@ -102,11 +85,28 @@ export class CurrentWaitingCountMetric extends JobSpotCountMetric {
 }
 
 /**
+ * A metric tracking the number of jobs currently awaiting children
+ */
+export class WaitingChildrenCountMetric extends JobSpotCountMetric {
+  constructor(options: MetricOptions) {
+    super(options, [JobStatusEnum.WAITING, JobStatusEnum.PAUSED]);
+  }
+
+  static get key(): MetricTypes {
+    return MetricTypes.WaitingChildren;
+  }
+
+  static get description(): string {
+    return 'Jobs awaiting children';
+  }
+}
+
+/**
  * A metric tracking the number of currently WAITING jobs in a queue
  */
 export class CurrentCompletedCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, JobStatusEnum.COMPLETED);
+    super(options, [JobStatusEnum.COMPLETED]);
   }
 
   static get key(): MetricTypes {
@@ -123,7 +123,7 @@ export class CurrentCompletedCountMetric extends JobSpotCountMetric {
  */
 export class CurrentFailedCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, JobStatusEnum.FAILED);
+    super(options, [JobStatusEnum.FAILED]);
   }
 
   static get key(): MetricTypes {
@@ -140,7 +140,7 @@ export class CurrentFailedCountMetric extends JobSpotCountMetric {
  */
 export class CurrentDelayedCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, JobStatusEnum.DELAYED);
+    super(options, [JobStatusEnum.DELAYED]);
   }
 
   static get key(): MetricTypes {
@@ -149,5 +149,27 @@ export class CurrentDelayedCountMetric extends JobSpotCountMetric {
 
   static get description(): string {
     return 'Delayed jobs';
+  }
+}
+
+/**
+ * This class tracks the count of pending jobs (the number of jobs waiting to be processed)
+ * i.e. jobs in waiting, paused or delayed state
+ */
+export class PendingCountMetric extends JobSpotCountMetric {
+  constructor(props: MetricOptions) {
+    super(props, [
+      JobStatusEnum.WAITING,
+      JobStatusEnum.PAUSED,
+      JobStatusEnum.DELAYED,
+    ]);
+  }
+
+  static get key(): MetricTypes {
+    return MetricTypes.PendingCount;
+  }
+
+  static get description(): string {
+    return 'Pending jobs';
   }
 }

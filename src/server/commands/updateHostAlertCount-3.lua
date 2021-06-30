@@ -13,7 +13,6 @@ local queuesIndexKey = KEYS[1]
 local destination = KEYS[2]
 local scratchKey = KEYS[3]
 
-local total = 0
 -- SORT doesnt work on HASHes as source, so we copy the keys (queues) to a scratch set
 -- Fortunately for us, the hash keys are also the key prefixes
 local queues = redis.call('HKEYS', queuesIndexKey)

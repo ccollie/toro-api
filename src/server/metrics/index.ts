@@ -28,6 +28,8 @@ import {
   CurrentDelayedCountMetric,
   CurrentFailedCountMetric,
   CurrentWaitingCountMetric,
+  PendingCountMetric,
+  WaitingChildrenCountMetric,
 } from './jobSpotCountMetric';
 import {
   AggregatorTypes,
@@ -60,7 +62,6 @@ const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
   [MetricTypes.CurrentCompletedCount]: CurrentCompletedCountMetric,
   [MetricTypes.DelayedJobs]: CurrentDelayedCountMetric,
   [MetricTypes.CurrentFailedCount]: CurrentFailedCountMetric,
-  [MetricTypes.Waiting]: CurrentWaitingCountMetric,
   [MetricTypes.ErrorRate]: ErrorRateMetric,
   [MetricTypes.ErrorPercentage]: ErrorPercentageMetric,
   [MetricTypes.Failures]: FailedCountMetric,
@@ -70,7 +71,10 @@ const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
   [MetricTypes.Latency]: LatencyMetric,
   [MetricTypes.UsedMemory]: UsedMemoryMetric,
   [MetricTypes.PeakMemory]: PeakMemoryMetric,
+  [MetricTypes.PendingCount]: PendingCountMetric,
   [MetricTypes.InstantaneousOps]: InstantaneousOpsMetric,
+  [MetricTypes.Waiting]: CurrentWaitingCountMetric,
+  [MetricTypes.WaitingChildren]: WaitingChildrenCountMetric,
   [MetricTypes.WaitTime]: WaitTimeMetric,
 };
 
@@ -87,7 +91,6 @@ export const metricsMap: {
   CurrentCompletedCount: CurrentCompletedCountMetric,
   DelayedJobs: CurrentDelayedCountMetric,
   CurrentFailedCount: CurrentFailedCountMetric,
-  Waiting: CurrentWaitingCountMetric,
   ErrorRate: ErrorRateMetric,
   ErrorPercentage: ErrorPercentageMetric,
   Failures: FailedCountMetric,
@@ -97,7 +100,10 @@ export const metricsMap: {
   Latency: LatencyMetric,
   UsedMemory: UsedMemoryMetric,
   PeakMemory: PeakMemoryMetric,
+  PendingCount: PendingCountMetric,
   InstantaneousOps: InstantaneousOpsMetric,
+  Waiting: CurrentWaitingCountMetric,
+  WaitingChildren: WaitingChildrenCountMetric,
   WaitTime: WaitTimeMetric,
 };
 

@@ -3,7 +3,7 @@ import { DateLike, parseTimestamp, roundDown, roundUp } from '@lib/datetime';
 import toDate from 'date-fns/toDate';
 import isDate from 'lodash/isDate';
 import { Timespan } from '@src/types';
-import { systemClock } from '../lib';
+import { logger, systemClock } from '../lib';
 import { deserializePipeline } from '../redis';
 import { RedisClient } from 'bullmq';
 
@@ -101,7 +101,7 @@ function parseRangeParameters(
   offset?: number,
   count?: number,
 ): string[] {
-  const args = [stringifyTimestamp(start), stringifyData(end)];
+  const args = [stringifyTimestamp(start), stringifyTimestamp(end)];
   if (typeof offset === 'number') {
     args.push('LIMIT', offset.toString(10));
     if (typeof count === 'number') {
@@ -125,8 +125,33 @@ async function rangeCmd(
 }
 
 export interface TimeseriesValue<T = any> {
+  // todo: make this a number. maybe its a string because of snowflake ids ??
   timestamp: string;
   value: T;
+}
+
+export function parseTimeseriesRangeResults<T = any>(
+  reply: Array<[Error | null, [ts: string, data: any]]>,
+): TimeseriesValue<T>[] {
+  const result = new Array<TimeseriesValue<T>>();
+  reply.forEach(([err, [timestamp, data]]) => {
+    if (err) {
+      logger.error(err);
+      return;
+    }
+    try {
+      const value = JSON.parse(data) as T;
+      if (value !== undefined) {
+        result.push({
+          timestamp,
+          value,
+        });
+      }
+    } catch (e) {
+      logger.log(e);
+    }
+  });
+  return result;
 }
 
 async function getRange<T = any>(
@@ -141,6 +166,36 @@ async function getRange<T = any>(
   const reply = await rangeCmd(client, cmd, key, start, end, offset, count);
   const result = new Array<TimeseriesValue<T>>();
   reply.forEach(([timestamp, data]) => {
+    try {
+      const value = JSON.parse(data) as T;
+      if (value !== undefined) {
+        result.push({
+          timestamp,
+          value,
+        });
+      }
+    } catch {}
+  });
+  return result;
+}
+
+async function getRangeByIndex<T = any>(
+  client: RedisClient,
+  key: string,
+  start: number,
+  end: number,
+  asc = true,
+): Promise<TimeseriesValue<T>[]> {
+  let reply: string[] = [];
+  if (asc) {
+    reply = await client.zrange(key, start, end);
+  } else {
+    reply = await client.zrevrange(key, start, end);
+  }
+  const result = new Array<TimeseriesValue<T>>();
+  reply.forEach((item) => {
+    const [ts, data] = item.split('|');
+    const timestamp = ts;
     try {
       const value = JSON.parse(data) as T;
       if (value !== undefined) {
@@ -271,6 +326,16 @@ export class TimeSeries {
     return getRange<T>(client, 'range', key, start, end, offset, count);
   }
 
+  static async getRangeByIndex<T = any>(
+    client: RedisClient,
+    key: string,
+    start: number,
+    end: number,
+    asc = true,
+  ): Promise<TimeseriesValue<T>[]> {
+    return getRangeByIndex<T>(client, key, start, end, asc);
+  }
+
   static async getRevRange<T = any>(
     client: RedisClient,
     key: string,
@@ -313,8 +378,8 @@ export class TimeSeries {
     if (span) {
       const { start, end } = span;
       return {
-        start: parseInt(start),
-        end: parseInt(end),
+        startTime: parseInt(start),
+        endTime: parseInt(end),
       };
     }
     return null;
@@ -393,7 +458,7 @@ export class TimeSeries {
           yield items[i];
         }
         const last = items[items.length - 1];
-        cursorStart = last.end + 1;
+        cursorStart = last.endTime + 1;
       } else {
         break;
       }
@@ -469,7 +534,7 @@ export class TimeSeries {
       return _pcall(pipeline, 'gaps', key, ...args);
     },
     getSpan(pipeline: Pipeline, key: string): Pipeline {
-      return _pcall(pipeline, key, 'span');
+      return _pcall(pipeline, 'span', key);
     },
     getCount(
       pipeline: Pipeline,
@@ -484,8 +549,8 @@ export class TimeSeries {
     getRange(
       pipeline: Pipeline,
       key: string,
-      start: DateLike,
-      end: DateLike,
+      start: PossibleTimestamp,
+      end: PossibleTimestamp,
       offset?: number,
       count?: number,
     ): Pipeline {
@@ -494,8 +559,8 @@ export class TimeSeries {
     getRevRange(
       pipeline: Pipeline,
       key: string,
-      start: DateLike,
-      end: DateLike,
+      start: PossibleTimestamp,
+      end: PossibleTimestamp,
       offset?: number,
       count?: number,
     ): Pipeline {

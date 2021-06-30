@@ -297,6 +297,11 @@ The `String` scalar type represents textual data, represented as UTF-8 character
 scalar String
 
 """
+The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch.
+"""
+scalar Timestamp
+
+"""
 A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt.
 """
 scalar URL
@@ -370,6 +375,8 @@ enum JobStatus {
   DELAYED
   FAILED
   PAUSED
+  WAITING_CHILDREN
+  UNKNOWN
 }
 
 enum MetricCategory {
@@ -398,8 +405,10 @@ enum MetricType {
   JobRate
   Latency
   PeakMemory
+  PendingCount
   UsedMemory
   Waiting
+  WaitingChildren
   WaitTime
 }
 
@@ -530,7 +539,7 @@ interface RuleConditionInterface {
 """A data point representing the value of a metric in a time series."""
 interface TimeseriesDataPointInterface {
   """The timestamp of when the event occurred"""
-  ts: DateTime!
+  ts: Timestamp!
 
   """The value at the given timestamp"""
   value: Float!
@@ -627,6 +636,9 @@ type Job {
   """Returns true if this job is either a parent or child node in a flow."""
   isInFlow: Boolean!
 
+  """returns true if this job is waiting."""
+  isWaiting: Boolean!
+
   """returns true if this job is waiting for children."""
   isWaitingChildren: Boolean!
 
@@ -659,12 +671,12 @@ type JobAddEveryPayload {
 
 """The count of jobs according to status"""
 type JobCounts {
-  completed: Int!
-  failed: Int!
-  delayed: Int!
-  active: Int!
-  waiting: Int!
-  paused: Int!
+  completed: Int
+  failed: Int
+  delayed: Int
+  active: Int
+  waiting: Int
+  paused: Int
 }
 
 type JobDataValidatePayload {
@@ -725,6 +737,14 @@ type JobLogAddPayload {
 type JobLogs {
   count: Int!
   items: [String!]!
+}
+
+type JobMemoryUsagePayload {
+  """The total number of bytes consumed by the sampled jobs"""
+  byteCount: Int!
+
+  """The total number of jobs contributing to the byteCount"""
+  jobCount: Int!
 }
 
 type JobMoveToCompletedPayload {
@@ -932,7 +952,18 @@ type Metric {
   """
   Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
   """
-  dataPeaks(input: MetricDataPeaksInput!): [PeakDataPoint]!
+  outliers(input: MetricDataOutliersInput!): [PeakDataPoint]!
+  histogram(input: MetricsHistogramInput!): HistogramPayload!
+
+  """
+  Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
+  """
+  summaryStats(input: MetricDataInput!): SummaryStatistics!
+
+  """
+  Returns the timestamps of the first and last data items recorded for the metric
+  """
+  dateRange: TimeSpan
 }
 
 type MetricDataRefreshPayload {
@@ -1120,7 +1151,7 @@ type OnRuleAlertPayload {
 
 type PeakDataPoint implements TimeseriesDataPointInterface {
   """The timestamp of when the event occurred"""
-  ts: DateTime!
+  ts: Timestamp!
 
   """The value at the given timestamp"""
   value: Float!
@@ -1182,17 +1213,14 @@ type Queue {
     jobName: String
 
     """An optional upper limit of jobs to use in the average"""
-    limit: Int = 1000
+    limit: Int = 100
   ): Int!
 
   """Get the average memory used by jobs in the queue"""
-  jobMemoryAvg(
-    """Consider only jobs of this type (optional)"""
-    jobName: String
+  jobMemoryAvg(input: JobsMemoryAvgInput): Float!
 
-    """An optional upper limit of jobs to use in the average"""
-    limit: Int = 1000
-  ): Int!
+  """Get the average memory used by jobs in the queue"""
+  jobMemoryUsage(input: JobsMemoryAvgInput): JobMemoryUsagePayload!
 
   """Gets the last recorded queue stats snapshot for a metric"""
   lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
@@ -1225,7 +1253,7 @@ type Queue {
   statsAggregate(input: StatsQueryInput!): StatsSnapshot
 
   """Gets the time range of recorded stats for a queue/host"""
-  statsDateRange(input: StatsSpanInput!): StatsSpanPayload
+  statsDateRange(input: StatsSpanInput!): TimeSpan
 
   """
   Gets the current job Throughput rates based on an exponential moving average
@@ -1241,6 +1269,12 @@ type Queue {
   Gets the current job ErrorPercentage rates based on an exponential moving average
   """
   errorPercentageRate(input: StatsRateQueryInput): Meter!
+
+  """Returns the number of jobs waiting to be processed."""
+  waitingCount: Int!
+
+  """Returns the number of child jobs waiting to be processed."""
+  waitingChildrenCount: Int!
 
   """Get the average time a job spends in the queue before being processed"""
   waitTimeAvg(
@@ -1286,20 +1320,16 @@ type QueueDrainPayload {
 type QueueHost {
   id: ID!
 
-  """The name of the host"""
-  name: String!
-
-  """An optional description of the host"""
-  description: String
-
-  """The queues registered for this host"""
-  queues(filter: HostQueuesFilter): [Queue!]!
-
-  """The count of queues registered for this host"""
-  queueCount: Int!
+  """
+  Returns the number of alerts raised across all the queues associated with this host
+  """
+  alertCount: Int!
 
   """Notification channels for alerts"""
   channels: [NotificationChannel!]!
+
+  """An optional description of the host"""
+  description: String
 
   """Discover Bull queues on the given host"""
   discoverQueues(
@@ -1331,9 +1361,18 @@ type QueueHost {
   """Gets the last recorded queue stats snapshot for a metric"""
   lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
 
+  """The name of the host"""
+  name: String!
+
   """Compute a percentile distribution."""
   percentileDistribution(input: PercentileDistributionInput!): PercentileDistribution!
   ping: PingPayload!
+
+  """The queues registered for this host"""
+  queues(filter: HostQueuesFilter): [Queue!]!
+
+  """The count of queues registered for this host"""
+  queueCount: Int!
   redis: RedisInfo!
 
   """Queries for queue stats snapshots within a range"""
@@ -1343,7 +1382,7 @@ type QueueHost {
   statsAggregate(input: StatsQueryInput!): StatsSnapshot
 
   """Gets the time range of recorded stats for a queue/host"""
-  statsDateRange(input: StatsSpanInput!): StatsSpanPayload
+  statsDateRange(input: StatsSpanInput!): TimeSpan
 
   """
   Gets the current job Throughput rates for a host based on an exponential moving average
@@ -1509,9 +1548,9 @@ type Rule {
 
   """Options controlling the generation of events"""
   options: RuleAlertOptions
-  alerts(input: RuleAlertsInput!): [RuleAlert]!
+  alerts(input: RuleAlertsInput): [RuleAlert]!
 
-  """The total number of alerts raised for this rule"""
+  """The current count of alerts available for this rule"""
   alertCount: Int!
 
   """The total number of failures"""
@@ -1726,7 +1765,7 @@ type StatsSnapshot implements JobStatsInterface {
   p995: Float!
 
   """
-  The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled, divided by the number of seconds the process has been running), it doesn’t offer a sense of recency.
+  The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled,divided by the number of seconds the process has been running), it doesn’t offer a sense of recency.
   """
   meanRate: Float!
 
@@ -1740,17 +1779,54 @@ type StatsSnapshot implements JobStatsInterface {
   m15Rate: Float!
 }
 
-type StatsSpanPayload {
-  start: Date!
-  end: Date!
+"""Basic descriptive statistics"""
+type SummaryStatistics {
+  """The number of input values included in calculations"""
+  count: Int!
+
+  """The minimum value."""
+  min: Float
+
+  """The maximum value."""
+  max: Float
+
+  """The average value - the sum of all values over the number of values."""
+  mean: Float!
+
+  """
+  The median is the middle number of a list. This is often a good indicator of "the middle" when there are outliers that skew the mean value.
+  """
+  median: Float
+
+  """The variance is the sum of squared deviations from the mean."""
+  variance: Float!
+
+  """
+  The sample variance is the sum of squared deviations from the mean.
+  The sample variance is distinguished from the variance by dividing the sum of squared deviations by (n - 1) instead of n. This corrects the bias in estimating a value from a sample set rather than the full population.
+  """
+  sampleVariance: Float!
+
+  """
+  The standard deviation is the square root of the variance. This is also known as the population standard deviation. It is useful for measuring the amount of variation or dispersion in a set of values.
+  """
+  standardDeviation: Float!
+
+  """The standard deviation is the square root of the sample variance."""
+  sampleStandardDeviation: Float!
 }
 
 type TimeseriesDataPoint implements TimeseriesDataPointInterface {
   """The timestamp of when the event occurred"""
-  ts: DateTime!
+  ts: Timestamp!
 
   """The value at the given timestamp"""
   value: Float!
+}
+
+type TimeSpan {
+  startTime: DateTime!
+  endTime: DateTime!
 }
 
 type ValidateJobOptionsPayload {
@@ -1843,20 +1919,8 @@ input ChangeConditionInput {
   aggregationType: ChangeAggregation!
 }
 
-"""Records histogram binning data"""
-input HistogramInput {
-  """An optional job name to filter on"""
-  jobName: String
-
-  """The metric requested"""
-  metric: StatsMetricType = Latency
-
-  """Stats snapshot granularity"""
-  granularity: StatsGranularity!
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String!
-
+"""Options for generating histogram bins"""
+input HistogramBinOptionsInput {
   """Generate a "nice" bin count"""
   pretty: Boolean = true
 
@@ -1871,6 +1935,25 @@ input HistogramInput {
 
   """Optional maximum value to include in counts"""
   maxValue: Float
+}
+
+"""Records histogram binning data"""
+input HistogramInput {
+  """An optional job name to filter on"""
+  jobName: String
+
+  """The metric requested"""
+  metric: StatsMetricType = Latency
+
+  """Stats snapshot granularity"""
+  granularity: StatsGranularity!
+
+  """The minimum date to consider"""
+  from: DateTime!
+
+  """The maximum date to consider"""
+  to: DateTime!
+  options: HistogramBinOptionsInput
 }
 
 input HostQueuesFilter {
@@ -2071,6 +2154,17 @@ input JobSearchInput {
   count: Int! = 10
 }
 
+input JobsMemoryAvgInput {
+  """Job status to consider. Defaults to COMPLETED"""
+  status: JobStatus
+
+  """Consider only jobs of this type (optional)"""
+  jobName: String
+
+  """An optional upper limit of jobs to sample for the average"""
+  limit: Int = 50
+}
+
 input JobUpdateInput {
   queueId: String!
   jobId: String!
@@ -2126,14 +2220,11 @@ input MetricCreateInput {
 }
 
 input MetricDataInput {
-  start: Date
-  end: Date
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String
+  start: Date!
+  end: Date!
 }
 
-input MetricDataPeaksInput {
+input MetricDataOutliersInput {
   start: Date!
   end: Date!
 
@@ -2191,6 +2282,16 @@ input MetricInput {
   """The metric options"""
   options: JSONObject
   aggregator: AggregatorInput
+}
+
+"""Compute a frequency distribution of a range of metric data."""
+input MetricsHistogramInput {
+  """The minimum date to consider"""
+  from: DateTime!
+
+  """The maximum date to consider"""
+  to: DateTime!
+  options: HistogramBinOptionsInput
 }
 
 input PeakConditionInput {
@@ -2449,7 +2550,7 @@ input RuleAlertsClearInput {
 input RuleAlertsInput {
   start: Int = 0
   end: Int = 10
-  sortOrder: SortOrderEnum = ASC
+  sortOrder: SortOrderEnum = DESC
 }
 
 input RuleConditionInput {

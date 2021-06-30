@@ -313,8 +313,8 @@ export class StatsListener extends StatsWriter {
         interval,
       );
       for await (const item of iter) {
-        await this.processRange(item.start, item.end);
-        end = item.end;
+        await this.processRange(item.startTime, item.endTime);
+        end = item.endTime;
         i = i++ % 10;
         if (i === 0) {
           // update

@@ -1,54 +1,42 @@
+import boom from '@hapi/boom';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { TimeseriesDataPointTC } from '../../stats/types';
-import { getQueueManager } from '../../../helpers';
 import { BaseMetric } from '@server/metrics';
 import { TimeseriesDataPoint } from '@src/types';
-import { parseRange } from '@lib/datetime';
-import boom from '@hapi/boom';
 import { MetricDataInput } from '../../../typings';
+import { getMetricData } from '@server/graphql/loaders/metric-data';
 
 export const MetricDataInputTC = schemaComposer.createInputTC({
   name: 'MetricDataInput',
   fields: {
     start: {
-      type: 'Date',
+      type: 'Date!',
     },
     end: {
-      type: 'Date',
-    },
-    range: {
-      type: 'String',
-      description:
-        'An expression specifying the range to query e.g. yesterday, last_7days',
+      type: 'Date!',
     },
   },
 });
 
-// todo: use dataloader. Return stats ?
 export const metricDataFC: FieldConfig = {
   type: TimeseriesDataPointTC.List.NonNull,
   args: {
     input: MetricDataInputTC.NonNull,
   },
   async resolve(
-    parent: BaseMetric,
+    metric: BaseMetric,
     { input }: { input: MetricDataInput },
+    { loaders },
   ): Promise<TimeseriesDataPoint[]> {
-    const { start, end, range } = input;
+    const { start, end } = input;
     let _start, _end;
     if (start && end) {
-      _start = start;
-      _end = end;
-    } else if (range) {
-      const { start, end } = parseRange(range);
       _start = start;
       _end = end;
     } else {
       throw boom.badRequest('Either start/end or range must be specified');
     }
-    const manager = getQueueManager(parent.queueId);
-    const metrics = manager.metricManager;
-    return metrics.getMetricData(parent, _start, _end);
+    return getMetricData(loaders, metric, _start, _end);
   },
 };

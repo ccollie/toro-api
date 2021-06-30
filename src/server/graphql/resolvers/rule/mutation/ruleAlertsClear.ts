@@ -1,6 +1,6 @@
 import { FieldConfig, RuleTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager, getRuleManager } from '../../../helpers';
+import { getQueueManager, getQueueRuleManager } from '../../../helpers';
 
 export const ruleAlertsClear: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -25,7 +25,7 @@ export const ruleAlertsClear: FieldConfig = {
   },
   async resolve(_: unknown, { input }) {
     const { queueId, ruleId } = input;
-    const rules = getRuleManager(queueId);
+    const rules = getQueueRuleManager(queueId);
     const queueManager = getQueueManager(queueId);
     const items = await rules.clearAlerts(ruleId);
     // todo: validate rule

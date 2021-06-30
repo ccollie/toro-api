@@ -11,8 +11,8 @@
 local ruleKey = KEYS[1]
 local ruleAlertsKey = KEYS[2]
 
-local total = redis.call('ZSET', ruleAlertsKey)
-redis.call('HSET', ruleKey, total)
+local total = redis.call('ZCARD', ruleAlertsKey)
+redis.call('HSET', ruleKey, 'alertCount', total)
 
 return total
 
