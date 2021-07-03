@@ -18,7 +18,7 @@
  */
 
 import * as dateMath from '@src/server/lib/parse-date-math';
-const moment = require('moment');
+import moment from 'moment';
 
 /**
  * Require a new instance of the moment library, bypassing the require cache
@@ -44,10 +44,6 @@ describe('dateMath', function () {
   const format = 'YYYY-MM-DDTHH:mm:ss.SSSZ';
 
   describe('errors', function () {
-    it('should return undefined if passed something falsy', function () {
-      expect(dateMath.parse()).toBeUndefined();
-    });
-
     it('should return undefined if I pass an operator besides [+-/]', function () {
       expect(dateMath.parse('now&1d')).toBeUndefined();
     });
@@ -71,18 +67,6 @@ describe('dateMath', function () {
     });
 
     describe('forceNow', function () {
-      it('should throw an Error if passed a string', function () {
-        const fn = () =>
-          dateMath.parse('now', { forceNow: '2000-01-01T00:00:00.000Z' });
-        expect(fn).toThrowError();
-      });
-
-      it('should throw an Error if passed a moment', function () {
-        expect(() =>
-          dateMath.parse('now', { forceNow: moment() }),
-        ).toThrowError();
-      });
-
       it('should throw an Error if passed an invalid date', function () {
         expect(() =>
           dateMath.parse('now', { forceNow: new Date('foobar') }),
@@ -310,7 +294,7 @@ describe('dateMath', function () {
       expect(val.isoWeekday()).toEqual(2);
     });
 
-    it('should round up weeks based on the passed moment locale start of week setting', function () {
+    it('should round up weeks based on the passed moment locale start of week setting', () => {
       const m = momentClone();
       // Define a locale, that has Tuesday as beginning of the week
       m.defineLocale('x-test', {
