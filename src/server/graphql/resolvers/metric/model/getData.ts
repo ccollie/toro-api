@@ -24,7 +24,7 @@ export async function getData(
   }
   if (filter) {
     const method = (filter?.method ??
-      OutlierDetectionMethod.SmoothedZScore) as unknown as OutlierMethod;
+      OutlierDetectionMethod.Sigma) as unknown as OutlierMethod;
     const threshold = filter?.threshold;
 
     const _filter = {
