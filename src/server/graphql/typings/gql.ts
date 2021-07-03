@@ -187,9 +187,9 @@ export type HistogramInput = {
   /** Stats snapshot granularity */
   granularity: StatsGranularity;
   /** The minimum date to consider */
-  from: Scalars['DateTime'];
+  from: Scalars['Date'];
   /** The maximum date to consider */
-  to: Scalars['DateTime'];
+  to: Scalars['Date'];
   options?: Maybe<HistogramBinOptionsInput>;
 };
 
@@ -202,7 +202,7 @@ export type HistogramPayload = {
   /** The maximum value in the data range. */
   max: Scalars['Float'];
   /** The width of the bins */
-  binWidth: Scalars['Float'];
+  width: Scalars['Float'];
   bins: Array<Maybe<HistogramBin>>;
 };
 
@@ -723,9 +723,11 @@ export type Metric = {
   aggregator: Aggregator;
   data: Array<Maybe<TimeseriesDataPoint>>;
   /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
-  outliers: Array<Maybe<PeakDataPoint>>;
+  outliers: Array<Maybe<TimeseriesDataPoint>>;
   histogram: HistogramPayload;
-  /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
+  /** Compute a percentile distribution. */
+  percentileDistribution: PercentileDistribution;
+  /** Returns simple descriptive statistics from a range of metric data */
   summaryStats: SummaryStatistics;
   /** Returns the timestamps of the first and last data items recorded for the metric */
   dateRange?: Maybe<TimeSpan>;
@@ -747,6 +749,12 @@ export type MetricOutliersArgs = {
 /** Metrics are numeric samples of data collected over time */
 export type MetricHistogramArgs = {
   input: MetricsHistogramInput;
+};
+
+
+/** Metrics are numeric samples of data collected over time */
+export type MetricPercentileDistributionArgs = {
+  input: MetricPercentileDistributionInput;
 };
 
 
@@ -782,17 +790,15 @@ export type MetricCreateInput = {
 export type MetricDataInput = {
   start: Scalars['Date'];
   end: Scalars['Date'];
+  outlierFilter?: Maybe<OutlierFilterInput>;
 };
 
 export type MetricDataOutliersInput = {
   start: Scalars['Date'];
   end: Scalars['Date'];
-  /** The lag time (in ms) of the moving window how much your data will be smoothed */
-  lag?: Maybe<Scalars['Duration']>;
-  /** The z-score at which the algorithm signals (i.e. how many standard deviations away from the moving mean a peak (or signal) is) */
+  method?: OutlierDetectionMethod;
+  /** the threshold for outline detection. Defaults depend on the method of detection */
   threshold?: Maybe<Scalars['Float']>;
-  /** The influence (between 0 and 1) of new signals on the mean and standard deviation (how much a peak (or signal) should affect other values near it) */
-  influence?: Maybe<Scalars['Float']>;
 };
 
 export type MetricDataRefreshInput = {
@@ -850,6 +856,14 @@ export type MetricInput = {
   aggregator?: Maybe<AggregatorInput>;
 };
 
+export type MetricPercentileDistributionInput = {
+  from: Scalars['Date'];
+  to: Scalars['Date'];
+  outlierFilter?: Maybe<OutlierFilterInput>;
+  /** The percentiles to get frequencies for */
+  percentiles?: Maybe<Array<Scalars['Float']>>;
+};
+
 export enum MetricType {
   None = 'None',
   Apdex = 'Apdex',
@@ -886,10 +900,11 @@ export enum MetricValueType {
 /** Compute a frequency distribution of a range of metric data. */
 export type MetricsHistogramInput = {
   /** The minimum date to consider */
-  from: Scalars['DateTime'];
+  from: Scalars['Date'];
   /** The maximum date to consider */
-  to: Scalars['DateTime'];
+  to: Scalars['Date'];
   options?: Maybe<HistogramBinOptionsInput>;
+  outlierFilter?: Maybe<OutlierFilterInput>;
 };
 
 export type Mutation = {
@@ -1419,6 +1434,23 @@ export type OnRuleAlertPayload = {
   alert: RuleAlert;
 };
 
+/** Method used for outlier detection */
+export enum OutlierDetectionMethod {
+  /** Detect outliers based on deviations from the mean. */
+  Sigma = 'Sigma',
+  /** Detect outliers based on the Inter Quartile Range. */
+  Iqr = 'IQR',
+  /** Detect outliers based on Iglewicz and Hoaglin's method (Mean Absolute Deviation). */
+  Mad = 'MAD'
+}
+
+/** Input parameters for outlier filtering */
+export type OutlierFilterInput = {
+  method: OutlierDetectionMethod;
+  /** Optional detection threshold */
+  threshold?: Maybe<Scalars['Float']>;
+};
+
 export type PeakConditionInput = {
   /** Standard deviations at which to trigger an error notification. */
   errorThreshold: Scalars['Float'];
@@ -1432,14 +1464,6 @@ export type PeakConditionInput = {
   influence?: Maybe<Scalars['Float']>;
   /** The lag of the moving window (in milliseconds).  For example, a lag of 5000 will use the last 5 seconds of observationsto smooth the data. */
   lag?: Maybe<Scalars['Duration']>;
-};
-
-export type PeakDataPoint = TimeseriesDataPointInterface & {
-  /** The timestamp of when the event occurred */
-  ts: Scalars['Timestamp'];
-  /** The value at the given timestamp */
-  value: Scalars['Float'];
-  signal: PeakSignalDirection;
 };
 
 export enum PeakSignalDirection {
@@ -1462,7 +1486,7 @@ export type PercentileDistribution = {
   min: Scalars['Float'];
   /** The maximum value in the data range. */
   max: Scalars['Float'];
-  percentiles: Array<Maybe<PercentileCount>>;
+  percentiles: Array<PercentileCount>;
 };
 
 /** Records histogram binning data */
@@ -1476,7 +1500,7 @@ export type PercentileDistributionInput = {
   /** An expression specifying the range to query e.g. yesterday, last_7days */
   range: Scalars['String'];
   /** The percentiles to get frequencies for */
-  percentiles?: Array<Scalars['Float']>;
+  percentiles?: Maybe<Array<Scalars['Float']>>;
 };
 
 export type PingPayload = {

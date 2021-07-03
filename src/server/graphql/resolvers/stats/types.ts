@@ -2,6 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { PeakSignalDirectionEnum, StatsMetricsTypeEnum } from '../scalars';
 import { GraphQLEnumType } from 'graphql';
 import { StatsRateType } from '@src/types';
+import { OutlierMethod } from '@server/stats/outliers';
 
 /* eslint max-len: 0 */
 
@@ -311,5 +312,37 @@ export const PercentileDistributionTC = schemaComposer.createObjectTC({
         },
       },
     }).NonNull.List.NonNull,
+  },
+});
+
+export const OutlierDetectionMethod = schemaComposer.createEnumTC({
+  name: 'OutlierDetectionMethod',
+  description: 'Method used for outlier detection',
+  values: {
+    [OutlierMethod.Sigma]: {
+      value: OutlierMethod.Sigma,
+      description: 'Detect outliers based on deviations from the mean.',
+    },
+    [OutlierMethod.IQR]: {
+      value: OutlierMethod.IQR,
+      description: 'Detect outliers based on the Inter Quartile Range.',
+    },
+    [OutlierMethod.MAD]: {
+      value: OutlierMethod.MAD,
+      description:
+        "Detect outliers based on Iglewicz and Hoaglin's method (Mean Absolute Deviation).",
+    },
+  },
+});
+
+export const OutlierFilterInputTC = schemaComposer.createInputTC({
+  name: 'OutlierFilterInput',
+  description: 'Input parameters for outlier filtering',
+  fields: {
+    method: OutlierDetectionMethod.NonNull,
+    threshold: {
+      type: 'Float',
+      description: 'Optional detection threshold',
+    },
   },
 });

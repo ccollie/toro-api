@@ -1,14 +1,17 @@
-import boom from '@hapi/boom';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import {
+  OutlierFilterInputTC,
   PercentileDistributionDefaultPercentiles,
   PercentileDistributionTC,
 } from '../../stats/types';
 import { BaseMetric } from '@server/metrics';
-import { PercentileDistribution } from '../../../typings';
-import { getMetricData } from '@server/graphql/loaders/metric-data';
+import {
+  MetricPercentileDistributionInput,
+  PercentileDistribution,
+} from '../../../typings';
 import { getPercentileDistribution } from '@server/stats';
+import { getData } from './getData';
 
 export const MetricPercentileDistributionInputTC = schemaComposer.createInputTC(
   {
@@ -20,6 +23,7 @@ export const MetricPercentileDistributionInputTC = schemaComposer.createInputTC(
       to: {
         type: 'Date!',
       },
+      outlierFilter: OutlierFilterInputTC,
       percentiles: {
         type: '[Float!]',
         defaultValue: PercentileDistributionDefaultPercentiles,
@@ -37,23 +41,17 @@ export const metricPercentileDistributionFC: FieldConfig = {
   },
   async resolve(
     metric: BaseMetric,
-    { input },
+    { input }: { input: MetricPercentileDistributionInput },
     { loaders },
   ): Promise<PercentileDistribution> {
     const {
       from,
       to,
+      outlierFilter,
       percentiles = PercentileDistributionDefaultPercentiles,
     } = input;
-    let start, end;
-    if (from && to) {
-      start = from;
-      end = to;
-    } else {
-      throw boom.badRequest('"from" and "to" must be specified');
-    }
 
-    const rawData = await getMetricData(loaders, metric, start, end);
+    const rawData = await getData(loaders, metric, from, to, outlierFilter);
     const values = rawData.map((x) => x.value);
     return getPercentileDistribution(values, percentiles);
   },
