@@ -10,6 +10,7 @@ import boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import { fieldsList } from 'graphql-fields-list';
 import { createAsyncIterator } from '../../lib';
+import { BaseMetric } from '@server/metrics';
 
 const queueIdMap = new WeakMap<Queue, string>();
 
@@ -56,6 +57,19 @@ export function getQueueId(queue: Queue): string {
     }
   }
   return id;
+}
+
+export function getMetricById(id: string): BaseMetric {
+  const hosts = getSupervisor().hosts;
+  for (let i = 0; i < hosts.length; i++) {
+    const managers = hosts[i].queueManagers;
+    for (let j = 0; j < managers.length; j++) {
+      const manager = managers[j];
+      const metric = manager.metricManager.findMetricById(id);
+      if (metric) return metric;
+    }
+  }
+  return null;
 }
 
 export async function getJobById(queueId: string, jobId: string): Promise<Job> {
