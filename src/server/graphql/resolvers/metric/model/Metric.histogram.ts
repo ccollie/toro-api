@@ -1,6 +1,5 @@
 import { FieldConfig } from '../../utils';
 import { BaseMetric } from '@server/metrics';
-import { getMetricData } from '@server/graphql/loaders/metric-data';
 import {
   BaseHistogramInputFields,
   HistogramPayloadTC,
@@ -12,13 +11,15 @@ import {
 } from '@server/stats/histogram-bins';
 import { MetricsHistogramInput } from '@server/graphql/typings';
 import { schemaComposer } from 'graphql-compose';
-import { toDate } from 'date-fns';
+import { OutlierFilterInputTC } from '@server/graphql/resolvers/stats/types';
+import { getData } from './getData';
 
 const MetricHistogramInputTC = schemaComposer.createInputTC({
   name: 'MetricsHistogramInput',
   description: 'Compute a frequency distribution of a range of metric data.',
   fields: {
     ...BaseHistogramInputFields,
+    outlierFilter: OutlierFilterInputTC,
   },
 });
 
@@ -32,11 +33,9 @@ export const metricHistogramFC: FieldConfig = {
     { input }: { input: MetricsHistogramInput },
     { loaders },
   ): Promise<BinnedHistogramValues> {
-    const { from, to, options } = input;
-    const startTime = toDate(from);
-    const endTime = toDate(to);
+    const { from, to, options, outlierFilter } = input;
 
-    const data = await getMetricData(loaders, metric, startTime, endTime);
+    const data = await getData(loaders, metric, from, to, outlierFilter);
 
     const opts = parseHistogramBinningOptions(options);
 

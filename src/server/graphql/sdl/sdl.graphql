@@ -418,6 +418,20 @@ enum MetricValueType {
   Rate
 }
 
+"""Method used for outlier detection"""
+enum OutlierDetectionMethod {
+  """Detect outliers based on deviations from the mean."""
+  Sigma
+
+  """Detect outliers based on the Inter Quartile Range."""
+  IQR
+
+  """
+  Detect outliers based on Iglewicz and Hoaglin's method (Mean Absolute Deviation).
+  """
+  MAD
+}
+
 enum PeakSignalDirection {
   ABOVE
   BELOW
@@ -610,7 +624,7 @@ type HistogramPayload {
   max: Float!
 
   """The width of the bins"""
-  binWidth: Float!
+  width: Float!
   bins: [HistogramBin]!
 }
 
@@ -952,12 +966,13 @@ type Metric {
   """
   Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
   """
-  outliers(input: MetricDataOutliersInput!): [PeakDataPoint]!
+  outliers(input: MetricDataOutliersInput!): [TimeseriesDataPoint]!
   histogram(input: MetricsHistogramInput!): HistogramPayload!
 
-  """
-  Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
-  """
+  """Compute a percentile distribution."""
+  percentileDistribution(input: MetricPercentileDistributionInput!): PercentileDistribution!
+
+  """Returns simple descriptive statistics from a range of metric data"""
   summaryStats(input: MetricDataInput!): SummaryStatistics!
 
   """
@@ -1149,15 +1164,6 @@ type OnRuleAlertPayload {
   alert: RuleAlert!
 }
 
-type PeakDataPoint implements TimeseriesDataPointInterface {
-  """The timestamp of when the event occurred"""
-  ts: Timestamp!
-
-  """The value at the given timestamp"""
-  value: Float!
-  signal: PeakSignalDirection!
-}
-
 type PercentileCount {
   count: Int!
 
@@ -1175,7 +1181,7 @@ type PercentileDistribution {
 
   """The maximum value in the data range."""
   max: Float!
-  percentiles: [PercentileCount]!
+  percentiles: [PercentileCount!]!
 }
 
 type PingPayload {
@@ -1949,10 +1955,10 @@ input HistogramInput {
   granularity: StatsGranularity!
 
   """The minimum date to consider"""
-  from: DateTime!
+  from: Date!
 
   """The maximum date to consider"""
-  to: DateTime!
+  to: Date!
   options: HistogramBinOptionsInput
 }
 
@@ -2222,26 +2228,18 @@ input MetricCreateInput {
 input MetricDataInput {
   start: Date!
   end: Date!
+  outlierFilter: OutlierFilterInput
 }
 
 input MetricDataOutliersInput {
   start: Date!
   end: Date!
+  method: OutlierDetectionMethod! = Sigma
 
   """
-  The lag time (in ms) of the moving window how much your data will be smoothed
+  the threshold for outline detection. Defaults depend on the method of detection
   """
-  lag: Duration = 0
-
-  """
-  The z-score at which the algorithm signals (i.e. how many standard deviations away from the moving mean a peak (or signal) is)
-  """
-  threshold: Float = 3.5
-
-  """
-  The influence (between 0 and 1) of new signals on the mean and standard deviation (how much a peak (or signal) should affect other values near it)
-  """
-  influence: Float = 0.5
+  threshold: Float
 }
 
 input MetricDataRefreshInput {
@@ -2284,14 +2282,32 @@ input MetricInput {
   aggregator: AggregatorInput
 }
 
+input MetricPercentileDistributionInput {
+  from: Date!
+  to: Date!
+  outlierFilter: OutlierFilterInput
+
+  """The percentiles to get frequencies for"""
+  percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
+}
+
 """Compute a frequency distribution of a range of metric data."""
 input MetricsHistogramInput {
   """The minimum date to consider"""
-  from: DateTime!
+  from: Date!
 
   """The maximum date to consider"""
-  to: DateTime!
+  to: Date!
   options: HistogramBinOptionsInput
+  outlierFilter: OutlierFilterInput
+}
+
+"""Input parameters for outlier filtering"""
+input OutlierFilterInput {
+  method: OutlierDetectionMethod!
+
+  """Optional detection threshold"""
+  threshold: Float
 }
 
 input PeakConditionInput {
@@ -2333,7 +2349,7 @@ input PercentileDistributionInput {
   range: String!
 
   """The percentiles to get frequencies for"""
-  percentiles: [Float!]! = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
+  percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
 }
 
 input QueueCleanFilter {

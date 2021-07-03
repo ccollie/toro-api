@@ -13,6 +13,7 @@ import { DataLoaderRegistry } from './registry';
 import { logger } from '@server/lib';
 import { MetricManager } from '@server/metrics/metric-manager';
 import { DateLike } from '@lib/datetime';
+import { filterOutlierObjects, OutlierMethod } from '@server/stats/outliers';
 
 export interface MetricDataLoaderKey {
   metric: BaseMetric;
@@ -133,4 +134,21 @@ export function getMetricData(
     limit,
   };
   return loader.load(key);
+}
+
+export async function getFilteredMetricData(
+  loaders: DataLoaderRegistry,
+  options: MetricDataLoaderKey,
+  outlierFilter?: {
+    method: OutlierMethod;
+    threshold?: number;
+  },
+): Promise<TimeseriesDataPoint[]> {
+  const { metric, start, end, limit } = options;
+  const data = await getMetricData(loaders, metric, start, end, limit);
+  if (outlierFilter) {
+    const { method, threshold } = outlierFilter;
+    return filterOutlierObjects(method, data, (x) => x.value, { threshold });
+  }
+  return data;
 }

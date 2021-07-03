@@ -6,13 +6,10 @@ import {
   StatsGranularity,
   MeterSummary,
   StatsRateType,
-  TimeseriesDataPoint,
 } from '@src/types';
-import { StatsClient, StreamingPeakDetector } from '@server/stats';
+import { StatsClient } from '@server/stats';
 import { HostManager } from '@server/hosts';
 import { Queue } from 'bullmq';
-import { ManualClock } from '@lib/clock';
-import { PeakSignalDirection, PeakDataPoint } from '@server/graphql/typings';
 
 export function getClient(model: Queue | HostManager): StatsClient {
   if (model instanceof HostManager) {
@@ -100,34 +97,4 @@ export async function aggregateRates(
   } else {
     return client.getAggregateRates(jobName, unit, type, startTime, endTime);
   }
-}
-
-export function detectPeaks(
-  rawData: TimeseriesDataPoint[],
-  lag = 0,
-  threshold = 3.5,
-  influence = 0.5,
-): PeakDataPoint[] {
-  const result: PeakDataPoint[] = [];
-  const clock = new ManualClock();
-  const detector = new StreamingPeakDetector(clock, lag, threshold, influence);
-
-  if (rawData.length) {
-    clock.set(rawData[0].ts);
-    rawData.forEach(({ ts, value }) => {
-      clock.set(ts);
-      const signal = detector.update(value);
-      if (signal !== 0) {
-        const direction: PeakSignalDirection =
-          signal === 1 ? PeakSignalDirection.Above : PeakSignalDirection.Below;
-        result.push({
-          ts,
-          value,
-          signal: direction,
-        });
-      }
-    });
-  }
-
-  return result;
 }
