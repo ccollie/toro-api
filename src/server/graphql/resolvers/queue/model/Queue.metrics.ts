@@ -2,18 +2,13 @@ import { Queue } from 'bullmq';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { MetricTC } from '../../metric/model';
-import { SerializedMetric } from '@src/types';
+import { BaseMetric } from '@server/metrics';
 
 export const queueMetrics: FieldConfig = {
   type: MetricTC.NonNull.List.NonNull,
   args: {},
-  async resolve(queue: Queue): Promise<SerializedMetric[]> {
+  async resolve(queue: Queue): Promise<BaseMetric[]> {
     const manager = getQueueManager(queue);
-    return manager.metricManager.metrics.map((x) => {
-      const metric = x.toJSON();
-      // somewhat hackish
-      (metric as any).queueId = manager.id;
-      return metric;
-    });
+    return manager.metricManager.metrics;
   },
 };

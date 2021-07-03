@@ -20,7 +20,7 @@ import {
 } from './index';
 import { QueueListener } from '@server/queues';
 import { UnsubscribeFn } from 'emittery';
-import IORedis, { Pipeline } from 'ioredis';
+import { Pipeline } from 'ioredis';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -248,6 +248,7 @@ export class MetricManager {
         const eventName = isActive
           ? MetricsEventsEnum.METRIC_ACTIVATED
           : MetricsEventsEnum.METRIC_DEACTIVATED;
+
         await this.bus.emit(eventName, {
           metricId: id,
         });
@@ -330,6 +331,7 @@ export class MetricManager {
         try {
           const metric = deserializeMetric(resp);
           if (metric) {
+            metric.queueId = this.queueId;
             result.push(metric);
           }
         } catch (err) {
