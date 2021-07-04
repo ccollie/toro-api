@@ -59,6 +59,7 @@ export enum AggregateTypeEnum {
 export type Aggregator = {
   type: AggregateTypeEnum;
   options?: Maybe<Scalars['JSONObject']>;
+  description: Scalars['String'];
 };
 
 export type AggregatorInput = {
@@ -90,7 +91,7 @@ export type BulkJobActionPayload = {
 export type BulkJobItemInput = {
   name: Scalars['String'];
   data: Scalars['JSONObject'];
-  options?: Maybe<JobOptionsInput>;
+  options?: Maybe<FlowJobOptions>;
 };
 
 export type BulkStatusItem = {
@@ -145,6 +146,73 @@ export enum ErrorLevel {
   Warning = 'WARNING',
   Critical = 'CRITICAL'
 }
+
+export type FlowAddInput = {
+  /** The host to which to add the flow */
+  host: Scalars['String'];
+  job: FlowJobInput;
+};
+
+/** TODO: fill in description */
+export type FlowJobInput = {
+  name: Scalars['String'];
+  /** Prefix of queue */
+  prefix?: Maybe<Scalars['String']>;
+  /** The queue to create the job in */
+  queueName: Scalars['String'];
+  /** Data for the job */
+  data?: Maybe<Scalars['JSONObject']>;
+  opts?: Maybe<FlowJobOptions>;
+  children?: Maybe<Array<FlowJobInput>>;
+};
+
+export type FlowJobOptions = {
+  timestamp?: Maybe<Scalars['Date']>;
+  /** Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required. */
+  priority?: Maybe<Scalars['Int']>;
+  /**
+   * An amount of milliseconds to wait until this job can be processed.
+   * Note that for accurate delays, worker and producers should have their clocks synchronized.
+   */
+  delay?: Maybe<Scalars['Int']>;
+  /** The total number of attempts to try the job until it completes. */
+  attempts?: Maybe<Scalars['Int']>;
+  /** Backoff setting for automatic retries if the job fails */
+  backoff?: Maybe<Scalars['JSON']>;
+  /** if true, adds the job to the right of the queue instead of the left (default false) */
+  lifo?: Maybe<Scalars['Boolean']>;
+  /** The number of milliseconds after which the job should be fail with a timeout error [optional] */
+  timeout?: Maybe<Scalars['Int']>;
+  /** Override the job ID - by default, the job ID is a unique integer, but you can use this setting to override it. If you use this option, it is up to you to ensure the jobId is unique. If you attempt to add a job with an id that already exists, it will not be added. */
+  jobId?: Maybe<Scalars['String']>;
+  /** If true, removes the job when it successfully completes.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the COMPLETED set. */
+  removeOnComplete?: Maybe<Scalars['JobRemoveOption']>;
+  /** If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set. */
+  removeOnFail?: Maybe<Scalars['JobRemoveOption']>;
+  /** Rate limiter key to use if rate limiter enabled. */
+  rateLimiterKey?: Maybe<Scalars['String']>;
+  /** Limits the amount of stack trace lines that will be recorded in the stacktrace. */
+  stackTraceLimit?: Maybe<Scalars['Int']>;
+  /** Limits the size in bytes of the job's data payload (as a JSON serialized string). */
+  sizeLimit?: Maybe<Scalars['Int']>;
+  repeat?: Maybe<JobRepeatOptionsCronInput>;
+};
+
+/** Input type for fetching a flow */
+export type FlowNodeGetInput = {
+  /** The host to search */
+  host: Scalars['String'];
+  /** The queue in which the root is found */
+  queueName: Scalars['String'];
+  /** Queue prefix */
+  prefix?: Maybe<Scalars['String']>;
+  /** The id of the job that is the root of the tree or subtree */
+  id: Scalars['String'];
+  /** The maximum depth to traverse */
+  depth?: Maybe<Scalars['Int']>;
+  /** The maximum number of children to fetch per level */
+  maxChildren?: Maybe<Scalars['Int']>;
+};
 
 export type HistogramBin = {
   count: Scalars['Int'];
@@ -285,7 +353,7 @@ export type JobAddCronInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['ID'];
   data?: Maybe<Scalars['JSONObject']>;
-  options?: Maybe<JobOptionsInput>;
+  options?: Maybe<FlowJobOptions>;
 };
 
 export type JobAddCronPayload = {
@@ -296,7 +364,7 @@ export type JobAddEveryInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['ID'];
   data?: Maybe<Scalars['JSONObject']>;
-  options?: Maybe<JobOptionsInput>;
+  options?: Maybe<FlowJobOptions>;
 };
 
 export type JobAddEveryPayload = {
@@ -307,7 +375,7 @@ export type JobAddInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['String'];
   data?: Maybe<Scalars['JSONObject']>;
-  options?: Maybe<JobOptionsInput>;
+  options?: Maybe<FlowJobOptions>;
 };
 
 /** The count of jobs according to status */
@@ -324,7 +392,7 @@ export type JobDataValidateInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['String'];
   data?: Maybe<Scalars['JSONObject']>;
-  opts?: Maybe<JobOptionsInput>;
+  opts?: Maybe<FlowJobOptions>;
 };
 
 export type JobDataValidatePayload = {
@@ -452,6 +520,11 @@ export type JobMoveToFailedPayload = {
   queue: Queue;
 };
 
+export type JobNode = {
+  job: Job;
+  children: Array<Maybe<Job>>;
+};
+
 export type JobOptions = {
   timestamp?: Maybe<Scalars['Date']>;
   /** Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required. */
@@ -475,38 +548,22 @@ export type JobOptions = {
   removeOnComplete?: Maybe<Scalars['JobRemoveOption']>;
   /** If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set. */
   removeOnFail?: Maybe<Scalars['JobRemoveOption']>;
+  /** Rate limiter key to use if rate limiter enabled. */
+  rateLimiterKey?: Maybe<Scalars['String']>;
   /** Limits the amount of stack trace lines that will be recorded in the stacktrace. */
   stackTraceLimit?: Maybe<Scalars['Int']>;
+  parent?: Maybe<JobParent>;
+  /** Limits the size in bytes of the job's data payload (as a JSON serialized string). */
+  sizeLimit?: Maybe<Scalars['Int']>;
   /** Job repeat options */
   repeat?: Maybe<JobRepeatOptions>;
 };
 
-export type JobOptionsInput = {
-  timestamp?: Maybe<Scalars['Date']>;
-  /** Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required. */
-  priority?: Maybe<Scalars['Int']>;
-  /**
-   * An amount of milliseconds to wait until this job can be processed.
-   * Note that for accurate delays, worker and producers should have their clocks synchronized.
-   */
-  delay?: Maybe<Scalars['Int']>;
-  /** The total number of attempts to try the job until it completes. */
-  attempts?: Maybe<Scalars['Int']>;
-  /** Backoff setting for automatic retries if the job fails */
-  backoff?: Maybe<Scalars['JSON']>;
-  /** if true, adds the job to the right of the queue instead of the left (default false) */
-  lifo?: Maybe<Scalars['Boolean']>;
-  /** The number of milliseconds after which the job should be fail with a timeout error [optional] */
-  timeout?: Maybe<Scalars['Int']>;
-  /** Override the job ID - by default, the job ID is a unique integer, but you can use this setting to override it. If you use this option, it is up to you to ensure the jobId is unique. If you attempt to add a job with an id that already exists, it will not be added. */
-  jobId?: Maybe<Scalars['String']>;
-  /** If true, removes the job when it successfully completes.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the COMPLETED set. */
-  removeOnComplete?: Maybe<Scalars['JobRemoveOption']>;
-  /** If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set. */
-  removeOnFail?: Maybe<Scalars['JobRemoveOption']>;
-  /** Limits the amount of stack trace lines that will be recorded in the stacktrace. */
-  stackTraceLimit?: Maybe<Scalars['Int']>;
-  repeat?: Maybe<JobRepeatOptionsCronInput>;
+export type JobParent = {
+  /** The id of the job */
+  id: Scalars['String'];
+  /** The name of the queue (including prefix) containing the job */
+  queue: Scalars['String'];
 };
 
 
@@ -567,7 +624,7 @@ export type JobSchemaInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['String'];
   schema: Scalars['JSONSchema'];
-  defaultOpts?: Maybe<JobOptionsInput>;
+  defaultOpts?: Maybe<FlowJobOptions>;
 };
 
 export type JobSearchInput = {
@@ -708,14 +765,18 @@ export type Metric = {
   queueId: Scalars['ID'];
   /** The name of the metric */
   name: Scalars['String'];
-  /** A description of the metric being measured. */
-  description?: Maybe<Scalars['String']>;
+  /** Returns the description of the metric */
+  description: Scalars['String'];
   /** The metric sampling interval. */
   sampleInterval?: Maybe<Scalars['Int']>;
   /** Is the metric active (i.e. is data being collected). */
   isActive: Scalars['Boolean'];
   /** The metric options */
   options: Scalars['JSONObject'];
+  category: MetricCategory;
+  unit: Scalars['String'];
+  /** The current value of the metric */
+  currentValue?: Maybe<Scalars['Float']>;
   /** Timestamp of when this metric was created */
   createdAt: Scalars['Date'];
   /** Timestamp of when this metric was created */
@@ -915,6 +976,7 @@ export type Mutation = {
   metricUpdate: Metric;
   /** Delete a queue metric */
   metricDelete: MetricDeletePayload;
+  flowAdd: JobNode;
   /** Add a mail notification channel */
   mailNotificationChannelAdd: MailNotificationChannel;
   /** Add a slack notification channel */
@@ -1014,6 +1076,11 @@ export type MutationMetricUpdateArgs = {
 
 export type MutationMetricDeleteArgs = {
   input: MetricDeleteInput;
+};
+
+
+export type MutationFlowAddArgs = {
+  input?: Maybe<FlowAddInput>;
 };
 
 
@@ -1440,7 +1507,7 @@ export enum OutlierDetectionMethod {
   Sigma = 'Sigma',
   /** Detect outliers based on the Inter Quartile Range. */
   Iqr = 'IQR',
-  /** Detect outliers based on Iglewicz and Hoaglin's method (Mean Absolute Deviation). */
+  /** Detect outliers based on Iglewicz and Hoaglin (Mean Absolute Deviation). */
   Mad = 'MAD'
 }
 
@@ -1521,6 +1588,8 @@ export type Query = {
   jobOptionsValidate: ValidateJobOptionsPayload;
   /** Find a queue by name */
   findQueue?: Maybe<Queue>;
+  /** Load a flow */
+  flow?: Maybe<JobNode>;
   /** Get a Host by id */
   host?: Maybe<QueueHost>;
   /** Get the list of hosts managed by the server instance */
@@ -1564,7 +1633,7 @@ export type QueryJobDataValidateArgs = {
 
 
 export type QueryJobOptionsValidateArgs = {
-  input: JobOptionsInput;
+  input: FlowJobOptions;
 };
 
 
@@ -1572,6 +1641,11 @@ export type QueryFindQueueArgs = {
   hostName: Scalars['String'];
   prefix?: Maybe<Scalars['String']>;
   queueName: Scalars['String'];
+};
+
+
+export type QueryFlowArgs = {
+  input: FlowNodeGetInput;
 };
 
 

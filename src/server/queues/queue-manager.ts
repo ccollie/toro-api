@@ -1,7 +1,7 @@
 import boom from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
-import { Job, Queue } from 'bullmq';
+import { FlowProducer, Job, Queue } from 'bullmq';
 import { StatsClient, StatsListener } from '../stats';
 import { Rule, RuleManager } from '../rules';
 import { EventBus, LockManager } from '../redis';
@@ -82,6 +82,7 @@ export class QueueManager {
   public readonly statsListener: StatsListener;
   private _uri: string = undefined;
   private inStatsUpdate = false;
+  private flowProducer: FlowProducer;
   public readonly dataRetention = getRetention();
 
   constructor(host: HostManager, queue: Queue, config: QueueConfig) {

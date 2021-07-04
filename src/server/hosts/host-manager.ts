@@ -1,4 +1,12 @@
-import { Queue, RedisClient } from 'bullmq';
+import boom from '@hapi/boom';
+import {
+  FlowJob,
+  FlowProducer,
+  JobNode,
+  NodeOpts,
+  Queue,
+  RedisClient,
+} from 'bullmq';
 import Emittery from 'emittery';
 import pSettle from 'p-settle';
 import pAll from 'p-all';
@@ -63,6 +71,8 @@ export class HostManager {
   private readonly connectionOpts: ConnectionOptions;
   private readonly defaultRedisClient: RedisClient;
   private readonly queueManagerMap: Map<string, QueueManager>;
+  private flowProducer: FlowProducer;
+
   private readonly _initialized: Promise<void>;
   private _notificationContext: NotificationContext;
 
@@ -100,6 +110,9 @@ export class HostManager {
     const dtors = this.queueManagers.map((manager) => () => manager.destroy());
     dtors.push(() => this.lock.destroy());
     dtors.push(() => this.streamAggregator.destroy());
+    if (this.flowProducer) {
+      dtors.push(() => this.flowProducer.disconnect());
+    }
     const settlement = await pSettle(dtors, { concurrency: 4 });
     // TODO:
     settlement
@@ -386,6 +399,45 @@ export class HostManager {
       stateIndex = stateIndex % states.length;
     }
     return counts;
+  }
+
+  async addFlow(flow: FlowJob): Promise<JobNode> {
+    const producer = this.initFlowProducer();
+
+    const validateQueues = (jobsTree: FlowJob) => {
+      const { prefix = this.config.prefix, queueName } = jobsTree;
+      const queue = this.getQueue(prefix, queueName);
+      if (!queue) {
+        const msg = `Could not find queue "${queueName}" in host "${this.name}"`;
+        throw boom.notFound(msg);
+      }
+      const children = jobsTree.children;
+      if (children) {
+        for (let i = 0; i < children.length; i++) {
+          validateQueues(children[i]);
+        }
+      }
+    };
+
+    validateQueues(flow);
+
+    return producer.add(flow);
+  }
+
+  async getFlow(opts: NodeOpts): Promise<JobNode> {
+    return this.initFlowProducer().getFlow(opts);
+  }
+
+  private initFlowProducer(): FlowProducer {
+    if (!this.flowProducer) {
+      const prefix = this.config.prefix;
+      const client = this.createClient(this.connectionOpts);
+      this.flowProducer = new FlowProducer({
+        connection: client,
+        prefix,
+      });
+    }
+    return this.flowProducer;
   }
 
   async waitUntilReady(): Promise<void> {

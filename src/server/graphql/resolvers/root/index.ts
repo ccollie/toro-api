@@ -5,6 +5,7 @@ export { job } from './job';
 export { jobDataValidate } from './jobDataValidate';
 export { jobOptionsValidate } from './jobOptionsValidate';
 export { findQueue } from './findQueue';
+export { flow } from './flow';
 export { host } from './host';
 export { hosts } from './hosts';
 export { hostByName } from './hostByName';
