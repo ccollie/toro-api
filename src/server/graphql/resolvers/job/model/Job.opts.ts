@@ -38,6 +38,21 @@ const RepeatOptionsCronInputTC = schemaComposer.createInputTC({
   },
 });
 
+export const JobParentTC = schemaComposer.createObjectTC({
+  name: 'JobParent',
+  fields: {
+    id: {
+      type: 'String!',
+      description: 'The id of the job',
+    },
+    queue: {
+      type: 'String!',
+      description:
+        'The name of the queue (including prefix) containing the job',
+    },
+  },
+});
+
 export const JobOptionsTC = schemaComposer.createObjectTC({
   name: 'JobOptions',
   fields: {
@@ -99,10 +114,20 @@ export const JobOptionsTC = schemaComposer.createObjectTC({
         '  A number specify the max amount of jobs to keep.' +
         '  Default behavior is to keep the job in the FAILED set.',
     }, //bool | int
+    rateLimiterKey: {
+      type: 'String',
+      description: 'Rate limiter key to use if rate limiter enabled.',
+    },
     stackTraceLimit: {
       type: 'Int',
       description:
         'Limits the amount of stack trace lines that will be recorded in the stacktrace.',
+    },
+    parent: JobParentTC,
+    sizeLimit: {
+      type: 'Int',
+      description:
+        "Limits the size in bytes of the job's data payload (as a JSON serialized string).",
     },
   },
 });

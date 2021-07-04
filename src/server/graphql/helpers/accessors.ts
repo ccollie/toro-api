@@ -32,6 +32,19 @@ export function getHostById(id: string): HostManager {
   return host;
 }
 
+export function getHost(id: string): HostManager {
+  const supervisor = getSupervisor();
+  let host = supervisor.getHostById(id);
+  if (!host) {
+    host = supervisor.hosts.find((x) => x.name === id);
+  }
+  if (!host) {
+    const msg = `Host "${id}" not found`;
+    throw boom.notFound(msg);
+  }
+  return host;
+}
+
 export function getQueueById(id: string): Queue {
   return getSupervisor().getQueueById(id);
 }

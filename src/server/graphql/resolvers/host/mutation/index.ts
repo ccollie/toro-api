@@ -7,8 +7,10 @@ import { notificationChannelDelete } from './notificationChannelDelete';
 import { mailNotificationChannelUpdate } from './mailNotificationChannelUpdate';
 import { slackNotificationChannelUpdate } from './slackNotificationChannelUpdate';
 import { webhookNotificationChannelUpdate } from './webhookNotificationChannelUpdate';
+import { flowAdd } from './flowAdd';
 
 export default {
+  flowAdd,
   mailNotificationChannelAdd,
   slackNotificationChannelAdd,
   webhookNotificationChannelAdd,

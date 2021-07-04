@@ -1,5 +1,5 @@
 import { HostTC, FieldConfig } from '../index';
-import { HostManager } from '../../../hosts';
+import { HostManager } from '@server/hosts';
 
 export const host: FieldConfig = {
   type: HostTC,
