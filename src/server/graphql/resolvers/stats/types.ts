@@ -330,7 +330,7 @@ export const OutlierDetectionMethod = schemaComposer.createEnumTC({
     [OutlierMethod.MAD]: {
       value: OutlierMethod.MAD,
       description:
-        "Detect outliers based on Iglewicz and Hoaglin's method (Mean Absolute Deviation).",
+        'Detect outliers based on Iglewicz and Hoaglin (Mean Absolute Deviation).',
     },
   },
 });

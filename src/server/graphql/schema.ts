@@ -18,7 +18,7 @@ import {
   SeverityType,
 } from './resolvers/scalars';
 
-import { MetricCategory } from './resolvers/metric';
+import { MetricCategoryTC } from './resolvers/metric';
 
 import { schemaComposer } from 'graphql-compose';
 import * as query from './resolvers/root';
@@ -46,7 +46,7 @@ schemaComposer.add(PeakSignalDirectionEnum);
 schemaComposer.add(RuleOperatorEnum);
 schemaComposer.add(RuleStateEnum);
 schemaComposer.add(SeverityType);
-schemaComposer.add(MetricCategory);
+schemaComposer.add(MetricCategoryTC);
 
 schemaComposer.Query.addFields({
   ...query,
