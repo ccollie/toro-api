@@ -2,7 +2,7 @@ import { FieldConfig } from '../index';
 import { getClassMetadata, metricsMap } from '@src/server/metrics';
 import { schemaComposer } from 'graphql-compose';
 import {
-  MetricCategory as MetricCategoryTC,
+  MetricCategoryTC as MetricCategoryTC,
   MetricValueTypeTC,
   MetricTypeTC,
 } from '../metric';

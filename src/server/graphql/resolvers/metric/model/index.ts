@@ -2,7 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { metricDataFC } from './Metric.data';
 import { metricDataOutliersFC as outliers } from './Metric.outliers';
 import { metricDateRangeFC as dateRange } from './Metric.date-range';
-import { AggregatorTC, BaseFields, MetricTypeTC } from '../scalars';
+import { BaseFields, MetricCategoryTC, MetricTypeTC } from '../scalars';
 import { metricHistogramFC as histogram } from './Metric.histogram';
 import { metricSummaryStatsFC as summaryStats } from './Metric.summary-stats';
 import { metricDescriptionFC as description } from './Metric.description';
@@ -10,6 +10,7 @@ import { metricDescriptionFC as description } from './Metric.description';
 import { metricPercentileDistributionFC as percentileDistribution } from './Metric.percentile-distribution';
 import { BaseMetric } from '@server/metrics';
 import { getStaticProp } from '@lib/utils';
+import { AggregatorTC } from '@server/graphql/resolvers/aggregator/model';
 
 export const MetricTC = schemaComposer.createObjectTC({
   name: 'Metric',
@@ -24,6 +25,25 @@ export const MetricTC = schemaComposer.createObjectTC({
       type: MetricTypeTC.NonNull,
       resolve: (metric: BaseMetric) => {
         return getStaticProp(metric, 'type');
+      },
+    },
+    category: {
+      type: MetricCategoryTC.NonNull,
+      resolve: (metric: BaseMetric) => {
+        return getStaticProp(metric, 'category');
+      },
+    },
+    unit: {
+      type: 'String!',
+      resolve: (metric: BaseMetric) => {
+        return getStaticProp(metric, 'unit');
+      },
+    },
+    currentValue: {
+      type: 'Float',
+      description: 'The current value of the metric',
+      resolve: (metric: BaseMetric) => {
+        return metric.value;
       },
     },
     createdAt: {

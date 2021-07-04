@@ -1,21 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { createEnumFromTS } from '../../../helpers';
-import { AggregatorTypes, MetricTypes } from '@src/types';
-
-export const AggregateTypeEnum = createEnumFromTS(
-  AggregatorTypes,
-  'AggregateTypeEnum',
-);
-
-export const AggregatorTC = schemaComposer.createObjectTC({
-  name: 'Aggregator',
-  fields: {
-    type: AggregateTypeEnum.NonNull,
-    options: 'JSONObject',
-  },
-});
-
-export const AggregatorInputTC = AggregatorTC.getITC();
+import { MetricTypes } from '@src/types';
+import { AggregatorInputTC } from '@server/graphql/resolvers/aggregator/model';
 
 export const MetricTypeTC = createEnumFromTS(MetricTypes, 'MetricType');
 
