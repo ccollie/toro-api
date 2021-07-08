@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { GraphQLJSONSchema } from '../../scalars';
+import { GraphQLJSONSchema } from '../../../scalars';
 
 export const JobSchemaTC = schemaComposer.createObjectTC({
   name: 'JobSchema',

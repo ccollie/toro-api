@@ -2,7 +2,7 @@ import { normalizeGranularity } from '../../helpers';
 import { FieldConfig } from '../';
 import { HostManager } from '@server/hosts';
 import { getClient } from './utils';
-import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../scalars';
+import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
 import {
   StatsMetricType,

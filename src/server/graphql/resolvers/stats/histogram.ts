@@ -7,7 +7,7 @@ import {
 } from '@server/stats/histogram-bins';
 import isNumber from 'lodash/isNumber';
 import { GraphQLEnumType } from 'graphql';
-import { StatsMetricsTypeEnum } from '../scalars';
+import { StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { aggregateStats } from './utils';
 import {

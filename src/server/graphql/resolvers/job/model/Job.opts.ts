@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { JobRemoveOption } from '../../scalars';
+import { JobRemoveOption } from '../../../scalars';
 
 const BaseRepeatOptionFields = {
   tz: 'String',

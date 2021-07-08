@@ -1,7 +1,7 @@
 import { FieldConfig } from '../../';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
-import { QueueFilterStatusEnum } from '../../scalars';
+import { QueueFilterStatusEnum } from '../../../scalars';
 import { HostQueuesFilter as GQLQueueFilter } from '../../../typings';
 import { getQueueId } from '../../../helpers';
 import {

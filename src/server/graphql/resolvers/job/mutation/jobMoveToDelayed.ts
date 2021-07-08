@@ -1,7 +1,7 @@
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
-import { Duration } from '../../scalars';
+import { Duration } from '../../../scalars';
 import boom from '@hapi/boom';
 
 export const jobMoveToDelayed: FieldConfig = {

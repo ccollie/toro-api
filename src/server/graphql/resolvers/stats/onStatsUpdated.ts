@@ -5,7 +5,7 @@ import {
   normalizeGranularity,
 } from '../../helpers';
 import { firstChar } from '@lib/utils';
-import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../scalars';
+import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig } from '../';

@@ -1,7 +1,7 @@
 import { FieldConfig } from '../../utils';
 import { BaseMetric } from '@server/metrics';
 import { Timespan } from '@src/types';
-import { TimeSpanTC } from '@server/graphql/resolvers/scalars';
+import { TimeSpanTC } from '@server/graphql/scalars';
 import { getMetricDateRange } from '@server/graphql/loaders/metric-date-range';
 
 export const metricDateRangeFC: FieldConfig = {

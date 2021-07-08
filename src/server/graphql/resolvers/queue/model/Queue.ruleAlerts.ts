@@ -4,7 +4,7 @@ import {
   schemaComposer,
 } from 'graphql-compose';
 import { Queue } from 'bullmq';
-import { OrderEnumType, SortOrderEnum } from '../../scalars';
+import { OrderEnumType, SortOrderEnum } from '../../../scalars';
 import { getQueueManager } from '../../../helpers';
 
 const QueueRuleAlertsInput = schemaComposer.createInputTC({

@@ -1,8 +1,8 @@
 import { get } from 'lodash';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, graphql } from 'graphql';
-import { GraphQLJSONSchema } from '@src/server/graphql/resolvers/scalars';
+import { GraphQLJSONSchema } from '@src/server/graphql/scalars';
 import { JobOptionsSchema } from '@src/server/queues';
-// eslint-disable-next-line import/no-named-as-default
+
 const INVALID_SCHEMA = {
   type: 'object',
   properties: {

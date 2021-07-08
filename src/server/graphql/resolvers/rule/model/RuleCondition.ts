@@ -6,7 +6,7 @@ import {
   PeakSignalDirectionEnum,
   RuleOperatorEnum,
   RuleTypeEnum,
-} from '../../scalars';
+} from '../../../scalars';
 import has from 'lodash/has';
 
 const BaseFields = {

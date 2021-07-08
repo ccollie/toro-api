@@ -3,7 +3,7 @@ import { FieldConfig } from '../../utils';
 import { QueueTC } from '../../index';
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
-import { StatsGranularityEnum } from '../../scalars';
+import { StatsGranularityEnum } from '../../../scalars';
 
 export const queueStatsDelete: FieldConfig = {
   description: 'Delete all stats associated with a queue',

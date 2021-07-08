@@ -16,7 +16,7 @@ import {
   RuleOperatorEnum,
   RuleStateEnum,
   SeverityType,
-} from './resolvers/scalars';
+} from './scalars';
 
 import { MetricCategoryTC } from './resolvers/metric';
 

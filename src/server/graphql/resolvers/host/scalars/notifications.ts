@@ -9,7 +9,7 @@ import {
   HttpMethodType,
   GraphQLEmailAddress,
   GraphQLURL,
-} from '../../scalars';
+} from '../../../scalars';
 
 const BaseFields = {
   id: 'ID!',

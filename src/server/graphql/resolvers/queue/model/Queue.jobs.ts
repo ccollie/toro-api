@@ -1,5 +1,9 @@
 import { Queue } from 'bullmq';
-import { SortOrderEnum, OrderEnumType, JobStatusEnumType } from '../../scalars';
+import {
+  SortOrderEnum,
+  OrderEnumType,
+  JobStatusEnumType,
+} from '../../../scalars';
 import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';

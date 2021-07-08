@@ -10,7 +10,7 @@ import {
   StatsGranularity,
 } from '@src/types';
 import { QueueFilterStatus } from '@server/hosts';
-import { createEnumFromTS } from '../../helpers';
+import { createEnumFromTS } from '../helpers';
 
 export const ChangeAggregationEnum = createEnumFromTS(
   ChangeAggregationType,

@@ -3,7 +3,7 @@ import { isNumber } from '@lib/utils';
 import ms from 'ms';
 import cronstrue from 'cronstrue/i18n';
 import { FieldConfig } from '../../utils';
-import { SortOrderEnum, OrderEnumType } from '../../scalars';
+import { SortOrderEnum, OrderEnumType } from '../../../scalars';
 import { RepeatableJob } from '@src/types';
 import { getQueueManager } from '../../../helpers';
 import { Queue } from 'bullmq';

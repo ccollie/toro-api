@@ -1,4 +1,4 @@
-import { OrderEnumType } from '../../scalars';
+import { OrderEnumType } from '../../../scalars';
 import { getQueueRuleManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';

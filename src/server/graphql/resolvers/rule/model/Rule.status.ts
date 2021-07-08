@@ -8,7 +8,7 @@ import {
   RuleStatus,
 } from '@server/graphql/typings';
 import { CircuitState } from '@server/commands';
-import { RuleStateEnum } from '@server/graphql/resolvers/scalars';
+import { RuleStateEnum } from '@server/graphql/scalars';
 
 const RuleCircuitStateTC = createEnumFromTS(CircuitState, 'RuleCircuitState');
 

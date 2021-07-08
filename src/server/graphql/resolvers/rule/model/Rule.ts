@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { RuleStateEnum, SeverityType } from '../../scalars';
+import { RuleStateEnum, SeverityType } from '../../../scalars';
 import {
   RuleConditionInputTC,
   RuleConditionInterfaceTC,

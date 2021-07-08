@@ -1,5 +1,5 @@
 import { GraphQLDate, schemaComposer } from 'graphql-compose';
-import { JobStatusEnumType } from '../../scalars';
+import { JobStatusEnumType } from '../../../scalars';
 
 export const JobFilterTC = schemaComposer.createObjectTC({
   name: 'JobFilter',

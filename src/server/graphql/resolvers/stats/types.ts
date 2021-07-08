@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { PeakSignalDirectionEnum, StatsMetricsTypeEnum } from '../scalars';
+import { PeakSignalDirectionEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { GraphQLEnumType } from 'graphql';
 import { StatsRateType } from '@src/types';
 import { OutlierMethod } from '@server/stats/outliers';

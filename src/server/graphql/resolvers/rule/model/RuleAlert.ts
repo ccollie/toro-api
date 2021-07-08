@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { ErrorLevelEnum, SeverityType } from '../../scalars';
+import { ErrorLevelEnum, SeverityType } from '../../../scalars';
 
 export const RuleAlertTC = schemaComposer.createObjectTC({
   name: 'RuleAlert',

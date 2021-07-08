@@ -3,7 +3,7 @@ import { getQueueById } from '../../../helpers';
 import { JobStatusEnumType } from '../../index';
 import { FieldConfig } from '../../index';
 import { JobStatusEnum } from '@src/types';
-import { Duration } from '../../scalars';
+import { Duration } from '../../../scalars';
 import { parseDuration } from '@lib/datetime';
 import boom from '@hapi/boom';
 

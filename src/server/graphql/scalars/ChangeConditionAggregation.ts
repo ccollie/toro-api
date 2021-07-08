@@ -1,2 +1,2 @@
 import { ChangeAggregationType } from '@src/types';
-import { createEnumFromTS } from '../../helpers';
+import { createEnumFromTS } from '../helpers';

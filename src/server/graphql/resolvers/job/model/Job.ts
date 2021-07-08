@@ -3,7 +3,7 @@ import { jobStateFC } from './Job.state';
 import { JobOptionsTC } from './Job.opts';
 import { jobQueueIdFC } from './Job.queueId';
 import { jobLogs } from './Job.logs';
-import { JobProgress } from '../../scalars';
+import { JobProgress } from '../../../scalars';
 import { Job } from 'bullmq';
 import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';

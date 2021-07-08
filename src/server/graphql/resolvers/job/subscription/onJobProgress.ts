@@ -1,7 +1,7 @@
 import { JobTC, QueueTC, FieldConfig } from '../../index';
 import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
-import { JobProgress } from '../../scalars';
+import { JobProgress } from '../../../scalars';
 import { JobData, needsJob, subscribeToJob } from './subscribeToJob';
 
 export const onJobProgress: FieldConfig = {
