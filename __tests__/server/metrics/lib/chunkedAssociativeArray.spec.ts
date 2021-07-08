@@ -5,7 +5,6 @@ import { getRandomIntArray } from '../../utils';
 import random from 'lodash/random';
 
 describe('ChunkedAssociativeArray', function () {
-
   function populate(array: ChunkedAssociativeArray): void {
     const count = random(5, 50);
     for (let i = 0; i < count; i++) {
@@ -28,20 +27,20 @@ describe('ChunkedAssociativeArray', function () {
       array.put(109, 5);
 
       expect(array.out())
-        .toBe("[(-3: 3) (-2: 1) (0: 5) ]->[(3: 0) (9: 8) (15: 0) ]->[(19: 5) (21: 5) (34: -9) ]->[(109: 5) ]");
-      expect(array.getValues())
-        .toEqual([3, 1, 5, 0, 8, 0, 5, 5, -9, 5]);
-      expect(array.size())
-        .toEqual(10);
+        // eslint-disable-next-line max-len
+        .toBe(
+          '[(-3: 3) (-2: 1) (0: 5) ]->[(3: 0) (9: 8) (15: 0) ]->[(19: 5) (21: 5) (34: -9) ]->[(109: 5) ]',
+        );
+      expect(array.getValues()).toEqual([3, 1, 5, 0, 8, 0, 5, 5, -9, 5]);
+      expect(array.size()).toEqual(10);
 
       array.trim(-2, 20);
 
-      expect(array.out())
-        .toBe("[(-2: 1) (0: 5) ]->[(3: 0) (9: 8) (15: 0) ]->[(19: 5) ]");
-      expect(array.getValues())
-        .toEqual([1, 5, 0, 8, 0, 5]);
-      expect(array.size())
-        .toBe(6);
+      expect(array.out()).toBe(
+        '[(-2: 1) (0: 5) ]->[(3: 0) (9: 8) (15: 0) ]->[(19: 5) ]',
+      );
+      expect(array.getValues()).toEqual([1, 5, 0, 8, 0, 5]);
+      expect(array.size()).toBe(6);
     });
   });
 
@@ -79,9 +78,8 @@ describe('ChunkedAssociativeArray', function () {
       array.put(34, -9);
       array.put(109, 5);
 
-      let values = array.getValues(0, 19);
-      expect(values)
-        .toEqual([5, 0, 8, 72, 39]);
+      const values = array.getValues(0, 19);
+      expect(values).toEqual([5, 0, 8, 72, 39]);
     });
 
     it('defaults to the last key if no end is specified', () => {
@@ -93,9 +91,8 @@ describe('ChunkedAssociativeArray', function () {
       array.put(33, -32);
       array.put(54, 24);
 
-      let values = array.getValues(13);
-      expect(values)
-        .toEqual([21, 5, -32, 24]);
+      const values = array.getValues(13);
+      expect(values).toEqual([21, 5, -32, 24]);
     });
   });
 

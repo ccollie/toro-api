@@ -78,8 +78,6 @@ describe('ChangeConditionEvaluator', () => {
       aggregator.update(x);
       clock.advanceBy(aggregator.sampleInterval);
     });
-    const prevStart = aggregator.previousWindowStart;
-    const rangeStart = aggregator.minTimestamp;
 
     const prevWindow = aggregator.getPreviousWindow();
     const window = aggregator.getCurrentWindow();
@@ -108,7 +106,7 @@ describe('ChangeConditionEvaluator', () => {
 
   describe('window calculations', () => {
     it('calculates current window size', () => {
-      let instance = createInstance({
+      const instance = createInstance({
         windowSize: 10000,
       });
     });
@@ -117,7 +115,7 @@ describe('ChangeConditionEvaluator', () => {
       const WINDOW_SIZE = 7500;
       const TIME_SHIFT = 4500;
 
-      let instance = createInstance({
+      const instance = createInstance({
         windowSize: WINDOW_SIZE,
         timeShift: TIME_SHIFT,
       });
@@ -230,8 +228,6 @@ describe('ChangeConditionEvaluator', () => {
   });
 
   describe('getPreviousWindow', () => {
-    let instance;
-
     it('can get the previous window', () => {
       const instance = new ChangeConditionEvaluator(metric, {
         errorThreshold: 0,
@@ -243,7 +239,7 @@ describe('ChangeConditionEvaluator', () => {
       });
 
       addTestData(instance);
-      const { prevWindow, window } = addTestData(instance);
+      const { prevWindow } = addTestData(instance);
       const expected = instance.getPreviousWindow();
       expect(expected.length).toEqual(prevWindow.length);
     });
@@ -262,7 +258,7 @@ describe('ChangeConditionEvaluator', () => {
 
     it('can correctly calculate diffs', async () => {
       addTestData(instance);
-      const { prevWindow, window } = addTestData(instance);
+      const { prevWindow } = addTestData(instance);
       const instanceDiff = instance.getDiffs();
       expect(instanceDiff.length).toEqual(prevWindow.length);
     });
