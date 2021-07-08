@@ -7,8 +7,8 @@ import { getHost } from '@server/graphql/helpers';
 
 import { JobOptionsTC } from '@server/graphql/resolvers/job/model/Job.opts';
 
-const FlowJobOptions = JobOptionsTC.getITC()
-  .setTypeName('FlowJobOptions')
+const FlowJobOptionsInputTC = JobOptionsTC.getITC()
+  .clone('FlowJobOptionsInput')
   .removeField('parent');
 
 export const FlowJobInputTC = schemaComposer.createInputTC({
@@ -30,7 +30,7 @@ export const FlowJobInputTC = schemaComposer.createInputTC({
       type: 'JSONObject',
       description: 'Data for the job',
     },
-    opts: FlowJobOptions,
+    opts: FlowJobOptionsInputTC,
     children: {
       type: '[FlowJobInput!]',
     },
