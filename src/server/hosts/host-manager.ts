@@ -244,7 +244,9 @@ export class HostManager {
         const cfg = JSON.parse(data) as QueueConfig;
         if (cfg) queues.push(cfg);
         // todo: make sure fields we expect exist
-      } catch {}
+      } catch (e) {
+        logger.error(e);
+      }
     }
     return queues;
   }

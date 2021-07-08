@@ -8,7 +8,7 @@ import { QueueManager, QueueListener } from '../queues';
 import { logger } from '../lib';
 import config from '../config';
 import { getHosts, HostManager } from '../hosts';
-import { AppInfo } from '@src/types';
+import { AppInfo, HostConfig } from '@src/types';
 import { registerHelpers } from '@lib/hbs';
 import ms from 'ms';
 import { parseDuration } from '@lib/datetime';
@@ -104,6 +104,20 @@ export class Supervisor {
 
     this.initSweepTimer();
     _isInit = true;
+  }
+
+  async registerHost(config: HostConfig): Promise<HostManager> {
+    let manager = this.getHost(config.name);
+    if (manager) {
+      throw boom.badRequest(`Host "${config.name}" already registered`);
+    }
+    manager = new HostManager(config);
+    hosts.set(config.name, manager);
+
+    await manager.waitUntilReady();
+    await manager.listen();
+
+    return manager;
   }
 
   getQueueListener(queue: Queue | string): QueueListener {
