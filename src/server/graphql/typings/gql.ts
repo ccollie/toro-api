@@ -11,25 +11,25 @@ export type Scalars = {
   Float: number;
   Date: any;
   /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
-  DateTime: any;
+  DateTime: Date;
   /** Specifies a duration in milliseconds - either as an int or a string specification e.g. "2 min", "3 hr" */
   Duration: any;
   /** A field whose value conforms to the standard internet email address format as specified in RFC822: https://www.w3.org/Protocols/rfc822/. */
-  EmailAddress: any;
+  EmailAddress: string;
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: any;
   /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSONObject: any;
+  JSONObject: { [key: string]: any };
   /** The `JSONSchema` scalar type represents JSONSchema values as specified by https://json-schema.org/draft/2019-09/json-schema-validation.html. */
-  JSONSchema: any;
+  JSONSchema: { [key: string]: any };
   /** Job process. Either a number (percentage) or user specified data */
-  JobProgress: any;
+  JobProgress: string | number | Record<string, any>;
   /** Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action */
-  JobRemoveOption: any;
+  JobRemoveOption: boolean | number;
   /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
-  Timestamp: any;
+  Timestamp: number;
   /** A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt. */
-  URL: any;
+  URL: string;
 };
 
 export type AggregateInfo = {
@@ -91,7 +91,7 @@ export type BulkJobActionPayload = {
 export type BulkJobItemInput = {
   name: Scalars['String'];
   data: Scalars['JSONObject'];
-  options?: Maybe<FlowJobOptions>;
+  options?: Maybe<JobOptionsInput>;
 };
 
 export type BulkStatusItem = {
@@ -162,11 +162,11 @@ export type FlowJobInput = {
   queueName: Scalars['String'];
   /** Data for the job */
   data?: Maybe<Scalars['JSONObject']>;
-  opts?: Maybe<FlowJobOptions>;
+  opts?: Maybe<FlowJobOptionsInput>;
   children?: Maybe<Array<FlowJobInput>>;
 };
 
-export type FlowJobOptions = {
+export type FlowJobOptionsInput = {
   timestamp?: Maybe<Scalars['Date']>;
   /** Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required. */
   priority?: Maybe<Scalars['Int']>;
@@ -353,7 +353,7 @@ export type JobAddCronInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['ID'];
   data?: Maybe<Scalars['JSONObject']>;
-  options?: Maybe<FlowJobOptions>;
+  options?: Maybe<JobOptionsInput>;
 };
 
 export type JobAddCronPayload = {
@@ -364,7 +364,7 @@ export type JobAddEveryInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['ID'];
   data?: Maybe<Scalars['JSONObject']>;
-  options?: Maybe<FlowJobOptions>;
+  options?: Maybe<JobOptionsInput>;
 };
 
 export type JobAddEveryPayload = {
@@ -375,7 +375,7 @@ export type JobAddInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['String'];
   data?: Maybe<Scalars['JSONObject']>;
-  options?: Maybe<FlowJobOptions>;
+  options?: Maybe<JobOptionsInput>;
 };
 
 /** The count of jobs according to status */
@@ -392,7 +392,7 @@ export type JobDataValidateInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['String'];
   data?: Maybe<Scalars['JSONObject']>;
-  opts?: Maybe<FlowJobOptions>;
+  opts?: Maybe<JobOptionsInput>;
 };
 
 export type JobDataValidatePayload = {
@@ -522,7 +522,7 @@ export type JobMoveToFailedPayload = {
 
 export type JobNode = {
   job: Job;
-  children: Array<Maybe<Job>>;
+  children?: Maybe<Array<Job>>;
 };
 
 export type JobOptions = {
@@ -559,7 +559,47 @@ export type JobOptions = {
   repeat?: Maybe<JobRepeatOptions>;
 };
 
+export type JobOptionsInput = {
+  timestamp?: Maybe<Scalars['Date']>;
+  /** Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required. */
+  priority?: Maybe<Scalars['Int']>;
+  /**
+   * An amount of milliseconds to wait until this job can be processed.
+   * Note that for accurate delays, worker and producers should have their clocks synchronized.
+   */
+  delay?: Maybe<Scalars['Int']>;
+  /** The total number of attempts to try the job until it completes. */
+  attempts?: Maybe<Scalars['Int']>;
+  /** Backoff setting for automatic retries if the job fails */
+  backoff?: Maybe<Scalars['JSON']>;
+  /** if true, adds the job to the right of the queue instead of the left (default false) */
+  lifo?: Maybe<Scalars['Boolean']>;
+  /** The number of milliseconds after which the job should be fail with a timeout error [optional] */
+  timeout?: Maybe<Scalars['Int']>;
+  /** Override the job ID - by default, the job ID is a unique integer, but you can use this setting to override it. If you use this option, it is up to you to ensure the jobId is unique. If you attempt to add a job with an id that already exists, it will not be added. */
+  jobId?: Maybe<Scalars['String']>;
+  /** If true, removes the job when it successfully completes.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the COMPLETED set. */
+  removeOnComplete?: Maybe<Scalars['JobRemoveOption']>;
+  /** If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set. */
+  removeOnFail?: Maybe<Scalars['JobRemoveOption']>;
+  /** Rate limiter key to use if rate limiter enabled. */
+  rateLimiterKey?: Maybe<Scalars['String']>;
+  /** Limits the amount of stack trace lines that will be recorded in the stacktrace. */
+  stackTraceLimit?: Maybe<Scalars['Int']>;
+  parent?: Maybe<JobParentInput>;
+  /** Limits the size in bytes of the job's data payload (as a JSON serialized string). */
+  sizeLimit?: Maybe<Scalars['Int']>;
+  repeat?: Maybe<JobRepeatOptionsCronInput>;
+};
+
 export type JobParent = {
+  /** The id of the job */
+  id: Scalars['String'];
+  /** The name of the queue (including prefix) containing the job */
+  queue: Scalars['String'];
+};
+
+export type JobParentInput = {
   /** The id of the job */
   id: Scalars['String'];
   /** The name of the queue (including prefix) containing the job */
@@ -624,7 +664,7 @@ export type JobSchemaInput = {
   queueId: Scalars['ID'];
   jobName: Scalars['String'];
   schema: Scalars['JSONSchema'];
-  defaultOpts?: Maybe<FlowJobOptions>;
+  defaultOpts?: Maybe<JobOptionsInput>;
 };
 
 export type JobSearchInput = {
@@ -1633,7 +1673,7 @@ export type QueryJobDataValidateArgs = {
 
 
 export type QueryJobOptionsValidateArgs = {
-  input: FlowJobOptions;
+  input: JobOptionsInput;
 };
 
 
