@@ -1,9 +1,12 @@
+import dotenv from 'dotenv';
 import nconf from 'nconf';
 import path from 'path';
 import { packageInfo } from '../packageInfo';
 import { isString, isObject } from 'lodash';
 import { AppInfo } from '@src/types';
 //const debug = require('debug')('toro:config');
+
+dotenv.config();
 
 nconf.argv({
   parseValues: true,
