@@ -3,6 +3,9 @@ schema: './src/server/graphql/sdl/sdl.graphql'
 generates:
   ./src/server/graphql/typings/gql.ts:
     plugins:
+      - add:
+          content:
+            - /* eslint-disable */
       - 'typescript'
       - 'typescript-operations'
     config:
@@ -18,3 +21,6 @@ generates:
         Timestamp: "number"
         EmailAddress: "string"
         URL: "string"
+    hooks:
+      afterOneFileWrite:
+        - prettier --write

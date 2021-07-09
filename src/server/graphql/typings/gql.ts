@@ -1,7 +1,12 @@
+/* eslint-disable */
 export type Maybe<T> = T | null;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type Exact<T extends { [key: string]: unknown }> = {
+  [K in keyof T]: T[K];
+};
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> &
+  { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> &
+  { [SubKey in K]: Maybe<T[SubKey]> };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -10,7 +15,7 @@ export type Scalars = {
   Int: number;
   Float: number;
   Date: any;
-  /** A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar. */
+  /** An ISO date-time string, such as 2007-12-03T10:15:30Z. Also handles Elastic compatible date-math expressions:  https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math. */
   DateTime: Date;
   /** Specifies a duration in milliseconds - either as an int or a string specification e.g. "2 min", "3 hr" */
   Duration: any;
@@ -53,7 +58,7 @@ export enum AggregateTypeEnum {
   P90 = 'P90',
   P95 = 'P95',
   P99 = 'P99',
-  P995 = 'P995'
+  P995 = 'P995',
 }
 
 export type Aggregator = {
@@ -107,7 +112,7 @@ export enum ChangeAggregation {
   Sum = 'SUM',
   P90 = 'P90',
   P95 = 'P95',
-  P99 = 'P99'
+  P99 = 'P99',
 }
 
 export type ChangeConditionInput = {
@@ -127,10 +132,8 @@ export type ChangeConditionInput = {
 
 export enum ConditionChangeType {
   Change = 'CHANGE',
-  Pct = 'PCT'
+  Pct = 'PCT',
 }
-
-
 
 export type DiscoverQueuesPayload = {
   /** The queue name */
@@ -139,12 +142,10 @@ export type DiscoverQueuesPayload = {
   prefix: Scalars['String'];
 };
 
-
-
 export enum ErrorLevel {
   None = 'NONE',
   Warning = 'WARNING',
-  Critical = 'CRITICAL'
+  Critical = 'CRITICAL',
 }
 
 export type FlowAddInput = {
@@ -243,7 +244,7 @@ export enum HistogramBinningMethod {
   /** Calculate the number of bins based on the Sturges method */
   Sturges = 'Sturges',
   /** Calculate the number of histogram bins based on Freedman-Diaconis method */
-  Freedman = 'Freedman'
+  Freedman = 'Freedman',
 }
 
 /** Records histogram binning data */
@@ -289,11 +290,8 @@ export type HostQueuesFilter = {
 
 export enum HttpMethodEnum {
   Get = 'GET',
-  Post = 'POST'
+  Post = 'POST',
 }
-
-
-
 
 export type Job = {
   id: Scalars['ID'];
@@ -329,17 +327,14 @@ export type Job = {
   dependenciesCount: JobDependenciesCountPayload;
 };
 
-
 export type JobLogsArgs = {
   start?: Scalars['Int'];
   end?: Scalars['Int'];
 };
 
-
 export type JobDependenciesArgs = {
   input?: Maybe<JobDependenciesOptsInput>;
 };
-
 
 export type JobDependenciesCountArgs = {
   input?: Maybe<JobDependenciesCountInput>;
@@ -606,12 +601,10 @@ export type JobParentInput = {
   queue: Scalars['String'];
 };
 
-
 export type JobPromotePayload = {
   job: Job;
   queue: Queue;
 };
-
 
 export type JobRemovePayload = {
   queue: Queue;
@@ -708,7 +701,7 @@ export enum JobStatus {
   Failed = 'FAILED',
   Paused = 'PAUSED',
   WaitingChildren = 'WAITING_CHILDREN',
-  Unknown = 'UNKNOWN'
+  Unknown = 'UNKNOWN',
 }
 
 export type JobUpdateDelta = {
@@ -834,30 +827,25 @@ export type Metric = {
   dateRange?: Maybe<TimeSpan>;
 };
 
-
 /** Metrics are numeric samples of data collected over time */
 export type MetricDataArgs = {
   input: MetricDataInput;
 };
-
 
 /** Metrics are numeric samples of data collected over time */
 export type MetricOutliersArgs = {
   input: MetricDataOutliersInput;
 };
 
-
 /** Metrics are numeric samples of data collected over time */
 export type MetricHistogramArgs = {
   input: MetricsHistogramInput;
 };
 
-
 /** Metrics are numeric samples of data collected over time */
 export type MetricPercentileDistributionArgs = {
   input: MetricPercentileDistributionInput;
 };
-
 
 /** Metrics are numeric samples of data collected over time */
 export type MetricSummaryStatsArgs = {
@@ -867,7 +855,7 @@ export type MetricSummaryStatsArgs = {
 export enum MetricCategory {
   Queue = 'Queue',
   Host = 'Host',
-  Redis = 'Redis'
+  Redis = 'Redis',
 }
 
 /** Input fields for creating a metric */
@@ -989,13 +977,13 @@ export enum MetricType {
   UsedMemory = 'UsedMemory',
   Waiting = 'Waiting',
   WaitingChildren = 'WaitingChildren',
-  WaitTime = 'WaitTime'
+  WaitTime = 'WaitTime',
 }
 
 export enum MetricValueType {
   Count = 'Count',
   Gauge = 'Gauge',
-  Rate = 'Rate'
+  Rate = 'Rate',
 }
 
 /** Compute a frequency distribution of a range of metric data. */
@@ -1098,130 +1086,105 @@ export type Mutation = {
   ruleAlertMarkAsRead: RuleAlertMarkAsReadPayload;
 };
 
-
 export type MutationMetricDataRefreshArgs = {
   input: MetricDataRefreshInput;
 };
-
 
 export type MutationMetricCreateArgs = {
   input: MetricCreateInput;
 };
 
-
 export type MutationMetricUpdateArgs = {
   input: MetricInput;
 };
-
 
 export type MutationMetricDeleteArgs = {
   input: MetricDeleteInput;
 };
 
-
 export type MutationFlowAddArgs = {
   input?: Maybe<FlowAddInput>;
 };
-
 
 export type MutationMailNotificationChannelAddArgs = {
   input: MailNotificationChannelAddInput;
 };
 
-
 export type MutationSlackNotificationChannelAddArgs = {
   input: SlackNotificationChannelAddInput;
 };
 
-
 export type MutationWebhookNotificationChannelAddArgs = {
   input: WebhookNotificationChannelAddInput;
 };
-
 
 export type MutationNotificationChannelEnableArgs = {
   hostId: Scalars['ID'];
   channelId: Scalars['ID'];
 };
 
-
 export type MutationNotificationChannelDisableArgs = {
   hostId: Scalars['ID'];
   channelId: Scalars['ID'];
 };
-
 
 export type MutationNotificationChannelDeleteArgs = {
   hostId: Scalars['ID'];
   channelId: Scalars['ID'];
 };
 
-
 export type MutationMailNotificationChannelUpdateArgs = {
   input: MailNotificationChannelUpdateInput;
 };
-
 
 export type MutationSlackNotificationChannelUpdateArgs = {
   input: SlackNotificationChannelUpdateInput;
 };
 
-
 export type MutationWebhookNotificationChannelUpdateArgs = {
   input: WebhookNotificationChannelUpdateInput;
 };
 
-
 export type MutationJobAddArgs = {
   input?: Maybe<JobAddInput>;
 };
-
 
 export type MutationJobAddBulkArgs = {
   queueId: Scalars['String'];
   jobs: Array<Maybe<BulkJobItemInput>>;
 };
 
-
 export type MutationJobAddCronArgs = {
   input: JobAddCronInput;
 };
-
 
 export type MutationJobAddEveryArgs = {
   input?: Maybe<JobAddEveryInput>;
 };
 
-
 export type MutationJobDiscardArgs = {
   input: JobLocatorInput;
 };
-
 
 export type MutationJobPromoteArgs = {
   input: JobLocatorInput;
 };
 
-
 export type MutationJobRemoveArgs = {
   input: JobLocatorInput;
 };
-
 
 export type MutationJobRemoveBulkArgs = {
   input: BulkJobActionInput;
 };
 
-
 export type MutationJobRetryArgs = {
   input: JobLocatorInput;
 };
 
-
 export type MutationJobUpdateArgs = {
   input: JobUpdateInput;
 };
-
 
 export type MutationJobLogAddArgs = {
   queueId: Scalars['String'];
@@ -1229,36 +1192,29 @@ export type MutationJobLogAddArgs = {
   row: Scalars['String'];
 };
 
-
 export type MutationJobMoveToCompletedArgs = {
   input: JobLocatorInput;
 };
-
 
 export type MutationJobMoveToDelayedArgs = {
   input?: Maybe<JobMoveToDelayedInput>;
 };
 
-
 export type MutationJobMoveToFailedArgs = {
   input?: Maybe<JobMoveToFailedInput>;
 };
-
 
 export type MutationJobPromoteBulkArgs = {
   input: BulkJobActionInput;
 };
 
-
 export type MutationJobRetryBulkArgs = {
   input: BulkJobActionInput;
 };
 
-
 export type MutationRepeatableJobRemoveByKeyArgs = {
   input: RepeatableJobRemoveByKeyInput;
 };
-
 
 export type MutationRepeatableJobRemoveArgs = {
   id: Scalars['ID'];
@@ -1266,108 +1222,87 @@ export type MutationRepeatableJobRemoveArgs = {
   repeat: RepeatableJobRemoveOptions;
 };
 
-
 export type MutationQueueCleanArgs = {
   input: QueueCleanFilter;
 };
-
 
 export type MutationQueueDrainArgs = {
   id: Scalars['ID'];
   delayed?: Maybe<Scalars['Boolean']>;
 };
 
-
 export type MutationQueuePauseArgs = {
   id: Scalars['ID'];
 };
 
-
 export type MutationQueueResumeArgs = {
   id: Scalars['ID'];
 };
-
 
 export type MutationQueueDeleteArgs = {
   id: Scalars['ID'];
   options?: Maybe<QueueDeleteOptions>;
 };
 
-
 export type MutationQueueRegisterArgs = {
   input?: Maybe<RegisterQueueInput>;
 };
-
 
 export type MutationQueueUnregisterArgs = {
   id: Scalars['ID'];
 };
 
-
 export type MutationQueueJobFilterCreateArgs = {
   input: JobFilterInput;
 };
-
 
 export type MutationQueueJobSchemaSetArgs = {
   input: JobSchemaInput;
 };
 
-
 export type MutationQueueJobSchemaDeleteArgs = {
   input: QueueJobSchemaDeleteInput;
 };
-
 
 export type MutationQueueJobFilterDeleteArgs = {
   input: QueueJobFilterDeleteInput;
 };
 
-
 export type MutationQueueJobFilterUpdateArgs = {
   input: JobFilterUpdateInput;
 };
-
 
 export type MutationQueueStatsDeleteArgs = {
   input: QueueStatsDeleteInput;
 };
 
-
 export type MutationRuleAlertDeleteArgs = {
   input: RuleAlertDeleteInput;
 };
-
 
 export type MutationRuleAlertsClearArgs = {
   input: RuleAlertsClearInput;
 };
 
-
 export type MutationRuleDeleteArgs = {
   input: RuleDeleteInput;
 };
-
 
 export type MutationRuleAddArgs = {
   input: RuleAddInput;
 };
 
-
 export type MutationRuleActivateArgs = {
   input: RuleActivateInput;
 };
-
 
 export type MutationRuleDeactivateArgs = {
   input: RuleDeactivateInput;
 };
 
-
 export type MutationRuleUpdateArgs = {
   input: RuleUpdateInput;
 };
-
 
 export type MutationRuleAlertMarkAsReadArgs = {
   input: RuleAlertMarkAsReadInput;
@@ -1548,7 +1483,7 @@ export enum OutlierDetectionMethod {
   /** Detect outliers based on the Inter Quartile Range. */
   Iqr = 'IQR',
   /** Detect outliers based on Iglewicz and Hoaglin (Mean Absolute Deviation). */
-  Mad = 'MAD'
+  Mad = 'MAD',
 }
 
 /** Input parameters for outlier filtering */
@@ -1576,7 +1511,7 @@ export type PeakConditionInput = {
 export enum PeakSignalDirection {
   Above = 'ABOVE',
   Below = 'BELOW',
-  Both = 'BOTH'
+  Both = 'BOTH',
 }
 
 export type PercentileCount = {
@@ -1655,27 +1590,22 @@ export type Query = {
   jobSchemaInfer?: Maybe<JobSchema>;
 };
 
-
 export type QueryQueueArgs = {
   id: Scalars['ID'];
 };
-
 
 export type QueryJobArgs = {
   queueId: Scalars['ID'];
   id: Scalars['ID'];
 };
 
-
 export type QueryJobDataValidateArgs = {
   input: JobDataValidateInput;
 };
 
-
 export type QueryJobOptionsValidateArgs = {
   input: JobOptionsInput;
 };
-
 
 export type QueryFindQueueArgs = {
   hostName: Scalars['String'];
@@ -1683,44 +1613,36 @@ export type QueryFindQueueArgs = {
   queueName: Scalars['String'];
 };
 
-
 export type QueryFlowArgs = {
   input: FlowNodeGetInput;
 };
-
 
 export type QueryHostArgs = {
   id: Scalars['ID'];
 };
 
-
 export type QueryHostByNameArgs = {
   name: Scalars['String'];
 };
-
 
 export type QueryMetricArgs = {
   queueId: Scalars['ID'];
   metricId: Scalars['ID'];
 };
 
-
 export type QueryNotificationChannelArgs = {
   hostId: Scalars['ID'];
   id: Scalars['ID'];
 };
 
-
 export type QueryQueueJobFilterArgs = {
   input?: Maybe<QueueJobFilterInput>;
 };
-
 
 export type QueryRuleArgs = {
   queueId: Scalars['ID'];
   ruleId: Scalars['ID'];
 };
-
 
 export type QueryRuleAlertArgs = {
   queueId: Scalars['ID'];
@@ -1728,11 +1650,9 @@ export type QueryRuleAlertArgs = {
   alertId: Scalars['ID'];
 };
 
-
 export type QueryQueueJobSchemaArgs = {
   input?: Maybe<QueueJobSchemaInput>;
 };
-
 
 export type QueryJobSchemaInferArgs = {
   input?: Maybe<JobSchemaInferInput>;
@@ -1802,113 +1722,91 @@ export type Queue = {
   workerCount: Scalars['Int'];
 };
 
-
 export type QueueHistogramArgs = {
   input: HistogramInput;
 };
-
 
 export type QueueJobFiltersArgs = {
   ids?: Maybe<Array<Scalars['ID']>>;
 };
 
-
 export type QueueJobSchemasArgs = {
   jobNames?: Maybe<Array<Scalars['String']>>;
 };
-
 
 export type QueueJobSearchArgs = {
   filter: JobSearchInput;
 };
 
-
 export type QueueJobsByFilterArgs = {
   filter: JobsByFilterIdInput;
 };
-
 
 export type QueueJobDurationAvgArgs = {
   jobName?: Maybe<Scalars['String']>;
   limit?: Maybe<Scalars['Int']>;
 };
 
-
 export type QueueJobMemoryAvgArgs = {
   input?: Maybe<JobsMemoryAvgInput>;
 };
-
 
 export type QueueJobMemoryUsageArgs = {
   input?: Maybe<JobsMemoryAvgInput>;
 };
 
-
 export type QueueLastStatsSnapshotArgs = {
   input?: Maybe<StatsLatestInput>;
 };
-
 
 export type QueuePercentileDistributionArgs = {
   input: PercentileDistributionInput;
 };
 
-
 export type QueueRepeatableJobsArgs = {
   input?: Maybe<RepeatableJobsInput>;
 };
-
 
 export type QueueRuleAlertsArgs = {
   input?: Maybe<QueueRuleAlertsInput>;
 };
 
-
 export type QueueJobsArgs = {
   input?: Maybe<QueueJobsInput>;
 };
-
 
 export type QueueJobsByIdArgs = {
   input?: Maybe<QueueJobsByIdInput>;
 };
 
-
 export type QueueStatsArgs = {
   input: StatsQueryInput;
 };
-
 
 export type QueueStatsAggregateArgs = {
   input: StatsQueryInput;
 };
 
-
 export type QueueStatsDateRangeArgs = {
   input: StatsSpanInput;
 };
-
 
 export type QueueThroughputArgs = {
   input?: Maybe<StatsRateQueryInput>;
 };
 
-
 export type QueueErrorRateArgs = {
   input?: Maybe<StatsRateQueryInput>;
 };
-
 
 export type QueueErrorPercentageRateArgs = {
   input?: Maybe<StatsRateQueryInput>;
 };
 
-
 export type QueueWaitTimeAvgArgs = {
   jobName?: Maybe<Scalars['String']>;
   limit?: Maybe<Scalars['Int']>;
 };
-
 
 export type QueueWorkersArgs = {
   limit?: Maybe<Scalars['Int']>;
@@ -1957,7 +1855,7 @@ export enum QueueFilterStatus {
   Active = 'Active',
   Inactive = 'Inactive',
   Paused = 'Paused',
-  Running = 'Running'
+  Running = 'Running',
 }
 
 export type QueueHost = {
@@ -2004,62 +1902,50 @@ export type QueueHost = {
   workers: Array<QueueWorker>;
 };
 
-
 export type QueueHostDiscoverQueuesArgs = {
   prefix?: Maybe<Scalars['String']>;
   unregisteredOnly?: Maybe<Scalars['Boolean']>;
 };
 
-
 export type QueueHostErrorPercentageRateArgs = {
   input?: Maybe<StatsRateQueryInput>;
 };
-
 
 export type QueueHostErrorRateArgs = {
   input?: Maybe<StatsRateQueryInput>;
 };
 
-
 export type QueueHostHistogramArgs = {
   input: HistogramInput;
 };
-
 
 export type QueueHostLastStatsSnapshotArgs = {
   input?: Maybe<StatsLatestInput>;
 };
 
-
 export type QueueHostPercentileDistributionArgs = {
   input: PercentileDistributionInput;
 };
-
 
 export type QueueHostQueuesArgs = {
   filter?: Maybe<HostQueuesFilter>;
 };
 
-
 export type QueueHostStatsArgs = {
   input: StatsQueryInput;
 };
-
 
 export type QueueHostStatsAggregateArgs = {
   input: StatsQueryInput;
 };
 
-
 export type QueueHostStatsDateRangeArgs = {
   input: StatsSpanInput;
 };
 
-
 export type QueueHostThroughputArgs = {
   input?: Maybe<StatsRateQueryInput>;
 };
-
 
 export type QueueHostWorkersArgs = {
   limit?: Maybe<Scalars['Int']>;
@@ -2286,7 +2172,6 @@ export type Rule = {
   totalFailures: Scalars['Int'];
 };
 
-
 export type RuleAlertsArgs = {
   input?: Maybe<RuleAlertsInput>;
 };
@@ -2436,7 +2321,7 @@ export type RuleAlertsInput = {
 export enum RuleCircuitState {
   Closed = 'CLOSED',
   Open = 'OPEN',
-  HalfOpen = 'HALF_OPEN'
+  HalfOpen = 'HALF_OPEN',
 }
 
 export type RuleConditionInput = {
@@ -2483,14 +2368,14 @@ export enum RuleOperator {
   Gt = 'GT',
   Lt = 'LT',
   Gte = 'GTE',
-  Lte = 'LTE'
+  Lte = 'LTE',
 }
 
 export enum RuleState {
   Normal = 'NORMAL',
   Warning = 'WARNING',
   Error = 'ERROR',
-  Muted = 'MUTED'
+  Muted = 'MUTED',
 }
 
 /** Real time status of a Rule */
@@ -2516,7 +2401,7 @@ export type RuleStatus = {
 export enum RuleType {
   Threshold = 'THRESHOLD',
   Peak = 'PEAK',
-  Change = 'CHANGE'
+  Change = 'CHANGE',
 }
 
 /** Information needed to update a rule */
@@ -2550,7 +2435,7 @@ export enum Severity {
   Info = 'INFO',
   Warning = 'WARNING',
   Error = 'ERROR',
-  Critical = 'CRITICAL'
+  Critical = 'CRITICAL',
 }
 
 /** A channel which sends notifications through slack */
@@ -2601,7 +2486,7 @@ export type SlackNotificationChannelUpdateInput = {
 
 export enum SortOrderEnum {
   Asc = 'ASC',
-  Desc = 'DESC'
+  Desc = 'DESC',
 }
 
 export enum StatsGranularity {
@@ -2609,7 +2494,7 @@ export enum StatsGranularity {
   Hour = 'Hour',
   Day = 'Day',
   Week = 'Week',
-  Month = 'Month'
+  Month = 'Month',
 }
 
 /** Queue stats filter to getting latest snapshot. */
@@ -2624,7 +2509,7 @@ export type StatsLatestInput = {
 
 export enum StatsMetricType {
   Latency = 'Latency',
-  Wait = 'Wait'
+  Wait = 'Wait',
 }
 
 /** Queue stats filter. */
@@ -2744,141 +2629,115 @@ export type Subscription = {
   onRuleAlert: OnRuleAlertPayload;
 };
 
-
 export type SubscriptionOnNotificationChannelCreatedArgs = {
   hostId: Scalars['String'];
 };
-
 
 export type SubscriptionOnNotificationChannelDeletedArgs = {
   hostId: Scalars['String'];
 };
 
-
 export type SubscriptionOnHostStatsUpdatedArgs = {
   input: StatsUpdatedSubscriptionFilter;
 };
 
-
 export type SubscriptionOnJobAddedArgs = {
   queueId: Scalars['ID'];
 };
-
 
 export type SubscriptionOnJobUpdatedArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
 
-
 export type SubscriptionOnJobProgressArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
-
 
 export type SubscriptionOnJobRemovedArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
 
-
 export type SubscriptionOnJobLogAddedArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
-
 
 export type SubscriptionObJobActiveArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
 
-
 export type SubscriptionObJobFailedArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
-
 
 export type SubscriptionObJobCompletedArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
 
-
 export type SubscriptionObJobStalledArgs = {
   queueId: Scalars['String'];
   jobId: Scalars['String'];
 };
-
 
 export type SubscriptionOnJobDelayedArgs = {
   prefix?: Scalars['String'];
   queueId: Scalars['ID'];
 };
 
-
 export type SubscriptionOnQueuePausedArgs = {
   queueId: Scalars['String'];
 };
-
 
 export type SubscriptionOnQueueResumedArgs = {
   queueId: Scalars['ID'];
 };
 
-
 export type SubscriptionOnQueueDeletedArgs = {
   hostId: Scalars['String'];
 };
-
 
 export type SubscriptionOnQueueWorkersChangedArgs = {
   queueId: Scalars['String'];
 };
 
-
 export type SubscriptionOnQueueStateChangedArgs = {
   queueId: Scalars['String'];
 };
-
 
 export type SubscriptionOnQueueJobCountsChangedArgs = {
   queueId: Scalars['String'];
 };
 
-
 export type SubscriptionOnQueueJobUpdatesArgs = {
   input: QueueJobUpdatesFilterInput;
 };
-
 
 export type SubscriptionOnQueueStatsUpdatedArgs = {
   input: StatsUpdatedSubscriptionFilter;
 };
 
-
 export type SubscriptionOnQueueRegisteredArgs = {
   hostId: Scalars['String'];
 };
-
 
 export type SubscriptionOnQueueUnregisteredArgs = {
   hostId: Scalars['String'];
 };
 
-
 export type SubscriptionOnQueueWorkersCountChangedArgs = {
   queueId: Scalars['String'];
 };
-
 
 export type SubscriptionOnQueueMetricValueUpdatedArgs = {
   queueId: Scalars['String'];
   metricId: Scalars['String'];
 };
-
 
 export type SubscriptionOnRuleAlertArgs = {
   queueId: Scalars['ID'];
@@ -2938,8 +2797,6 @@ export type TimeseriesDataPointInterface = {
   /** The value at the given timestamp */
   value: Scalars['Float'];
 };
-
-
 
 export type ValidateJobOptionsPayload = {
   isValid: Scalars['Boolean'];
