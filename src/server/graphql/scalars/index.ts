@@ -10,9 +10,9 @@ export * from './StatsMetricsTypeEnum';
 export * from './JobFilterQuery';
 export * from './QueueEventsEnum';
 export * from './timespan';
+export * from './DateTime';
 
 export {
-  GraphQLDateTime,
   GraphQLEmailAddress,
   GraphQLURL,
   GraphQLTimestamp,
