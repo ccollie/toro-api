@@ -162,7 +162,7 @@ describe('ChannelStorage', () => {
     it('returns false for a non-existent key', async () => {
       const invalidId = randomId(6);
 
-      let exists = await sut.channelExists(invalidId);
+      const exists = await sut.channelExists(invalidId);
       expect(!!exists).toBe(false);
 
       const deleted = await sut.deleteChannel(invalidId);
