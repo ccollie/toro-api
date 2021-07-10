@@ -1,7 +1,7 @@
 import boom from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
-import { FlowProducer, Job, Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import { StatsClient, StatsListener } from '../stats';
 import { Rule, RuleManager } from '../rules';
 import { EventBus, LockManager } from '../redis';
@@ -25,8 +25,8 @@ import {
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '@lib/keys';
 import { MetricManager } from '../metrics/metric-manager';
-import { parseDuration } from '@lib/datetime';
 import { BaseMetric } from '../metrics';
+import { getConfigDuration } from '@lib/config-utils';
 
 const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
 
@@ -53,10 +53,7 @@ export function getCronDescription(cron: string | number): string {
 const DEFAULT_RETENTION = ms('2 weeks');
 
 function getRetention(): number {
-  const baseValue = process.env.DATA_RETENTION;
-  return baseValue
-    ? parseDuration(baseValue, DEFAULT_RETENTION)
-    : DEFAULT_RETENTION;
+  return getConfigDuration('DATA_RETENTION', DEFAULT_RETENTION);
 }
 
 /**
@@ -82,7 +79,6 @@ export class QueueManager {
   public readonly statsListener: StatsListener;
   private _uri: string = undefined;
   private inStatsUpdate = false;
-  private flowProducer: FlowProducer;
   public readonly dataRetention = getRetention();
 
   constructor(host: HostManager, queue: Queue, config: QueueConfig) {

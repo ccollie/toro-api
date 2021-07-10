@@ -18,6 +18,7 @@ import {
 } from '../lib/expressions';
 import fnv from 'fnv-plus';
 import { isEmpty, isObject, uniq } from 'lodash';
+import { getConfigNumeric } from '@lib/config-utils';
 
 type FilterMeta = {
   rpn: RpnNode[];
@@ -265,9 +266,8 @@ interface SearchCursorMeta {
   ids: string[];
 }
 
-// todo: maxBatchCount to avoid blocking redis
-// todo: get from config
-const MAX_BATCH_COUNT = 200;
+// maxBatchCount to avoid blocking redis
+const MAX_BATCH_COUNT = getConfigNumeric('JOB_MATCH_BATCH_SIZE', 200);
 
 export async function processSearch(
   queue: Queue,
@@ -318,7 +318,7 @@ export async function processSearch(
     const fromCache = await getMultipleJobsById(queue, slice);
     meta.ids = remainder;
     fromCache.forEach((json) => {
-      const job = Job.fromJSON(queue, (json as unknown) as JobJsonRaw);
+      const job = Job.fromJSON(queue, json as unknown as JobJsonRaw);
       jobs.push(job);
     });
   }

@@ -5,8 +5,12 @@ import isEmpty from 'lodash/isEmpty';
 import { JobFinishedState, JobStatusEnum } from '../../types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
+import { getConfigDuration } from '@lib/config-utils';
 
-const DEFAULT_JOBNAMES_TIMEOUT = ms('5 secs'); // TODO: get from config
+const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
+  'JOB_NAMES_CACHE_TIMOUT',
+  ms('15 secs'),
+);
 
 export interface ScriptFilteredJobsResult {
   cursor: number;
