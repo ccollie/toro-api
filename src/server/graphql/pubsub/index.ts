@@ -1,6 +1,7 @@
-// todo: explicitly reference graphql-subscriptions instead of apollo
-import { PubSub, FilterFn, PubSubEngine } from 'apollo-server-express';
-import { logger } from '../lib';
+import { getValue } from '../../config';
+import { PubSub, FilterFn, PubSubEngine } from 'graphql-subscriptions';
+import { logger } from '@lib/index';
+import { createRedisPubSubEngine } from './redis';
 
 // In a production server you might want to have some message broker or pubsub implementation like
 // rabbitMQ, redis or kafka logic here
@@ -10,9 +11,13 @@ import { logger } from '../lib';
 // Kafka: https://github.com/ancashoria/graphql-kafka-subscriptions
 // Rabbitmq: https://github.com/cdmbase/graphql-rabbitmq-subscriptions
 
-export const pubsub = new PubSub(); // todo: construct based on config
+function createPubsub(): PubSubEngine {
+  const redisPubsubUrl = getValue('redis_pubsub_url');
+  if (redisPubsubUrl) return createRedisPubSubEngine(redisPubsubUrl);
+  return new PubSub();
+}
 
-export { PubSubEngine, FilterFn };
+const pubsub: PubSubEngine = createPubsub();
 
 export function publish(
   channelName: string,
@@ -22,3 +27,5 @@ export function publish(
     logger.warn(err);
   });
 }
+
+export { PubSubEngine, FilterFn, pubsub };
