@@ -33,7 +33,7 @@ describe('LockManager', () => {
       });
 
       it('can manually acquire the lock', async () => {
-        let lock = new LockManager(client);
+        const lock = new LockManager(client);
         const acquired = await lock.acquire();
         expect(acquired).toBe(true);
         const exists = await client.exists(lock.key);
@@ -41,7 +41,7 @@ describe('LockManager', () => {
       });
 
       it('re-acquires lock if it is lost', async () => {
-        let lock = new LockManager(client, {
+        const lock = new LockManager(client, {
           ttl: 500,
         });
 
@@ -133,7 +133,7 @@ describe('LockManager: Competing clients', () => {
       await setup();
       try {
         await first.acquire();
-        let secondIsOwner = await second.acquire();
+        const secondIsOwner = await second.acquire();
         expect(secondIsOwner).toBe(false);
         // start monitoring the lock
         await second.start();

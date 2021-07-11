@@ -10,7 +10,6 @@ import {
   DEFAULT_CLIENT_OPTIONS,
   TEST_DB,
 } from '../../factories';
-import * as IORedis from 'ioredis';
 import { delay } from '../utils';
 import { RedisClient } from 'bullmq';
 

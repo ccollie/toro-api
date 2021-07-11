@@ -79,7 +79,6 @@ describe('JobRateMetric', () => {
     beforeEach(() => {
       metric = new JobRateMetric({
         timePeriod: 5000,
-        interval: 500,
       });
       helper = MetricTestHelper.forMetric(metric);
     });

@@ -48,8 +48,8 @@ export const GraphQLDateTimeConfig: GraphQLScalarTypeConfig<Date, Date> =
         }
 
         const v = parseDateMath(value);
-        if (v.isValid()) {
-          return v.toDate();
+        if (isValidDate(v)) {
+          return v;
         }
 
         throw new TypeError(
@@ -84,8 +84,8 @@ export const GraphQLDateTimeConfig: GraphQLScalarTypeConfig<Date, Date> =
         }
 
         const v = parseDateMath(value);
-        if (v.isValid()) {
-          return v.toDate();
+        if (isValidDate(v)) {
+          return v;
         }
 
         throw new TypeError(
@@ -116,8 +116,8 @@ export const GraphQLDateTimeConfig: GraphQLScalarTypeConfig<Date, Date> =
       }
 
       const v = parseDateMath(value);
-      if (v.isValid()) {
-        return v.toDate();
+      if (isValidDate(v)) {
+        return v;
       }
 
       throw new TypeError(
