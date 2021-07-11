@@ -3,7 +3,7 @@ import { SlackChannel } from '@src/server/notifications';
 import { createNotificationContext } from '../helpers';
 import { nanoid } from 'nanoid';
 import { POST_MESSAGE_URL } from '@src/server/notifications/slack/slack-channel';
-import nock = require('nock');
+import nock from 'nock';
 
 describe('SlackChannel', () => {
   const URL =
@@ -13,7 +13,7 @@ describe('SlackChannel', () => {
 
   describe('constructor', () => {
     it('can construct an instance', () => {
-      let config: SlackChannelConfig = {
+      const config: SlackChannelConfig = {
         id: 'hook1',
         name: 'hook1',
         type: 'slack',
@@ -72,7 +72,7 @@ describe('SlackChannel', () => {
     jest.setTimeout(8000);
 
     it('can send using chat.postMessage', async () => {
-      let config = {
+      const config = {
         token: nanoid(),
         channel: '89V5MPZX',
       };
@@ -91,7 +91,7 @@ describe('SlackChannel', () => {
     });
 
     it('can send using Incoming Webhooks', async () => {
-      let config = {
+      const config = {
         webhook: URL,
         channel: nanoid(),
       };

@@ -12,7 +12,7 @@ describe('WebhookChannel', () => {
 
   describe('constructor', () => {
     it('can construct an instance', () => {
-      let config: WebhookChannelConfig = {
+      const config: WebhookChannelConfig = {
         id: 'hook1',
         name: 'hook1',
         timeout: 400,

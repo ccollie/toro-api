@@ -26,27 +26,18 @@ describe('messages', () => {
     });
 
     function createRuleAlert(event: RuleEventsEnum): RuleAlert {
-      const start = +new Date() - random(15 * ONE_MINUTE, ONE_HOUR);
-      const end = start + random(ONE_MINUTE, 30 * ONE_MINUTE);
       const context: RuleAlert = {
+        isRead: false,
+        ruleId: nanoid(),
         raisedAt: 0,
         status: 'open',
         value: 0,
         id: nanoid(),
-        event,
         errorLevel: ErrorLevel.WARNING,
-        start,
-        end,
-        threshold: random(10, 100),
-        value: random(10, 100),
         failures: random(1, 5), // violations
-        alerts: random(1, 5),
         state: {},
         severity: Severity.WARNING,
       };
-      if (event === RuleEventsEnum.ALERT_RESET) {
-        context.resetValue = random(10, 100);
-      }
       return context;
     }
 

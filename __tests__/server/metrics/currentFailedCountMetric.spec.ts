@@ -17,7 +17,6 @@ describe('CurrentFailedCountMetric', () => {
       };
       const sut = new CurrentFailedCountMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.jobNames.sort()).toEqual(options.jobNames.sort());
       expect(sut.sampleInterval).toBe(options.sampleInterval);
       expect(MetricTestHelper.hasDescription(sut)).toBe(true);
       expect(MetricTestHelper.hasKey(sut)).toBe(true);
