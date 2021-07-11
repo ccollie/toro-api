@@ -18,21 +18,30 @@
  */
 
 import * as dateMath from '@src/server/lib/parse-date-math';
-import moment from 'moment';
+import { parseISO } from 'date-fns';
+import {
+  startOf as _startOf,
+  endOf as _endOf,
+  add as _add,
+} from '../../../src/server/lib/datetime';
 
-/**
- * Require a new instance of the moment library, bypassing the require cache
- * by using jest.resetModules().
- * This is needed, since we are trying to test whether or not this library works
- * when passing in a different configured moment instance. If we would change
- * the locales on the imported moment, it would automatically apply
- * to the source code, even without passing it in to the method, since they share
- * the same global state. This method avoids this, by loading a separate instance
- * of moment, by resetting the jest require modules cache and require the library again.
- */
-function momentClone() {
-  jest.resetModules();
-  return require('moment');
+function startOf(date: Date, unit: string): Date {
+  unit = unit === 'M' ? 'month' : unit;
+  return _startOf(date, unit);
+}
+
+function endOf(date: Date, unit: string): Date {
+  unit = unit === 'M' ? 'month' : unit;
+  return _endOf(date, unit);
+}
+
+function add(date: Date, amount: number, unit: string): Date {
+  unit = unit === 'M' ? 'month' : unit;
+  return _add(date, amount, unit);
+}
+
+function subtract(date: Date, amount: number, unit: string): Date {
+  return add(date, -amount, unit);
 }
 
 describe('dateMath', function () {
@@ -40,7 +49,7 @@ describe('dateMath', function () {
   const spans = ['s', 'm', 'h', 'd', 'w', 'M', 'y', 'ms'];
   const anchor = '2014-01-01T06:06:06.666Z';
   const anchoredDate = new Date(Date.parse(anchor));
-  const unix = moment(anchor).valueOf();
+  const unix = parseISO(anchor).valueOf();
   const format = 'YYYY-MM-DDTHH:mm:ss.SSSZ';
 
   describe('errors', function () {
@@ -76,40 +85,28 @@ describe('dateMath', function () {
   });
 
   describe('objects and strings', function () {
-    let mmnt;
-    let date;
-    let string;
-    let now;
+    let mmnt: Date;
+    let date: Date;
+    let now: Date;
 
     beforeEach(function () {
       jest.useFakeTimers('modern');
       jest.setSystemTime(unix);
-      now = moment();
-      mmnt = moment(anchor);
-      date = mmnt.toDate();
-      string = mmnt.format(format);
+      now = new Date();
+      mmnt = new Date(anchoredDate);
+      date = new Date(mmnt);
     });
 
     afterEach(function () {
       jest.useRealTimers();
     });
 
-    it('should return the same moment if passed a moment', function () {
-      expect(dateMath.parse(mmnt)).toEqual(mmnt);
-    });
-
-    it('should return a moment if passed a date', function () {
-      expect(dateMath.parse(date).format(format)).toEqual(mmnt.format(format));
-    });
-
-    it('should return a moment if passed an ISO8601 string', function () {
-      expect(dateMath.parse(string).format(format)).toEqual(
-        mmnt.format(format),
-      );
+    it('should return a Date if passed an ISO8601 string', function () {
+      expect(dateMath.parse(anchor).getTime()).toEqual(mmnt.getTime());
     });
 
     it('should return the current time when parsing now', function () {
-      expect(dateMath.parse('now').format(format)).toEqual(now.format(format));
+      expect(dateMath.parse('now').getTime()).toEqual(now.getTime());
     });
 
     it('should use the forceNow parameter when parsing now', function () {
@@ -120,14 +117,14 @@ describe('dateMath', function () {
   });
 
   describe('subtraction', function () {
-    let now;
-    let anchored;
+    let now: Date;
+    let anchored: Date;
 
     beforeEach(function () {
       jest.useFakeTimers('modern');
       jest.setSystemTime(unix);
-      now = moment();
-      anchored = moment(anchor);
+      now = new Date();
+      anchored = new Date(anchor);
     });
 
     afterEach(function () {
@@ -140,34 +137,35 @@ describe('dateMath', function () {
         const thenEx = `${anchor}||-${len}${span}`;
 
         it(`should return ${len}${span} ago`, function () {
-          const parsed = dateMath.parse(nowEx).format(format);
-          expect(parsed).toEqual(now.subtract(len, span).format(format));
+          const parsed = dateMath.parse(nowEx).valueOf();
+          expect(parsed).toEqual(subtract(now, len, span).valueOf());
         });
 
         it(`should return ${len}${span} before ${anchor}`, function () {
-          const parsed = dateMath.parse(thenEx).format(format);
-          expect(parsed).toEqual(anchored.subtract(len, span).format(format));
+          const parsed = dateMath.parse(thenEx).valueOf();
+          expect(parsed).toEqual(subtract(anchored, len, span).valueOf());
         });
 
         it(`should return ${len}${span} before forceNow`, function () {
           const parsed = dateMath
             .parse(nowEx, { forceNow: anchoredDate })
             .valueOf();
-          expect(parsed).toEqual(anchored.subtract(len, span).valueOf());
+          const expected = subtract(anchored, len, span);
+          expect(parsed).toEqual(expected.valueOf());
         });
       });
     });
   });
 
   describe('addition', function () {
-    let now;
-    let anchored;
+    let now: Date;
+    let anchored: Date;
 
     beforeEach(function () {
       jest.useFakeTimers('modern');
       jest.setSystemTime(unix);
-      now = moment();
-      anchored = moment(anchor);
+      now = new Date();
+      anchored = new Date(anchor);
     });
 
     afterEach(function () {
@@ -180,35 +178,35 @@ describe('dateMath', function () {
         const thenEx = `${anchor}||+${len}${span}`;
 
         it(`should return ${len}${span} from now`, function () {
-          expect(dateMath.parse(nowEx).format(format)).toEqual(
-            now.add(len, span).format(format),
+          expect(dateMath.parse(nowEx).valueOf()).toEqual(
+            add(now, len, span).valueOf(),
           );
         });
 
         it(`should return ${len}${span} after ${anchor}`, function () {
-          expect(dateMath.parse(thenEx).format(format)).toEqual(
-            anchored.add(len, span).format(format),
+          expect(dateMath.parse(thenEx).valueOf()).toEqual(
+            add(anchored, len, span).valueOf(),
           );
         });
 
         it(`should return ${len}${span} after forceNow`, function () {
           expect(
             dateMath.parse(nowEx, { forceNow: anchoredDate }).valueOf(),
-          ).toEqual(anchored.add(len, span).valueOf());
+          ).toEqual(add(anchored, len, span).valueOf());
         });
       });
     });
   });
 
   describe('rounding', function () {
-    let now;
+    let now: Date;
     let anchored;
 
     beforeEach(function () {
       jest.useFakeTimers('modern');
       jest.setSystemTime(unix);
-      now = moment();
-      anchored = moment(anchor);
+      now = new Date();
+      anchored = new Date(anchor);
     });
 
     afterEach(function () {
@@ -217,21 +215,21 @@ describe('dateMath', function () {
 
     spans.forEach((span) => {
       it(`should round now to the beginning of the ${span}`, function () {
-        expect(dateMath.parse(`now/${span}`).format(format)).toEqual(
-          now.startOf(span).format(format),
+        expect(dateMath.parse(`now/${span}`).valueOf()).toEqual(
+          startOf(now, span).valueOf(),
         );
       });
 
       it(`should round now to the beginning of forceNow's ${span}`, function () {
         expect(
           dateMath.parse(`now/${span}`, { forceNow: anchoredDate }).valueOf(),
-        ).toEqual(anchored.startOf(span).valueOf());
+        ).toEqual(startOf(anchored, span).valueOf());
       });
 
       it(`should round now to the end of the ${span}`, function () {
         expect(
-          dateMath.parse(`now/${span}`, { roundUp: true }).format(format),
-        ).toEqual(now.endOf(span).format(format));
+          dateMath.parse(`now/${span}`, { roundUp: true }).valueOf(),
+        ).toEqual(endOf(now, span).valueOf());
       });
 
       it(`should round now to the end of forceNow's ${span}`, function () {
@@ -239,20 +237,20 @@ describe('dateMath', function () {
           dateMath
             .parse(`now/${span}`, { roundUp: true, forceNow: anchoredDate })
             .valueOf(),
-        ).toEqual(anchored.endOf(span).valueOf());
+        ).toEqual(endOf(anchored, span).valueOf());
       });
     });
   });
 
   describe('math and rounding', function () {
-    let now;
-    let anchored;
+    let now: Date;
+    let anchored: Date;
 
     beforeEach(function () {
       jest.useFakeTimers('modern');
       jest.setSystemTime(unix);
-      now = moment();
-      anchored = moment(anchor);
+      now = new Date();
+      anchored = new Date(anchor);
     });
 
     afterEach(function () {
@@ -260,117 +258,41 @@ describe('dateMath', function () {
     });
 
     it('should round to the nearest second with 0 value', function () {
-      const val = dateMath.parse('now-0s/s').format(format);
-      expect(val).toEqual(now.startOf('s').format(format));
+      const val = dateMath.parse('now-0s/s').valueOf();
+      expect(val).toEqual(startOf(now, 's').valueOf());
     });
 
     it('should subtract 17s, rounded to the nearest second', function () {
-      const val = dateMath.parse('now-17s/s').format(format);
-      expect(val).toEqual(now.startOf('s').subtract(17, 's').format(format));
+      const val = dateMath.parse('now-17s/s').valueOf();
+      const start = startOf(now, 's');
+      const expected = subtract(start, 17, 's');
+      expect(val).toEqual(expected.valueOf());
     });
 
     it('should add 555ms, rounded to the nearest millisecond', function () {
-      const val = dateMath.parse('now+555ms/ms').format(format);
-      expect(val).toEqual(now.add(555, 'ms').startOf('ms').format(format));
+      const val = dateMath.parse('now+555ms/ms').valueOf();
+      const added = add(now, 555, 'ms');
+      const expected = startOf(added, 'ms');
+      expect(val).toEqual(expected.valueOf());
     });
 
     it('should subtract 555ms, rounded to the nearest second', function () {
-      const val = dateMath.parse('now-555ms/s').format(format);
-      expect(val).toEqual(now.subtract(555, 'ms').startOf('s').format(format));
-    });
-
-    it('should round weeks to Sunday by default', function () {
-      const val = dateMath.parse('now-1w/w');
-      expect(val.isoWeekday()).toEqual(7);
-    });
-
-    it('should round weeks based on the passed moment locale start of week setting', function () {
-      const m = momentClone();
-      // Define a locale, that has Tuesday as beginning of the week
-      m.defineLocale('x-test', {
-        week: { dow: 2 },
-      });
-      const val = dateMath.parse('now-1w/w', { momentInstance: m });
-      expect(val.isoWeekday()).toEqual(2);
-    });
-
-    it('should round up weeks based on the passed moment locale start of week setting', () => {
-      const m = momentClone();
-      // Define a locale, that has Tuesday as beginning of the week
-      m.defineLocale('x-test', {
-        week: { dow: 3 },
-      });
-      const val = dateMath.parse('now-1w/w', {
-        roundUp: true,
-        momentInstance: m,
-      });
-      // The end of the range (rounding up) should be the last day of the week (so one day before)
-      // our start of the week, that's why 3 - 1
-      expect(val.isoWeekday()).toEqual(3 - 1);
+      const val = dateMath.parse('now-555ms/s').valueOf();
+      const subtracted = subtract(now, 555, 'ms');
+      const expected = startOf(subtracted, 's');
+      expect(val).toEqual(expected.valueOf());
     });
 
     it('should round relative to forceNow', function () {
       const val = dateMath
         .parse('now-0s/s', { forceNow: anchoredDate })
         .valueOf();
-      expect(val).toEqual(anchored.startOf('s').valueOf());
+      const expected = startOf(anchored, 's');
+      expect(val).toEqual(expected.valueOf());
     });
 
     it('should parse long expressions', () => {
       expect(dateMath.parse('now-1d/d+8h+50m')).toBeTruthy();
-    });
-  });
-
-  describe('used momentjs instance', function () {
-    it('should use the default moment instance if parameter not specified', function () {
-      const momentSpy = jest.spyOn(moment, 'isMoment');
-      dateMath.parse('now');
-      expect(momentSpy).toHaveBeenCalled();
-      momentSpy.mockRestore();
-    });
-
-    it('should not use default moment instance if parameter is specified', function () {
-      const m = momentClone();
-      const momentSpy = jest.spyOn(moment, 'isMoment');
-      const cloneSpy = jest.spyOn(m, 'isMoment');
-      dateMath.parse('now', { momentInstance: m });
-      expect(momentSpy).not.toHaveBeenCalled();
-      expect(cloneSpy).toHaveBeenCalled();
-      momentSpy.mockRestore();
-      cloneSpy.mockRestore();
-    });
-
-    it('should work with multiple different instances', function () {
-      const m1 = momentClone();
-      const m2 = momentClone();
-      const m1Spy = jest.spyOn(m1, 'isMoment');
-      const m2Spy = jest.spyOn(m2, 'isMoment');
-      dateMath.parse('now', { momentInstance: m1 });
-      expect(m1Spy).toHaveBeenCalled();
-      expect(m2Spy).not.toHaveBeenCalled();
-      m1Spy.mockClear();
-      m2Spy.mockClear();
-      dateMath.parse('now', { momentInstance: m2 });
-      expect(m1Spy).not.toHaveBeenCalled();
-      expect(m2Spy).toHaveBeenCalled();
-      m1Spy.mockRestore();
-      m2Spy.mockRestore();
-    });
-
-    it('should use global instance after passing an instance', function () {
-      const m = momentClone();
-      const momentSpy = jest.spyOn(moment, 'isMoment');
-      const cloneSpy = jest.spyOn(m, 'isMoment');
-      dateMath.parse('now', { momentInstance: m });
-      expect(momentSpy).not.toHaveBeenCalled();
-      expect(cloneSpy).toHaveBeenCalled();
-      momentSpy.mockClear();
-      cloneSpy.mockClear();
-      dateMath.parse('now');
-      expect(momentSpy).toHaveBeenCalled();
-      expect(cloneSpy).not.toHaveBeenCalled();
-      momentSpy.mockRestore();
-      cloneSpy.mockRestore();
     });
   });
 

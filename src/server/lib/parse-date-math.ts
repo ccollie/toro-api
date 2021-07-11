@@ -17,7 +17,8 @@
  * under the License.
  */
 // https://github.com/elastic/kibana/tree/master/packages/elastic-datemath/src
-import moment from 'moment';
+import { parseISO, toDate } from 'date-fns';
+import { add, endOf, startOf, subtract } from '@lib/datetime';
 
 export type Unit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'M' | 'y';
 export type UnitsMap = {
@@ -54,24 +55,18 @@ const isValidDate = (d: unknown) => isDate(d) && !isNaN(d.valueOf() as any);
 
 /*
  * This is a simplified version of elasticsearch's date parser.
- * If you pass in a momentjs instance as the third parameter the calculation
- * will be done using this (and its locale settings) instead of the one bundled
- * with this library.
  */
 export function parse(
   input: string,
   options: {
     roundUp?: boolean;
-    momentInstance?: typeof moment;
     forceNow?: number | Date;
   } = {},
-) {
+): Date | undefined {
   const text = input;
-  const { roundUp = false, momentInstance = moment, forceNow } = options;
+  const { roundUp = false, forceNow } = options;
 
   if (!text) return undefined;
-  if (momentInstance.isMoment(text)) return text;
-  if (isDate(text)) return momentInstance(text);
   if (forceNow !== undefined && !isValidDate(forceNow as any)) {
     throw new Error('forceNow must be a valid Date');
   }
@@ -82,7 +77,7 @@ export function parse(
   let parseString;
 
   if (text.substring(0, 3) === 'now') {
-    time = momentInstance(forceNow);
+    time = forceNow ? toDate(forceNow) : new Date();
     mathString = text.substring('now'.length);
   } else {
     index = text.indexOf('||');
@@ -94,7 +89,7 @@ export function parse(
       mathString = text.substring(index + 2);
     }
     // We're going to just require ISO8601 timestamps, k?
-    time = momentInstance(parseString);
+    time = parseISO(parseString);
   }
 
   if (!mathString.length) {
@@ -104,12 +99,8 @@ export function parse(
   return parseDateMath(mathString, time, roundUp);
 }
 
-function parseDateMath(
-  mathString: string,
-  time: moment.Moment,
-  roundUp: boolean,
-) {
-  const dateTime = time;
+function parseDateMath(mathString: string, time: Date, roundUp: boolean) {
+  let dateTime = time;
   const len = mathString.length;
   let i = 0;
 
@@ -165,13 +156,14 @@ function parseDateMath(
     if (units.indexOf(unit) === -1) {
       return;
     } else {
+      const _unit = unit === 'M' ? 'month' : unit;
       if (type === 0) {
-        if (roundUp) dateTime.endOf(unit as any);
-        else dateTime.startOf(unit as any);
+        if (roundUp) dateTime = endOf(dateTime, _unit);
+        else dateTime = startOf(dateTime, _unit);
       } else if (type === 1) {
-        dateTime.add(num as any, unit);
+        dateTime = add(dateTime, num as any, _unit);
       } else if (type === 2) {
-        dateTime.subtract(num as any, unit);
+        dateTime = subtract(dateTime, num as any, _unit);
       }
     }
   }

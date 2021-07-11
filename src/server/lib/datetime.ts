@@ -72,6 +72,10 @@ export function normalizeUnit(str: string = null): string {
     case 'quarter':
     case 'q':
       return 'quarter';
+    case 'mnt':
+    case 'months':
+    case 'month':
+      return 'month';
     case 'weeks':
     case 'week':
     case 'w':
