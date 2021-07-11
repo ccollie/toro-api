@@ -19,7 +19,7 @@ import {
   MetricOptions,
 } from '../../types';
 import { createJobNameFilter } from './utils';
-import { parseDuration } from '@lib/datetime';
+import { getConfigDuration } from '@lib/config-utils';
 
 export interface MetricUpdateEvent {
   ts: number;
@@ -32,10 +32,7 @@ export type MetricUpdateEventHandler = (eventData?: MetricUpdateEvent) => void;
 const DEFAULT_SAMPLE_INTERVAL = ms('1 min'); // todo: get from config
 
 function getSampleInterval(): number {
-  const baseValue = process.env.METRIC_SAVE_INTERVAL;
-  return baseValue
-    ? parseDuration(baseValue, DEFAULT_SAMPLE_INTERVAL)
-    : DEFAULT_SAMPLE_INTERVAL;
+  return getConfigDuration('METRIC_SAMPLE_INTERVAL', DEFAULT_SAMPLE_INTERVAL);
 }
 
 export const BaseMetricSchema = Joi.object().keys({

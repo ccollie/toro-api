@@ -18,6 +18,8 @@ nconf.env({
   lowerCase: true,
 });
 
+const DEFAULT_KEY_PREFIX = 'aspen';
+
 const baseConfigPath = global.process.env.CONFIG_PATH || __dirname;
 const environment = global.process.env.NODE_ENV || 'development';
 
@@ -98,6 +100,7 @@ function getAppInfo(): AppInfo {
  * values we have to set manually
  */
 nconf.set('env', environment);
+nconf.set('keyPrefix', global.process.env.KEY_PREFIX || DEFAULT_KEY_PREFIX);
 
 // todo: timezone
 nconf.set('packageInfo', packageInfo);
