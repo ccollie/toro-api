@@ -2,6 +2,7 @@ import { logger } from '../lib';
 import { BaseMetric } from '../metrics';
 import {
   ChangeCondition,
+  EvaluationResult,
   PeakCondition,
   RuleType,
   ThresholdCondition,
@@ -10,7 +11,6 @@ import { Rule } from './rule';
 import { parseRuleCondition } from './schemas';
 import {
   ConditionEvaluator,
-  EvaluationResult,
   PeakConditionEvaluator,
   ThresholdConditionEvaluator,
 } from './condition-evaluator';

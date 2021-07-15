@@ -3,6 +3,8 @@ import {
   RuleAlert,
   RuleConfigOptions,
   RuleEventsEnum,
+  RuleOperator,
+  RuleType,
 } from '@src/types';
 import { Rule, RuleStorage } from '@src/server/rules';
 import {
@@ -208,7 +210,14 @@ describe('RuleStorage', () => {
         errorLevel: ErrorLevel.CRITICAL,
         value: 100,
         raisedAt: Date.now(),
-        state: {},
+        state: {
+          ruleType: RuleType.THRESHOLD,
+          errorThreshold: 100,
+          errorLevel: ErrorLevel.CRITICAL,
+          value: 110,
+          comparator: RuleOperator.GT,
+          unit: 'jobs/sec',
+        },
         severity: data.severity,
         failures: 0,
         isRead: false,

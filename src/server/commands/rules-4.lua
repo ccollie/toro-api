@@ -156,12 +156,10 @@ end
 --- does s only contain digits?
 -- @string s a string
 local function isDigit(s)
-    -- assert(1,s)
     return string.find(s,'^%d+$') == 1
 end
 
 local function isString(s)
-    -- assert(1,s)
     return type(s) == 'string'
 end
 
@@ -366,7 +364,7 @@ local function updateRuleState(state)
         redis.call('hset', ruleKey, unpack(args))
 
         emitEvent(STATE_CHANGED, unpack(args))
-    end    
+    end
 end
 
 local function fetchAlert(id)
@@ -479,6 +477,7 @@ local function writeAlert(parameter)
         errorLevel = data.errorLevel,
         severity = rule.severity,
         state = data.state,
+        title = data.title or '',
         message = data.message or '',
         failures = getFailures(),
         value = data.value,
@@ -495,7 +494,7 @@ local function writeAlert(parameter)
     local serialized = cjson.encode(alert)
 
     --- create an entry compatible with timeseries-1.lua
-    --- Note: this works because id passed in is actually a snowflake id
+    --- Note: this works because id passed in is actually a snowflake id compatible with a long int
     setAlert(id, serialized)
 
     --- Raise event

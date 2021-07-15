@@ -1,4 +1,3 @@
-import isEmpty from 'lodash/isEmpty';
 import { LatencyMetric } from '@src/server/metrics';
 import {
   ErrorLevel,
@@ -12,6 +11,7 @@ import {
   PeakConditionEvaluator,
   ThresholdConditionEvaluator,
 } from '@src/server/rules';
+import { ManualClock } from '@src/server/lib';
 
 describe('Condition Evaluation', () => {
   describe('ThresholdConditionEvaluator', () => {
@@ -38,7 +38,6 @@ describe('Condition Evaluation', () => {
         };
         const sut = new ThresholdConditionEvaluator(metric, options);
         expect(sut).toBeDefined();
-        expect(isEmpty(sut.state)).toBe(true);
         expect(sut.metric).toBe(metric);
       });
     });
@@ -133,8 +132,8 @@ describe('Condition Evaluation', () => {
     function createEvaluator(
       options?: Partial<PeakCondition>,
     ): PeakConditionEvaluator {
+      const clock: ManualClock = new ManualClock(1000);
       const defaults: PeakCondition = {
-        operator: RuleOperator.GT,
         type: RuleType.PEAK,
         influence: 0.5,
         lag: 0,
@@ -149,7 +148,6 @@ describe('Condition Evaluation', () => {
       it('can construct an instance', () => {
         const metric = new LatencyMetric({});
         const options: PeakCondition = {
-          operator: RuleOperator.GT,
           type: RuleType.PEAK,
           errorThreshold: 3.5,
           influence: 0,
@@ -158,22 +156,48 @@ describe('Condition Evaluation', () => {
         };
         const sut = new PeakConditionEvaluator(metric, options);
         expect(sut).toBeDefined();
-        expect(isEmpty(sut.state)).toBe(true);
         expect(sut.metric).toBe(metric);
       });
     });
 
     describe('.evaluate', () => {
+      const testData: number[] = [
+        1, 1, 1.1, 1, 0.9, 1, 1, 1.1, 1, 0.9, 1, 1.1, 1, 1, 0.9, 1, 1, 1.1, 1,
+        1, 1, 1, 1.1, 0.9, 1, 1.1, 1, 1, 0.9, 1, 1.1, 1, 1, 1.1, 1, 0.8, 0.9, 1,
+        1.2, 0.9, 1, 1, 1.1, 1.2, 1, 1.5, 1, 3, 2, 5, 3, 2, 1, 1, 1, 0.9, 1, 1,
+        3, 2.6, 4, 3, 3.2, 2, 1, 1, 0.8, 4, 4, 2, 2.5, 1, 1, 1,
+      ];
+
+      //results from original implementation
+      const knownResults: number[] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
+        1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0,
+        0, 0,
+      ];
+
       it('triggers on errorThreshold', () => {
-        const sut = createEvaluator({ errorThreshold: 10 });
-        const result = sut.evaluate(5);
-        expect(result.triggered).toBe(true);
-        expect(result.state).toMatchObject({
-          value: 5,
-          ruleType: RuleType.THRESHOLD,
-          errorLevel: ErrorLevel.CRITICAL,
-          unit: 'ms',
-        });
+        const sut = createEvaluator({ errorThreshold: 3.5, influence: 0 });
+        for (let i = 0; i < testData.length; i++) {
+          const value = testData[i];
+          const result = sut.evaluate(value);
+          expect(result.triggered).toBe(!!knownResults[i]);
+          if (result.triggered) {
+            expect(result.state).toMatchObject({
+              value,
+              ruleType: RuleType.PEAK,
+              errorLevel: ErrorLevel.CRITICAL,
+              unit: 'ms',
+            });
+          } else {
+            expect(result.state).toMatchObject({
+              value,
+              ruleType: RuleType.PEAK,
+              errorLevel: ErrorLevel.NONE,
+              unit: 'ms',
+            });
+          }
+        }
       });
 
       it('triggers on warningThreshold', () => {
@@ -185,60 +209,9 @@ describe('Condition Evaluation', () => {
         expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 12,
-          ruleType: RuleType.THRESHOLD,
+          ruleType: RuleType.PEAK,
           errorLevel: ErrorLevel.WARNING,
           unit: 'ms',
-        });
-      });
-
-      it('properly handles comparisons', () => {
-        const testData = [
-          {
-            options: { errorThreshold: 10, operator: RuleOperator.EQ },
-            value: 10,
-            expected: true,
-          },
-          {
-            options: { errorThreshold: 11, operator: RuleOperator.NE },
-            value: 11,
-            expected: false,
-          },
-          {
-            options: { errorThreshold: 100, operator: RuleOperator.GT },
-            value: 110,
-            expected: true,
-          },
-          {
-            options: { errorThreshold: 99, operator: RuleOperator.GTE },
-            value: 99,
-            expected: true,
-          },
-          {
-            options: { errorThreshold: 50, operator: RuleOperator.LT },
-            value: 51,
-            expected: false,
-          },
-          {
-            options: { errorThreshold: 73, operator: RuleOperator.LTE },
-            value: 73,
-            expected: true,
-          },
-        ];
-
-        testData.forEach(({ options, value, expected }) => {
-          const opts: Partial<PeakCondition> = {
-            errorThreshold: options.errorThreshold,
-            operator: options.operator,
-          };
-          const sut = createEvaluator(opts);
-          const result = sut.evaluate(value);
-          expect(result.triggered).toBe(expected);
-          expect(result.state).toMatchObject({
-            value,
-            ruleType: RuleType.THRESHOLD,
-            // errorLevel: ErrorLevel.CRITICAL,
-            unit: 'ms',
-          });
         });
       });
     });

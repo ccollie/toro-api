@@ -1,21 +1,18 @@
 import random from 'lodash/random';
-import {
-  EvaluationResult,
-  Rule,
-  RuleAlerter,
-  RuleStorage,
-} from '@src/server/rules';
+import { Rule, RuleAlerter, RuleStorage } from '@src/server/rules';
 import { delay, getRandomBool } from '../utils';
-import { createQueueManager, createRule, clearDb } from '../../factories';
+import { clearDb, createQueueManager, createRule } from '../../factories';
 import {
   ErrorLevel,
+  EvaluationResult,
   RuleAlert,
   RuleConfigOptions,
+  RuleOperator,
   RuleState,
+  RuleType,
 } from '@src/types';
 import { QueueManager } from '@src/server/queues';
-import { ManualClock } from '@src/server/lib';
-import nanoid from 'nanoid';
+import { ManualClock, nanoid } from '@src/server/lib';
 
 describe('RuleEAlerter', () => {
   let queueManager: QueueManager;
@@ -29,7 +26,7 @@ describe('RuleEAlerter', () => {
   beforeEach(async () => {
     hostName = 'host-' + nanoid();
     queueManager = createQueueManager();
-    storage = new RuleStorage(queueManager.queue, queueManager.bus);
+    storage = new RuleStorage(hostName, queueManager.queue, queueManager.bus);
     clock = new ManualClock();
     successResult = createSuccessResult();
     errorResult = createFailResult(ErrorLevel.CRITICAL);
@@ -63,11 +60,19 @@ describe('RuleEAlerter', () => {
         ? ErrorLevel.NONE
         : [ErrorLevel.WARNING, ErrorLevel.CRITICAL][random(0, 1)];
     }
+    const value = random(10, 1000);
     return {
       triggered,
       errorLevel: level,
-      value: random(10, 1000),
-      state: {},
+      value,
+      state: {
+        ruleType: RuleType.THRESHOLD,
+        errorLevel: level,
+        value,
+        errorThreshold: 240,
+        comparator: RuleOperator.GT,
+        unit: 'ms',
+      },
       ...opts,
     };
   }
@@ -127,7 +132,7 @@ describe('RuleEAlerter', () => {
     it('raise an alert on trigger', async () => {
       const payload = {
         num: random(0, 99),
-        str: nanoid.nanoid(4),
+        str: nanoid(),
       };
 
       const sut = await createAlerter({
@@ -292,7 +297,7 @@ describe('RuleEAlerter', () => {
         // jest.useFakeTimers();
         const payload = {
           num: random(0, 99),
-          str: nanoid.nanoid(),
+          str: nanoid(),
         };
         const options = {
           alertOnReset: true,

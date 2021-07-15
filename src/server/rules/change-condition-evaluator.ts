@@ -3,13 +3,15 @@ import { BaseMetric } from '@server/metrics';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation/schemas';
 import { DDSketch } from 'sketches-js';
-import { clearDDSketch, calculateInterval } from '../stats/utils';
+import { calculateInterval, clearDDSketch } from '../stats/utils';
 import {
   ChangeAggregationType,
   ChangeConditionOptions,
-  RuleType,
-  ErrorLevel,
+  ChangeRuleEvaluationState,
   ChangeTypeEnum,
+  ErrorLevel,
+  RuleEvaluationState,
+  RuleType,
 } from '../../types';
 import { ThresholdConditionEvaluator } from './condition-evaluator';
 
@@ -78,16 +80,23 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     this.usePercentage = options.changeType === ChangeTypeEnum.CHANGE;
   }
 
-  protected evaluateThreshold(value: number): ErrorLevel {
-    const val = this.update(value);
-    return super.evaluateThreshold(val);
+  protected getState(level: ErrorLevel, value: number): RuleEvaluationState {
+    const baseState = super.getState(level, value);
+    return {
+      ...baseState,
+      ruleType: RuleType.CHANGE,
+      changeType: this.usePercentage
+        ? ChangeTypeEnum.PCT
+        : ChangeTypeEnum.CHANGE,
+      windowSize: this.windowSize,
+      timeShift: this.timeShift,
+      aggregation: this.aggregationType,
+    } as ChangeRuleEvaluationState;
   }
 
   protected handleEval(value: number): ErrorLevel {
     const change = this.update(value);
-    const result = super.handleEval(change);
-    this.state['ruleType'] = RuleType.CHANGE;
-    return result;
+    return super.handleEval(change);
   }
 
   private get now(): number {

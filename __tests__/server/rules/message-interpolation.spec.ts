@@ -74,7 +74,7 @@ describe('Rule Message Interpolation', () => {
     const channels = ['email', 'slack'];
 
     const opts: RuleConfigOptions = createRuleOptions({
-      metric,
+      metricId: nanoid(),
       condition,
       channels,
       options: {

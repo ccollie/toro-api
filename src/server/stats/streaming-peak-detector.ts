@@ -23,6 +23,7 @@ export class StreamingPeakDetector {
   private filteredY: number;
   private readonly clock: Clock;
   private readonly lagEnd: number;
+  private pastLag: boolean;
   private readonly stats: OnlineNormalEstimator;
 
   constructor(clock: Clock, lag: number, threshold = 3.5, influence = 0.5) {
@@ -36,7 +37,8 @@ export class StreamingPeakDetector {
   }
 
   get isInLagPeriod(): boolean {
-    return this.clock.getTime() < this.lagEnd;
+    this.pastLag = this.pastLag || this.clock.getTime() >= this.lagEnd;
+    return !this.pastLag;
   }
 
   update(value: number): number {

@@ -48,7 +48,6 @@ export function convertCondition(input: RuleConditionInput): RuleCondition {
         return {
           type: RuleType.PEAK,
           ...rest,
-          operator: translateOperator(operator),
           direction: translateDirection(direction),
         };
       }

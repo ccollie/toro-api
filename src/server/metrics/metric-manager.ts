@@ -98,7 +98,7 @@ export class MetricManager {
       isNew = true;
       const type = opts.type;
       if (type) {
-        id = `${type}-${nanoid()}`;
+        id = `${nanoid()}`;
       } else {
         id = getUniqueId();
       }
@@ -141,7 +141,10 @@ export class MetricManager {
       const data = await client.hgetall(this.getMetricKey(id));
       if (metric) {
         metric = deserializeMetric(data);
-        this.listener.registerMetric(metric);
+        if (metric) {
+          this.listener.registerMetric(metric);
+        }
+        // else throw
       }
     }
     return metric;

@@ -40,7 +40,7 @@ import {
   SerializedAggregator,
 } from '../../types';
 import { createAggregator } from './aggregators';
-import { Clock, hashObject, parseBool, systemClock, titleCase } from '../lib';
+import { Clock, hashObject, logger, parseBool, systemClock } from '../lib';
 import { ApdexMetric, ApdexMetricOptions } from './apdexMetric';
 import { parseTimestamp } from '@lib/datetime';
 import { isNil, isObject, isString } from 'lodash';
@@ -112,11 +112,11 @@ export function getMetricByKey(type: string | MetricTypes): MetricConstructor {
   if (typeof type === 'string') {
     ctor = metricsMap[type];
     if (!ctor) {
-      if (!type.endsWith('Metric')) {
-        type = titleCase(type) + 'Metric';
+      const asInt = parseInt(type);
+      if (!isNaN(asInt)) {
+        const mtype = asInt as MetricTypes;
+        ctor = metricsByEnum[mtype];
       }
-      const ctors = Object.create(metricsMap);
-      ctor = ctors.find((v) => v.name === type);
     }
   } else {
     ctor = metricsByEnum[type];
@@ -176,6 +176,10 @@ export function createMetricFromJSON(
   }
 
   const metric = createMetric(type, options);
+  if (!metric) {
+    logger.error(`Error loading metric. Type "${type}" invalid.`);
+    return metric;
+  }
 
   metric.id = id;
   metric.name = name;
@@ -235,7 +239,7 @@ export function isPollingMetric(clazz: MetricConstructor): boolean {
 
 export function getClassMetadata(clazz: MetricConstructor): MetricInfo {
   const ctor = clazz as any;
-  const meta: MetricInfo = {
+  return {
     type: ctor.key,
     key: ctor.key,
     category: ctor.category,
@@ -244,7 +248,6 @@ export function getClassMetadata(clazz: MetricConstructor): MetricInfo {
     description: ctor.description,
     isPolling: isPollingMetric(clazz),
   };
-  return meta;
 }
 
 export * from './aggregators';

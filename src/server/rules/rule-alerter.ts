@@ -7,11 +7,20 @@ import {
   logger,
 } from '../lib';
 import {
+  ChangeAggregationType,
+  ChangeRuleEvaluationState,
+  ChangeTypeEnum,
   ErrorLevel,
+  EvaluationResult,
+  isChangeRuleEvaluationState,
+  isPeakRuleEvaluationState,
   NotificationContext,
   RuleAlert,
+  RuleEvaluationState,
   RuleEventsEnum,
+  RuleOperator,
   RuleState,
+  RuleType,
 } from '../../types';
 import {
   AlertData,
@@ -25,7 +34,8 @@ import handlebars from 'handlebars';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
 import { QueueManager } from '../queues';
 import { NotificationManager } from '../notifications';
-import { EvaluationResult } from './condition-evaluator';
+import ms from 'ms';
+import { round } from 'lodash';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
@@ -282,6 +292,8 @@ export class RuleAlerter {
     };
 
     alert.message = this.getAlertMessage(templateData);
+    if (!alert.message) alert.message = describeResult(result.state);
+    alert.title = result.triggered ? getAlertTitle(result.state) : '';
 
     return alert;
   }
@@ -365,5 +377,147 @@ export class RuleAlerter {
         description: this.rule.description,
       },
     };
+  }
+}
+
+export const OperatorNames = {
+  short: {
+    [RuleOperator.EQ]: '==',
+    [RuleOperator.NE]: '!=',
+    [RuleOperator.LT]: '<',
+    [RuleOperator.LTE]: '<=',
+    [RuleOperator.GT]: '>',
+    [RuleOperator.GTE]: '>=',
+  },
+  long: {
+    [RuleOperator.EQ]: 'is equal to',
+    [RuleOperator.NE]: 'is not equal to',
+    [RuleOperator.LT]: 'falls below',
+    [RuleOperator.LTE]: 'is less than or equal to',
+    [RuleOperator.GT]: 'exceeds',
+    [RuleOperator.GTE]: 'is greater than or equal to',
+  },
+};
+
+// exported for testing
+export function getAlertTitle(state: RuleEvaluationState): string {
+  const { comparator: operator, ruleType } = state;
+  switch (ruleType) {
+    case RuleType.CHANGE:
+      const changeState = state as ChangeRuleEvaluationState;
+      let operatorText: string;
+      switch (operator) {
+        case RuleOperator.EQ:
+          operatorText = 'matches';
+          break;
+        case RuleOperator.NE:
+          operatorText = 'does not match';
+          break;
+        case RuleOperator.GT:
+        case RuleOperator.GTE:
+        case RuleOperator.LT:
+        case RuleOperator.LTE:
+          operatorText = 'exceeds';
+          break;
+      }
+      const aggregationText = getChangeAggregationString(
+        changeState.aggregation,
+      );
+      const strChangeType =
+        changeState.changeType === ChangeTypeEnum.PCT ? '% change' : 'change';
+      const windowDescription = ms(changeState.windowSize);
+      return (
+        `The ${aggregationText} of the ${strChangeType} over ${windowDescription} ` +
+        `${operatorText} a threshold`
+      );
+    case RuleType.PEAK:
+      return 'Spike detected';
+    case RuleType.THRESHOLD:
+      if (operator === RuleOperator.EQ) {
+        return 'Value matches a threshold';
+      }
+      if (operator === RuleOperator.NE) {
+        return 'Metric value does not match a preset';
+      }
+      if (
+        [
+          RuleOperator.GT,
+          RuleOperator.GTE,
+          RuleOperator.LT,
+          RuleOperator.LTE,
+        ].includes(operator)
+      ) {
+        return 'Value exceeded a threshold';
+      }
+      break;
+  }
+  return '';
+}
+
+export function describeResult(state: RuleEvaluationState): string {
+  const { value, unit } = state;
+  const threshold = getThreshold(state);
+
+  if (isPeakRuleEvaluationState(state)) {
+    const strThreshold = formatValue(threshold, 'std dev', 1);
+    const action =
+      `peaked ${strThreshold} ` + (state.signal > 0 ? 'above' : 'below');
+    const strValue = formatValue(value, unit);
+    return `${strValue} ${action} the mean`;
+  } else if (isChangeRuleEvaluationState(state)) {
+    const strThreshold = formatValue(threshold, unit);
+    const aggregationText = getChangeAggregationString(state.aggregation);
+    const strChangeType =
+      state.changeType === ChangeTypeEnum.PCT ? '% change' : 'change';
+    const windowDescription = ms(state.windowSize);
+    const lookbackDescription = ms(state.timeShift);
+    const operatorText = OperatorNames.long[state.comparator];
+    return (
+      `The ${aggregationText} of the ${strChangeType} over ${windowDescription} compared to ` +
+      `${lookbackDescription} ${operatorText} ${strThreshold}`
+    );
+  }
+  const strThreshold = formatValue(threshold);
+  const strValue = formatValue(value, unit);
+  const operatorText = OperatorNames.long[state.comparator];
+  return `The value of ${strValue} ${operatorText} the threshold of ${strThreshold}`;
+}
+
+function getThreshold(state: RuleEvaluationState): number {
+  return state.errorLevel === ErrorLevel.WARNING
+    ? state.warningThreshold
+    : state.errorThreshold;
+}
+
+function hasFraction(val: number): boolean {
+  return val !== Math.floor(val);
+}
+
+function formatValue(value: number, unit = '', places = 3): string {
+  let result = '';
+  if (hasFraction(value)) {
+    value = round(value, places); // ?????
+  }
+  result = `${value}`;
+  if (unit) result += ` ${unit}`;
+  return result;
+}
+
+function getChangeAggregationString(agg: ChangeAggregationType): string {
+  switch (agg) {
+    case ChangeAggregationType.AVG:
+      return 'average';
+    case ChangeAggregationType.MAX:
+      return 'maximum';
+    case ChangeAggregationType.MIN:
+      return 'minimum';
+    case ChangeAggregationType.P90:
+      return '90th percentile';
+    case ChangeAggregationType.P95:
+      return '95th percentile';
+    case ChangeAggregationType.P99:
+      return '99th percentile';
+    case ChangeAggregationType.SUM:
+      return 'total';
   }
 }

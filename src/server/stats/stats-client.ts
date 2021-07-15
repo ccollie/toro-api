@@ -16,11 +16,7 @@ import LRUCache from 'lru-cache';
 import logger from '../lib/logger';
 import toDate from 'date-fns/toDate';
 import { QueueManager } from '../queues';
-import {
-  aggregateSnapshots,
-  getRetention,
-  aggregateMeter,
-} from '../stats/utils';
+import { aggregateSnapshots, getRetention, aggregateMeter } from './utils';
 import { WriteCache } from '../redis';
 import { isEmpty } from 'lodash';
 

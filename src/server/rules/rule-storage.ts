@@ -1,12 +1,5 @@
 import boom from '@hapi/boom';
-import {
-  isEmpty,
-  isFunction,
-  isNil,
-  isNumber,
-  isObject,
-  isString,
-} from 'lodash';
+import { isEmpty, isFunction, isNumber, isObject, isString } from 'lodash';
 import { parseTimestamp } from '@lib/datetime';
 import {
   checkMultiErrors,
@@ -32,6 +25,7 @@ import {
   RuleScripts,
   TimeSeries,
 } from '../commands';
+import { getAlertTitle } from './rule-alerter';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -404,11 +398,14 @@ export class RuleStorage {
       alert.severity = data.severity = severity;
     }
 
+    const title = getAlertTitle(alert.state);
+
     const alertData: AlertData = {
       errorLevel: data.errorLevel,
       id: getUniqueId(),
       value: data.value,
       state: data.state,
+      title,
       message: data.message,
     };
 

@@ -131,7 +131,6 @@ describe('RuleEvaluator', () => {
         condition: {
           type: RuleType.PEAK,
           errorThreshold: 3.5,
-          operator: RuleOperator.GT,
         },
       });
       expect(sut.getEvaluator()).toBeInstanceOf(PeakConditionEvaluator);

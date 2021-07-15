@@ -40,6 +40,7 @@ export interface AlertData {
   id: string;
   value: number;
   errorLevel: ErrorLevel;
+  title?: string;
   message?: string;
   state: Record<string, any>;
 }

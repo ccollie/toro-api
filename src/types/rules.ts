@@ -61,7 +61,7 @@ export interface ThresholdCondition extends RuleConditionThresholds {
   readonly type: RuleType.THRESHOLD;
 }
 
-export interface PeakCondition extends RuleConditionThresholds {
+export interface PeakCondition extends NotificationThresholds {
   readonly type: RuleType.PEAK;
   /**
    * the influence (between 0 and 1) of new signals on the mean and standard deviation
@@ -222,6 +222,76 @@ export interface RuleConfigOptions {
   alertCount?: number;
 }
 
+export interface RuleEvaluationState {
+  ruleType: RuleType;
+  errorLevel: ErrorLevel;
+  value: number;
+  comparator: RuleOperator;
+  errorThreshold: number;
+  warningThreshold?: number;
+  unit: string;
+}
+
+export interface ThresholdRuleEvaluationState extends RuleEvaluationState {}
+
+export interface PeakRuleEvaluationState extends RuleEvaluationState {
+  signal: number;
+  direction: PeakSignalDirection;
+}
+
+export interface ChangeRuleEvaluationState
+  extends ThresholdRuleEvaluationState {
+  windowSize: number;
+  timeShift: number;
+  changeType: ChangeTypeEnum;
+  aggregation: ChangeAggregationType;
+}
+
+export function isRuleEvaluationState(
+  arg: unknown,
+): arg is RuleEvaluationState {
+  if (!arg) return false;
+  const _arg = arg as any;
+  return [
+    'ruleType',
+    'errorLevel',
+    'errorThreshold',
+    'comparator',
+    'value',
+  ].every((field) => _arg[field] !== undefined);
+}
+
+export function isPeakRuleEvaluationState(
+  arg: unknown,
+): arg is PeakRuleEvaluationState {
+  if (!arg) return false;
+  const _arg = arg as any;
+  return (
+    _arg['ruleType'] === RuleType.PEAK &&
+    typeof _arg['errorThreshold'] !== 'undefined'
+  );
+}
+
+export function isChangeRuleEvaluationState(
+  arg: unknown,
+): arg is ChangeRuleEvaluationState {
+  if (!arg) return false;
+  const _arg = arg as any;
+  return (
+    _arg['ruleType'] === RuleType.CHANGE &&
+    ['errorThreshold', 'windowSize', 'timeShift'].every(
+      (field) => _arg[field] !== undefined,
+    )
+  );
+}
+
+export interface EvaluationResult {
+  value: number;
+  triggered: boolean;
+  errorLevel: ErrorLevel;
+  state: RuleEvaluationState;
+}
+
 /**
  * An alert raised as the result of a Rule violation
  * @typedef {Object} RuleAlert
@@ -244,10 +314,12 @@ export interface RuleAlert {
   readonly value: number;
   /*** The number of failures before the alert was generated */
   readonly failures: number;
+  /** Alert title */
+  title?: string;
   /** Alert message */
   message?: string;
   /** states which triggered alert */
-  readonly state?: Record<string, any>;
+  readonly state?: RuleEvaluationState;
   readonly errorLevel: ErrorLevel;
   severity: Severity;
   isRead: boolean;

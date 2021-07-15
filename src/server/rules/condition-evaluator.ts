@@ -3,49 +3,16 @@ import { Clock, getStaticProp, isNumber } from '../lib';
 import { BaseMetric } from '../metrics';
 import {
   ErrorLevel,
+  EvaluationResult,
   PeakCondition,
+  PeakRuleEvaluationState,
   PeakSignalDirection,
+  RuleEvaluationState,
   RuleOperator,
   RuleType,
   ThresholdCondition,
+  ThresholdRuleEvaluationState,
 } from '../../types';
-import { UnsubscribeFn } from 'emittery';
-
-export interface EvaluationResult {
-  value: number;
-  triggered: boolean;
-  errorLevel: ErrorLevel;
-  state: Record<string, any>;
-}
-
-export interface RuleEvaluationState {
-  ruleType: RuleType;
-  errorLevel: ErrorLevel;
-  value: number;
-  errorThreshold: number;
-  warningThreshold?: number;
-  comparator: RuleOperator;
-  unit: string;
-}
-
-export const OperatorNames = {
-  short: {
-    [RuleOperator.EQ]: '==',
-    [RuleOperator.NE]: '!=',
-    [RuleOperator.LT]: '<',
-    [RuleOperator.LTE]: '<=',
-    [RuleOperator.GT]: '>',
-    [RuleOperator.GTE]: '>=',
-  },
-  long: {
-    [RuleOperator.EQ]: 'is equal to',
-    [RuleOperator.NE]: 'is not equal to',
-    [RuleOperator.LT]: 'falls below',
-    [RuleOperator.LTE]: 'is less than or equal to',
-    [RuleOperator.GT]: 'exceeds',
-    [RuleOperator.GTE]: 'is greater than or equal to',
-  },
-};
 
 export function compare(operator: RuleOperator, a: number, b: number): boolean {
   switch (operator) {
@@ -67,17 +34,12 @@ export function compare(operator: RuleOperator, a: number, b: number): boolean {
 
 export class ConditionEvaluator {
   public readonly metric: BaseMetric;
-  private readonly unsubscribe: UnsubscribeFn;
-  public readonly state: Record<string, any>;
+  protected unit: string;
 
   constructor(metric: BaseMetric) {
     this.metric = metric;
-    this.state = Object.create(null);
-    this.state['unit'] = getStaticProp(this.metric, 'unit');
-  }
-
-  destroy(): void {
-    this.unsubscribe();
+    // todo: should unit be based on the aggregator rather than the metric ?
+    this.unit = getStaticProp(this.metric, 'unit');
   }
 
   protected get clock(): Clock {
@@ -89,15 +51,25 @@ export class ConditionEvaluator {
     return ErrorLevel.NONE;
   }
 
+  protected getState(level: ErrorLevel, value: number): RuleEvaluationState {
+    return {
+      errorThreshold: 0,
+      unit: this.unit,
+      errorLevel: level,
+      ruleType: RuleType.THRESHOLD,
+      comparator: RuleOperator.GT,
+      value,
+    };
+  }
+
   evaluate(value: number): EvaluationResult {
     const notificationType = this.handleEval(value);
     const triggered = notificationType !== ErrorLevel.NONE;
-    this.state['errorLevel'] = notificationType;
     return {
       value,
       triggered,
       errorLevel: notificationType,
-      state: this.state,
+      state: this.getState(notificationType, value),
     };
   }
 }
@@ -108,10 +80,9 @@ export class ThresholdConditionEvaluator extends ConditionEvaluator {
   constructor(metric: BaseMetric, options: ThresholdCondition) {
     super(metric);
     this.options = options;
-    this.state['ruleType'] = RuleType.THRESHOLD;
   }
 
-  protected evaluateThreshold(value: number): ErrorLevel {
+  protected handleEval(value: number): ErrorLevel {
     const { operator, errorThreshold, warningThreshold } = this.options;
 
     if (compare(operator, value, errorThreshold)) {
@@ -128,13 +99,21 @@ export class ThresholdConditionEvaluator extends ConditionEvaluator {
     return ErrorLevel.NONE;
   }
 
-  protected handleEval(value: number): ErrorLevel {
-    const level = this.evaluateThreshold(value);
-    this.state['value'] = value;
-    this.state['threshold'] = this.options.errorThreshold;
-    this.state['warn_threshold'] = this.options.warningThreshold;
-    this.state['comparator'] = OperatorNames.short[this.options.operator];
-    return level;
+  protected getState(level: ErrorLevel, value: number): RuleEvaluationState {
+    const {
+      errorThreshold,
+      warningThreshold,
+      operator: comparator,
+    } = this.options;
+    return {
+      comparator,
+      unit: this.unit,
+      errorLevel: level,
+      ruleType: RuleType.THRESHOLD,
+      errorThreshold,
+      warningThreshold,
+      value,
+    } as ThresholdRuleEvaluationState;
   }
 }
 
@@ -144,20 +123,22 @@ const DefaultPeakDetectorOptions: PeakCondition = {
   influence: 0.5,
   lag: 0,
   direction: PeakSignalDirection.BOTH,
-  operator: RuleOperator.GT,
 };
 
-export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
+export class PeakConditionEvaluator extends ConditionEvaluator {
   private readonly detector: StreamingPeakDetector;
   private readonly warningDetector: StreamingPeakDetector;
   private readonly direction: PeakSignalDirection;
+  private readonly options: PeakCondition;
+  private lastSignal = 0;
 
   constructor(metric: BaseMetric, options: PeakCondition) {
-    super(metric, { ...options, type: RuleType.THRESHOLD });
+    super(metric);
     const opts = {
       ...DefaultPeakDetectorOptions,
       ...options,
     };
+    this.options = opts;
     const clock = this.clock;
     this.detector = new StreamingPeakDetector(
       clock,
@@ -177,9 +158,7 @@ export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
       this.warningDetector = null;
     }
 
-    this.direction = options.direction;
-    this.state['ruleType'] = RuleType.PEAK;
-    this.state['unit'] = 'std_dev';
+    this.direction = opts.direction;
   }
 
   private signalValid(signal: number): boolean {
@@ -195,7 +174,23 @@ export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
     }
   }
 
-  protected evaluateThreshold(value: number): ErrorLevel {
+  protected getState(
+    level: ErrorLevel,
+    value: number,
+  ): PeakRuleEvaluationState {
+    const baseState = super.getState(level, value);
+    const { errorThreshold, warningThreshold } = this.options;
+    return {
+      ...baseState,
+      errorThreshold,
+      warningThreshold,
+      ruleType: RuleType.PEAK,
+      signal: this.lastSignal,
+      direction: this.direction,
+    };
+  }
+
+  protected handleEval(value: number): ErrorLevel {
     const errorSignal = this.detector.update(value);
     // independent of whether an error is encountered, we have to
     // update the warning detector if it exists
@@ -203,14 +198,12 @@ export class PeakConditionEvaluator extends ThresholdConditionEvaluator {
       (this.warningDetector && this.warningDetector.update(value)) ?? 0;
 
     if (this.signalValid(errorSignal)) {
-      this.state['signal'] = errorSignal;
-      this.state['direction'] = this.direction;
+      this.lastSignal = errorSignal;
       return ErrorLevel.CRITICAL;
     }
 
     if (this.signalValid(warningSignal)) {
-      this.state['signal'] = warningSignal;
-      this.state['direction'] = this.direction;
+      this.lastSignal = errorSignal;
       return ErrorLevel.WARNING;
     }
 
