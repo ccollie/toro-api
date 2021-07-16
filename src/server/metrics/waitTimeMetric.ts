@@ -9,7 +9,7 @@ export class WaitTimeMetric extends QueueBasedMetric {
   }
 
   handleEvent(event: JobFinishedEventData): void {
-    this.update(event.wait);
+    this.update(event.wait, event.ts);
   }
 
   static get key(): MetricTypes {

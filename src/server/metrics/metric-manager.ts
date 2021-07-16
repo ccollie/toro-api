@@ -16,6 +16,7 @@ import {
   BaseMetric,
   createMetricFromJSON,
   MetricsListener,
+  MetricsUpdatedPayload,
   serializeMetric,
 } from './index';
 import { QueueListener } from '@server/queues';
@@ -117,7 +118,7 @@ export class MetricManager {
         );
       }
     }
-    const metric = createMetricFromJSON(opts, this.clock);
+    const metric = createMetricFromJSON(opts);
     return this.saveMetric(metric);
   }
 
@@ -495,7 +496,9 @@ export class MetricManager {
     return client.smembers(this.indexKey);
   }
 
-  onMetricsUpdated(handler: (eventData?: any) => void): UnsubscribeFn {
+  onMetricsUpdated(
+    handler: (eventData?: MetricsUpdatedPayload) => void,
+  ): UnsubscribeFn {
     return this.listener.onMetricsUpdated(handler);
   }
 }

@@ -1,5 +1,5 @@
 import { HostConfig } from '../../src/types';
-import { DEFAULT_CLIENT_OPTIONS } from './client';
+import { DEFAULT_CONNECTION_OPTIONS } from './client';
 import { getUniqueId } from '../../src/server/lib';
 import { HostManager } from '../../src/server/hosts';
 
@@ -7,7 +7,7 @@ function createConfig(defaults?: Partial<HostConfig>): HostConfig {
   return {
     allowDynamicQueues: false,
     autoDiscoverQueues: false,
-    connection: DEFAULT_CLIENT_OPTIONS,
+    connection: DEFAULT_CONNECTION_OPTIONS,
     queues: [],
     channels: [],
     id: getUniqueId(),

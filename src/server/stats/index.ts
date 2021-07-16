@@ -8,7 +8,6 @@ export * from './streaming-stats';
 export * from './streaming-peak-detector';
 export * from './sliding-time-window';
 export * from './online-normal-estimator';
-export * from './quantile-estimator';
 export * from './units';
 export * from './timer';
 export * from './percentile-distribution';

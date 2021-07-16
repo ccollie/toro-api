@@ -6,6 +6,8 @@ import { DurationSchema } from '../validation/schemas';
 import { MetricsListener } from './metrics-listener';
 import { MetricValueType, QueueMetricOptions } from '../../types';
 import { IMovingAverage, MovingAverage } from '../stats/moving-average';
+import { JobEventData } from '../queues';
+import { systemClock } from '@lib/clock';
 
 /**
  * @interface RateMetricOptions
@@ -37,18 +39,14 @@ export class RateMetric extends QueuePollingMetric {
     this.movingAverage = MovingAverage(options.timePeriod);
   }
 
-  destroy(): any {
-    return super.destroy();
-  }
-
   init(listener: MetricsListener): void {
     super.init(listener);
     this._count = 0;
     this.movingAverage.reset();
   }
 
-  async checkUpdate(): Promise<void> {
-    this.update(this.movingAverage.value);
+  async checkUpdate(ts?: number): Promise<void> {
+    this.update(this.movingAverage.value, ts);
   }
 
   get period(): number {
@@ -63,10 +61,11 @@ export class RateMetric extends QueuePollingMetric {
     return [Events.FINISHED];
   }
 
-  handleEvent(): void {
+  handleEvent(event?: JobEventData): void {
     this._count++;
-    this.movingAverage.update(this.clock.getTime(), 1);
-    this.update(this.movingAverage.value);
+    const now = event?.ts ?? systemClock.getTime();
+    this.movingAverage.update(now, 1);
+    this.update(this.movingAverage.value, now);
   }
 
   reset(): void {

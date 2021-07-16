@@ -51,11 +51,7 @@ export const metricUpdate: FieldConfig = {
 
     // TODO: should we remove present data
     if (aggregator !== undefined) {
-      metric.aggregator = createAggregator(
-        aggregator.type,
-        metric.clock,
-        aggregator.options,
-      );
+      metric.aggregator = createAggregator(aggregator.type, aggregator.options);
     }
 
     await manager.metricManager.saveMetric(metric);

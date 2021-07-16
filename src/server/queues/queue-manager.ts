@@ -226,8 +226,10 @@ export class QueueManager {
     }
   }
 
-  protected dispatchMetrics({ metrics = [], state }): void {
-    metrics.forEach((metric) => this.ruleManager.handleMetricUpdate(metric));
+  protected dispatchMetrics({ metrics = [], ts }): void {
+    metrics.forEach((metric) =>
+      this.ruleManager.handleMetricUpdate(metric, ts),
+    );
   }
 
   /**

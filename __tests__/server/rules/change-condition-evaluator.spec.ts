@@ -50,7 +50,6 @@ describe('ChangeConditionEvaluator', () => {
     const now = Date.now();
     clock = new ManualClock(now - (now % 1000));
     metric = new LatencyMetric({});
-    metric.clock = clock;
   });
 
   function createInstance(
@@ -275,7 +274,6 @@ describe('ChangeConditionEvaluator', () => {
         windowSize: 10000,
         timeShift: 1000,
       });
-      metric.clock = clock;
     });
 
     it('generates a short description', () => {

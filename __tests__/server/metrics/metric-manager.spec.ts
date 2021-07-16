@@ -145,7 +145,7 @@ describe('MetricManager', () => {
     });
 
     metric.name = `name-${randomString(4)}`;
-    metric.aggregator = new P90Aggregator(queueManager.clock, {
+    metric.aggregator = new P90Aggregator({
       duration: DURATION,
     });
 

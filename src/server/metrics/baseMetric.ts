@@ -5,7 +5,7 @@ import Joi, { ObjectSchema } from 'joi';
 import { JobEventData } from '../queues';
 import { BaseAggregator, NullAggregator } from './aggregators';
 import { Events } from './constants';
-import { Clock, createAsyncIterator, systemClock } from '../lib';
+import { Clock, createAsyncIterator, getStaticProp, systemClock } from '../lib';
 import { MetricsListener } from './metrics-listener';
 import { DurationSchema } from '../validation/schemas';
 import {
@@ -18,7 +18,7 @@ import {
   QueueMetricOptions,
   MetricOptions,
 } from '../../types';
-import { createJobNameFilter } from './utils';
+import { createJobNameFilter, metricNameByEnum } from './utils';
 import { getConfigDuration } from '@lib/config-utils';
 
 export interface MetricUpdateEvent {
@@ -61,7 +61,6 @@ export abstract class BaseMetric {
   public createdAt: number;
   public updatedAt: number;
   public lastChangedAt: number;
-  public clock: Clock = systemClock;
 
   protected constructor(options: any) {
     this._prev = null;
@@ -69,7 +68,7 @@ export abstract class BaseMetric {
     this._sampleInterval = getSampleInterval();
     this.setOptions(options);
     this._aggregator = new NullAggregator();
-    this.createdAt = this.clock.getTime();
+    this.createdAt = systemClock.getTime();
     this.updatedAt = this.createdAt;
   }
 
@@ -130,6 +129,11 @@ export abstract class BaseMetric {
     this._sampleInterval = newValue;
   }
 
+  static getTypeName(metric: BaseMetric): string {
+    const type = getStaticProp(metric, 'key') as MetricTypes;
+    return metricNameByEnum[type];
+  }
+
   static get key(): MetricTypes {
     return MetricTypes.None;
   }
@@ -180,7 +184,6 @@ export abstract class BaseMetric {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   init(listener: MetricsListener): void {
-    this.clock = listener.clock;
     // abstract method
   }
 
@@ -204,18 +207,19 @@ export abstract class BaseMetric {
   }
 
   // To override in descendents
-  protected transformValue(value: number): number {
-    return this._aggregator.update(value);
+  protected transformValue(value: number, ts?: number): number {
+    return this._aggregator.update(value, ts);
   }
 
   // Public api used elsewhere
-  update(value: number): number {
-    this._value = this.transformValue(value);
+  update(value: number, ts?: number): number {
+    if (!ts) ts = systemClock.getTime();
+    this._value = this.transformValue(value, ts);
     if (this._value !== this._prev) {
       this._prev = this._value;
-      this.lastChangedAt = this.clock.getTime();
+      this.lastChangedAt = ts;
       const event: MetricUpdateEvent = {
-        ts: this.lastChangedAt,
+        ts,
         value: this._value,
         metric: this,
       };
@@ -264,7 +268,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
 }
 
 export interface IPollingMetric {
-  checkUpdate: () => Promise<void>;
+  checkUpdate: (listener?: MetricsListener, ts?: number) => Promise<void>;
 }
 
 export function isPollingMetric(arg: any): arg is IPollingMetric {
@@ -284,7 +288,7 @@ export abstract class PollingMetric
     super(options);
   }
 
-  checkUpdate(): Promise<void> {
+  checkUpdate(listener?: MetricsListener, ts?: number): Promise<void> {
     throw boom.notImplemented('checkUpdate');
   }
 }

@@ -1,5 +1,5 @@
 import { StreamingPeakDetector } from '../stats';
-import { Clock, getStaticProp, isNumber } from '../lib';
+import { getStaticProp, isNumber } from '../lib';
 import { BaseMetric } from '../metrics';
 import {
   ErrorLevel,
@@ -42,12 +42,8 @@ export class ConditionEvaluator {
     this.unit = getStaticProp(this.metric, 'unit');
   }
 
-  protected get clock(): Clock {
-    return this.metric.clock;
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected handleEval(value: number): ErrorLevel {
+  protected handleEval(value: number, ts?: number): ErrorLevel {
     return ErrorLevel.NONE;
   }
 
@@ -62,8 +58,8 @@ export class ConditionEvaluator {
     };
   }
 
-  evaluate(value: number): EvaluationResult {
-    const notificationType = this.handleEval(value);
+  evaluate(value: number, ts?: number): EvaluationResult {
+    const notificationType = this.handleEval(value, ts);
     const triggered = notificationType !== ErrorLevel.NONE;
     return {
       value,
@@ -139,9 +135,7 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
       ...options,
     };
     this.options = opts;
-    const clock = this.clock;
     this.detector = new StreamingPeakDetector(
-      clock,
       opts.lag,
       opts.errorThreshold,
       opts.influence,
@@ -149,7 +143,6 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
 
     if (typeof opts.warningThreshold === 'number') {
       this.warningDetector = new StreamingPeakDetector(
-        clock,
         opts.lag,
         opts.warningThreshold,
         opts.influence,
@@ -190,8 +183,8 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
     };
   }
 
-  protected handleEval(value: number): ErrorLevel {
-    const errorSignal = this.detector.update(value);
+  protected handleEval(value: number, ts?: number): ErrorLevel {
+    const errorSignal = this.detector.update(value, ts);
     // independent of whether an error is encountered, we have to
     // update the warning detector if it exists
     const warningSignal =

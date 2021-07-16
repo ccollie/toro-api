@@ -1,5 +1,5 @@
 import OnlineNormalEstimator from './online-normal-estimator';
-import { Clock } from '../lib';
+import { systemClock } from '../lib';
 
 /**
  * "Smoothed zero-score algorithm" shamelessly copied from
@@ -21,33 +21,45 @@ export class StreamingPeakDetector {
   public readonly influence: number;
   public signal = 0;
   private filteredY: number;
-  private readonly clock: Clock;
-  private readonly lagEnd: number;
+  private lagEnd: number | undefined;
+  private inLag: boolean | undefined;
   private pastLag: boolean;
+  private lastTick: number | undefined;
   private readonly stats: OnlineNormalEstimator;
 
-  constructor(clock: Clock, lag: number, threshold = 3.5, influence = 0.5) {
-    this.clock = clock;
+  constructor(lag: number, threshold = 3.5, influence = 0.5) {
     this.lag = lag;
     this.threshold = threshold;
     this.influence = influence;
     this.filteredY = undefined;
-    this.lagEnd = clock.getTime() + this.lag;
+    if (this.lag <= 0) {
+      this.lagEnd = 0;
+      this.inLag = false;
+      this.pastLag = true;
+    }
     this.stats = new OnlineNormalEstimator();
   }
 
   get isInLagPeriod(): boolean {
-    this.pastLag = this.pastLag || this.clock.getTime() >= this.lagEnd;
     return !this.pastLag;
   }
 
-  update(value: number): number {
+  update(value: number, ts?: number): number {
     const { threshold, influence, stats } = this;
+
+    if (!ts) ts = systemClock.getTime();
 
     this.signal = 0;
 
-    if (this.isInLagPeriod) {
+    if (!this.lagEnd) {
+      this.lagEnd = this.lag + ts;
+    }
+
+    this.pastLag = this.pastLag || ts >= this.lagEnd;
+
+    if (!this.pastLag) {
       stats.add(value);
+      this.lastTick = ts;
       return 0;
     }
 
@@ -67,6 +79,7 @@ export class StreamingPeakDetector {
 
     stats.replace(oldValue, this.filteredY);
 
+    this.lastTick = ts;
     return this.signal;
   }
 }

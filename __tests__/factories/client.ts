@@ -4,7 +4,9 @@ import { loadScripts } from '@src/server/commands';
 import { RedisClient } from 'bullmq';
 
 export const TEST_DB = 13;
-export const DEFAULT_CLIENT_OPTIONS: ConnectionOptions = {
+export const TEST_QUEUE_PREFIX = 'test';
+
+export const DEFAULT_CONNECTION_OPTIONS: ConnectionOptions = {
   db: TEST_DB,
   lazyConnect: false,
 };
@@ -12,7 +14,7 @@ export const DEFAULT_CLIENT_OPTIONS: ConnectionOptions = {
 export async function createClient(
   options?: ConnectionOptions,
 ): Promise<RedisClient> {
-  options = options || DEFAULT_CLIENT_OPTIONS;
+  options = options || DEFAULT_CONNECTION_OPTIONS;
   const client = _createClient(options);
   await loadScripts(client);
   return client;

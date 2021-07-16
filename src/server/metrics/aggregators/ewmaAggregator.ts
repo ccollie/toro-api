@@ -1,10 +1,10 @@
 import { BaseAggregator, WindowedAggregator } from './aggregator';
-import { Clock, getStaticProp } from '../../lib';
+import { systemClock } from '../../lib';
 import { BaseMetric } from '../baseMetric';
 import { IMovingAverage, MovingAverage } from '../../stats/moving-average';
 import { ObjectSchema } from 'joi';
 import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
-import { SlidingWindowOptionSchema } from './slidingTimeWindowAggregator';
+import { TimeWindowOptionSchema } from './SlidingTimeWindowAggregator';
 
 /***
  * Returns the Exponentially Weighted Moving Avg of a stream
@@ -21,14 +21,14 @@ export class EWMAAggregator
   /**
    * Construct a EWMAAggregator
    */
-  constructor(clock: Clock, options: SlidingWindowOptions) {
-    super(clock, options);
+  constructor(options: SlidingWindowOptions) {
+    super(options);
     this.windowSize = options.duration;
     this.ewma = MovingAverage(options.duration);
   }
 
   getDescription(metric: BaseMetric, short = false): string {
-    const type = getStaticProp(metric, 'key');
+    const type = BaseMetric.getTypeName(metric);
     if (short) {
       return super.getDescription(metric, true);
     }
@@ -51,8 +51,8 @@ export class EWMAAggregator
     return this.ewma.value;
   }
 
-  update(newVal: number): number {
-    this.ewma.update(this.clock.getTime(), newVal);
+  update(newVal: number, ts?: number): number {
+    this.ewma.update(ts ?? systemClock.getTime(), newVal);
     this._count++;
     return this.value;
   }
@@ -63,6 +63,6 @@ export class EWMAAggregator
   }
 
   static get schema(): ObjectSchema {
-    return SlidingWindowOptionSchema;
+    return TimeWindowOptionSchema;
   }
 }

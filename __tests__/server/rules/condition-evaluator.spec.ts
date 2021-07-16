@@ -48,7 +48,7 @@ describe('Condition Evaluation', () => {
           errorThreshold: 10,
           operator: RuleOperator.LT,
         });
-        const result = sut.evaluate(5);
+        const result = sut.evaluate(5, 1000);
         expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 5,
@@ -64,7 +64,7 @@ describe('Condition Evaluation', () => {
           warningThreshold: 10,
           operator: RuleOperator.GT,
         });
-        const result = sut.evaluate(12);
+        const result = sut.evaluate(12, 1000);
         expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 12,
@@ -115,7 +115,7 @@ describe('Condition Evaluation', () => {
             operator: options.operator,
           };
           const sut = createEvaluator(opts);
-          const result = sut.evaluate(value);
+          const result = sut.evaluate(value, 1000);
           expect(result.triggered).toBe(expected);
           expect(result.state).toMatchObject({
             value,
@@ -180,7 +180,7 @@ describe('Condition Evaluation', () => {
         const sut = createEvaluator({ errorThreshold: 3.5, influence: 0 });
         for (let i = 0; i < testData.length; i++) {
           const value = testData[i];
-          const result = sut.evaluate(value);
+          const result = sut.evaluate(value, 1000 + i * 10);
           expect(result.triggered).toBe(!!knownResults[i]);
           if (result.triggered) {
             expect(result.state).toMatchObject({
@@ -205,7 +205,7 @@ describe('Condition Evaluation', () => {
           errorThreshold: 20,
           warningThreshold: 10,
         });
-        const result = sut.evaluate(12);
+        const result = sut.evaluate(12, 1000);
         expect(result.triggered).toBe(true);
         expect(result.state).toMatchObject({
           value: 12,

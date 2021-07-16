@@ -3,10 +3,37 @@ import { clearDb, createQueue } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { MetricOptions } from '@src/types';
+import {
+  MetricCategory,
+  MetricOptions,
+  MetricTypes,
+  MetricValueType,
+} from '@src/types';
 import { randomString } from '../utils';
 
 describe('CurrentWaitingCountMetric', () => {
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(CurrentWaitingCountMetric.description).toBe('Waiting Jobs');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(CurrentWaitingCountMetric.key).toBe(MetricTypes.Waiting);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(CurrentWaitingCountMetric.unit).toBe('jobs');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(CurrentWaitingCountMetric.category).toBe(MetricCategory.Queue);
+    });
+
+    it('exposes a "type" property', () => {
+      expect(CurrentWaitingCountMetric.type).toBe(MetricValueType.Gauge);
+    });
+  });
+
   describe('constructor', () => {
     it('constructs a CurrentWaitingCountMetric', () => {
       const options: MetricOptions = {
@@ -15,9 +42,6 @@ describe('CurrentWaitingCountMetric', () => {
       const sut = new CurrentWaitingCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
-      expect(MetricTestHelper.hasDescription(sut)).toBe(true);
-      expect(MetricTestHelper.hasKey(sut)).toBe(true);
-      expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
   });
 
@@ -45,9 +69,10 @@ describe('CurrentWaitingCountMetric', () => {
       };
       const sut = new CurrentWaitingCountMetric(options);
       const helper = MetricTestHelper.forMetric(sut, queue);
+      const listener = helper.metricsListener;
 
       try {
-        await sut.checkUpdate();
+        await sut.checkUpdate(listener, 1000);
         expect(sut.value).toBe(count);
       } finally {
         await queue.close();

@@ -1,7 +1,9 @@
 import { ConsecutiveFailuresMetric, Events } from '@src/server/metrics';
 
 import { MetricTestHelper } from './metricTestHelper';
-import { QueueMetricOptions } from '@src/types';
+import { MetricCategory, MetricTypes, QueueMetricOptions } from '@src/types';
+import { createJobEvent } from '../../factories';
+import { validateJobNamesFilter } from './helpers';
 
 describe('ConsecutiveFailuresMetric', () => {
   let testHelper: MetricTestHelper;
@@ -31,6 +33,28 @@ describe('ConsecutiveFailuresMetric', () => {
     }
   }
 
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(ConsecutiveFailuresMetric.description).toBe(
+        'Consecutive Failures',
+      );
+    });
+
+    it('exposes a "key" property', () => {
+      expect(ConsecutiveFailuresMetric.key).toBe(
+        MetricTypes.ConsecutiveFailures,
+      );
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(ConsecutiveFailuresMetric.unit).toBe('jobs');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(ConsecutiveFailuresMetric.category).toBe(MetricCategory.Queue);
+    });
+  });
+
   describe('constructor', () => {
     test('can create with default options', () => {
       const subject = new ConsecutiveFailuresMetric(defaultOptions);
@@ -40,6 +64,19 @@ describe('ConsecutiveFailuresMetric', () => {
     test('subscribes to correct events', () => {
       const subject = new ConsecutiveFailuresMetric(defaultOptions);
       expect(subject.validEvents).toEqual([Events.FINISHED]);
+    });
+  });
+
+  describe('accept', () => {
+    it('allows all jobs if no job names is specified', () => {
+      const event = createJobEvent(Events.FAILED);
+      const metric = new ConsecutiveFailuresMetric({});
+      expect(metric.accept(event)).toBeTruthy();
+    });
+
+    it('filters events according to job names', () => {
+      const metric = new ConsecutiveFailuresMetric({});
+      validateJobNamesFilter(metric);
     });
   });
 

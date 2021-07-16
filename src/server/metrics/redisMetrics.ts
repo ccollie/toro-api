@@ -6,11 +6,9 @@ import {
   MetricValueType,
   MetricTypes,
   MetricOptions,
-} from '../../types/metrics';
-import { RedisClient } from 'bullmq';
+} from '@src/types/metrics';
 
 export class RedisMetric extends PollingMetric {
-  private client: Promise<RedisClient>;
   private readonly fieldName: string;
 
   constructor(options: MetricOptions, fieldName: string) {
@@ -18,18 +16,11 @@ export class RedisMetric extends PollingMetric {
     this.fieldName = fieldName;
   }
 
-  async checkUpdate(): Promise<void> {
-    if (this.client) {
-      const client = await this.client;
-      const info = await getRedisInfo(client);
-      const value = (info as any)[this.fieldName];
-      this.update(value);
-    }
-  }
-
-  init(listener: MetricsListener): void {
-    super.init(listener);
-    this.client = listener.client;
+  async checkUpdate(listener: MetricsListener, ts: number): Promise<void> {
+    const client = await listener.client;
+    const info = await getRedisInfo(client);
+    const value = (info as any)[this.fieldName];
+    this.update(value, ts);
   }
 
   get validEvents(): string[] {

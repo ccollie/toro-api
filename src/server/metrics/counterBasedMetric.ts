@@ -34,17 +34,17 @@ export class QueueCounterBasedMetric extends QueueBasedMetric {
   }
 
   handleEvent(event: JobFinishedEventData): void {
-    this.incr();
+    this.incr(1, event.ts);
   }
 
-  protected incr(delta = 1): void {
+  protected incr(delta = 1, ts?: number): void {
     this.internalCount += delta;
-    this.update(this.internalCount);
+    this.update(this.internalCount, ts);
   }
 
-  reset(): void {
+  reset(ts?: number): void {
     this.internalCount = 0;
-    this.update(0);
+    this.update(0, ts);
   }
 
   static get type(): MetricValueType {

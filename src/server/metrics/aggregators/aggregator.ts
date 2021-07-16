@@ -1,10 +1,10 @@
 import boom from '@hapi/boom';
 import { isEqual } from 'lodash';
-import { EventEmitter } from 'events';
 import { ObjectSchema } from 'joi';
-import { Clock, getStaticProp, systemClock } from '@src/server/lib';
+import { getStaticProp } from '@src/server/lib';
 import { BaseMetric } from '../baseMetric';
 import { AggregatorTypes, SerializedAggregator } from '@src/types';
+import { aggregatorTypeNameMap } from './utils';
 
 export interface Aggregator {
   /** The number of samples added so far */
@@ -19,8 +19,9 @@ export interface Aggregator {
    * Update the states of the aggregator with the current value.
    * @param value
    *            the value to aggregate
+   * @param ts the timestamp of when the update occurred
    */
-  update(value: number): number;
+  update(value: number, ts?: number): number;
   /**
    * Reset the states of the aggregator.
    */
@@ -44,14 +45,11 @@ function isWindowedAggregator(arg: any): arg is WindowedAggregator {
   return isAggregator(arg) && typeof (arg as any).windowSize === 'number';
 }
 
-export class BaseAggregator extends EventEmitter implements Aggregator {
-  protected clock: Clock;
+export class BaseAggregator implements Aggregator {
   protected options: any;
 
-  constructor(clock?: Clock, options?: any) {
-    super();
-    this.clock = clock || systemClock;
-    if (arguments.length > 1) {
+  constructor(options?: any) {
+    if (arguments.length) {
       this.setOptions(options);
     } else {
       this.options = {};
@@ -86,10 +84,11 @@ export class BaseAggregator extends EventEmitter implements Aggregator {
   }
 
   getDescription(metric: BaseMetric, short = false): string {
-    const type = getStaticProp(metric, 'type');
+    const type = BaseMetric.getTypeName(metric);
     if (short) {
       const key = getStaticProp(this, 'key');
-      return `${key}(${type})`;
+      const aggrTypeName = aggregatorTypeNameMap[key as AggregatorTypes];
+      return `${aggrTypeName}(${type})`;
     }
     const description = getStaticProp(this, 'description');
     return `${description} ${type}`;
@@ -133,7 +132,7 @@ export class BaseAggregator extends EventEmitter implements Aggregator {
   }
 
   // to override
-  update(value: number): number {
+  update(value: number, ts?: number): number {
     return value;
   }
 

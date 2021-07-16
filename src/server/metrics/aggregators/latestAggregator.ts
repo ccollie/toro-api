@@ -1,7 +1,6 @@
 import { ObjectSchema } from 'joi';
 import { BaseMetric } from '../baseMetric';
 import { BaseAggregator } from './aggregator';
-import { getStaticProp } from '../../lib';
 import { AggregatorTypes } from '@src/types';
 
 /**
@@ -17,8 +16,12 @@ export class LatestAggregator extends BaseAggregator {
     this._value = undefined;
   }
 
-  getDescription(metric: BaseMetric): string {
-    return getStaticProp(metric, 'key');
+  getDescription(metric: BaseMetric, short?: boolean): string {
+    const metricType = BaseMetric.getTypeName(metric);
+    if (short) {
+      return metricType;
+    }
+    return `${metricType} latest value`;
   }
 
   static get key(): AggregatorTypes {
@@ -42,9 +45,8 @@ export class LatestAggregator extends BaseAggregator {
   }
 
   // to override
-  update(value: number): number {
-    this._value = value;
+  update(value: number, ts?: number): number {
     this._count++;
-    return value;
+    return (this._value = value);
   }
 }

@@ -53,8 +53,8 @@ export class RuleEvaluator {
     }
   }
 
-  evaluate(value: number): EvaluationResult {
-    return this.evaluator.evaluate(value);
+  evaluate(value: number, ts?: number): EvaluationResult {
+    return this.evaluator.evaluate(value, ts);
   }
 
   private onError(err: Error): void {

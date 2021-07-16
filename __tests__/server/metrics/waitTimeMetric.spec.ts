@@ -6,6 +6,9 @@ import {
   WaitTimeMetric,
 } from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
+import { MetricCategory, MetricTypes, MetricValueType } from '@src/types';
+import { createJobEvent } from '../../factories';
+import { validateJobNamesFilter } from './helpers';
 
 const EVENT_NAME = Events.FINISHED;
 
@@ -19,6 +22,28 @@ describe('WaitTimeMetric', () => {
     }
   });
 
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(WaitTimeMetric.description).toBe('Job Wait Time');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(WaitTimeMetric.key).toBe(MetricTypes.WaitTime);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(WaitTimeMetric.unit).toBe('ms');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(WaitTimeMetric.category).toBe(MetricCategory.Queue);
+    });
+
+    it('exposes a "type" property', () => {
+      expect(WaitTimeMetric.type).toBe(MetricValueType.Gauge);
+    });
+  });
+
   describe('constructor', () => {
     test('can create with default options', () => {
       const subject = new WaitTimeMetric(defaultOptions);
@@ -28,6 +53,19 @@ describe('WaitTimeMetric', () => {
     test(`subscribes to the "${EVENT_NAME}" event`, () => {
       const subject = new WaitTimeMetric(defaultOptions);
       expect(subject.validEvents).toEqual([EVENT_NAME]);
+    });
+  });
+
+  describe('accept', () => {
+    it('allows all jobs if no job names is specified', () => {
+      const event = createJobEvent(Events.FAILED);
+      const metric = new WaitTimeMetric({});
+      expect(metric.accept(event)).toBeTruthy();
+    });
+
+    it('filters events according to job names', () => {
+      const metric = new WaitTimeMetric({});
+      validateJobNamesFilter(metric);
     });
   });
 

@@ -1,12 +1,46 @@
 import { CurrentCompletedCountMetric } from '@src/server/metrics';
 import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
-import { Job, Queue } from 'bullmq';
+import { Job, Queue, RedisClient } from 'bullmq';
 import random from 'lodash/random';
-import { MetricOptions } from '@src/types';
+import {
+  MetricCategory,
+  MetricOptions,
+  MetricTypes,
+  MetricValueType,
+} from '@src/types';
 import { randomString } from '../utils';
 
+// see https://github.com/facebook/jest/issues/11543
+jest.setTimeout(10000);
+
 describe('CurrentCompletedCountMetric', () => {
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(CurrentCompletedCountMetric.description).toBe(
+        'Current COMPLETED Jobs',
+      );
+    });
+
+    it('exposes a "key" property', () => {
+      expect(CurrentCompletedCountMetric.key).toBe(
+        MetricTypes.CurrentCompletedCount,
+      );
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(CurrentCompletedCountMetric.unit).toBe('jobs');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(CurrentCompletedCountMetric.category).toBe(MetricCategory.Queue);
+    });
+
+    it('exposes a "type" property', () => {
+      expect(CurrentCompletedCountMetric.type).toBe(MetricValueType.Gauge);
+    });
+  });
+
   describe('constructor', () => {
     it('constructs a CurrentCompletedCountMetric', () => {
       const options: MetricOptions = {
@@ -14,15 +48,17 @@ describe('CurrentCompletedCountMetric', () => {
       };
       const sut = new CurrentCompletedCountMetric(options);
       expect(sut).toBeDefined();
-      expect(MetricTestHelper.hasDescription(sut)).toBe(true);
-      expect(MetricTestHelper.hasKey(sut)).toBe(true);
-      expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
   });
 
   describe('.checkUpdate', () => {
+    let queue: Queue;
+    let client: RedisClient;
+
     beforeEach(async () => {
       await clearDb();
+      queue = await createQueue();
+      client = await queue.client;
     });
 
     function generateJobs(queue: Queue, options = {}): Promise<Job[]> {
@@ -34,44 +70,42 @@ describe('CurrentCompletedCountMetric', () => {
       return queue.addBulk(datas);
     }
 
-    it('should get the correct number of COMPLETED jobs', async () => {
-      const queue = await createQueue();
-
-      const interval = 25000;
-      const options: MetricOptions = {
-        sampleInterval: interval,
-      };
-      const sut = new CurrentCompletedCountMetric(options);
+    it('should get the correct number of completed jobs', async () => {
+      const sut = new CurrentCompletedCountMetric({ sampleInterval: 1000 });
       const helper = MetricTestHelper.forMetric(sut, queue);
+      const listener = helper.metricsListener;
 
-      let jobCount: number;
-      let processor;
-      const processing = new Promise((resolve, reject) => {
-        processor = async (job: Job) => {
-          if (--jobCount === 0) {
-            process.nextTick(resolve);
-          }
-        };
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const worker = createWorker(queue.name, async (job) => {}, {
+        connection: client,
       });
 
-      const worker = createWorker(queue.name, processor);
-      await worker.waitUntilReady();
-      await queue.pause();
+      let counter = 0;
+      let expected: number;
+
+      const completed = new Promise<void>((resolve) => {
+        worker.on('completed', async function () {
+          counter--;
+
+          if (counter === 0) {
+            const jobs = await queue.getFailed();
+            expect(Array.isArray(jobs)).toBe(true);
+
+            await sut.checkUpdate(listener, 1000);
+            expect(sut.value).toBe(expected);
+
+            await worker.close();
+            resolve();
+          }
+        });
+      }).finally(() => {
+        Promise.all([helper.destroy(), queue.close(), worker.close()]);
+      });
 
       const jobs = await generateJobs(queue);
-      const count = (jobCount = jobs.length);
+      counter = expected = jobs.length;
 
-      await queue.resume();
-      await processing;
-
-      try {
-        await sut.checkUpdate();
-        expect(sut.value).toBe(count);
-      } finally {
-        await queue.close();
-        await helper.destroy();
-        await worker.close();
-      }
+      await completed;
     });
   });
 });

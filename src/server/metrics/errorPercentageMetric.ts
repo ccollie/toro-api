@@ -1,7 +1,7 @@
 import { Events } from './constants';
 import { JobFinishedEventData } from '../queues';
 import { round } from 'lodash';
-import { MetricTypes, QueueMetricOptions } from '../../types';
+import { MetricTypes, MetricValueType, QueueMetricOptions } from '../../types';
 import { QueueCounterBasedMetric } from './counterBasedMetric';
 
 // todo: can we set initial counts ?
@@ -17,13 +17,21 @@ export class ErrorPercentageMetric extends QueueCounterBasedMetric {
     return [Events.FINISHED];
   }
 
+  get successes(): number {
+    return this._successes;
+  }
+
+  get failures(): number {
+    return this._failures;
+  }
+
   handleEvent(event: JobFinishedEventData): void {
     if (event.success) {
       this._successes++;
     } else {
       this._failures++;
     }
-    this.update(this.errorPercentage);
+    this.update(this.errorPercentage, event.ts);
   }
 
   get completed(): number {
@@ -44,5 +52,9 @@ export class ErrorPercentageMetric extends QueueCounterBasedMetric {
 
   static get unit(): string {
     return '%';
+  }
+
+  static get type(): MetricValueType {
+    return MetricValueType.Rate;
   }
 }

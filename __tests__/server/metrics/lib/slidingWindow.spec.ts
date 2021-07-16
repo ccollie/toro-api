@@ -64,7 +64,7 @@ describe('SlidingWindow', () => {
     });
 
     it('can get items by negative index', () => {
-      let j = -1;
+      const j = -1;
       const len = subject.length;
       for (let i = 0; i < len; i++) {
         const val = subject.get(j - i);
@@ -87,34 +87,6 @@ describe('SlidingWindow', () => {
       const index = subject.length + 1;
       expect(subject.get(index)).toBeUndefined();
       expect(subject.get(-index)).toBeUndefined();
-    });
-  });
-
-  describe('set', () => {
-    let clock;
-    let subject: SlidingTimeWindow<number>;
-
-    beforeEach(() => {
-      clock = new ManualClock(0);
-      let index = 0;
-      const defaultValue = () => index++;
-      subject = new SlidingTimeWindow<number>(clock, 20000, defaultValue);
-    });
-
-    it('should set the value at an index', () => {
-      let v = subject.set(1, 22);
-      expect(v).toBe(22);
-      v = subject.get(1);
-      expect(v).toBe(22);
-      v = subject.set(-1, 999);
-      expect(v).toBe(999);
-      expect(subject.get(subject.length - 1)).toBe(v);
-    });
-
-    it('should not set the value at an out-of-bounds index', () => {
-      const len = subject.length;
-      let v = subject.set(len, 22);
-      expect(v).toBeUndefined();
     });
   });
 
@@ -171,7 +143,7 @@ describe('SlidingWindow', () => {
       let count = 0;
       // don't assume order of iteration, check using a set instead
       const used = new Set(values);
-      for (let data of subject) {
+      for (const data of subject) {
         count++;
         expect(used.has(data)).toBe(true);
         used.delete(data);
@@ -239,14 +211,8 @@ describe('SlidingWindow', () => {
     });
 
     it('can get the current slice', () => {
-      let val = subject.current;
+      const val = subject.current;
       expect(val).toBe(start);
-    });
-
-    it('can set the current slice', () => {
-      const expected = random(10, 1000);
-      subject.current = expected;
-      expect(subject.current).toBe(expected);
     });
 
     it('respects the clock', () => {

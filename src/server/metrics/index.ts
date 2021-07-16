@@ -23,6 +23,7 @@ import {
   UsedMemoryMetric,
 } from './redisMetrics';
 import {
+  JobSpotCountMetric,
   CurrentActiveCountMetric,
   CurrentCompletedCountMetric,
   CurrentDelayedCountMetric,
@@ -40,7 +41,7 @@ import {
   SerializedAggregator,
 } from '../../types';
 import { createAggregator } from './aggregators';
-import { Clock, hashObject, logger, parseBool, systemClock } from '../lib';
+import { hashObject, logger, parseBool } from '../lib';
 import { ApdexMetric, ApdexMetricOptions } from './apdexMetric';
 import { parseTimestamp } from '@lib/datetime';
 import { isNil, isObject, isString } from 'lodash';
@@ -51,7 +52,7 @@ export * from './sliding-window-counter';
 
 export type MetricConstructor = Constructor<BaseMetric>;
 
-const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
+export const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
   [MetricTypes.None]: null, //
   [MetricTypes.Apdex]: ApdexMetric,
   [MetricTypes.ConnectedClients]: ConnectedClientsMetric,
@@ -147,10 +148,7 @@ function deserializeObject(str: string): any {
   }
 }
 
-export function createMetricFromJSON(
-  json: Record<string, any>,
-  clock: Clock = systemClock,
-): BaseMetric {
+export function createMetricFromJSON(json: Record<string, any>): BaseMetric {
   /// TODO: Hackish handling of createdAt, updatedAt
   const {
     id,
@@ -202,9 +200,9 @@ export function createMetricFromJSON(
       aggregator = _aggOptions;
     }
     const { type, options } = aggregator;
-    metric.aggregator = createAggregator(type, clock, options);
+    metric.aggregator = createAggregator(type, options);
   } else {
-    metric.aggregator = createAggregator(AggregatorTypes.Identity, clock, {});
+    metric.aggregator = createAggregator(AggregatorTypes.Identity, {});
   }
 
   return metric;
@@ -230,6 +228,21 @@ export function isPollingMetric(clazz: MetricConstructor): boolean {
 
   while (curPrototype != null) {
     if (curPrototype === PollingMetric.prototype) {
+      return true;
+    }
+    curPrototype = Object.getPrototypeOf(curPrototype);
+  }
+  return false;
+}
+
+export function isTypeOfMetric(
+  clazz: MetricConstructor,
+  target: MetricConstructor,
+): boolean {
+  let curPrototype = clazz.prototype;
+
+  while (curPrototype != null) {
+    if (curPrototype === target.prototype) {
       return true;
     }
     curPrototype = Object.getPrototypeOf(curPrototype);
@@ -274,6 +287,7 @@ export {
   FinishedCountMetric,
   FragmentationRatioMetric,
   JobRateMetric,
+  JobSpotCountMetric,
   LatencyMetric,
   PeakMemoryMetric,
   MetricUpdateEvent,

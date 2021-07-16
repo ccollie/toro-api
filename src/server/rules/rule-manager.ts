@@ -123,7 +123,12 @@ export class RuleManager {
     return this.queueManager.findMetric(rule.metricId);
   }
 
-  private dispatchRule(metric: BaseMetric, meta: RuleMeta, hasLock: boolean) {
+  private dispatchRule(
+    metric: BaseMetric,
+    meta: RuleMeta,
+    ts: number,
+    hasLock: boolean,
+  ) {
     const { alerter, rule } = meta;
     if (rule && rule.isActive) {
       let evaluator = meta.evaluator;
@@ -131,7 +136,7 @@ export class RuleManager {
         evaluator = new RuleEvaluator(rule, metric);
         meta.evaluator = evaluator;
       }
-      const result = evaluator.evaluate(metric.value);
+      const result = evaluator.evaluate(metric.value, ts);
       // put this check AFTER the above since evaluators may be stateful, and we
       // need to maintain state in case we acquire the lock
       if (!hasLock) return;
@@ -147,11 +152,13 @@ export class RuleManager {
     }
   }
 
-  handleMetricUpdate(metric: BaseMetric): void {
+  handleMetricUpdate(metric: BaseMetric, ts: number): void {
     const metas = this.metricRuleMap.get(metric.id);
     if (metas) {
       const hasLock = this.hasLock;
-      metas.forEach((meta) => void this.dispatchRule(metric, meta, hasLock));
+      metas.forEach(
+        (meta) => void this.dispatchRule(metric, meta, ts, hasLock),
+      );
     }
   }
 

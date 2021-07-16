@@ -3,10 +3,37 @@ import { clearDb, createQueue, createWorker } from '../../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
-import { MetricOptions } from '@src/types';
+import {
+  MetricCategory,
+  MetricOptions,
+  MetricTypes,
+  MetricValueType,
+} from '@src/types';
 import { delay, randomString } from '../utils';
 
 describe('CurrentActiveCountMetric', () => {
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(CurrentActiveCountMetric.description).toBe('Active Jobs');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(CurrentActiveCountMetric.key).toBe(MetricTypes.ActiveJobs);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(CurrentActiveCountMetric.unit).toBe('jobs');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(CurrentActiveCountMetric.category).toBe(MetricCategory.Queue);
+    });
+
+    it('exposes a "type" property', () => {
+      expect(CurrentActiveCountMetric.type).toBe(MetricValueType.Count);
+    });
+  });
+
   describe('constructor', () => {
     it('constructs a CurrentActiveCountMetric', () => {
       const options: MetricOptions = {
@@ -15,9 +42,6 @@ describe('CurrentActiveCountMetric', () => {
       const sut = new CurrentActiveCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
-      expect(MetricTestHelper.hasDescription(sut)).toBe(true);
-      expect(MetricTestHelper.hasKey(sut)).toBe(true);
-      expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
   });
 
@@ -65,7 +89,7 @@ describe('CurrentActiveCountMetric', () => {
       await processing;
 
       try {
-        await sut.checkUpdate();
+        await sut.checkUpdate(helper.metricsListener, 1000);
         expect(sut.value).toBe(count);
       } finally {
         await queue.close();

@@ -57,7 +57,8 @@ export interface CounterInterface {
  */
 export class SlidingWindowCounter
   extends EventEmitter
-  implements CounterInterface {
+  implements CounterInterface
+{
   private readonly _windows: SlidingTimeWindow<Bucket>;
   private _currentWindow: Bucket;
   private _accumulator: Bucket;
@@ -104,13 +105,6 @@ export class SlidingWindowCounter
   get(key: string): number {
     this._windows.tickIfNeeded();
     return this._accumulator.get(key);
-  }
-
-  percentage(valueKey: string, totalKey: string): number {
-    this._windows.tickIfNeeded();
-    const value = this._accumulator.get(valueKey);
-    const total = this._accumulator.get(totalKey);
-    return total === 0 ? 0 : value / total;
   }
 
   incr(key: string, delta = 1): number {

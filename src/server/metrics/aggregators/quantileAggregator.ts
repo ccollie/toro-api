@@ -1,8 +1,6 @@
 import Joi, { ObjectSchema } from 'joi';
-import { Clock, getStaticProp, ordinal } from '../../lib';
-import { QuantileEstimator, TickEventData } from '../../stats';
+import { ordinal } from '../../lib';
 import baseSchema from '../slidingWindowBaseSchema';
-import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import { BaseMetric } from '../baseMetric';
 import {
   AggregatorTypes,
@@ -10,12 +8,15 @@ import {
   SlidingWindowOptions,
 } from '@src/types';
 import { round } from 'lodash';
+import { DDSketch } from '@datadog/sketches-js';
+import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
 
 function quantileToString(q: number): string {
   return 'p' + (q * 100).toString(10).replace('.', '');
 }
 
-export interface QuantileAggregatorOptions extends SlidingWindowOptions {
+export interface QuantileAggregatorOptions {
+  duration: number;
   /**
    * the quantile as a fraction, e.g. 0.5 for the mean
    */
@@ -26,8 +27,8 @@ export interface QuantileAggregatorOptions extends SlidingWindowOptions {
   alpha?: number;
 }
 
-function makeEstimator(options?: QuantileAggregatorOptions): QuantileEstimator {
-  return new QuantileEstimator(options.alpha);
+function makeEstimator(options?: QuantileAggregatorOptions): DDSketch {
+  return new DDSketch({ relativeAccuracy: options.alpha });
 }
 
 const QuantileAggregatorSchema = baseSchema.keys({
@@ -47,21 +48,27 @@ const QuantileAggregatorSchema = baseSchema.keys({
 /**
  * An aggregator which calculates a quantile over streaming data with configurable accuracy
  */
-export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEstimator> {
-  private readonly accumulator: QuantileEstimator;
-  private current: QuantileEstimator;
+export class QuantileAggregator extends SlidingTimeWindowAggregator {
+  private accumulator: DDSketch;
 
   /**
    * Construct a SlidingWindowQuantileAggregator
-   * @param clock
    * @param options
    * @param {Number} options.alpha
    * @param {Number} options.quantile the desired quantile (0.0 - 1)
    */
-  constructor(clock: Clock, options?: QuantileAggregatorOptions) {
-    super(clock, () => makeEstimator(options), options);
-    this.accumulator = makeEstimator(options);
-    this.current = this.currentSlice;
+  constructor(options?: QuantileAggregatorOptions) {
+    super({
+      duration: 0,
+      quantile: 0.5,
+      alpha: 0.05,
+      ...(options || {}),
+    });
+    this.accumulator = this.createSketch();
+  }
+
+  protected createSketch(): DDSketch {
+    return makeEstimator(this.options as QuantileAggregatorOptions);
   }
 
   static get schema(): ObjectSchema {
@@ -69,12 +76,13 @@ export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEsti
   }
 
   getDescription(metric: BaseMetric, short = false): string {
-    const type = getStaticProp(metric, 'key');
-    const q = round(this.quantile, 2);
+    const type = BaseMetric.getTypeName(metric);
+    let q = round(this.quantile, 2);
     if (short) {
       const str = quantileToString(q);
       return `${str}(${type})`;
     }
+    q = q * 100;
     return `${type} ${ordinal(q)} percentile`;
   }
 
@@ -83,7 +91,7 @@ export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEsti
   }
 
   static get description(): string {
-    return 'Quantile Value';
+    return 'Quantile';
   }
 
   get quantile(): number {
@@ -94,19 +102,16 @@ export class QuantileAggregator extends SlidingTimeWindowAggregator<QuantileEsti
     return (this.options as QuantileAggregatorOptions).alpha;
   }
 
-  protected onTick(data: TickEventData<QuantileEstimator>): void {
-    const { popped, current } = data;
-    if (popped) {
-      this.accumulator.subtract(popped);
-      popped.clear();
-    }
-    this.current = current;
+  protected onTick(): void {
+    this.accumulator = this.createSketch();
+    const values = this.getCurrentValues();
+    this._count = values.length;
+    values.forEach((value) => this.accumulator.accept(value));
   }
 
-  protected handleUpdate(newVal: number): number {
-    this.current.update(newVal);
-    this.accumulator.update(newVal);
-    return this.accumulator.quantile(this.quantile);
+  protected handleUpdate(value: number): number {
+    this.accumulator.accept(value);
+    return this.accumulator.getValueAtQuantile(this.quantile);
   }
 
   toJSON(): SerializedAggregator {
@@ -139,8 +144,8 @@ export interface PercentileAggregatorOptions extends SlidingWindowOptions {
 }
 
 export class P75Aggregator extends QuantileAggregator {
-  constructor(clock: Clock, options: PercentileAggregatorOptions) {
-    super(clock, {
+  constructor(options: PercentileAggregatorOptions) {
+    super({
       quantile: 0.75,
       ...options,
     });
@@ -160,8 +165,8 @@ export class P75Aggregator extends QuantileAggregator {
 }
 
 export class P90Aggregator extends QuantileAggregator {
-  constructor(clock: Clock, options: PercentileAggregatorOptions) {
-    super(clock, {
+  constructor(options: PercentileAggregatorOptions) {
+    super({
       quantile: 0.9,
       ...options,
     });
@@ -181,8 +186,8 @@ export class P90Aggregator extends QuantileAggregator {
 }
 
 export class P95Aggregator extends QuantileAggregator {
-  constructor(clock: Clock, options: PercentileAggregatorOptions) {
-    super(clock, {
+  constructor(options: PercentileAggregatorOptions) {
+    super({
       quantile: 0.95,
       ...options,
     });
@@ -202,8 +207,8 @@ export class P95Aggregator extends QuantileAggregator {
 }
 
 export class P99Aggregator extends QuantileAggregator {
-  constructor(clock: Clock, options: PercentileAggregatorOptions) {
-    super(clock, {
+  constructor(options: PercentileAggregatorOptions) {
+    super({
       quantile: 0.99,
       ...options,
     });
@@ -223,8 +228,8 @@ export class P99Aggregator extends QuantileAggregator {
 }
 
 export class P995Aggregator extends QuantileAggregator {
-  constructor(clock: Clock, options: PercentileAggregatorOptions) {
-    super(clock, {
+  constructor(options: PercentileAggregatorOptions) {
+    super({
       quantile: 0.995,
       ...options,
     });
@@ -240,5 +245,13 @@ export class P995Aggregator extends QuantileAggregator {
 
   static get schema(): ObjectSchema {
     return SpecificPercentileSchema;
+  }
+
+  getDescription(metric: BaseMetric, short = false): string {
+    const type = BaseMetric.getTypeName(metric);
+    if (short) {
+      return `p995(${type})`;
+    }
+    return `${type} 99.5th percentile`;
   }
 }

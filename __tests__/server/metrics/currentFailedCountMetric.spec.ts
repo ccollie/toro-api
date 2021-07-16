@@ -7,20 +7,39 @@ import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import random from 'lodash/random';
 import { randomString } from '../utils';
+import { MetricCategory, MetricTypes, MetricValueType } from '@src/types';
 
 describe('CurrentFailedCountMetric', () => {
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(CurrentFailedCountMetric.description).toBe('Failed Jobs');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(CurrentFailedCountMetric.key).toBe(MetricTypes.CurrentFailedCount);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(CurrentFailedCountMetric.unit).toBe('jobs');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(CurrentFailedCountMetric.category).toBe(MetricCategory.Queue);
+    });
+
+    it('exposes a "type" property', () => {
+      expect(CurrentFailedCountMetric.type).toBe(MetricValueType.Gauge);
+    });
+  });
+
   describe('constructor', () => {
     it('constructs a CurrentFailedCountMetric', () => {
       const options: QueueMetricOptions = {
-        jobNames: [randomString()],
         sampleInterval: 250,
       };
       const sut = new CurrentFailedCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
-      expect(MetricTestHelper.hasDescription(sut)).toBe(true);
-      expect(MetricTestHelper.hasKey(sut)).toBe(true);
-      expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
   });
 
@@ -38,54 +57,44 @@ describe('CurrentFailedCountMetric', () => {
       return queue.addBulk(datas);
     }
 
-    it('should get the correct number of FAILED jobs', async () => {
-      jest.setTimeout(40000);
+    it('should get the correct number of failed jobs', async () => {
+      const queue = createQueue();
+      const client = await queue.client;
 
-      const queue = await createQueue();
-
-      const interval = 8000;
-      const options: QueueMetricOptions = {
-        sampleInterval: interval,
-      };
-      const sut = new CurrentFailedCountMetric(options);
+      const sut = new CurrentFailedCountMetric({ sampleInterval: 1000 });
       const helper = MetricTestHelper.forMetric(sut, queue);
 
-      let jobCount: number;
-      let failCount = 0;
-      let processor;
-      const processing = new Promise((resolve) => {
-        const checkResolve = () => {
-          if (--jobCount === 0) {
-            process.nextTick(resolve);
-          }
-        };
+      const worker = createWorker(
+        queue.name,
+        async (job) => {
+          throw new Error('Forced error');
+        },
+        { connection: client },
+      );
 
-        processor = async (job: Job) => {
-          if (random(0, 10) > 5) {
-            failCount++;
-            checkResolve();
-            throw new Error('Failed job #' + jobCount);
+      let counter = 0;
+      let expected: number;
+
+      const failed = new Promise<void>((resolve) => {
+        worker.on('failed', async function () {
+          counter--;
+
+          if (counter === 0) {
+            await sut.checkUpdate(helper.metricsListener, 1000);
+            expect(sut.value).toBe(expected);
+
+            await worker.close();
+            resolve();
           }
-          checkResolve();
-        };
+        });
+      }).finally(() => {
+        Promise.all([helper.destroy(), queue.close(), worker.close()]);
       });
 
-      const worker = createWorker(queue.name, processor);
-      await worker.waitUntilReady();
-
       const jobs = await generateJobs(queue);
-      jobCount = jobs.length;
+      counter = expected = jobs.length;
 
-      await processing;
-
-      try {
-        await sut.checkUpdate();
-        expect(sut.value).toBe(failCount);
-      } finally {
-        await queue.close();
-        await helper.destroy();
-        await worker.close();
-      }
+      await failed;
     });
   });
 });

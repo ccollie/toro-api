@@ -1,4 +1,3 @@
-import { Queue } from 'bullmq';
 import { PollingMetric } from './baseMetric';
 import { MetricsListener } from './metrics-listener';
 import {
@@ -16,25 +15,22 @@ import {
  * meaning that they can work even on historical data. This class gets
  * current values from the queue.
  */
-abstract class JobSpotCountMetric extends PollingMetric {
-  private queue: Queue;
-  private readonly statuses: JobStatusEnum[];
+export class JobSpotCountMetric extends PollingMetric {
+  private readonly _statuses: JobStatusEnum[];
 
-  protected constructor(props: MetricOptions, statuses: JobStatusEnum[]) {
+  // public only for testing
+  constructor(props: MetricOptions, statuses: JobStatusEnum[]) {
     super(props);
-    this.statuses = statuses;
+    this._statuses = statuses;
   }
 
-  async checkUpdate(): Promise<void> {
-    if (this.queue) {
-      const count = await this.queue.getJobCountByTypes(...this.statuses);
-      this.update(count);
-    }
+  get statuses(): JobStatusEnum[] {
+    return this._statuses;
   }
 
-  init(listener: MetricsListener): void {
-    super.init(listener);
-    this.queue = listener.queueListener.queue;
+  async checkUpdate(listener: MetricsListener, ts: number): Promise<void> {
+    const count = await listener.queue.getJobCountByTypes(...this._statuses);
+    this.update(count, ts);
   }
 
   static get unit(): string {
@@ -46,7 +42,7 @@ abstract class JobSpotCountMetric extends PollingMetric {
   }
 
   static get type(): MetricValueType {
-    return MetricValueType.Count;
+    return MetricValueType.Gauge;
   }
 }
 
@@ -80,7 +76,7 @@ export class CurrentWaitingCountMetric extends JobSpotCountMetric {
   }
 
   static get description(): string {
-    return 'Waiting jobs';
+    return 'Waiting Jobs';
   }
 }
 
@@ -114,7 +110,7 @@ export class CurrentCompletedCountMetric extends JobSpotCountMetric {
   }
 
   static get description(): string {
-    return 'current COMPLETED jobs';
+    return 'Current COMPLETED Jobs';
   }
 }
 

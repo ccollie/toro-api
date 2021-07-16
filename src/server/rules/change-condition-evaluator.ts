@@ -1,9 +1,9 @@
-import { ChunkedAssociativeArray } from '../lib';
+import { ChunkedAssociativeArray, systemClock } from '../lib';
 import { BaseMetric } from '@server/metrics';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation/schemas';
-import { DDSketch } from 'sketches-js';
-import { calculateInterval, clearDDSketch } from '../stats/utils';
+import { DDSketch } from '@datadog/sketches-js';
+import { calculateInterval } from '../stats/utils';
 import {
   ChangeAggregationType,
   ChangeConditionOptions,
@@ -15,17 +15,15 @@ import {
 } from '../../types';
 import { ThresholdConditionEvaluator } from './condition-evaluator';
 
-const TRIM_THRESHOLD = 10;
+const TRIM_THRESHOLD = 15;
 
 export type AggregateFunction = (data: number[]) => number;
 
 function percentileFactory(percentile: number): AggregateFunction {
-  const sketch = new DDSketch({ alpha: 0.005 });
   return (data: number[]): number => {
-    data.forEach((value) => sketch.add(value));
-    const result = sketch.getValueAtPercentile(percentile);
-    clearDDSketch(sketch);
-    return result;
+    const sketch = new DDSketch();
+    data.forEach((value) => sketch.accept(value));
+    return sketch.getValueAtQuantile(percentile);
   };
 }
 
@@ -99,19 +97,20 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     return super.handleEval(change);
   }
 
-  private get now(): number {
-    return this.clock.getTime();
+  get lastTimestamp(): number {
+    return this.measurements.lastKey ?? 0;
   }
 
   public get isFullWindow(): boolean {
     if (this._isFullWindow) return true;
     if (this._lastTick === undefined) return false;
-    this._isFullWindow = this.now > this._lastTick + this.fullWindow;
+    const firstTs = this.measurements.firstKey ?? 0;
+    this._isFullWindow = this.lastTimestamp - firstTs >= this.fullWindow;
     return this._isFullWindow;
   }
 
   get currentWindowStart(): number {
-    return this.align(this.now - this.windowSize);
+    return this.align(this.lastTimestamp - this.windowSize);
   }
 
   get previousWindowStart(): number {
@@ -180,7 +179,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
       return 0;
     }
 
-    const now = this.now;
+    const now = this.lastTimestamp;
     if (now - (this._lastTick ?? now) < this.sampleInterval) {
       return this._value;
     }
@@ -190,10 +189,10 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     return !diffs.length ? 0 : this.calculationMethod(diffs);
   }
 
-  update(value: number): number {
+  update(value: number, ts?: number): number {
     // for comparison, align timestamps. Of course the assumption is that
     // we are updating at intervals of this.sampleInterval
-    const ts = this.align(this.now);
+    ts = this.align(ts ?? systemClock.getTime());
     this.measurements.put(ts, value);
     if (++this._count % TRIM_THRESHOLD == 0) {
       if (ts - this.measurements.firstKey > this.fullWindow) {

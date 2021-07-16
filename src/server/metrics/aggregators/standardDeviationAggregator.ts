@@ -1,19 +1,14 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
-import { Clock, getStaticProp } from '../../lib';
 import { BaseMetric } from '../baseMetric';
 import { AggregatorTypes, SlidingWindowOptions } from '@src/types';
 
 export class StandardDeviationAggregator extends StatsBasedAggregator {
-  constructor(clock: Clock, window: SlidingWindowOptions) {
-    super(clock, window);
-  }
-
-  get value(): number {
-    return this.stats.populationStdev;
+  constructor(window: SlidingWindowOptions) {
+    super(window, 'standardDeviation');
   }
 
   getDescription(metric: BaseMetric, short = false): string {
-    const type = getStaticProp(metric, 'key');
+    const type = BaseMetric.getTypeName(metric);
     if (short) {
       return `std_dev(${type})`;
     }

@@ -45,7 +45,7 @@ export class ApdexMetric extends QueueBasedMetric {
 
   handleEvent(event: JobFinishedEventData): void {
     this._data.update(event.latency);
-    this.update(this._data.getScore());
+    this.update(this._data.getScore(), event.ts);
   }
 
   reset(): void {

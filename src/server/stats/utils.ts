@@ -13,7 +13,6 @@ import {
   initWebAssemblySync,
 } from 'hdr-histogram-js';
 import ms from 'ms';
-import { DDSketch } from 'sketches-js';
 import * as units from './units';
 import { ManualClock } from '../lib';
 import { Meter } from '@server/stats/meter';
@@ -258,12 +257,6 @@ export function aggregateSnapshots(
     startTime,
     endTime,
   };
-}
-
-export function clearDDSketch(sketch: DDSketch): void {
-  sketch.bins = {};
-  sketch.n = 0;
-  sketch.numBins = 0;
 }
 
 export function calculateInterval(duration: number): number {

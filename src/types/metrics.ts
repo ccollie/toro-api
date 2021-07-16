@@ -25,6 +25,8 @@ export enum MetricTypes {
   WaitTime,
 }
 
+export type MetricTypeName = keyof typeof MetricTypes;
+
 export enum AggregatorTypes {
   None,
   Identity,
@@ -43,6 +45,8 @@ export enum AggregatorTypes {
   P995,
 }
 
+export type AggregatorTypeName = keyof typeof AggregatorTypes;
+
 export enum MetricValueType {
   Count,
   Gauge,
@@ -57,6 +61,7 @@ export enum MetricCategory {
 
 export interface SlidingWindowOptions {
   duration: number;
+  granularity?: number;
 }
 
 export interface MetricsFilter {

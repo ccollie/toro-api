@@ -9,7 +9,7 @@ export class LatencyMetric extends QueueBasedMetric {
   }
 
   handleEvent(event: JobFinishedEventData): void {
-    this.update(event.latency);
+    this.update(event.latency, event.ts);
   }
 
   static get key(): MetricTypes {

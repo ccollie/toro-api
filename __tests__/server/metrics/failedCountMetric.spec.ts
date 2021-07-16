@@ -1,6 +1,8 @@
 import { FailedCountMetric, Events, BaseMetric } from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
-import { QueueMetricOptions } from '@src/types';
+import { MetricCategory, MetricTypes, QueueMetricOptions } from '@src/types';
+import { createJobEvent } from '../../factories';
+import { validateJobNamesFilter } from './helpers';
 
 describe('FailedCountMetric', () => {
   const defaultOptions: QueueMetricOptions = {};
@@ -39,6 +41,24 @@ describe('FailedCountMetric', () => {
     }
   }
 
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(FailedCountMetric.description).toBe('Failed Jobs');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(FailedCountMetric.key).toBe(MetricTypes.Failures);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(FailedCountMetric.unit).toBe('jobs');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(FailedCountMetric.category).toBe(MetricCategory.Queue);
+    });
+  });
+
   describe('constructor', () => {
     test('can create with default options', () => {
       const subject = new FailedCountMetric(defaultOptions);
@@ -48,6 +68,19 @@ describe('FailedCountMetric', () => {
     test('subscribes to correct events', () => {
       const subject = new FailedCountMetric(defaultOptions);
       expect(subject.validEvents).toEqual([Events.FAILED]);
+    });
+  });
+
+  describe('accept', () => {
+    it('allows all jobs if no job names is specified', () => {
+      const event = createJobEvent(Events.FAILED);
+      const metric = new FailedCountMetric({});
+      expect(metric.accept(event)).toBeTruthy();
+    });
+
+    it('filters events according to job names', () => {
+      const metric = new FailedCountMetric({});
+      validateJobNamesFilter(metric);
     });
   });
 

@@ -4,11 +4,11 @@ import { QueueCounterBasedMetric } from './counterBasedMetric';
 import { MetricTypes } from '@src/types';
 
 export class ConsecutiveFailuresMetric extends QueueCounterBasedMetric {
-  handleEvent(event?: JobFinishedEventData): void {
+  handleEvent(event: JobFinishedEventData): void {
     if (event.success) {
-      this.reset();
+      this.reset(event.ts);
     } else {
-      this.incr();
+      this.incr(1, event.ts);
     }
   }
 

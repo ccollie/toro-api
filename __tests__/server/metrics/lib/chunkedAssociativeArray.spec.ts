@@ -82,6 +82,27 @@ describe('ChunkedAssociativeArray', function () {
       expect(values).toEqual([5, 0, 8, 72, 39]);
     });
 
+    it('.range', () => {
+      const array = new ChunkedAssociativeArray(3);
+      array.put(-3, 3);
+      array.put(-2, 1);
+      array.put(0, 5);
+      array.put(3, 0);
+      array.put(9, 8);
+      array.put(15, 72);
+      array.put(19, 39);
+      array.put(21, 5);
+      array.put(34, -9);
+      array.put(109, 5);
+
+      const values = [5, 0, 8, 72, 39];
+      let i = 0;
+      for (const [ts, val] of array.range(0, 19)) {
+        expect(values[i]).toBe(val);
+        i++;
+      }
+    });
+
     it('defaults to the last key if no end is specified', () => {
       const array = new ChunkedAssociativeArray(3);
       array.put(-3, 3);

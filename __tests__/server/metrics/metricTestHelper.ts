@@ -79,7 +79,7 @@ export class MetricTestHelper {
     return this.queue.client;
   }
 
-  registerMetric(metric: BaseMetric) {
+  registerMetric(metric: BaseMetric): void {
     this.metricsListener.registerMetric(metric);
   }
 

@@ -17,8 +17,8 @@ export class StreamingStats {
   private readonly clock: Clock;
   private _currentWindow: Denque<number>;
 
-  constructor(clock?: Clock, windowSize?: number) {
-    this.clock = clock || systemClock;
+  constructor(windowSize?: number) {
+    this.clock = systemClock;
     if (windowSize !== undefined && windowSize > 0) {
       this.window = new SlidingTimeWindow(
         this.clock,

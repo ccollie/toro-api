@@ -35,6 +35,12 @@ interface MetricMetadata {
   sampleInterval?: number;
 }
 
+export interface MetricsUpdatedPayload {
+  metrics: BaseMetric[];
+  state: Record<string, any>;
+  ts: number;
+}
+
 /***
  * A queue listener that acts as an event emitter/dispatcher for
  * queue metrics, as well as storing metric data at a preset interval.
@@ -133,7 +139,7 @@ export class MetricsListener {
         meta.lastSave = now;
         meta.lastTick = now;
         if (isPollingMetric(metric)) {
-          tasks.push(() => metric.checkUpdate());
+          tasks.push(() => metric.checkUpdate(this, now));
           polling.push(metric);
         } else {
           addToPipeline(metric);
@@ -144,7 +150,7 @@ export class MetricsListener {
     if (polling.length) {
       await this.workQueue
         .addAll(tasks)
-        .then(() => this.emitUpdate(polling))
+        .then(() => this.emitUpdate(polling, now))
         .catch(this.onError);
 
       polling.forEach(addToPipeline);
@@ -227,7 +233,7 @@ export class MetricsListener {
   registerMetricFromJSON(opts: SerializedMetric): BaseMetric {
     let metric = this.findMetricById(opts.id);
     if (!metric) {
-      metric = createMetricFromJSON(opts, this.clock);
+      metric = createMetricFromJSON(opts);
       this.registerMetric(metric);
     }
     return metric;
@@ -296,7 +302,9 @@ export class MetricsListener {
     return this.emitter.off(`${UPDATE_EVENT_NAME}:${id}`, handler);
   }
 
-  onMetricsUpdated(handler: (eventData?: any) => void): UnsubscribeFn {
+  onMetricsUpdated(
+    handler: (eventData?: MetricsUpdatedPayload) => void,
+  ): UnsubscribeFn {
     return this.emitter.on(UPDATE_EVENT_NAME, handler);
   }
 
@@ -350,11 +358,11 @@ export class MetricsListener {
     if (!tasks.length) return;
     this.workQueue
       .addAll(tasks)
-      .then(() => this.emitUpdate(filtered))
+      .then(() => this.emitUpdate(filtered, event.ts))
       .catch(this.onError);
   }
 
-  private async emitUpdate(metrics: BaseMetric[]): Promise<void> {
+  private async emitUpdate(metrics: BaseMetric[], ts: number): Promise<void> {
     const state = this._state;
     const calls = [];
     metrics.forEach((metric) => {
@@ -363,10 +371,13 @@ export class MetricsListener {
         this.emitter.emit(`${UPDATE_EVENT_NAME}:${metric.id}`, {
           metric,
           state, // pass by ref, so should be fine
+          ts,
         }),
       );
     });
-    calls.push(() => this.emitter.emit(UPDATE_EVENT_NAME, { metrics, state }));
+    calls.push(() =>
+      this.emitter.emit(UPDATE_EVENT_NAME, { metrics, state, ts }),
+    );
 
     await this.workQueue.addAll(calls);
   }

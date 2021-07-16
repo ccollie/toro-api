@@ -10,6 +10,7 @@ import {
 } from '@src/server/metrics';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRandomNumberArray } from './helpers';
+import { MetricCategory, MetricTypes, MetricValueType } from '@src/types';
 
 const EVENT_NAME = Events.FINISHED;
 
@@ -30,6 +31,32 @@ describe('JobRateMetric', () => {
       });
     });
   }
+
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(JobRateMetric.description).toBe('Job Rate');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(JobRateMetric.key).toBe(MetricTypes.JobRate);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(JobRateMetric.unit).toBe('jobs/sec');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(JobRateMetric.category).toBe(MetricCategory.Queue);
+    });
+
+    it('exposes a "schema" property', () => {
+      expect(JobRateMetric.schema).toBeDefined();
+    });
+
+    it('exposes a "type" property', () => {
+      expect(JobRateMetric.type).toBe(MetricValueType.Gauge);
+    });
+  });
 
   describe('constructor', () => {
     test('can create with default options', () => {

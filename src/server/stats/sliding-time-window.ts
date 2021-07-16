@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { isFunction } from 'lodash';
 import { calculateInterval } from './utils';
 import { UnsubscribeFn } from 'emittery';
-import { Clock, TimeTicker } from '../lib';
+import { ChunkedAssociativeArray, Clock, TimeTicker } from '../lib';
 import ms from 'ms';
 
 function getDefaultValue(defaultValue): any {
@@ -20,11 +20,18 @@ export interface TickEventData<T> {
   ts: number;
 }
 
+const TRIM_THRESHOLD = 15;
+
 export class SlidingTimeWindow<T> extends EventEmitter {
   private _ptr: number;
   private _rotated = false;
+  private lastWrite: number;
+  private tickCount = 0;
+  protected lastTick: number;
+  protected prevWindowStart: number;
   private readonly _ticker: TimeTicker;
   private readonly slices: Array<T>;
+  private readonly data: ChunkedAssociativeArray<number, T>;
   protected readonly clock: Clock;
   private readonly _getDefault: () => T;
   public readonly duration: number;
@@ -43,6 +50,7 @@ export class SlidingTimeWindow<T> extends EventEmitter {
     this.slices = new Array<T>(len);
     this._getDefault = () => getDefaultValue(valueDefault);
 
+    this.data = new ChunkedAssociativeArray<number, T>();
     for (let i = 0; i < len; i++) {
       this.slices[i] = getDefaultValue(valueDefault);
     }
@@ -56,8 +64,43 @@ export class SlidingTimeWindow<T> extends EventEmitter {
     return this.slices.length;
   }
 
-  get isFull(): boolean {
-    return this.length === this.capacity;
+  private align(ts: number): number {
+    return ts - (ts % this.interval);
+  }
+
+  protected getPreviousValues(): T[] {
+    const start = this.prevWindowStart;
+    const end = this.lastTick - 1;
+    return this.data.getValues(start, end);
+  }
+
+  protected getCurrentValues(): T[] {
+    return this.data.getValues(this.lastTick);
+  }
+
+  getValues(start?: number, end?: number): T[] {
+    return this.data.getValues(start, end);
+  }
+
+  _tickIfNeeded(now: number): boolean {
+    if (!this.lastTick) {
+      this.lastTick = this.align(now);
+      this.prevWindowStart = this.lastTick - this.interval;
+      return false;
+    }
+    const granularity = this.interval;
+    if (now - this.lastTick >= granularity) {
+      this.prevWindowStart = this.lastTick;
+      this.lastTick = this.align(now);
+      // this.onTick();
+      if (++this.tickCount % TRIM_THRESHOLD === 0) {
+        this.tickCount = 0;
+        this.data.trim(this.prevWindowStart);
+        // this._count = this.data.size();
+      }
+      return true;
+    }
+    return false;
   }
 
   public get(n: number): T | undefined {
@@ -69,37 +112,9 @@ export class SlidingTimeWindow<T> extends EventEmitter {
     return this.slices[n];
   }
 
-  public set(n: number, val: T): T {
-    this.tickIfNeeded();
-    const length = this.slices.length;
-    if (n >= length || n < -length) {
-      return undefined;
-    }
-    if (n < 0) n += length;
-    n = (this._ptr + n) % this.capacity;
-    this.slices[n] = val;
-    return val;
-  }
-
-  get front(): T {
-    return this.get(0);
-  }
-
   get current(): T {
     this.tickIfNeeded();
     return this.slices[this._ptr];
-  }
-
-  set current(val: T) {
-    this.tickIfNeeded();
-    this.slices[this._ptr] = val;
-  }
-
-  push(val: T): this {
-    this.tickIfNeeded();
-    this._ptr = (this._ptr + 1) % this.capacity;
-    this.slices[this._ptr] = val;
-    return this;
   }
 
   forEach(handler: (data: T, index?: number) => boolean | void): void {

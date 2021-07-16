@@ -1,49 +1,47 @@
-import { StreamingStats } from '../../stats';
-import { BaseAggregator, WindowedAggregator } from './aggregator';
-import { Clock } from '../../lib';
 import { SlidingWindowOptions } from '@src/types';
 import { ObjectSchema } from 'joi';
-import { SlidingWindowOptionSchema } from './slidingTimeWindowAggregator';
+import {
+  SlidingTimeWindowAggregator,
+  TimeWindowOptionSchema,
+} from './SlidingTimeWindowAggregator';
+import OnlineNormalEstimator from '../../stats/online-normal-estimator';
 
-export class StatsBasedAggregator
-  extends BaseAggregator
-  implements WindowedAggregator
-{
-  protected readonly stats: StreamingStats;
-  public readonly windowSize: number;
+export type StatsFieldName = 'mean' | 'standardDeviation' | 'variance';
+
+export class StatsBasedAggregator extends SlidingTimeWindowAggregator {
+  private readonly field: StatsFieldName;
+  protected readonly estimator = new OnlineNormalEstimator();
 
   /**
    * Construct a StatsBasedAggregator
-   * @param clock
    * @param {Object} options options
+   * @param field
    * @param {Number} options.duration rolling statistical window for the stats functions
    * @param {Number} options.interval interval for rolling window
    */
-  constructor(clock: Clock, options: SlidingWindowOptions) {
-    super(clock, options);
-    this.windowSize = options.duration;
-    this.stats = new StreamingStats(clock, options.duration);
+  constructor(options: SlidingWindowOptions, field: StatsFieldName) {
+    super(options);
+    this.field = field;
   }
 
   get count(): number {
-    return this.stats.count;
+    return this.estimator.count;
   }
 
-  destroy(): void {
-    this.stats.destroy();
-    super.destroy();
+  protected onTick(): void {
+    // get the slice of values (of size granularity ms) that moved out of
+    // the window
+    const oldValues = this.getPreviousSlice();
+    // remove them from the estimator
+    oldValues.forEach((value) => this.estimator.remove(value));
   }
 
-  update(value: number): number {
-    this.stats.update(value);
-    return this.value;
-  }
-
-  static get isWindowed(): boolean {
-    return true;
+  protected handleUpdate(value: number): number {
+    this.estimator.add(value);
+    return this.estimator[this.field];
   }
 
   static get schema(): ObjectSchema {
-    return SlidingWindowOptionSchema;
+    return TimeWindowOptionSchema;
   }
 }

@@ -8,7 +8,6 @@ import { MeanAggregator } from './meanAggregator';
 import { LatestAggregator } from './latestAggregator';
 import { EWMAAggregator } from './ewmaAggregator';
 import { StandardDeviationAggregator } from './standardDeviationAggregator';
-import { SlidingTimeWindowAggregator } from './slidingTimeWindowAggregator';
 import {
   P75Aggregator,
   P90Aggregator,
@@ -18,7 +17,6 @@ import {
   PercentileAggregatorOptions,
   QuantileAggregator,
 } from './quantileAggregator';
-import { Clock } from '../../lib';
 import { AggregatorTypes, Constructor } from '@src/types';
 
 export type AggregatorClass = Constructor<BaseAggregator>;
@@ -79,11 +77,10 @@ function findAggregator(
 
 export function createAggregator(
   type: string | AggregatorTypes = AggregatorTypes.Identity,
-  clock: Clock,
   options?: Record<string, any>,
 ): BaseAggregator {
   const ctor = findAggregator(type);
-  return new ctor(clock, options);
+  return new ctor(options);
 }
 
 export function validateAggregatorOpts(
@@ -112,5 +109,4 @@ export {
   MeanAggregator,
   QuantileAggregator,
   StandardDeviationAggregator,
-  SlidingTimeWindowAggregator,
 };

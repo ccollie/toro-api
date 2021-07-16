@@ -2,9 +2,27 @@ import { ConnectedClientsMetric } from '@src/server/metrics';
 import { delay } from '../utils';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '@src/server/redis';
-import { MetricOptions } from '@src/types';
+import { MetricCategory, MetricOptions, MetricTypes } from '@src/types';
 
 describe('ConnectedClientsMetric', () => {
+  describe('static properties', () => {
+    it('exposes a "description" property', () => {
+      expect(ConnectedClientsMetric.description).toBe('Connected Clients');
+    });
+
+    it('exposes a "key" property', () => {
+      expect(ConnectedClientsMetric.key).toBe(MetricTypes.ConnectedClients);
+    });
+
+    it('exposes a "unit" property', () => {
+      expect(ConnectedClientsMetric.unit).toBe('connections');
+    });
+
+    it('exposes a "category" property', () => {
+      expect(ConnectedClientsMetric.category).toBe(MetricCategory.Redis);
+    });
+  });
+
   describe('constructor', () => {
     it('constructs a ConnectedClientsMetric', () => {
       const options: MetricOptions = {
@@ -12,11 +30,7 @@ describe('ConnectedClientsMetric', () => {
       };
       const sut = new ConnectedClientsMetric(options);
       expect(sut).toBeDefined();
-      expect(sut.id).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
-      expect(MetricTestHelper.hasDescription(sut)).toBe(true);
-      expect(MetricTestHelper.hasKey(sut)).toBe(true);
-      expect(MetricTestHelper.hasUnit(sut)).toBe(true);
     });
   });
 

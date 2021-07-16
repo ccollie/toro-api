@@ -61,6 +61,7 @@ class Chunk<TKey = number, TValue = any> {
   }
 
   copyValues(dest: TValue[], count: number, valueIndex: number): void {
+    // todo: splice
     for (let i = this.startIndex; i < this.cursor && count > 0; i++, count--) {
       dest[valueIndex++] = this.values[i];
     }
@@ -69,6 +70,11 @@ class Chunk<TKey = number, TValue = any> {
 
 const DEFAULT_CHUNK_SIZE = 256;
 const MAX_CACHE_SIZE = 64;
+
+export interface ChunkedAssociativeArrayRange<TKey = any> {
+  startKey?: TKey;
+  endKey?: TKey;
+}
 
 export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
   private readonly defaultChunkSize: number;
@@ -127,6 +133,28 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
     return true;
   }
 
+  private findIndex(startKey: TKey): [number, number] {
+    let found = false;
+    const len = this.chunks.length;
+    for (let i = 0; i < len && !found; i++) {
+      const chunk = this.chunks.get(i);
+      let startIndex = chunk.startIndex;
+      if (!found) {
+        if (chunk.isEmpty) {
+          found = true;
+        } else if (startKey > chunk.lastKey) {
+          continue;
+        } else {
+          // startKey <= chunk.lastKey
+          found = true;
+          startIndex = chunk.findFirstIndexOfGreaterEqualElements(startKey);
+        }
+      }
+      return [i, startIndex];
+    }
+    return [len, -1];
+  }
+
   getValues(startKey?: TKey, endKey?: TKey): TValue[] {
     let foundStart = false;
 
@@ -166,7 +194,8 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
       }
 
       if (endKey >= chunk.lastKey && startIndex == 0) {
-        result.push(...chunk.values);
+        const items = chunk.values.slice(0, chunk.length);
+        result.push(...items);
       } else {
         for (let j = startIndex; j < chunk.cursor; j++) {
           if (chunk.keys[j] > endKey) {
@@ -179,6 +208,36 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
     }
 
     return result;
+  }
+
+  forEach(
+    range: ChunkedAssociativeArrayRange,
+    callback: ([ts, value], index?: number) => void,
+  ): void {
+    let i = 0;
+    const { startKey, endKey } = range;
+    for (const [ts, value] of this.range(startKey, endKey)) {
+      callback([ts, value], i++);
+    }
+  }
+
+  reduce<TAccumulator = any>(
+    range: ChunkedAssociativeArrayRange,
+    callback: (
+      acc: TAccumulator,
+      value,
+      ts?: TKey,
+      index?: number,
+    ) => TAccumulator,
+    init: TAccumulator,
+  ): TAccumulator {
+    let i = 0;
+    const { startKey, endKey } = range;
+    let accumulator = init;
+    for (const [ts, value] of this.range(startKey, endKey)) {
+      accumulator = callback(accumulator, value, ts, i++);
+    }
+    return accumulator;
   }
 
   *range(startKey?: TKey, endKey?: TKey): IterableIterator<[TKey, TValue]> {
@@ -282,9 +341,8 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
       if (chunk.isLastElementLessThanKey(startKey)) {
         this.freeChunk(this.chunks.shift());
       } else {
-        const newStartIndex = chunk.findFirstIndexOfGreaterEqualElements(
-          startKey,
-        );
+        const newStartIndex =
+          chunk.findFirstIndexOfGreaterEqualElements(startKey);
         if (chunk.startIndex != newStartIndex) {
           chunk.startIndex = newStartIndex;
           chunk.chunkSize = chunk.length;
