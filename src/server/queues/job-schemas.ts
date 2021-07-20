@@ -287,12 +287,17 @@ export async function deleteAllSchemas(queue: Queue): Promise<number> {
   return deleted ? count : 0;
 }
 
+export interface JobValidationResult {
+  options?: Partial<JobsOptions>;
+  data: any;
+}
+
 export function validateBySchema(
   jobName: string,
   jobSchema: JobSchema,
   data: Record<string, any>,
   options?: Partial<JobsOptions>,
-): { options?: Partial<JobsOptions>; data: any } {
+): JobValidationResult {
   if (jobSchema) {
     const opts = Object.assign({}, jobSchema.defaultOpts || {}, options || {});
 
@@ -309,7 +314,7 @@ export async function validateJobData(
   jobName: string,
   data: Record<string, any>,
   options?: Partial<JobsOptions>,
-): Promise<{ options?: Partial<JobsOptions>; data: any }> {
+): Promise<JobValidationResult> {
   const jobSchema = await getJobSchema(queue, jobName);
   return validateBySchema(jobName, jobSchema, data, options);
 }

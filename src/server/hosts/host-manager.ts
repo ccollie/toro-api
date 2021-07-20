@@ -10,12 +10,15 @@ import {
 import Emittery from 'emittery';
 import pSettle from 'p-settle';
 import pAll from 'p-all';
+import pMap from 'p-map';
 import { sortBy, uniqBy } from 'lodash';
 import {
   QueueManager,
   discoverQueues,
   convertWorker,
   getPipelinedCounts,
+  validateJobData,
+  JobValidationResult,
 } from '../queues';
 import {
   checkMultiErrors,
@@ -294,7 +297,12 @@ export class HostManager {
     return manager && manager.queue;
   }
 
-  getQueue(prefix: string, name: string): Queue {
+  getQueue(nameOrPrefix: string, name?: string): Queue {
+    let prefix = nameOrPrefix;
+    if (arguments.length === 1) {
+      name = nameOrPrefix;
+      prefix = this.config.prefix;
+    }
     const key = queueConfigKey(prefix, name);
     const manager = this.queueManagerMap.get(key);
     return manager?.queue;
@@ -405,23 +413,39 @@ export class HostManager {
 
   async addFlow(flow: FlowJob): Promise<JobNode> {
     const producer = this.initFlowProducer();
+    const linearJobs: FlowJob[] = [];
+    const validationMap = new Map<FlowJob, JobValidationResult>();
 
-    const validateQueues = (jobsTree: FlowJob) => {
-      const { prefix = this.config.prefix, queueName } = jobsTree;
+    const validate = async (job: FlowJob): Promise<void> => {
+      const { prefix = this.config.prefix, queueName, name, data, opts } = job;
       const queue = this.getQueue(prefix, queueName);
       if (!queue) {
         const msg = `Could not find queue "${queueName}" in host "${this.name}"`;
         throw boom.notFound(msg);
       }
+      const validationResult = await validateJobData(queue, name, data, opts);
+      validationMap.set(job, validationResult);
+    };
+
+    const gatherJobs = (jobsTree: FlowJob) => {
+      linearJobs.push(jobsTree);
       const children = jobsTree.children;
       if (children) {
         for (let i = 0; i < children.length; i++) {
-          validateQueues(children[i]);
+          gatherJobs(children[i]);
         }
       }
     };
 
-    validateQueues(flow);
+    gatherJobs(flow);
+
+    await pMap(linearJobs, validate, { concurrency: 4 });
+    // set defaults
+    linearJobs.forEach((job) => {
+      const result = validationMap.get(job);
+      job.opts = { ...(job.opts || {}), ...(result.options || {}) };
+      job.data = { ...(job.data || {}), ...(result.data || {}) };
+    });
 
     return producer.add(flow);
   }

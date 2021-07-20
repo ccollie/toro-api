@@ -44,6 +44,9 @@ export function validate(
       propertyPath: [],
       targetValue: data,
     });
+    if (output.length === 1) {
+      throw boom.badRequest(output[0].error);
+    }
     throw boom.badRequest('Error validating job data', output);
   }
 }
