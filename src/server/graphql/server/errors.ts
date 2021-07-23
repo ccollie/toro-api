@@ -1,7 +1,6 @@
 import Boom from '@hapi/boom';
-import config from '../config';
+import config from '../../config';
 import { get, isEmpty } from 'lodash';
-import { ApolloError } from 'apollo-server-express';
 import errorFormatter from 'node-error-formatter';
 
 const isProduction = config.get('env') === 'production';
@@ -41,8 +40,6 @@ export function formatGraphqlError(graphqlError): any {
   const hideSensitiveData = isProduction;
   let err = graphqlError.originalError || graphqlError;
 
-  // todo: log error
-
   const finalError: Record<string, any> = {
     locations: graphqlError.locations,
     path: graphqlError.path,
@@ -51,21 +48,17 @@ export function formatGraphqlError(graphqlError): any {
 
   const extensions = Object.create(null);
 
-  if (!(graphqlError instanceof ApolloError)) {
-    if (!err.isBoom) {
-      const transformed = errorFormatter.create(err);
-      err = Boom.boomify(transformed, { statusCode: transformed.statusCode });
-    }
-    const payload = err.output.payload;
-    if (!err.isServer || !hideSensitiveData) {
-      const data = get(err, PublicDataPath, {});
-      if (data) extensions.data = data;
-    }
-    extensions.statusCode = payload.statusCode;
-  } else {
-    // todo: generate statusCodes from Apollo errors
-    extensions.statusCode = ErrorStatusMap[graphqlError.name] || 500;
+  if (!err.isBoom) {
+    const transformed = errorFormatter.create(err);
+    err = Boom.boomify(transformed, { statusCode: transformed.statusCode });
   }
+  const payload = err.output.payload;
+  if (!err.isServer || !hideSensitiveData) {
+    const data = get(err, PublicDataPath, {});
+    if (data) extensions.data = data;
+  }
+  extensions.statusCode =
+    payload.statusCode || ErrorStatusMap[graphqlError.name] || 500;
 
   if (extensions.statusCode) {
     const code = ErrorCodeMap.get(extensions.statusCode);

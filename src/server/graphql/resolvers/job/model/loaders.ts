@@ -1,9 +1,9 @@
 import { Job, Queue } from 'bullmq';
 import { JobIdSpec, JobStatusEnum } from '@src/types';
-import { ResolverContext } from '@server/graphql';
+import { Context } from '@server/graphql';
 
 export async function checkState(
-  context: ResolverContext,
+  context: Context,
   job: Job,
   ...states: JobStatusEnum[]
 ): Promise<boolean> {
@@ -11,15 +11,12 @@ export async function checkState(
   return state && states.includes(state as JobStatusEnum);
 }
 
-export function getJobState(
-  context: ResolverContext,
-  job: Job,
-): Promise<string> {
+export function getJobState(context: Context, job: Job): Promise<string> {
   return context.loaders.load<Job, string>('jobState', job);
 }
 
 export function getJobById(
-  context: ResolverContext,
+  context: Context,
   queue: Queue | string,
   id: string,
 ): Promise<Job> {

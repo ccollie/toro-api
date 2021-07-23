@@ -3,7 +3,7 @@ import { Queue } from 'bullmq';
 import { FieldConfig } from '../../utils';
 import { QueueWorker } from '@src/types';
 import toDate from 'date-fns/toDate';
-import { ResolverContext } from '@server/graphql';
+import { Context } from '@server/graphql';
 
 export const QueueWorkerTC = schemaComposer.createObjectTC({
   // see https://redis.io/commands/client-list
@@ -53,7 +53,7 @@ export const queueWorkers: FieldConfig = {
   async resolve(
     queue: Queue,
     args: any,
-    context: ResolverContext,
+    context: Context,
   ): Promise<QueueWorker[]> {
     const queueWorkersLoader = context.loaders.getLoader<
       Queue,

@@ -1,5 +1,4 @@
 import { UnsubscribeFn } from 'emittery';
-import { FilterFn } from 'apollo-server-express';
 import { JobEventData } from '../../../../queues';
 import { diff, isNumber, systemClock } from '../../../../lib';
 import {
@@ -12,6 +11,7 @@ import { AppJob, JobStatusEnum } from '@src/types';
 import { fieldsList } from 'graphql-fields-list';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
+import { FilterFn } from 'graphql-subscriptions';
 
 export type JobData = Partial<AppJob> & {
   ts: number;

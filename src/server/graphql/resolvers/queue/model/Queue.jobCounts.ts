@@ -3,7 +3,7 @@ import { get } from 'lodash';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
 import { JobCountStates, JobStatusEnum } from '@src/types';
-import { ResolverContext } from '@server/graphql';
+import { Context } from '@server/graphql';
 import { getJobCounts } from './loaders';
 
 export const JobCountsTC = schemaComposer.createObjectTC({
@@ -25,7 +25,7 @@ export const jobCounts: FieldConfig = {
   async resolve(
     queue: Queue,
     args: unknown,
-    context: ResolverContext,
+    context: Context,
     info: unknown,
   ): Promise<Record<string, number>> {
     // get field names/states

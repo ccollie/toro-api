@@ -9,7 +9,7 @@ import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';
 import { parent } from './Job.parent';
 import { JobStatusEnum } from '@src/types';
-import { ResolverContext } from '@server/graphql';
+import { Context } from '@server/graphql';
 import { checkState } from './loaders';
 
 export const JobOptionsInputTC =
@@ -62,7 +62,7 @@ export const JobTC = schemaComposer.createObjectTC({
     isWaiting: {
       type: 'Boolean!',
       description: 'returns true if this job is waiting.',
-      resolve(job: Job, args, context: ResolverContext): Promise<boolean> {
+      resolve(job: Job, args, context: Context): Promise<boolean> {
         return checkState(
           context,
           job,
@@ -74,7 +74,7 @@ export const JobTC = schemaComposer.createObjectTC({
     isWaitingChildren: {
       type: 'Boolean!',
       description: 'returns true if this job is waiting for children.',
-      resolve(job: Job, args, context: ResolverContext): Promise<boolean> {
+      resolve(job: Job, args, context: Context): Promise<boolean> {
         return checkState(context, job, JobStatusEnum.WAITING_CHILDREN);
       },
     },

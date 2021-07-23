@@ -2,17 +2,17 @@ import { isNil, isString } from 'lodash';
 import { GraphQLFieldResolver } from 'graphql';
 import { isPromise, logger, withCancel } from '../../lib';
 import { pubsub, FilterFn } from '../pubsub';
-import { ResolverContext } from '@server/graphql';
 import RefCountCache from '@lib/refcount-cache';
+import { Context } from '../context';
 
-export interface ResolverContextWithChannel extends ResolverContext {
+export interface ResolverContextWithChannel extends Context {
   channelName: string;
 }
 
 export type ChannelNameFn = (
   rootValue: any,
   args: any,
-  context: ResolverContext,
+  context: Context,
   info: any,
 ) => string;
 
@@ -46,7 +46,7 @@ function createFilteredIterator(
   asyncIterator: AsyncIterator<any>,
   filterFn: FilterFn,
   args: any,
-  context: ResolverContext,
+  context: Context,
   info: any,
 ): AsyncIterator<any> {
   const getNextPromise = () => {
@@ -100,7 +100,7 @@ export function createSubscriptionResolver(
   return async (
     rootValue: any,
     args: any,
-    context: ResolverContext,
+    context: Context,
     info: any,
   ): Promise<any> => {
     const channelName = isString(options.channelName)

@@ -5,53 +5,18 @@ import logger from 'morgan';
 import compression from 'compression';
 import config from './config';
 import path from 'path';
-import http from 'http';
 import cors from 'cors';
-import { Supervisor } from './supervisor';
 import ms from 'ms';
-import { ApolloServer } from 'apollo-server-express';
-import { schema, createContext, formatGraphqlError } from './graphql';
-import { parseBool } from './lib';
+import { createGraphQLRouter } from './graphql/server/express';
+import bodyParser from 'body-parser';
 
 const app = express();
 
 const port = config.get('port') || 4000;
-const env = process.env.NODE_ENV || 'dev';
-const isProd = env === 'production';
-const debug = parseBool(process.env.DEBUG) && env !== 'production';
+const env = process.env.NODE_ENV || 'development';
 
-function createServer(): ApolloServer {
-  const server = new ApolloServer({
-    schema,
-    // resolvers,
-    // mocks: true,
-    // mockEntireSchema: true,
-    context: createContext,
-    formatError: formatGraphqlError,
-    debug, // TODO
-    subscriptions: {
-      onConnect: (connectionParams, webSocket, context) => {
-        console.log('Connected!');
-      },
-      onDisconnect: (webSocket, context) => {
-        console.log('Disconnected!');
-      },
-      path: '/subscriptions',
-      // ...other options...
-    },
-    // tracing: process.env.NODE_ENV !== 'production',
-  });
-  return server;
-}
-
-// TODO: get from config ?
-const OriginWhitelist = [
-  `http://localhost:${port}`,
-  'http://localhost:8000',
-  'http://localhost:8080',
-  'http://localhost:8081',
-];
-
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(
   compression({
     // filter decides if the response should be compressed or not,
@@ -75,57 +40,24 @@ app.use(logger(env));
 app.use(cookieParser());
 app.use(cors());
 
-const supervisor = Supervisor.getInstance();
-
-const middleware = {
-  app,
-  ...(isProd
-    ? {}
-    : {
-        playground: {
-          settings: {
-            'editor.theme': 'light',
-          },
-        },
-      }),
-};
-
-const server = createServer();
-server.applyMiddleware(middleware);
-
 const publicPath = path.resolve(__dirname, '../dist');
 const staticConf = { maxAge: '1hr', etag: true };
 
 app.use(serveStatic(publicPath, staticConf));
-
-app.use((req, res) => {
-  res.sendStatus(404);
-});
-
-const httpServer = http.createServer(app);
-server.installSubscriptionHandlers(httpServer);
-
 const start = Date.now();
-supervisor
-  .waitUntilReady()
-  .then(() => {
-    console.log('Queue monitor started. Starting server');
-    httpServer.listen(port, () => {
-      const duration = ms(Date.now() - start);
-      const addressInfo: any = httpServer.address();
-      const port: number = 'port' in addressInfo ? addressInfo.port : null;
-      const address: string =
-        'address' in addressInfo
-          ? addressInfo.address === '::'
-            ? 'http://localhost:'
-            : addressInfo.address
-          : '';
 
-      console.log(`Server startup after ${duration}!`);
-      console.log(`🚀 Server ready at ${address}:${port}${server.graphqlPath}`);
-      console.log(`🚀 Subscriptions available at ${server.subscriptionsPath}`);
-    });
-  })
-  .catch((err) => {
-    console.log(err);
+console.log('Starting ...');
+(async () => {
+  app.use('/graphql', await createGraphQLRouter([], {}));
+  app.use((req, res) => {
+    res.sendStatus(404);
   });
+  console.log('Queue monitor started. Starting server');
+  app.listen(port, () => {
+    console.log(`GraphQL server is running on port ${port}.`);
+    const duration = ms(Date.now() - start);
+    console.log(`Server startup after ${duration}!`);
+    console.log(`🚀 Server ready at localhost:${port}/graphql`);
+    // console.log(`🚀 Subscriptions available at ${server.subscriptionsPath}`);
+  });
+})();

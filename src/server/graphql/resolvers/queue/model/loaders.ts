@@ -1,10 +1,10 @@
 import { Queue } from 'bullmq';
 import { JobCounts, JobCountStates } from '@src/types';
-import { ResolverContext } from '@server/graphql';
+import { Context } from '@server/graphql';
 import { JobCountsLoaderKey } from '@server/graphql/loaders/job-counts';
 
 export async function getJobCounts(
-  context: ResolverContext,
+  context: Context,
   queue: Queue,
   ...states: JobCountStates[]
 ): Promise<JobCounts> {
@@ -16,7 +16,7 @@ export async function getJobCounts(
 }
 
 export async function getJobCountByType(
-  context: ResolverContext,
+  context: Context,
   queue: Queue,
   ...states: JobCountStates[]
 ): Promise<number> {

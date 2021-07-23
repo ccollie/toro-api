@@ -160,7 +160,7 @@ export class LockManager extends EventEmitter {
 
   async renew(): Promise<boolean> {
     if (this.isOwner) {
-      logger.debug('[renew] coordinator extends expiration');
+      logger.debug('[renew] owner extended expiration');
       try {
         this.lock = await this.lock.extend(this.ttl);
       } catch (error) {

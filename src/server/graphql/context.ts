@@ -1,35 +1,30 @@
-import config from '../config';
 import { Supervisor } from '../supervisor';
-import { PackageInfo, packageInfo } from '../packageInfo';
-import { parseBool } from '../lib';
-import { publish, pubsub, PubSubEngine } from './pubsub';
-import { DataLoaderRegistry } from '../graphql/loaders';
+import { publish, pubsub, PubSubEngine } from './index';
+import { DataLoaderRegistry } from './loaders';
+import { ExecutionContext, Request } from 'graphql-helix';
 
-const env = config.get('env');
-const debug = parseBool(process.env.DEBUG) && env !== 'production';
-
-export interface ResolverContext {
-  env: string;
+export interface Context {
   loaders: DataLoaderRegistry;
   supervisor: Supervisor;
-  packageInfo: PackageInfo;
   pubsub: PubSubEngine;
-  debug: boolean;
   publish: (channelName: string, payload?: Record<string, any>) => void;
+  request?: Request;
+  [k: string]: any;
 }
 
-export type ContextFactory = () => ResolverContext;
+export type ContextFunction = (...args: any[]) => Context | Promise<Context>;
 
-export function createContext(): ResolverContext {
+export function createContext(executionContext: ExecutionContext): Context {
   const supervisor = Supervisor.getInstance();
-  const loaders = new DataLoaderRegistry();
+  const { request } = executionContext;
+  let loaders: DataLoaderRegistry; // make this lazy ??
   return {
-    env,
-    loaders,
     supervisor,
-    packageInfo,
     publish,
     pubsub,
-    debug,
+    request,
+    get loaders(): DataLoaderRegistry {
+      return loaders || (loaders = new DataLoaderRegistry());
+    },
   };
 }

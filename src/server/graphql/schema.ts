@@ -27,6 +27,8 @@ import queue from './resolvers/queue';
 import job from './resolvers/job';
 import rule from './resolvers/rule';
 import metric from './resolvers/metric';
+import { GraphQLSchema } from 'graphql';
+import logger from '@lib/logger';
 
 // Scalars
 schemaComposer.add(ChangeAggregationEnum);
@@ -68,5 +70,15 @@ schemaComposer.Subscription.addFields({
   ...metric.Subscription,
 });
 
-export const schema = schemaComposer.buildSchema();
 export const toSDL = () => schemaComposer.toSDL();
+
+let schema: GraphQLSchema;
+
+export const getSchema = (): GraphQLSchema => {
+  if (!schema) {
+    logger.info('building schema');
+    schema = schemaComposer.buildSchema();
+    logger.info('building schema: done');
+  }
+  return schema;
+};

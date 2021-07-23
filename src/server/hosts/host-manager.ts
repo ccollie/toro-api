@@ -188,7 +188,7 @@ export class HostManager {
   }
 
   public async addQueue(config: QueueConfig): Promise<QueueManager> {
-    logger.info(`host ${this.name}: added queue`, config.name);
+    logger.info(`host ${this.name}: added queue "%s"`, config.name);
 
     this.ensureQueueId(config);
 

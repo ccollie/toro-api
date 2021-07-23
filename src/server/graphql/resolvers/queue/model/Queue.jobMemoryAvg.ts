@@ -8,7 +8,7 @@ import {
   getJobMemoryAvg,
   getJobMemoryUsage,
 } from '@server/graphql/loaders/job-memory';
-import { ResolverContext } from '@server/graphql';
+import { Context } from '@server/graphql';
 import { JobStatusEnumType } from '@server/graphql/resolvers';
 
 export const JobMemoryAvgInputTC = schemaComposer.createInputTC({
@@ -36,7 +36,7 @@ export const jobMemoryAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   args: {
     input: JobMemoryAvgInputTC,
   },
-  resolve: async (queue: Queue, args, context: ResolverContext) => {
+  resolve: async (queue: Queue, args, context: Context) => {
     const {
       limit = 50,
       jobName,
@@ -67,7 +67,7 @@ export const jobMemoryUsage: ObjectTypeComposerFieldConfigDefinition<any, any> =
     args: {
       input: JobMemoryAvgInputTC,
     },
-    resolve: async (queue: Queue, args, context: ResolverContext) => {
+    resolve: async (queue: Queue, args, context: Context) => {
       const {
         limit = 50,
         jobName,

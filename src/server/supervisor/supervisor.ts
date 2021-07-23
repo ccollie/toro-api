@@ -107,6 +107,7 @@ export class Supervisor {
   }
 
   async registerHost(config: HostConfig): Promise<HostManager> {
+    await this.waitUntilReady();
     let manager = this.getHost(config.name);
     if (manager) {
       throw boom.badRequest(`Host "${config.name}" already registered`);
@@ -121,8 +122,7 @@ export class Supervisor {
   }
 
   getQueueListener(queue: Queue | string): QueueListener {
-    const manager = this.getQueueManager(queue);
-    return manager && manager.queueListener;
+    return this.getQueueManager(queue)?.queueListener;
   }
 
   getHost(hostName: string): HostManager {
@@ -134,9 +134,9 @@ export class Supervisor {
     return values.find((host) => host.id === id);
   }
 
-  getQueue(hostName: string, prefix: string, name: string): Queue {
+  getQueue(hostName: string, prefixOrName: string, name?: string): Queue {
     const host = this.getHost(hostName);
-    return host && host.getQueue(prefix, name);
+    return host && host.getQueue(prefixOrName, name);
   }
 
   getQueueManager(queue: Queue | string): QueueManager {
@@ -310,8 +310,9 @@ export class Supervisor {
     });
   }
 
-  waitUntilReady(): Promise<void> {
-    return this.initialized;
+  async waitUntilReady(): Promise<Supervisor> {
+    await this.initialized;
+    return this;
   }
 }
 
