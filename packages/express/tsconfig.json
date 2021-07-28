@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "module": "CommonJS",
+  },
+  "include": [
+    "./src/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
+  "references": [{ "path": "../core" }, { "path": "../api" }, { "path": "../shared" }]
+}

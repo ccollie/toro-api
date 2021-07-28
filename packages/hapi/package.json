@@ -1,0 +1,45 @@
+{
+  "name": "@alpen/hapi",
+  "version": "1.0.0",
+  "description": "Hapi adapter for Alpen",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./*": {
+      "require": "./dist/*.js",
+      "import": "./dist/*.mjs"
+    }
+  },
+  "scripts": {
+    "build": "npm run clean && npm run compile",
+    "clean": "rm -rf ./dist",
+    "compile": "bob-ts -i src -f interop",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bullmq",
+    "hapi",
+    "graphql"
+  ],
+  "author": "clayton collie",
+  "license": "MIT",
+  "peerDependencies": {
+    "@hapi/hapi": "^20.x"
+  },
+  "dependencies": {
+    "@alpen/core": "^0.0.2",
+    "@alpen/api": "^0.0.2",
+    "@graphql-ez/hapi": "^0.8.1",
+    "graphql-ez": "^0.13.1"
+  },
+  "devDependencies": {
+    "bob-ts": "^1.1.2",
+    "@hapi/hapi": "^20.1.2",
+    "@types/hapi__hapi": "^20.0.7",
+    "@types/node": "^14.17.5"
+  }
+}

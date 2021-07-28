@@ -2,7 +2,12 @@
 
 # build / generate output
 dist
-coverage
+*.js
+!jest.config.js
+!.prettierrc.js
+!.eslintrc.js
+*.d.ts
+*.map
 
 # dotenv environment variables file
 .env

@@ -1,0 +1,28 @@
+.DS_Store
+
+# build / generate output
+dist
+lib
+coverage
+
+# dotenv environment variables file
+.env
+.env.test
+.env.local
+.env.*.local
+
+# TypeScript cache
+*.tsbuildinfo
+
+.yarnrc.yml
+# yarn v2
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# Yarn Integrity file
+.yarn-integrity
+/__tests__/**/__snapshots__/

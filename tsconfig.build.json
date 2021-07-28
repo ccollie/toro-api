@@ -1,0 +1,19 @@
+{
+  "files": [],
+  "exclude": [
+    "examples",
+    "**/__tests__",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/dist"
+  ],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/api" },
+    { "path": "packages/shared" },
+    { "path": "packages/express" },
+    { "path": "packages/koa" },
+    { "path": "packages/fastify" },
+    { "path": "packages/example" }
+  ]
+}

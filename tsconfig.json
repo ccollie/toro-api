@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
-    "incremental": true,
-    "target": "es2019",
+    "target": "es2020",
     "module": "commonjs",
     "lib": [
       "es2020",
@@ -9,55 +8,34 @@
       "dom",
       "es6"
     ],
-    "allowJs": true,
-    "checkJs": false,
     "declaration": true,
-    "declarationDir": "./dist",
-    "sourceMap": true,
-    "outDir": "./dist/",
-    "importHelpers": true,
     "diagnostics": true,
     "strict": false,
     "alwaysStrict": true,
-
+    "composite": true,
     "moduleResolution": "node",
-    "baseUrl": "./",
-    "paths": {
-      "@src/*": ["src/*"],
-      "@server/*": ["src/server/*"],
-      "@resolvers/*": ["src/server/resolvers/*"],
-      "@lib/*": ["src/server/lib/*"],
-      "@types/*": ["src/types/*"],
-      "@tests/*": ["__tests__/*"],
-      "tslib" : ["node_modules/tslib/tslib.d.ts"]
-    },
-    // Note: In order to transform *both* js and d.ts files, you need to add both of the below lines to plugins
-    "plugins": [
-      // Transform paths in output .js files
-      { "transform": "typescript-transform-paths" },
-
-      // Transform paths in output .d.ts files (Include this line if you output declarations files)
-      { "transform": "typescript-transform-paths", "afterDeclarations": true }
-    ],
-    "rootDirs": [
-      "src/server"
-    ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    "disableSourceOfProjectReferenceRedirect": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "skipLibCheck": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
-  "include": [
-    "./src/**/*.ts",
-    "./scripts/**/*.ts"
-  ],
-  "exclude": [
-    "./dist/**",
-    "node_modules",
-    "**/*.spec.ts"
-  ],
-  "compilation": {
-    "compiler": {
-      "context": "./src",
-      "outputPath": "./dist"
-    }
+  "exclude": ["node_modules"],
+  "files": [],
+  "baseUrl": "./",
+  "paths": {
+    "@alpen/api": ["packages/api/index.ts"],
+    "@alpen/core": ["packages/core/index.ts"],
+    "@alpen/express": ["packages/express/src/index.ts"],
+    "@alpen/fastify": ["packages/fastify/src/index.ts"],
+    "@alpen/hapi": ["packages/hapi/src/index.ts"],
+    "@alpen/koa": ["packages/koa/src/index.ts"],
+    "@alpen/shared": ["packages/shared/src/index.ts"],
+    "@alpen/*": ["packages/*/src"],
+    "tslib" : ["node_modules/tslib/tslib.d.ts"]
   }
 }

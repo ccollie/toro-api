@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "noEmit": false,
+  "exclude": ["__tests__", "**/*.spec.ts", "**/*.test.ts"]
+}
