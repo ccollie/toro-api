@@ -1,11 +1,13 @@
 import ms from 'ms';
+import boom from '@hapi/boom';
 import { loadScripts } from './index';
 import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
-import isEmpty from 'lodash/isEmpty';
+import { chunk, isEmpty } from 'lodash';
 import { JobFinishedState, JobStatusEnum } from '../../types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
 import { getConfigDuration } from '@lib/config-utils';
+import logger from '@lib/logger';
 
 const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
   'JOB_NAMES_CACHE_TIMOUT',
@@ -19,11 +21,14 @@ export interface ScriptFilteredJobsResult {
   jobs: Job[];
 }
 
-function parseScriptError(err: string): string {
+function parseScriptError(err: Error | string): string {
+  if (typeof err !== 'string') {
+    err = err.message;
+  }
   const errorRegex = /@user_script\:[0-9]+\:\s+user_script\:[0-9]+\:\s*(.*)/g;
   const matches = err.match(errorRegex);
   // TODO
-  return err;
+  return matches[0];
 }
 
 const DEFAULT_SAMPLE_SIZE = 50;
@@ -56,10 +61,8 @@ export class Scripts {
     id: string,
     client = null,
   ): Promise<string> {
-    client = client || (await queue.client);
-    const keys = Scripts.getStateKeys(queue);
-    const args = [...keys, id];
-    return (client as any).getJobState(...args);
+    const states = await Scripts.multiGetJobState(queue, [id]);
+    return states[0];
   }
 
   static async multiGetJobState(
@@ -69,12 +72,26 @@ export class Scripts {
     const client = await queue.client;
     const multi = client.multi();
     const keys = Scripts.getStateKeys(queue);
-    ids.forEach((id) => {
-      const args = [...keys, id];
+    const chunks = chunk(ids, 20);
+    chunks.forEach((ids) => {
+      const args = [...keys, ...ids];
       (multi as any).getJobState(...args);
     });
 
-    return parseListPipeline<string>(multi);
+    const res = await multi.exec();
+    const result = new Array<string>(ids.length);
+
+    res.forEach((item) => {
+      if (item[0] instanceof Error) {
+        const msg = parseScriptError(item[0]);
+        logger.warn(msg);
+        throw boom.internal(msg);
+      } else {
+        result.push(...item[1]);
+      }
+    });
+
+    return result;
   }
 
   static getIsInListsArgs(

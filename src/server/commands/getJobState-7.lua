@@ -7,23 +7,36 @@
         KEYS[4]   ACTIVE key
         KEYS[5]   WAITING key
         KEYS[6]   PAUSED key
+        KEYS[7]   WAITING-CHILDREN key
 
-        ARGV[1]   job id
+        ARGV[...]   job ids
       Output:
-        job states, or "unknown" if not found
+        job state, one per arg
 ]]
 
-local jobId = ARGV[1]
+local STATE_LIST = {'completed', 'failed', 'delayed', 'active', 'waiting', 'paused', 'waiting-children'}
+local LIST_KEYS = {
+    ['wait'] = 1,
+    ['waiting'] = 1,
+    ['active'] = 1,
+    ['paused'] = 1,
+}
 
-local hasLPOS = redis.call('COMMAND', 'INFO', 'LPOS') ~= nil
+local hasLPOS = redis.call('COMMAND', 'INFO', 'LPOS')
+hasLPOS = (hasLPOS[1] ~= nil)
 
-local function isInList (key)
-    local jobId = jobId
-    local hasLPOS = hasLPOS
-    if (hasLPOS) then
-        return redis.call("LPOS", key, jobId) ~= false
+local function searchListByLPOS(key, jobId)
+    return redis.call("LPOS", key, jobId) ~= nil
+end
+
+local listDataCache = {}
+
+local function searchListByLRANGE(key, jobId)
+    local list = listDataCache[key]
+    if (list == nil) then
+        list = redis.call("LRANGE", key, 0, -1)
+        listDataCache[key] = list
     end
-    local list = redis.call("LRANGE", key, 0, -1)
     for _, v in pairs(list) do
         if v == jobId then
             return true
@@ -32,37 +45,30 @@ local function isInList (key)
     return false
 end
 
-local function isInZSet(key)
-    local jobId = jobId
-    return redis.call("ZSCORE", key, jobId) ~= false
+local inListFn = hasLPOS and searchListByLPOS or searchListByLRANGE;
+
+local function getState(jobId)
+    local valid = false
+    local isInList = inListFn
+
+    for i, key in ipairs(KEYS) do
+        local state = STATE_LIST[i]
+        local isListKey = LIST_KEYS[state] == 1
+        if (isListKey) then
+            valid = isInList(key, jobId)
+        else
+            valid = redis.call("ZSCORE", key, jobId) ~= nil
+        end
+        if (valid) then
+            return state
+        end
+    end
+    return 'unknown'
 end
 
-if isInZSet(KEYS[1]) then
-    return "completed"
+local result = {}
+for i, jobId in ipairs(ARGV) do
+    result[i] = getState(jobId)
 end
 
-if isInZSet(KEYS[2]) then
-    return "failed"
-end
-
-if isInZSet(KEYS[3]) then
-    return "delayed"
-end
-
-if isInList(KEYS[4]) then
-    return "active"
-end
-
-if isInList(KEYS[5]) then
-    return "waiting"
-end
-
-if isInList(KEYS[6]) then
-    return "paused"
-end
-
-if isInZSet(KEYS[7]) then
-    return "waiting-children"
-end
-
-return 'unknown'
+return result
