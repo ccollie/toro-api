@@ -20,7 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@hapi/boom": "^9.1.4",
-    "date-fns": "^2.24.0",
+    "date-fns": "^2.25.0",
     "jsep": "^1.0.3",
     "lodash-es": "^4.17.21",
     "ms": "^2.1.3"

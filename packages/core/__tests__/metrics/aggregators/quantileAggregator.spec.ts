@@ -1,4 +1,5 @@
 import {
+  AggregatorTypes,
   LatencyMetric,
   P75Aggregator,
   P90Aggregator,
@@ -7,7 +8,6 @@ import {
   QuantileAggregator,
 } from '../../../src';
 import random from 'lodash/random';
-import { AggregatorTypes } from '../../../src/types';
 import { DDSketch } from 'sketches-js';
 import { validateCounts } from './helpers';
 

@@ -7,7 +7,7 @@ import { JobStatusEnum } from '@alpen/core';
 import {
   getJobMemoryAvg,
   getJobMemoryUsage,
-} from '../../../loaders/job-memory';
+} from './loaders';
 import { JobStatusEnumType } from '../../../scalars';
 import { EZContext } from 'graphql-ez';
 
@@ -42,7 +42,7 @@ export const jobMemoryAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
       jobName,
       status = JobStatusEnum.COMPLETED,
     } = args || {};
-    return getJobMemoryAvg(context.loaders, queue, status, limit, jobName);
+    return getJobMemoryAvg(context, queue, status, limit, jobName);
   },
 };
 
@@ -74,7 +74,7 @@ export const jobMemoryUsage: ObjectTypeComposerFieldConfigDefinition<any, any> =
         status = JobStatusEnum.COMPLETED,
       } = args || {};
       const { byteCount, jobCount } = await getJobMemoryUsage(
-        context.loaders,
+        context,
         queue,
         status,
         limit,

@@ -2,8 +2,7 @@ import { ChunkedAssociativeArray, systemClock } from '../lib';
 import { BaseMetric } from '../metrics';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation';
-import { DDSketch } from 'sketches-js';
-import { calculateInterval } from '../stats';
+import { calculateInterval, quantile } from '../stats';
 import {
   RuleEvaluationState,
   ThresholdConditionEvaluator,
@@ -44,9 +43,7 @@ export type AggregateFunction = (data: number[]) => number;
 
 function percentileFactory(percentile: number): AggregateFunction {
   return (data: number[]): number => {
-    const sketch = new DDSketch();
-    data.forEach((value) => sketch.add(value));
-    return sketch.getValueAtQuantile(percentile);
+    return quantile(data, percentile);
   };
 }
 

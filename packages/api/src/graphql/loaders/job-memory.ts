@@ -4,7 +4,6 @@ import DataLoader from 'dataloader';
 import { RegisterFn } from './types';
 import { getQueueId, getQueueManager } from '../helpers';
 import { HostManager, Scripts } from '@alpen/core';
-import { DataLoaderRegistry } from './registry';
 import { JobStatusEnum } from '@alpen/core';
 
 export interface JobMemoryLoaderKey {
@@ -92,42 +91,4 @@ export default function registerLoaders(register: RegisterFn): void {
       cacheKeyFn: cacheFn,
     });
   register('jobMemoryUsage', queuePausedFactory);
-}
-
-export async function getJobMemoryUsage(
-  loaders: DataLoaderRegistry,
-  queue: Queue,
-  state: JobStatusEnum,
-  limit?: number,
-  jobName?: string,
-): Promise<JobMemoryLoaderResult> {
-  const loader = loaders.getLoader<
-    JobMemoryLoaderKey,
-    JobMemoryLoaderResult,
-    string
-  >('jobMemoryUsage');
-  const key: JobMemoryLoaderKey = {
-    queue,
-    state,
-    limit,
-    jobName,
-  };
-  return loader.load(key);
-}
-
-export async function getJobMemoryAvg(
-  loaders: DataLoaderRegistry,
-  queue: Queue,
-  state: JobStatusEnum,
-  limit?: number,
-  jobName?: string,
-): Promise<number> {
-  const { byteCount, jobCount } = await getJobMemoryUsage(
-    loaders,
-    queue,
-    state,
-    limit,
-    jobName,
-  );
-  return byteCount / (jobCount || 1);
 }
