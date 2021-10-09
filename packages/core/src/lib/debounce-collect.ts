@@ -7,12 +7,11 @@ interface DebounceCollectOptions {
   maxItems: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function debounce(
   func,
   wait = 100,
   opts: Partial<DebounceCollectOptions> = {},
-) {
+): (...args: any[]) => any {
   opts = {
     immediate: false,
     maxItems: 0,

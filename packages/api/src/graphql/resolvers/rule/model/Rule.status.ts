@@ -1,4 +1,5 @@
-import { createEnumFromTS, getQueueManager } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { createEnumFromTS } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { Rule, CircuitState } from '@alpen/core';
@@ -52,8 +53,12 @@ const RuleStatusTC = schemaComposer.createObjectTC({
 export const ruleStatus: FieldConfig = {
   type: RuleStatusTC.NonNull,
   args: {},
-  async resolve(parent: Rule): Promise<RuleStatus> {
-    const manager = getQueueManager(parent.queueId);
+  async resolve(
+    parent: Rule,
+    _: unknown,
+    { accessors }: EZContext,
+  ): Promise<RuleStatus> {
+    const manager = accessors.getQueueManager(parent.queueId);
     const ruleManager = manager.ruleManager;
     const val = await ruleManager.getRuleStatus(parent);
     let state: RuleCircuitState;

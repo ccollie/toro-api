@@ -192,13 +192,13 @@ export const defaultLoggerOptions: LoggerOptions = {
  * ToroLoggerOptions defines custom index options that extend those available in LoggerOptions
  * and can define a destination like a file or other supported pin log transport stream
  *
- * @typedef {Object} ToroLoggerOptions
+ * @typedef {Object} AlpenLoggerOptions
  * @extends LoggerOptions
  * @property {options} LoggerOptions - options define how to log
  * @property {string | DestinationStream} destination - destination defines where to log
  * @property {boolean} showConfig - Display index configuration on initialization
  */
-export interface ToroLoggerOptions {
+export interface AlpenLoggerOptions {
   options?: LoggerOptions;
   destination?: string | DestinationStream;
   showConfig?: boolean;
@@ -207,7 +207,7 @@ export interface ToroLoggerOptions {
 /**
  * Creates the index
  *
- * @param options {ToroLoggerOptions} - Override the default index configuration
+ * @param options {AlpenLoggerOptions} - Override the default index configuration
  * @param destination {DestinationStream} - An optional destination stream
  * @param showConfig {Boolean} - Show the index configuration. This is off by default.
  *
@@ -225,7 +225,7 @@ export const createLogger = ({
   options,
   destination,
   showConfig = false,
-}: ToroLoggerOptions): BaseLogger => {
+}: AlpenLoggerOptions): BaseLogger => {
   const hasDestination = typeof destination !== 'undefined';
   const isFile = hasDestination && typeof destination === 'string';
   const isStream = hasDestination && !isFile;
@@ -290,7 +290,4 @@ export const createLogger = ({
   }
 };
 
-const index = createLogger({});
-
-export { index as logger };
-export default index;
+export const logger = createLogger({});

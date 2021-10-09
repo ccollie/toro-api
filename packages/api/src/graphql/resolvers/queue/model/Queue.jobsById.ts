@@ -1,5 +1,4 @@
-import { Queue } from 'bullmq';
-import { getQueueManager } from '../../../helpers';
+import { Queue, Job } from 'bullmq';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC } from '../../job/model/Job';
@@ -14,12 +13,9 @@ export const jobsById: FieldConfig = {
       },
     }),
   },
-  async resolve(queue: Queue, { input }): Promise<any> {
+  async resolve(queue: Queue, { input }, context): Promise<Job> {
     const { ids = [] } = input;
-    const manager = getQueueManager(queue);
-    // todo: use loader to take advantage of caching
-    // todo: check out requested fields. If "states" is requested
-    // use the optimized method to get states in bulk
-    return manager.getMultipleJobsById(ids);
+    const keys = ids.map((id) => ({ queue, id }));
+    return context.loaders.jobById.loadMany(keys);
   },
 };

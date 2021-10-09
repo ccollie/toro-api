@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import {
   MailNotificationChannelTC,
@@ -19,7 +20,7 @@ export const mailNotificationChannelUpdate: FieldConfig = {
   args: {
     input: MailNotificationChannelUpdateInputTC.NonNull,
   },
-  resolve: async (_, { input }) => {
-    return updateChannel(input, 'mail');
+  resolve: async (_, { input }, context: EZContext) => {
+    return updateChannel(context, input, 'mail');
   },
 };

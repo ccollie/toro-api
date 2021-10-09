@@ -6,13 +6,7 @@ import { StatsClient, StatsListener } from '../stats';
 import { Rule, RuleAlert, RuleConfigOptions, RuleManager } from '../rules';
 import { EventBus, LockManager } from '../redis';
 import { QueueListener } from './queue-listener';
-import {
-  convertWorker,
-  deleteAllQueueData,
-  getJobTypes,
-  getMultipleJobsById,
-  QueueWorker,
-} from './queue';
+import { deleteAllQueueData, getJobTypes, getMultipleJobsById } from './queue';
 import { HostManager, QueueConfig } from '../hosts';
 import { Clock, getQueueUri } from '../lib';
 import { JobStatus, RepeatableJob } from './types';
@@ -21,6 +15,7 @@ import { getQueueBusKey } from '../keys';
 import { MetricManager, BaseMetric } from '../metrics';
 import { getConfigDuration } from '../lib/config-utils';
 import { logger } from '../logger';
+import { convertWorker, QueueWorker } from './queue-worker';
 
 const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
 

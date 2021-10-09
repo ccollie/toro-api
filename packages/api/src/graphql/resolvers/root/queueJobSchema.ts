@@ -1,4 +1,4 @@
-import { getQueueById } from '../../helpers';
+import { EZContext } from 'graphql-ez';
 import { getJobSchema, JobSchema } from '@alpen/core';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
@@ -18,9 +18,9 @@ export const queueJobSchema: FieldConfig = {
       },
     }),
   },
-  async resolve(_, { input }): Promise<JobSchema> {
+  async resolve(_, { input }, { accessors }: EZContext): Promise<JobSchema> {
     const { queueId, jobName } = input;
-    const queue = getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
 
     const schema = await getJobSchema(queue, jobName);
     if (!schema) {

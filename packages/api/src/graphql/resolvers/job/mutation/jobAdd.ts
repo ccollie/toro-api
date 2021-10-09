@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
 import { JobTC, FieldConfig } from '../../index';
-import { getQueueById } from '../../../helpers';
 import { addJob } from './utils';
 
 const JobAddInput = schemaComposer.createInputTC({
@@ -18,10 +18,10 @@ export const jobAdd: FieldConfig = {
   args: {
     input: JobAddInput,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, context: EZContext) => {
     const { queueId, jobName, data, options } = input;
-    const queue = await getQueueById(queueId);
+    const queue = context.accessors.getQueueById(queueId);
 
-    return addJob(queue, jobName, data, options);
+    return addJob(context, queue, jobName, data, options);
   },
 };

@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import {
@@ -5,13 +6,12 @@ import {
   PercentileDistributionDefaultPercentiles,
   PercentileDistributionTC,
 } from '../../stats/types';
-import { BaseMetric } from '@alpen/core';
 import {
   MetricPercentileDistributionInput,
   PercentileDistribution,
 } from '../../../typings';
-import { getPercentileDistribution } from '@alpen/core';
-import { getData } from './getData';
+import { BaseMetric, getPercentileDistribution } from '@alpen/core';
+import { getMetricData } from './getData';
 
 export const MetricPercentileDistributionInputTC = schemaComposer.createInputTC(
   {
@@ -42,7 +42,7 @@ export const metricPercentileDistributionFC: FieldConfig = {
   async resolve(
     metric: BaseMetric,
     { input }: { input: MetricPercentileDistributionInput },
-    { loaders },
+    context: EZContext,
   ): Promise<PercentileDistribution> {
     const {
       from,
@@ -51,7 +51,11 @@ export const metricPercentileDistributionFC: FieldConfig = {
       percentiles = PercentileDistributionDefaultPercentiles,
     } = input;
 
-    const rawData = await getData(loaders, metric, from, to, outlierFilter);
+    const rawData = await getMetricData(context, metric, {
+      from,
+      to,
+      outlierFilter,
+    });
     const values = rawData.map((x) => x.value);
     return getPercentileDistribution(values, percentiles);
   },

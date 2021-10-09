@@ -1,4 +1,4 @@
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
 import { validateJobData } from '@alpen/core';
@@ -23,9 +23,9 @@ export const jobUpdate: FieldConfig = {
   args: {
     input: JobUpdateInput.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId, data } = input;
-    const queue = await getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     let job = await queue.getJob(jobId);
     if (!job) {
       throw boom.notFound(`Job #${jobId} not found!`);

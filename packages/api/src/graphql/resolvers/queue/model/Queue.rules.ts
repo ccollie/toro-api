@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
-import { getQueueManager } from '../../../helpers';
 import { Queue } from 'bullmq';
 import { Rule } from '@alpen/core';
 import { RuleTC } from '../../rule/model/Rule';
@@ -7,8 +7,8 @@ import { RuleTC } from '../../rule/model/Rule';
 export const queueRules: FieldConfig = {
   args: {},
   type: RuleTC.NonNull.List.NonNull,
-  resolve(queue: Queue): Rule[] {
-    const manager = getQueueManager(queue);
+  resolve(queue: Queue, _, { accessors }: EZContext): Rule[] {
+    const manager = accessors.getQueueManager(queue);
     return manager.rules;
   },
 };

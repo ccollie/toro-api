@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
 import { JobStatusEnumType, FieldConfig } from '../../index';
-import { getJobById } from '../../../helpers';
 
 export const jobLogAdd: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -25,8 +25,8 @@ export const jobLogAdd: FieldConfig = {
     id: 'String!',
     row: 'String!',
   },
-  resolve: async (_, { queueId, id, row }) => {
-    const job = await getJobById(queueId, id);
+  resolve: async (_, { queueId, id, row }, { accessors }: EZContext) => {
+    const job = await accessors.getJobById(queueId, id);
 
     const [count, state] = await Promise.all([job.log(row), job.getState()]);
 

@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, QueueTC } from '../../index';
 import { JobTC } from '../../index';
-import { getJobById, getQueueById } from '../../../helpers';
 
 export const jobMoveToFailed: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -21,12 +21,12 @@ export const jobMoveToFailed: FieldConfig = {
       },
     }),
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId, reason = 'Failed by user' } = input;
-    const job = await getJobById(queueId, jobId);
+    const job = await accessors.getJobById(queueId, jobId);
 
     const err = new Error(reason);
-    const queue = getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     await job.moveToFailed(err, queue.token, false);
     return {
       queue,

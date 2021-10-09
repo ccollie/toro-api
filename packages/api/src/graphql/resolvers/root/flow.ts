@@ -8,12 +8,12 @@ export interface NodeOpts {
   maxChildren?: number;
 }
  */
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobNodeTC } from '../flow/model/jobNode';
 import { JobNode, NodeOpts } from 'bullmq';
 import { FlowNodeGetInput } from '../../typings';
-import { getHost } from '../../helpers';
 
 export const FlowNodeGetInputTC = schemaComposer.createInputTC({
   name: 'FlowNodeGetInput',
@@ -54,13 +54,17 @@ export const flow: FieldConfig = {
   args: {
     input: FlowNodeGetInputTC.NonNull,
   },
-  async resolve(_, { input }: { input: FlowNodeGetInput }): Promise<JobNode> {
+  async resolve(
+    _,
+    { input }: { input: FlowNodeGetInput },
+    { accessors }: EZContext,
+  ): Promise<JobNode> {
     const { host, ...rest } = input;
     const opts: NodeOpts = {
       ...rest,
     };
 
-    const mgr = getHost(host);
+    const mgr = accessors.getHost(host);
     return mgr.getFlow(opts);
   },
 };

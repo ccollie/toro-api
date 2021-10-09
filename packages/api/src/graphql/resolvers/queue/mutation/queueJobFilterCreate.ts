@@ -1,5 +1,5 @@
 'use strict';
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { addJobFilter } from '@alpen/core';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
@@ -21,9 +21,9 @@ export const queueJobFilterCreate: FieldConfig = {
   args: {
     input: JobFilterInputTC.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, name, status, expression } = input;
-    const queue = await getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
 
     return addJobFilter(queue, name, status, expression);
   },

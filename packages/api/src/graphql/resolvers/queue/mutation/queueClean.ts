@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { JobStatusEnumType } from '../../index';
 import { FieldConfig } from '../../index';
 import { JobStatusEnum } from '@alpen/core';
@@ -58,8 +58,12 @@ export const queueClean: FieldConfig = {
       },
     }).NonNull,
   },
-  resolve: async (_, { input: { id, grace, status, limit } }) => {
-    const queue = await getQueueById(id);
+  resolve: async (
+    _,
+    { input: { id, grace, status, limit } },
+    { accessors }: EZContext,
+  ) => {
+    const queue = accessors.getQueueById(id);
     const gracePeriod = parseDuration(grace);
 
     if (!isFinite(limit) || limit < 1) {

@@ -1,4 +1,4 @@
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
 import { JobOptionsInputTC, JobTC, FieldConfig } from '../../index';
 import boom from '@hapi/boom';
@@ -23,8 +23,8 @@ export const jobAddBulk: FieldConfig = {
       },
     }).List.NonNull,
   },
-  resolve: async (_, { queueId, jobs }) => {
-    const queue = await getQueueById(queueId);
+  resolve: async (_, { queueId, jobs }, { accessors }: EZContext) => {
+    const queue = accessors.getQueueById(queueId);
     // todo: handle job schemas
     if (!Array.isArray(jobs) || !jobs.length) {
       throw boom.badRequest(

@@ -15,11 +15,9 @@ import { sortBy, uniqBy } from 'lodash';
 import { JobCounts, JobStatusEnum } from '../queues/types';
 import { QueueManager } from '../queues/queue-manager';
 import {
-  convertWorker,
   DiscoveredQueue,
   discoverQueues,
   getPipelinedCounts,
-  QueueWorker,
 } from '../queues/queue';
 import { JobValidationResult, validateJobData } from '../queues/job-schemas';
 import {
@@ -34,8 +32,8 @@ import {
   WriteCache,
 } from '../redis';
 
-import config, { getValue } from '../config';
-import index from '../logger';
+import { config, getValue } from '../config';
+import { logger } from '../logger';
 import {
   fixupQueueConfig,
   generateQueueId,
@@ -51,6 +49,7 @@ import {
   NotificationManager,
 } from '../notifications';
 import { getHostUri } from '../lib';
+import { convertWorker, QueueWorker } from '../queues';
 
 const queueConfigKey = (prefix: string, name: string): string => {
   return `${prefix}:${name}`;
@@ -137,7 +136,7 @@ export class HostManager {
       this._uri = getHostUri(data);
     } catch (err) {
       this._uri = null;
-      index.warn(err);
+      logger.warn(err);
     }
   }
 
@@ -192,7 +191,7 @@ export class HostManager {
   }
 
   public async addQueue(config: QueueConfig): Promise<QueueManager> {
-    index.info(`host ${this.name}: added queue "%s"`, config.name);
+    logger.info(`host ${this.name}: added queue "%s"`, config.name);
 
     this.ensureQueueId(config);
 
@@ -398,7 +397,7 @@ export class HostManager {
 
   sweep(): void {
     this.bus.cleanup().catch((err) => {
-      index.warn(err);
+      logger.warn(err);
     });
     this.queueManagers.forEach((handler) => handler.sweep());
   }
@@ -441,7 +440,7 @@ export class HostManager {
         if (cfg) queues.push(cfg);
         // todo: make sure fields we expect exist
       } catch (e) {
-        index.error(e);
+        logger.error(e);
       }
     }
     return queues;

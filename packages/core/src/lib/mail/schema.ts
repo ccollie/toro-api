@@ -66,7 +66,7 @@ const isDev = env === 'development';
 
 // validator for MailServerConfig
 // see https://nodemailer.com/smtp/
-export default Joi.object({
+export const schema = Joi.object({
   transport: transportSchema.required().default(defaultTransport),
   verifyTransport: Joi.boolean().optional().default(!isDev),
   send: Joi.boolean().falsy().optional().default(isDev),

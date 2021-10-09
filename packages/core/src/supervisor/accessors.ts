@@ -1,17 +1,16 @@
-import {
-  BaseMetric,
-  HostManager,
-  QueueListener,
-  QueueManager,
-  RuleManager,
-  StatsListener,
-  Supervisor,
-} from '@alpen/core';
 import boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
+import { StatsClient } from '../stats/stats-client';
 import { fieldsList } from 'graphql-fields-list';
-import { createAsyncIterator } from '@alpen/core';
 import { GraphQLResolveInfo } from 'graphql';
+import { QueueManager } from '../queues/queue-manager';
+import { QueueListener } from '../queues/queue-listener';
+import { Supervisor } from './supervisor';
+import { HostManager } from '../hosts/host-manager';
+import { BaseMetric } from '../metrics/baseMetric';
+import { StatsListener } from '../stats';
+import { RuleManager } from '../rules/rule-manager';
+import { createAsyncIterator } from '../lib';
 
 const queueIdMap = new WeakMap<Queue, string>();
 
@@ -88,6 +87,7 @@ export function getMetricById(id: string): BaseMetric {
 
 export async function getJobById(queueId: string, jobId: string): Promise<Job> {
   const queue = getQueueById(queueId);
+  // todo: maybe use loader here
   const job = await queue.getJob(jobId);
   if (!job) {
     const msg = `Job #${jobId} not found in queue "${queue.name}"`;
@@ -137,12 +137,12 @@ export function getResolverFields(info: GraphQLResolveInfo): string[] {
   return fieldsList(info);
 }
 
-export function getQueueRuleManager(queueId: string): RuleManager {
+export function getQueueRuleManager(queueId: Queue | string): RuleManager {
   const manager = getQueueManager(queueId);
   return manager.ruleManager;
 }
 
-export function getQueueHost(queueId: string): HostManager {
+export function getQueueHost(queueId: Queue | string): HostManager {
   const supervisor = getSupervisor();
   const manager = supervisor.getQueueManager(queueId);
   return manager?.hostManager;
@@ -153,4 +153,9 @@ export function getAsyncIterator(queueId: string, eventName: string) {
   return createAsyncIterator(queueEvents, {
     eventNames: [eventName],
   });
+}
+
+export function getStatsClient(queue: string | Queue): StatsClient {
+  const manager = getQueueManager(queue);
+  return manager && manager.statsClient;
 }

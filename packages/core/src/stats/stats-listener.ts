@@ -13,7 +13,7 @@ import { systemClock, Clock } from '../lib';
 import { isAfter, toDate } from 'date-fns';
 import { StatsWriter } from './stats-writer';
 import Emittery from 'emittery';
-import index from '../logger';
+import { logger } from '../logger';
 import { TimeSeries } from '../commands';
 import { CONFIG, getSnapshotInterval } from './utils';
 import { StatsClient } from './stats-client';
@@ -199,7 +199,7 @@ export class StatsListener extends StatsWriter {
       includeData: true,
     };
 
-    index.info(
+    logger.info(
       `Snapshotting ${this.queue.name}.  EndTime = `,
       new Date(opts.endTime),
     );
@@ -211,7 +211,7 @@ export class StatsListener extends StatsWriter {
 
       this.write(this.queueStats, opts);
     } catch (err) {
-      index.warn(err);
+      logger.warn(err);
     } finally {
       this._emit(StatsListenerEvents.SNAPSHOT_ENDED);
       this._snapshotting = false;
@@ -260,7 +260,7 @@ export class StatsListener extends StatsWriter {
         const now = systemClock.getTime();
         if (now - lastSeen > TIMEOUT) {
           // todo: log this
-          index.warn('[StatsListener] timed out WAITING for event');
+          logger.warn('[StatsListener] timed out WAITING for event');
           cancel();
         }
       }, 500);

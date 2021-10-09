@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleTC } from '../index';
-import { getQueueManager } from '../../helpers';
 import boom from '@hapi/boom';
 import { Rule } from '@alpen/core';
 
@@ -9,8 +9,12 @@ export const rule: FieldConfig = {
     queueId: 'ID!',
     ruleId: 'ID!',
   },
-  async resolve(_, { queueId, ruleId }): Promise<Rule> {
-    const manager = getQueueManager(queueId);
+  async resolve(
+    _,
+    { queueId, ruleId },
+    { accessors }: EZContext,
+  ): Promise<Rule> {
+    const manager = accessors.getQueueManager(queueId);
     const rule = await manager.getRule(ruleId);
     if (!rule) {
       // todo: throw on not found ?

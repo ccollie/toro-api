@@ -1,4 +1,5 @@
-import { QUEUE_DELETED_PREFIX, getHostById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { QUEUE_DELETED_PREFIX } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
@@ -30,9 +31,9 @@ export const onQueueDeleted: FieldConfig = {
       description: 'The host to monitor',
     },
   },
-  subscribe: (_, { hostId }, context) => {
-    const host = getHostById(hostId);
+  subscribe: (_, { hostId }, { pubsub, accessors }: EZContext) => {
+    const host = accessors.getHostById(hostId);
     const channel = `${QUEUE_DELETED_PREFIX}${host.id}`;
-    return context.pubsub.asyncIterator(channel);
+    return pubsub.asyncIterator(channel);
   },
 };

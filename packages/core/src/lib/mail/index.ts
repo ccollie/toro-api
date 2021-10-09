@@ -1,10 +1,10 @@
 'use strict';
 import { createTransport } from 'nodemailer';
 import { createDebug } from '../debug';
-import index from '../../logger';
+import { logger } from '../../logger';
 import Mail from 'nodemailer/lib/mailer';
 import { getValue } from '../../config';
-import schema, { defaultTransport } from './schema';
+import { defaultTransport, schema } from './schema';
 import { htmlToText } from 'html-to-text';
 import { MailServerConfig } from '../../notifications';
 
@@ -38,16 +38,16 @@ async function _useTransport(config: MailServerConfig) {
     if (transport.verify) {
       try {
         await transport.verify();
-        index.info('transport verify call success');
+        logger.info('transport verify call success');
       } catch (error) {
-        index.error('transport verify call FAILED', { error });
+        logger.error('transport verify call FAILED', { error });
       }
     } else {
-      index.warn('transport verify check not available');
+      logger.warn('transport verify check not available');
     }
   }
 
-  index.debug('transport configured');
+  logger.debug('transport configured');
 
   return transport;
 }
@@ -104,7 +104,7 @@ export async function sendMail(message: Mail.Options): Promise<any> {
 
   // minimal email info
   // FIXME: what to log? what level? separate mail log? event?
-  index.debug('sent', {
+  logger.debug('sent', {
     messageId: result.messageId,
     from: result.envelope.from,
     to: result.envelope.to,

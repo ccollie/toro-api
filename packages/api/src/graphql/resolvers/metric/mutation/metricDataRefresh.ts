@@ -1,6 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager } from '../../../helpers';
 import { BaseMetric } from '@alpen/core';
 import { parseRange } from '@alpen/shared';
 import boom from '@hapi/boom';
@@ -47,6 +47,7 @@ export const metricDataRefresh: FieldConfig = {
   async resolve(
     parent: BaseMetric,
     { input }: { input: MetricDataRefreshInput },
+    { accessors }: EZContext,
   ) {
     const { start, end, range, metricId } = input;
     let _start, _end;
@@ -60,7 +61,7 @@ export const metricDataRefresh: FieldConfig = {
     } else {
       throw boom.badRequest('Either start/end or range must be specified');
     }
-    const manager = getQueueManager(parent.queueId);
+    const manager = accessors.getQueueManager(parent.queueId);
     const metrics = manager.metricManager;
     const metric = await metrics.getMetric(metricId);
     if (!metric) {

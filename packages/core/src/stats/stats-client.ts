@@ -6,7 +6,7 @@ import { Pipeline } from 'ioredis';
 import { TimeSeries } from '../commands';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
-import index from '../logger';
+import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
 import { QueueManager } from '../queues';
 import { aggregateSnapshots, getRetention, aggregateMeter } from './utils';
@@ -426,7 +426,7 @@ export class StatsClient extends Emittery {
   }
 
   onError(err: Error): void {
-    index.warn(err);
+    logger.warn(err);
   }
 }
 

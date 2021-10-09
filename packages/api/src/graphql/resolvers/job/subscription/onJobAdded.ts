@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { publish } from '../../../pubsub';
 import { Job, Queue } from 'bullmq';
@@ -8,16 +8,12 @@ function getChannelName(queueId: string): string {
   return `queue-job-added-${queueId}`;
 }
 
-function getQueueId(queue: Queue): string {
-  const manager = getQueueManager(queue);
-  return manager.id;
-}
-
 export async function publishJobAdded(
+  context: EZContext,
   queue: Queue,
   job: Job | Job[],
 ): Promise<void> {
-  const queueId = getQueueId(queue);
+  const queueId = context.accessors.getQueueId(queue);
   const channelName = getChannelName(queueId);
   const queueName = queue.name;
 

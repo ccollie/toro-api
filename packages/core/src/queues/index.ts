@@ -1,5 +1,6 @@
 export * from './queue-listener';
 export * from './queue-manager';
+export * from './queue-worker';
 export * from './job-schemas';
 export * from './job-filters';
 export * from './job';

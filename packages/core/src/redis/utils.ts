@@ -1,6 +1,6 @@
-import IORedis, { Pipeline, RedisOptions } from 'ioredis';
+import IORedis, { Pipeline, RedisOptions, parseUrl } from 'ioredis';
 import { isObject, chunk, isNil, isString } from 'lodash';
-import { isValidDate, isNumber } from '@alpen/shared';
+import { isValidDate, isNumber, hashObject } from '@alpen/shared';
 import { loadScripts } from '../commands/utils';
 import { RedisClient } from 'bullmq';
 import { logger } from '../logger';
@@ -193,20 +193,19 @@ export function normalizePrefixGlob(prefixGlob: string): string {
 }
 
 export function parseRedisURI(urlString: string): Record<string, any> {
-  const redisOpts = Object.create(null) as Record<string, any>;
-  try {
-    const redisUrl: URL = new URL(urlString);
-    redisOpts.port = redisUrl.port || 6379;
-    redisOpts.host = redisUrl.hostname;
-    redisOpts.db = redisUrl.pathname ? redisUrl.pathname.split('/')[1] : 0;
-    redisOpts.protocol = redisUrl.protocol;
-    redisOpts.hash = redisUrl.hash;
-    redisOpts.username = redisUrl.username;
-    redisOpts.password = redisUrl.password;
-  } catch (e) {
-    throw new Error(e.message);
+  return parseUrl(urlString);
+}
+
+export function getClientHash(redis: RedisClient | string): string {
+  let options: Record<string, any>;
+
+  if (typeof redis === 'string') {
+    options = parseUrl(redis);
+  } else {
+    options = redis.options;
   }
-  return redisOpts;
+
+  return hashObject(options);
 }
 
 // https://github.com/luin/ioredis/issues/747

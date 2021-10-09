@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, QueueTC } from '../../index';
 
 export const queueDrain: FieldConfig = {
@@ -19,8 +19,8 @@ export const queueDrain: FieldConfig = {
       defaultValue: false,
     },
   },
-  resolve: async (_, { queueId, delayed }) => {
-    const queue = await getQueueById(queueId);
+  resolve: async (_, { queueId, delayed }, { accessors }: EZContext) => {
+    const queue = accessors.getQueueById(queueId);
     await queue.drain(delayed);
     return {
       queue,

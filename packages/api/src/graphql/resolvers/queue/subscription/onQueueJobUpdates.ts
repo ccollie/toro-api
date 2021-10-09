@@ -1,7 +1,8 @@
+import { EZContext } from 'graphql-ez';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { isEmpty, isNumber } from 'lodash';
-import { createSubscriptionResolver, getQueueListener } from '../../../helpers';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { JobStatusEnum, createJobNameFilter } from '@alpen/core';
 import { FieldConfig, JobStatusEnumType } from '../../index';
@@ -166,13 +167,17 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
   // TODO: use field map to determine which fields the user requested
   // If it is one not normally returned from the queue events listener
   // we may have to read the job from redis to supply it
-  function onSubscribe(_, { input }): AsyncIterator<any> {
+  function onSubscribe(
+    _,
+    { input },
+    { accessors }: EZContext,
+  ): AsyncIterator<any> {
     const {
       queueId,
       batchInterval = DEFAULT_BATCH_INTERVAL,
       ...filter
     } = input;
-    const listener = getQueueListener(queueId);
+    const listener = accessors.getQueueListener(queueId);
     queue = listener.queue;
 
     const resultFilter = createFilter(filter);

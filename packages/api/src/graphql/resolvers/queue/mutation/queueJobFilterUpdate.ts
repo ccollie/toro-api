@@ -1,7 +1,7 @@
 'use strict';
 import boom from '@hapi/boom';
-import { getQueueById } from '../../../helpers';
 import { getJobFilter, updateJobFilter } from '@alpen/core';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobFilterTC } from '../../job/model/Job.filter';
@@ -31,9 +31,9 @@ export const queueJobFilterUpdate: FieldConfig = {
   args: {
     input: JobFilterUpdateTC.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, filterId, name, status, expression } = input;
-    const queue = await getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     const filter = await getJobFilter(queue, filterId);
 
     if (!filter) {

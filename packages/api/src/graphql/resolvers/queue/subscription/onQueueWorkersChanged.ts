@@ -1,5 +1,5 @@
 import { keyBy } from 'lodash';
-import { createSubscriptionResolver, getQueueManager } from '../../../helpers';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { QueueWorker } from '@alpen/core';
 import { FieldConfig } from '../../index';
@@ -56,7 +56,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
   function onSubscribe(_, args, context) {
     const { queueId } = args;
     const { publish, channelName } = context;
-    const manager = getQueueManager(queueId);
+    const manager = context.accessors.getQueueManager(queueId);
 
     // get initial values
     updateWorkersCache(manager).catch((err) => {

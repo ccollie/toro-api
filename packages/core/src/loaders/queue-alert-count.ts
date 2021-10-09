@@ -1,12 +1,10 @@
 import { Queue } from 'bullmq';
-import { aggregateQueuesByHost, mapQueuesToIndex, queueCacheFn } from './utils';
 import { Pipeline } from 'ioredis';
-import { getQueueAlertCountKey } from '@alpen/core';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { RegisterFn } from './types';
-import { RuleScripts } from '@alpen/core';
-import { DataLoaderRegistry } from './registry';
+import { aggregateQueuesByClient, mapQueuesToIndex } from './utils';
+import { getQueueAlertCountKey } from '../keys';
+import { RuleScripts } from '../commands';
 
 function enqueueFetch(pipeline: Pipeline, queue: Queue) {
   const key = getQueueAlertCountKey(queue);
@@ -23,12 +21,12 @@ async function getQueueAlertCounts(queues: Queue[]): Promise<number[]> {
     const count = await RuleScripts.getQueueAlertCount(queues[0]);
     return [count];
   }
-  const queuesByHost = aggregateQueuesByHost(queues);
+  const queuesByHost = aggregateQueuesByClient(queues);
   const queueIndexMap = mapQueuesToIndex(queues);
   const result = new Array<number>(queues.length).fill(0);
 
-  await pMap(queuesByHost, async ([host, queues]) => {
-    const pipeline = host.client.pipeline();
+  await pMap(queuesByHost, async ([client, queues]) => {
+    const pipeline = client.pipeline();
     queues.forEach((queue) => void enqueueFetch(pipeline, queue));
     const res = await pipeline.exec();
 
@@ -40,21 +38,5 @@ async function getQueueAlertCounts(queues: Queue[]): Promise<number[]> {
   });
   return result;
 }
-const LOADER_NAME = 'queueAlertCount';
 
-export default function registerLoaders(register: RegisterFn): void {
-  const queueAlertCountFactory = () =>
-    new DataLoader(getQueueAlertCounts, {
-      cacheKeyFn: queueCacheFn,
-    });
-
-  register(LOADER_NAME, queueAlertCountFactory);
-}
-
-export function getQueueAlertCount(
-  loaders: DataLoaderRegistry,
-  queue: Queue,
-): Promise<number> {
-  const loader = loaders.getLoader<Queue, number, string>(LOADER_NAME);
-  return loader.load(queue);
-}
+export const queueAlertCount = new DataLoader(getQueueAlertCounts);

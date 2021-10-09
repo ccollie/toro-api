@@ -1,6 +1,6 @@
 // Based on https://github.com/bluerivers/redlock-coordinator
 import { EventEmitter } from 'events';
-import index from '../logger';
+import { logger } from '../logger';
 import RedLock from 'redlock';
 import { parseDuration } from '@alpen/shared';
 import { RedisClient } from 'bullmq';
@@ -90,7 +90,7 @@ export class LockManager extends EventEmitter {
     this.redLock = new RedLock([this.client], redlockOptions).on(
       'clientError',
       (error) => {
-        index.error('A redis error has occurred - err: %O', error);
+        logger.error('A redis error has occurred - err: %O', error);
         throw error;
       },
     );
@@ -130,7 +130,7 @@ export class LockManager extends EventEmitter {
     try {
       this.lock = await this.redLock.lock(this.key, this.ttl);
 
-      index.info(
+      logger.info(
         '[acquire] Acquired lock - value: %s, expiration time: %s',
         this.lock.value,
         new Date(this.lock.expiration),
@@ -147,9 +147,9 @@ export class LockManager extends EventEmitter {
     } catch (error) {
       this.lock = null;
       if (error.name === 'LockError') {
-        index.debug('[acquire] not the owner');
+        logger.debug('[acquire] not the owner');
       } else {
-        index.error('[acquire] error occurred - error: %O', error);
+        logger.error('[acquire] error occurred - error: %O', error);
         this.emit(LockManager.ERROR, error);
       }
       this.clearTimers();
@@ -160,15 +160,15 @@ export class LockManager extends EventEmitter {
 
   async renew(): Promise<boolean> {
     if (this.isOwner) {
-      index.debug('[renew] owner extended expiration');
+      logger.debug('[renew] owner extended expiration');
       try {
         this.lock = await this.lock.extend(this.ttl);
       } catch (error) {
         const expired = /the lock has already expired/.test(error.message);
         if (expired) {
-          index.debug('[renew] lock expired');
+          logger.debug('[renew] lock expired');
         } else {
-          index.error('[renew] extend FAILED - error: %O', error);
+          logger.error('[renew] extend FAILED - error: %O', error);
         }
 
         try {
@@ -181,17 +181,17 @@ export class LockManager extends EventEmitter {
           try {
             await this.lock.unlock();
           } catch (error) {
-            index.warn('[renew] unlock FAILED - error: %O', error);
+            logger.warn('[renew] unlock FAILED - error: %O', error);
           }
         }
 
         this.lock = null;
         this.emit(LockManager.RELEASED, this);
-        index.error('[renew] Attempting to acquire');
+        logger.error('[renew] Attempting to acquire');
         this.setElectTimeout();
       }
     } else {
-      index.debug('[renew] non-owner reset renew interval');
+      logger.debug('[renew] non-owner reset renew interval');
       this.clearTimers();
       this.setElectTimeout();
     }
@@ -199,7 +199,7 @@ export class LockManager extends EventEmitter {
   }
 
   async release(): Promise<void> {
-    index.info('[release] start release');
+    logger.info('[release] start release');
 
     this.clearTimers();
 
@@ -207,11 +207,11 @@ export class LockManager extends EventEmitter {
       try {
         await this.lock.unlock();
 
-        index.info('[release] release complete');
+        logger.info('[release] release complete');
         this.emit(LockManager.RELEASED, this);
         this.emit(LockManager.STATE_CHANGED, this.isOwner);
       } catch (error) {
-        index.error('[release] unlock FAILED - error: %O', error);
+        logger.error('[release] unlock FAILED - error: %O', error);
         this.emit(LockManager.ERROR, error);
       }
     }

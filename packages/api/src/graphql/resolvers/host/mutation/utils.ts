@@ -1,7 +1,5 @@
-import {
-  getHostById,
-  NOTIFICATION_CHANNEL_ADDED_PREFIX,
-} from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { NOTIFICATION_CHANNEL_ADDED_PREFIX } from '../../../helpers';
 import { HostManager, Channel, NotificationChannel } from '@alpen/core';
 
 export function publishCreatedEvent(
@@ -21,20 +19,24 @@ export function publishCreatedEvent(
 
 export async function addChannel<T extends Channel = Channel>(
   input,
-  context,
+  context: EZContext,
   type: string,
 ): Promise<T> {
   const { hostId, ...channelConfig } = input;
-  const host = getHostById(hostId);
+  const host = context.accessors.getHostById(hostId);
   channelConfig.type = type;
   const channel = await host.notifications.addChannel<T>(channelConfig);
   publishCreatedEvent(context, host, channel);
   return channel;
 }
 
-export async function updateChannel(input, type: string): Promise<Channel> {
+export async function updateChannel(
+  context: EZContext,
+  input,
+  type: string,
+): Promise<Channel> {
   const { hostId, ...channel } = input;
-  const host = getHostById(hostId);
+  const host = context.accessors.getHostById(hostId);
   channel.type = type;
   return host.notifications.updateChannel(channel);
 }

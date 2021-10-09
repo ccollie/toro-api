@@ -1,11 +1,12 @@
-import { BaseMetric, logger, TimeSeries, Timespan } from '@alpen/core';
-import { HostManager, getMetricsDataKey } from '@alpen/core';
-import { getQueueById, getQueueHostManager, getQueueManager } from '../helpers';
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import pMap from 'p-map';
-import { RegisterFn } from './types';
 import DataLoader from 'dataloader';
-import { DataLoaderRegistry } from './registry';
+import { BaseMetric } from '../metrics';
+import { getMetricsDataKey } from '../keys';
+import { Timespan } from '../types';
+import { logger } from '../logger';
+import { TimeSeries } from '../commands';
+import { getQueueHostClient, getQueueById, getQueueManager } from './accessors';
 
 function getDataKey(queue: Queue, metric: BaseMetric): string {
   return getMetricsDataKey(queue, metric.id);
@@ -30,15 +31,15 @@ async function getRangeBatch(metrics: BaseMetric[]): Promise<Timespan[]> {
 
   const result: Timespan[] = new Array<Timespan>(metrics.length);
   const metaMap = new Map<BaseMetric, QueryMeta>();
-  const hostMetrics = new Map<HostManager, BaseMetric[]>();
+  const hostMetrics = new Map<RedisClient, BaseMetric[]>();
 
   metrics.forEach((metric, index) => {
     const queue = getQueueById(metric.queueId);
-    const host = getQueueHostManager(queue);
-    let metricsThisHost = hostMetrics.get(host);
+    const client = getQueueHostClient(queue);
+    let metricsThisHost = hostMetrics.get(client);
     if (!metricsThisHost) {
       metricsThisHost = [];
-      hostMetrics.set(host, metricsThisHost);
+      hostMetrics.set(client, metricsThisHost);
     }
     metricsThisHost.push(metric);
     const meta: QueryMeta = {
@@ -48,8 +49,7 @@ async function getRangeBatch(metrics: BaseMetric[]): Promise<Timespan[]> {
     metaMap.set(metric, meta);
   });
 
-  await pMap(hostMetrics, async ([host, metrics]) => {
-    const client = host.client;
+  await pMap(hostMetrics, async ([client, metrics]) => {
     const pipeline = client.pipeline();
 
     metrics.forEach((metric) => {
@@ -77,21 +77,6 @@ async function getRangeBatch(metrics: BaseMetric[]): Promise<Timespan[]> {
   return result;
 }
 
-const LOADER_NAME = 'metricDateRange';
-
-export default function registerLoaders(register: RegisterFn): void {
-  const factory = () =>
-    new DataLoader(getRangeBatch, {
-      cacheKeyFn: (x) => x.id,
-    });
-
-  register('metricDateRange', factory);
-}
-
-export function getMetricDateRange(
-  loaders: DataLoaderRegistry,
-  metric: BaseMetric,
-): Promise<Timespan> {
-  const loader = loaders.getLoader<BaseMetric, Timespan, string>(LOADER_NAME);
-  return loader.load(metric);
-}
+export const metricDateRange = new DataLoader(getRangeBatch, {
+  cacheKeyFn: (x) => x.id,
+});

@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import {
   WebhookNotificationChannelTC,
@@ -19,7 +20,7 @@ export const webhookNotificationChannelUpdate: FieldConfig = {
   args: {
     input: WebhookNotificationChannelUpdateInputTC.NonNull,
   },
-  resolve: async (_, { input }) => {
-    return updateChannel(input, 'webhook');
+  resolve: async (_, { input }, context: EZContext) => {
+    return updateChannel(context, input, 'webhook');
   },
 };

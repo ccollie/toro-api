@@ -1,7 +1,7 @@
 import IORedis, { Pipeline } from 'ioredis';
 import { isObject, isEmpty } from 'lodash';
 
-import logger from '../logger';
+import { logger } from '../logger';
 import { LockManager } from './lock-manager';
 import { parseDuration } from '@alpen/shared';
 import { RedisClient } from 'bullmq';

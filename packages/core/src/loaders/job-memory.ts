@@ -1,10 +1,9 @@
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { RegisterFn } from './types';
-import { getQueueId, getQueueManager } from '../helpers';
-import { HostManager, Scripts } from '@alpen/core';
-import { JobStatusEnum } from '@alpen/core';
+import { JobStatusEnum } from '../queues/types';
+import { Scripts } from '../commands';
+import { getAccessor } from './accessors';
 
 export interface JobMemoryLoaderKey {
   queue: Queue;
@@ -20,6 +19,7 @@ export interface JobMemoryLoaderResult {
 }
 
 function cacheFn(key: JobMemoryLoaderKey): string {
+  const { getQueueId } = getAccessor();
   const { queue, state, limit = 0, jobName = '' } = key;
   const qid = getQueueId(queue);
   return `${qid}:${state}:${limit}:${jobName}`;
@@ -53,23 +53,24 @@ async function getJobMemoryBatch(
   if (keys.length === 1) {
     return getSingle(keys[0]);
   }
+  const { getQueueHostClient } = getAccessor();
   const keyIndexMap = new Map<JobMemoryLoaderKey, number>();
-  const hostKeys = new Map<HostManager, JobMemoryLoaderKey[]>();
+  const hostKeys = new Map<RedisClient, JobMemoryLoaderKey[]>();
 
   keys.forEach((key, index) => {
-    const host = getQueueManager(key.queue).hostManager;
+    const client = getQueueHostClient(key.queue);
     keyIndexMap.set(key, index);
-    let queues = hostKeys.get(host);
+    let queues = hostKeys.get(client);
     if (!queues) {
       queues = [];
-      hostKeys.set(host, queues);
+      hostKeys.set(client, queues);
     }
     queues.push(key);
   });
   const result = [];
 
-  await pMap(hostKeys, async ([h, keys]) => {
-    const pipeline = h.client.pipeline();
+  await pMap(hostKeys, async ([client, keys]) => {
+    const pipeline = client.pipeline();
     keys.forEach((key) => {
       const { queue, jobName, limit, state } = key;
       const args = Scripts.getKeysMemoryUsageArgs(queue, state, limit, jobName);
@@ -85,10 +86,6 @@ async function getJobMemoryBatch(
   return result;
 }
 
-export default function registerLoaders(register: RegisterFn): void {
-  const queuePausedFactory = () =>
-    new DataLoader(getJobMemoryBatch, {
-      cacheKeyFn: cacheFn,
-    });
-  register('jobMemoryUsage', queuePausedFactory);
-}
+export const jobMemoryUsage = new DataLoader(getJobMemoryBatch, {
+  cacheKeyFn: cacheFn,
+});

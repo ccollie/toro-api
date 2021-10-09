@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { StatsRateQueryInputTC } from './types';
 import { aggregateRates, getClient } from './utils';
 import { MeterTC } from './MeterTC';
@@ -5,12 +6,14 @@ import { MeterSummary, StatsGranularity, StatsRateType } from '@alpen/core';
 import { HostManager, QueueStats } from '@alpen/core';
 import { FieldConfig } from '../index';
 import { Queue } from 'bullmq';
-import { getStatsListener } from '../../helpers';
 import boom from '@hapi/boom';
 
-export function getQueueRatesResolver(type: StatsRateType): FieldConfig {
+export function getQueueRatesResolver(
+  context: EZContext,
+  type: StatsRateType,
+): FieldConfig {
   function getInstantRate(queue: Queue, jobName?: string) {
-    const listener = getStatsListener(queue);
+    const listener = context.accessors.getStatsListener(queue);
     const stats: QueueStats = jobName
       ? listener.getJobNameStats(jobName)
       : listener.queueStats;
@@ -37,24 +40,25 @@ export function getQueueRatesResolver(type: StatsRateType): FieldConfig {
     args: {
       input: StatsRateQueryInputTC,
     },
-    async resolve(queue: Queue, { input }) {
+    async resolve(queue: Queue, { input }, context: EZContext) {
       if (!input) {
         return getInstantRate(queue);
       }
       const { jobName, granularity, range } = input;
-      return aggregateRates(queue, jobName, range, granularity, type);
+      return aggregateRates(context, queue, jobName, range, granularity, type);
     },
   };
 }
 
 export function getHostRatesResolver(type: StatsRateType): FieldConfig {
   function getRates(
+    context: EZContext,
     host: HostManager,
     jobName: string,
     range: string,
     granularity: StatsGranularity,
   ) {
-    return aggregateRates(host, jobName, range, granularity, type);
+    return aggregateRates(context, host, jobName, range, granularity, type);
   }
 
   return {
@@ -64,10 +68,10 @@ export function getHostRatesResolver(type: StatsRateType): FieldConfig {
     args: {
       input: StatsRateQueryInputTC,
     },
-    async resolve(_, { input }): Promise<MeterSummary> {
+    async resolve(_, { input }, context: EZContext): Promise<MeterSummary> {
       if (!input) {
         let range = 'last_minute';
-        const client = getClient(_);
+        const client = getClient(context, _);
         const timeSpan = await client.getHostSpan(
           null,
           'latency',
@@ -76,10 +80,10 @@ export function getHostRatesResolver(type: StatsRateType): FieldConfig {
         if (timeSpan) {
           range = `${timeSpan.startTime}-${timeSpan.endTime}`;
         }
-        return getRates(_, null, range, StatsGranularity.Minute);
+        return getRates(context, _, null, range, StatsGranularity.Minute);
       }
       const { jobName, granularity, range = 'last_minute' } = input;
-      return getRates(_, jobName, range, granularity);
+      return getRates(context, _, jobName, range, granularity);
     },
   };
 }

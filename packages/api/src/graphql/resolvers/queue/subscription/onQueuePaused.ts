@@ -1,6 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getAsyncIterator } from '../../../helpers';
 
 export const onQueuePaused: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -17,7 +17,7 @@ export const onQueuePaused: FieldConfig = {
       queueId,
     };
   },
-  subscribe: (_, { queueId }) => {
-    return getAsyncIterator(queueId, 'paused');
+  subscribe: (_, { queueId }, { accessors }: EZContext) => {
+    return accessors.getAsyncIterator(queueId, 'paused');
   },
 };

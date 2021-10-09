@@ -1,4 +1,4 @@
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
 import { JobOptionsEveryInputTC } from '../model/Job.opts';
@@ -26,10 +26,10 @@ export const jobAddEvery: FieldConfig = {
   args: {
     input: JobAddEveryInput,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, context: EZContext) => {
     const { queueId, jobName, data, options } = input;
-    const queue = await getQueueById(queueId);
-    const job = await addJob(queue, jobName, data, options);
+    const queue = context.accessors.getQueueById(queueId);
+    const job = await addJob(context, queue, jobName, data, options);
     return {
       job,
     };

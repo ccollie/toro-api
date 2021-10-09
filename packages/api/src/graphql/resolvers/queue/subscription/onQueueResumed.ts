@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { getAsyncIterator } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 
 export const onQueueResumed: FieldConfig = {
@@ -17,7 +17,7 @@ export const onQueueResumed: FieldConfig = {
       queueId,
     };
   },
-  subscribe: (_, { queueId }) => {
-    return getAsyncIterator(queueId, 'resumed');
+  subscribe: (_, { queueId }, { accessors }: EZContext) => {
+    return accessors.getAsyncIterator(queueId, 'resumed');
   },
 };

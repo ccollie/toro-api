@@ -9,7 +9,7 @@ import handlebars from 'handlebars';
  * @param  {Number} numColumns number of columns across
  * @returns {Object} fields - a Slack-ready set of "fields"
  */
-export default function createDataTable(
+export function createDataTable(
   inputObj: Array<any> | Record<string, any>,
   numColumns = 3,
 ): string {

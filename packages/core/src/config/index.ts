@@ -39,19 +39,6 @@ const environment = global.process.env.NODE_ENV || 'development';
 const isTest = process.env.NODE_ENV === 'test';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-// Find .env file from projectRoot and NODE_ENV
-// Returns Buffer
-function loadEnvFile(projectRoot: string, nodeEnv: string): Buffer {
-  const filePath = getProjectRoot() + '/.env';
-
-  if (nodeEnv) {
-    if (fs.existsSync(filePath + '.' + nodeEnv)) {
-      return fs.readFileSync(filePath + '.' + nodeEnv);
-    }
-  }
-  return fs.readFileSync(filePath);
-}
-
 nconf.file(
   'default-env',
   path.join(baseConfigPath, 'env', `config.${environment}.json`),
@@ -101,7 +88,6 @@ function processTemplate(tpl: any): any {
   return tpl;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function getValue(key: string, defaultValue?: any): any {
   const val = nconf.get(key);
   return val ? processTemplate(val) : defaultValue;
@@ -110,7 +96,7 @@ export function getValue(key: string, defaultValue?: any): any {
 function getAppInfo(): AppInfo {
   const server = nconf.get('server');
   const env = nconf.get('env');
-  const title = nconf.get('title') || 'el toro';
+  const title = nconf.get('title') || 'alpen';
   const brand = nconf.get('brand') || 'GuanimaTech';
   const url = !server
     ? 'localhost'
@@ -141,4 +127,4 @@ nconf.set('appInfo', getAppInfo());
 // To output this, use DEBUG=pamplona:*,pamplona-config
 // debug(nconf.get());
 
-export default nconf;
+export const config = nconf;

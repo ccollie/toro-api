@@ -1,5 +1,6 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { createSubscriptionResolver, getQueueManager } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { createSubscriptionResolver } from '../../../helpers';
 import boom from '@hapi/boom';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
@@ -22,9 +23,10 @@ function createResolver(): GraphQLFieldResolver<any, any> {
   function onSubscribe(
     _,
     args: MetricsInput,
+    { accessors }: EZContext,
   ): AsyncIterator<TimeseriesDataPoint> {
     const { queueId, metricId } = args;
-    const mgr = getQueueManager(queueId);
+    const mgr = accessors.getQueueManager(queueId);
     const metric = mgr.metricManager.metrics.find((x) => x.id === metricId);
     if (!metric) {
       throw boom.badRequest(`No metric found with id "${metricId}"`);

@@ -1,4 +1,4 @@
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { deleteJobFilter } from '@alpen/core';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
@@ -23,9 +23,9 @@ export const queueJobFilterDelete: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, filterId } = input;
-    const queue = getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     const result = await deleteJobFilter(queue, filterId);
 
     if (!result) {

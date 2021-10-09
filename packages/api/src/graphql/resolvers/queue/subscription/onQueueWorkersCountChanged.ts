@@ -1,5 +1,5 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { getQueueManager, createSubscriptionResolver } from '../../../helpers';
+import { createSubscriptionResolver } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { logger } from '@alpen/core';
@@ -16,7 +16,7 @@ export function createResolver(): GraphQLFieldResolver<any, any> {
   function onSubscribe(_, args, context) {
     const { queueId } = args;
     const { channelName } = context;
-    const manager = getQueueManager(queueId);
+    const manager = context.accessors.getQueueManager(queueId);
 
     let savedCount = 0;
     manager

@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { QueueTC, FieldConfig } from '../index';
-import { getQueueById } from '../../helpers';
 import { Queue } from 'bullmq';
 
 export const queue: FieldConfig = {
@@ -8,7 +8,7 @@ export const queue: FieldConfig = {
   args: {
     id: 'ID!',
   },
-  resolve(_, { id }): Queue {
-    return getQueueById(id);
+  resolve(_, { id }, { accessors }: EZContext): Queue {
+    return accessors.getQueueById(id);
   },
 };

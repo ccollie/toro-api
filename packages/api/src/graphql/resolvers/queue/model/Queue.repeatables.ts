@@ -1,12 +1,11 @@
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
 import ms from 'ms';
 import cronstrue from 'cronstrue/i18n';
 import { FieldConfig } from '../../utils';
 import { SortOrderEnum, OrderEnumType } from '../../../scalars';
 import { RepeatableJob } from '@alpen/core';
-import { getQueueManager } from '../../../helpers';
 import { Queue } from 'bullmq';
-import { getQueueRepeatableCount } from '../../../loaders/queue-repeatable-count';
 
 export const repeatableJob = schemaComposer.createObjectTC({
   name: 'RepeatableJob',
@@ -62,10 +61,14 @@ export const repeatableJobs: FieldConfig = {
       },
     }),
   },
-  async resolve(queue: Queue, { input }): Promise<RepeatableJob[]> {
+  async resolve(
+    queue: Queue,
+    { input },
+    { accessors }: EZContext,
+  ): Promise<RepeatableJob[]> {
     const { offset, limit, sortOrder } = input || {};
     const asc = sortOrder === 'ASC';
-    const manager = getQueueManager(queue);
+    const manager = accessors.getQueueManager(queue);
     return manager.getRepeatableJobs(offset, limit, asc);
   },
 };
@@ -74,6 +77,6 @@ export const repeatableJobCount: FieldConfig = {
   type: 'Int!',
   description: 'Returns the number of repeatable jobs',
   async resolve(queue: Queue, args, { loaders }): Promise<number> {
-    return getQueueRepeatableCount(loaders, queue);
+    return loaders.queueRepeatableCount.load(queue);
   },
 };

@@ -1,11 +1,9 @@
 import { GraphQLFieldResolver } from 'graphql';
 import { RuleAlert } from '@alpen/core';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import {
-  createSubscriptionResolver,
-  getQueueRuleManager,
-} from '../../../helpers';
+import { createSubscriptionResolver } from '../../../helpers';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_: unknown, { input }): string {
@@ -22,9 +20,13 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     return name;
   }
 
-  function onSubscribe(_: unknown, { input }): AsyncIterator<RuleAlert> {
+  function onSubscribe(
+    _: unknown,
+    { input },
+    { accessors }: EZContext,
+  ): AsyncIterator<RuleAlert> {
     const { queueId, ruleIds = [] } = input || {};
-    const ruleManager = getQueueRuleManager(queueId);
+    const ruleManager = accessors.getQueueRuleManager(queueId);
 
     return ruleManager.subscribeToAlerts({
       ruleIds,

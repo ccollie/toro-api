@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { getAsyncIterator, getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { JobTC, QueueTC, FieldConfig } from '../../index';
 
 export const onJobDelayed: FieldConfig = {
@@ -19,8 +19,8 @@ export const onJobDelayed: FieldConfig = {
     },
     queueId: 'ID!',
   },
-  resolve: async ({ jobId, delay }, { queueId }) => {
-    const queue = getQueueById(queueId);
+  resolve: async ({ jobId, delay }, { queueId }, { accessors }: EZContext) => {
+    const queue = accessors.getQueueById(queueId);
     const job = await queue.getJob(jobId);
     return {
       job,
@@ -29,7 +29,7 @@ export const onJobDelayed: FieldConfig = {
       delay: parseInt(delay),
     };
   },
-  subscribe: (_, { queueId }) => {
-    return getAsyncIterator(queueId, 'delayed');
+  subscribe: (_, { queueId }, { accessors }: EZContext) => {
+    return accessors.getAsyncIterator(queueId, 'delayed');
   },
 };

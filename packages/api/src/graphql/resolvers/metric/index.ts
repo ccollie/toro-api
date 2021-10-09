@@ -1,4 +1,3 @@
-export * from './scalars';
 // import * as Subscription from './subscription';
 const Subscription = {};
 

@@ -1,6 +1,6 @@
 'use strict';
 import boom from '@hapi/boom';
-import { getQueueManager } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { MetricInputTC } from '../scalars';
 import { createAggregator, QueueMetricOptions } from '@alpen/core';
@@ -12,10 +12,10 @@ export const metricUpdate: FieldConfig = {
   args: {
     input: MetricInputTC.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, id, name, description, isActive, options, aggregator } =
       input;
-    const manager = getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId);
     const metric = await manager.metricManager.getMetric(id);
 
     if (!metric) {

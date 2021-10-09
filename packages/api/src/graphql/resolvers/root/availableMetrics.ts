@@ -1,23 +1,16 @@
 import { FieldConfig } from '../index';
 import { getClassMetadata, metricsMap, MetricInfo } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
-import {
-  MetricCategoryTC as MetricCategoryTC,
-  MetricValueTypeTC,
-  MetricTypeTC,
-} from '../metric';
+import { MetricTypeTC } from '../metric/scalars';
 
 const MetricsInfoTC = schemaComposer.createObjectTC({
   name: 'MetricInfo',
   fields: {
     key: 'String!',
     description: 'String',
-    category: {
-      type: MetricCategoryTC,
-      makeRequired: true,
-    },
+    category: 'MetricCategory!',
     type: MetricTypeTC.NonNull,
-    valueType: MetricValueTypeTC.NonNull,
+    valueType: 'MetricValueType!',
     unit: 'String',
     isPolling: 'Boolean!',
   },

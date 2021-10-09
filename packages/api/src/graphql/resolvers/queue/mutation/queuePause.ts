@@ -1,4 +1,4 @@
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, QueueTC } from '../../index';
 
 export const queuePause: FieldConfig = {
@@ -11,8 +11,8 @@ export const queuePause: FieldConfig = {
   args: {
     id: 'ID!',
   },
-  resolve: async (_, { id }) => {
-    const queue = await getQueueById(id);
+  resolve: async (_, { id }, { accessors }: EZContext) => {
+    const queue = accessors.getQueueById(id);
     await queue.pause();
     return queue;
   },

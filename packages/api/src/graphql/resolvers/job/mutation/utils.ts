@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
+import { EZContext } from 'graphql-ez';
 import { isString } from 'lodash';
-import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig, QueueTC } from '../../index';
 import { Job, Queue } from 'bullmq';
@@ -8,6 +8,7 @@ import { publishJobAdded } from '../subscription/onJobAdded';
 import { bulkJobHandler, createJob, JobCreationOptions } from '@alpen/core';
 
 export async function addJob(
+  context: EZContext,
   queue: Queue,
   jobName: string,
   data: Record<string, any>,
@@ -19,7 +20,7 @@ export async function addJob(
     opts,
   };
   const job = await createJob(queue, jobOptions);
-  await publishJobAdded(queue, job); // should we just fire and forget instead of waiting ?
+  await publishJobAdded(context, queue, job); // should we just fire and forget instead of waiting ?
   return job;
 }
 
@@ -62,9 +63,9 @@ export function createBulkMutationHandler(
     args: {
       input: BulkJobActionInput.NonNull,
     },
-    async resolve(_, { input }): Promise<any> {
+    async resolve(_, { input }, { accessors }: EZContext): Promise<any> {
       const { queueId, jobIds } = input;
-      const queue = getQueueById(queueId);
+      const queue = accessors.getQueueById(queueId);
 
       const status = await bulkJobHandler(action, queue, jobIds);
 

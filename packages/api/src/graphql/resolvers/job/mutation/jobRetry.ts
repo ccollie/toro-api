@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
-import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { processJobCommand } from '@alpen/core';
 import { JobLocatorInput } from './jobLocatorInput';
@@ -15,9 +15,9 @@ export const jobRetry: FieldConfig = {
   args: {
     input: JobLocatorInput.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId } = input;
-    const queue = await getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     const job = await processJobCommand('retry', queue, jobId);
     return {
       job,

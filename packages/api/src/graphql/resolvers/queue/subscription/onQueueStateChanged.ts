@@ -1,4 +1,5 @@
-import { createSubscriptionResolver, getQueueListener } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { QueueEventsEnum } from '@alpen/core';
 import { FieldConfig } from '../../index';
@@ -11,8 +12,12 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     return `QUEUE_STATE_CHANGED:${queueId}`;
   }
 
-  function onSubscribe(_, { queueId }): AsyncIterator<any> {
-    const listener = getQueueListener(queueId);
+  function onSubscribe(
+    _,
+    { queueId },
+    { accessors }: EZContext,
+  ): AsyncIterator<any> {
+    const listener = accessors.getQueueListener(queueId);
     const queue = listener.queue;
 
     function transform(state): any {

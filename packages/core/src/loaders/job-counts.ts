@@ -1,11 +1,10 @@
 import { Queue } from 'bullmq';
+import { Pipeline } from 'ioredis';
 import DataLoader from 'dataloader';
-import { JobCounts, JobCountStates, JobStatusEnum } from '@alpen/core';
-import { getQueueById, getQueueId } from '../helpers';
-import { aggregateQueuesByHost } from './utils';
-import { getPipelinedCounts } from '@alpen/core';
-import { RegisterFn } from './types';
+import { aggregateQueuesByClient } from './utils';
 import pMap from 'p-map';
+import { JobCounts, JobCountStates, JobStatusEnum } from '../queues/types';
+import { getAccessor } from './accessors';
 
 const DefaultTypes: JobCountStates[] = [
   JobStatusEnum.DELAYED,
@@ -14,7 +13,7 @@ const DefaultTypes: JobCountStates[] = [
 ];
 
 export interface JobCountsLoaderKey {
-  queue: Queue | string;
+  queue: Queue;
   types?: JobCountStates[];
 }
 
@@ -24,6 +23,7 @@ interface QueueJobCountsMeta {
 }
 
 function jobCountsLoaderCacheFn(key: JobCountsLoaderKey): string {
+  const { getQueueId } = getAccessor();
   const queueId =
     typeof key.queue === 'string' ? key.queue : getQueueId(key.queue);
   const types = key.types ? key.types.sort() : DefaultTypes;
@@ -32,12 +32,37 @@ function jobCountsLoaderCacheFn(key: JobCountsLoaderKey): string {
 }
 
 async function getSingle(key: JobCountsLoaderKey): Promise<JobCounts[]> {
-  let queue = key.queue;
-  if (typeof queue === 'string') {
-    queue = getQueueById(queue);
-  }
+  const queue = key.queue;
   const counts = (await queue.getJobCounts(...key.types)) as JobCounts;
   return [counts];
+}
+
+function getPipelinedCounts(
+  pipeline: Pipeline,
+  queue: Queue,
+  types: string[],
+): Pipeline {
+  types.forEach((type: string) => {
+    type = type === 'waiting' ? 'wait' : type; // alias
+
+    const key = queue.toKey(type);
+    switch (type) {
+      case 'completed':
+      case 'failed':
+      case 'delayed':
+      case 'repeat':
+      case 'waiting-children':
+        pipeline.zcard(key);
+        break;
+      case 'active':
+      case 'wait':
+      case 'paused':
+        pipeline.llen(key);
+        break;
+    }
+  });
+
+  return pipeline;
 }
 
 async function getJobCountsBatch(
@@ -53,9 +78,6 @@ async function getJobCountsBatch(
   const empty = Object.create(null);
   keys.forEach(({ queue, types }, index) => {
     const meta = { types, index };
-    if (typeof queue === 'string') {
-      queue = getQueueById(queue);
-    }
     queues.push(queue);
     let metas = queueTypesMap.get(queue);
     if (!metas) {
@@ -66,9 +88,8 @@ async function getJobCountsBatch(
     result[index] = empty;
   });
 
-  const hostQueues = aggregateQueuesByHost(queues);
-  await pMap(hostQueues, async ([host, queues]) => {
-    const client = host.client;
+  const clientQueues = aggregateQueuesByClient(queues);
+  await pMap(clientQueues, async ([client, queues]) => {
     const pipeline = client.pipeline();
     queues.forEach((queue) => {
       const metas = queueTypesMap.get(queue);
@@ -97,34 +118,26 @@ async function getJobCountsBatch(
   return result;
 }
 
-export default function registerLoaders(register: RegisterFn): void {
-  const jobCountsLoaderFactory = () =>
-    new DataLoader(getJobCountsBatch, {
-      cacheKeyFn: jobCountsLoaderCacheFn,
-    });
+export const jobCounts = new DataLoader(getJobCountsBatch, {
+  cacheKeyFn: jobCountsLoaderCacheFn,
+});
 
-  const jobCountByTypeFactory = (jobCounts) => {
-    // Job counts by type
-    // getJobCountByTypes(queue, 'completed') => completed count
-    // getJobCountByTypes(queue, 'completed,failed') => completed + failed count
-    // getJobCountByTypes(queue, 'completed', 'failed') => completed + failed count
-    // getJobCountByTypes(queue, 'completed', 'waiting', 'failed') => completed+waiting+failed count
-    async function getJobCountByTypes(
-      keys: JobCountsLoaderKey[],
-    ): Promise<number[]> {
-      const countsByKey = (await jobCounts.loadMany(keys)) as JobCounts[];
-      return countsByKey.map((counts) => {
-        // we won't raise on error
-        if (counts instanceof Error) return 0;
-        return Object.values(counts).reduce((sum, count) => sum + count);
-      });
-    }
-
-    return new DataLoader(getJobCountByTypes, {
-      cacheKeyFn: jobCountsLoaderCacheFn,
-    });
-  };
-
-  register('jobCounts', jobCountsLoaderFactory);
-  register('jobCountByTpe', jobCountByTypeFactory, ['jobCounts']);
+// Job counts by type
+// getJobCountByTypes(queue, 'completed') => completed count
+// getJobCountByTypes(queue, 'completed,failed') => completed + failed count
+// getJobCountByTypes(queue, 'completed', 'failed') => completed + failed count
+// getJobCountByTypes(queue, 'completed', 'waiting', 'failed') => completed+waiting+failed count
+async function getJobCountByTypes(
+  keys: JobCountsLoaderKey[],
+): Promise<number[]> {
+  const countsByKey = (await jobCounts.loadMany(keys)) as JobCounts[];
+  return countsByKey.map((counts) => {
+    // we won't raise on error
+    if (counts instanceof Error) return 0;
+    return Object.values(counts).reduce((sum, count) => sum + count);
+  });
 }
+
+export const jobCountsByType = new DataLoader(getJobCountByTypes, {
+  cacheKeyFn: jobCountsLoaderCacheFn,
+});

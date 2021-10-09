@@ -1,10 +1,7 @@
 import { UnsubscribeFn } from 'emittery';
 import { JobEventData, systemClock } from '@alpen/core';
-import {
-  getQueueById,
-  getQueueListener,
-  createSubscriptionResolver,
-} from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 import { AppJob, JobStatusEnum } from '@alpen/core';
 import { fieldsList } from 'graphql-fields-list';
@@ -59,9 +56,13 @@ export function subscribeToJob(
     return `JOB_UPDATED:${queueId}${id}`;
   }
 
-  function onSubscribe(_, { input }): AsyncIterator<any> {
+  function onSubscribe(
+    _,
+    { input },
+    { accessors }: EZContext,
+  ): AsyncIterator<any> {
     const { queueId, jobId } = input;
-    const listener = getQueueListener(queueId);
+    const listener = accessors.getQueueListener(queueId);
 
     return listener.createAsyncIterator({
       eventNames: [`job.${jobId}`],
@@ -100,7 +101,7 @@ export function createStateSubscription(state: JobStatusEnum): FieldConfig {
       jobId: 'String!',
     },
     resolve: async (_, { queueId, jobId }, ctx, info) => {
-      const queue = getQueueById(queueId);
+      const queue = ctx.accessors.getQueueById(queueId);
       const result = {
         queue,
       };

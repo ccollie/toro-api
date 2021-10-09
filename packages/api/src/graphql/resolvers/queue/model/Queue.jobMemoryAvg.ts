@@ -3,13 +3,8 @@ import {
   schemaComposer,
 } from 'graphql-compose';
 import { Queue } from 'bullmq';
-import { JobStatusEnum } from '@alpen/core';
-import {
-  getJobMemoryAvg,
-  getJobMemoryUsage,
-} from './loaders';
+import { getJobMemoryAvg, getJobMemoryUsage, JobStatusEnum } from '@alpen/core';
 import { JobStatusEnumType } from '../../../scalars';
-import { EZContext } from 'graphql-ez';
 
 export const JobMemoryAvgInputTC = schemaComposer.createInputTC({
   name: 'JobsMemoryAvgInput',
@@ -36,13 +31,13 @@ export const jobMemoryAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   args: {
     input: JobMemoryAvgInputTC,
   },
-  resolve: async (queue: Queue, args, context: EZContext) => {
+  resolve: async (queue: Queue, args) => {
     const {
       limit = 50,
       jobName,
       status = JobStatusEnum.COMPLETED,
     } = args || {};
-    return getJobMemoryAvg(context, queue, status, limit, jobName);
+    return getJobMemoryAvg(queue, status, limit, jobName);
   },
 };
 
@@ -67,14 +62,13 @@ export const jobMemoryUsage: ObjectTypeComposerFieldConfigDefinition<any, any> =
     args: {
       input: JobMemoryAvgInputTC,
     },
-    resolve: async (queue: Queue, args, context: EZContext) => {
+    resolve: async (queue: Queue, args) => {
       const {
         limit = 50,
         jobName,
         status = JobStatusEnum.COMPLETED,
       } = args || {};
       const { byteCount, jobCount } = await getJobMemoryUsage(
-        context,
         queue,
         status,
         limit,

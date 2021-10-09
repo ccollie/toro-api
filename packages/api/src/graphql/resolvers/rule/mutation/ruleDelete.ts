@@ -1,6 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager } from '../../../helpers';
 
 interface RuleDeletePayload {
   queueId: string;
@@ -27,9 +27,13 @@ export const ruleDelete: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_: unknown, { input }): Promise<RuleDeletePayload> {
+  async resolve(
+    _: unknown,
+    { input },
+    { accessors }: EZContext,
+  ): Promise<RuleDeletePayload> {
     const { queueId, ruleId } = input;
-    const manager = getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId);
     const isDeleted = await manager.deleteRule(ruleId);
     return {
       queueId,

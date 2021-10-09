@@ -1,7 +1,6 @@
-import { normalizeGranularity } from '../../helpers';
 import { FieldConfig } from '../index';
 import { HostManager } from '@alpen/core';
-import { getClient } from './utils';
+import { getClient, normalizeGranularity } from './utils';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
 import {
@@ -40,13 +39,13 @@ export const statsLatest: FieldConfig = {
   args: {
     input: StatsLatestInputTC,
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }, context) {
     const { jobName, granularity, metric } = input || {
       granularity: StatsGranularity.Minute,
       metric: 'latency',
     };
     let snapshot: StatisticalSnapshot;
-    const client = getClient(_);
+    const client = getClient(context, _);
     const unit = normalizeGranularity(granularity);
     if (_ instanceof HostManager) {
       snapshot = await client.getHostLast(

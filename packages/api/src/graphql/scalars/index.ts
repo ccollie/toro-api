@@ -11,6 +11,8 @@ export * from './JobFilterQuery';
 export * from './QueueEventsEnum';
 export * from './timespan';
 export * from './DateTime';
+export * from './MetricCategory';
+export * from './MetricValueType';
 
 export {
   GraphQLEmailAddress,

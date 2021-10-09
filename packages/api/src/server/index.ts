@@ -14,8 +14,10 @@ import pMap from 'p-map';
 
 import { ApolloError } from 'apollo-server-errors';
 import { getSchema, publish, pubsub } from '../graphql';
-import { HostConfig, Supervisor, logger } from '@alpen/core';
+import { Supervisor, logger, loaders } from '@alpen/core';
 import { LoggerConfig, useLogger } from './plugins/logger';
+import { HostConfig } from '@alpen/core/hosts';
+import * as accessors from '@alpen/core/supervisor/accessors';
 import {
   AppOptions,
   BuildAppOptions,
@@ -24,7 +26,6 @@ import {
   EZPlugin,
   InferContext,
 } from 'graphql-ez';
-import { DataLoaderRegistry } from '../graphql/loaders';
 import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
 import {
   AutomaticPersistedQueryOptions,
@@ -189,16 +190,14 @@ export const formatError: FormatErrorHandler = (err): GraphQLError => {
 
 function buildContext({ req }: BuildContextArgs) {
   const supervisor = Supervisor.getInstance();
-  let loaders: DataLoaderRegistry;
   return {
     // IncomingMessage
     req,
     supervisor,
     publish,
     pubsub,
-    get loaders(): DataLoaderRegistry {
-      return loaders || (loaders = new DataLoaderRegistry());
-    },
+    accessors,
+    loaders,
   };
 }
 

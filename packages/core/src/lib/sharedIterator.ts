@@ -1,4 +1,4 @@
-import { withCancel } from '@alpen/core';
+import { withCancel } from './iterators';
 
 export type OnReturnFn = () => void | Promise<void>;
 

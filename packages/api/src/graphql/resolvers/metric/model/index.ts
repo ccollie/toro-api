@@ -2,7 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { metricDataFC } from './Metric.data';
 import { metricDataOutliersFC as outliers } from './Metric.outliers';
 import { metricDateRangeFC as dateRange } from './Metric.date-range';
-import { BaseFields, MetricCategoryTC, MetricTypeTC } from '../scalars';
+import { BaseFields, MetricTypeTC } from '../scalars';
 import { metricHistogramFC as histogram } from './Metric.histogram';
 import { metricSummaryStatsFC as summaryStats } from './Metric.summary-stats';
 import { metricDescriptionFC as description } from './Metric.description';
@@ -28,7 +28,7 @@ export const MetricTC = schemaComposer.createObjectTC({
       },
     },
     category: {
-      type: MetricCategoryTC.NonNull,
+      type: 'MetricCategory!',
       resolve: (metric: BaseMetric) => {
         return getStaticProp(metric, 'category');
       },

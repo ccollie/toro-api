@@ -1,4 +1,4 @@
-import { normalizeGranularity } from '../../helpers';
+import { normalizeGranularity } from '../stats/utils';
 import { FieldConfig } from '../index';
 import { HostManager } from '@alpen/core';
 import { getClient } from './utils';
@@ -24,10 +24,10 @@ export const statsDateRange: FieldConfig = {
   args: {
     input: StatsSpanInput.NonNull,
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }, context) {
     const { jobName, granularity = StatsGranularity.Minute } = input;
 
-    const client = getClient(_);
+    const client = getClient(context, _);
     const _granularity = normalizeGranularity(granularity);
     if (_ instanceof HostManager) {
       return client.getHostSpan(jobName, 'latency', _granularity);

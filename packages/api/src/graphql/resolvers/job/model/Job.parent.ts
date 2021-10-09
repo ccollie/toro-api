@@ -1,8 +1,6 @@
 import { Job } from 'bullmq';
 import { FieldConfig } from '../../utils';
-import { getQueueManager } from '../../../helpers';
 import { getJobKeyProperties } from '@alpen/core';
-import { getJobById } from './loaders';
 import { EZContext } from 'graphql-ez';
 
 export const parent: FieldConfig = {
@@ -11,7 +9,7 @@ export const parent: FieldConfig = {
   async resolve(child: Job, args, context: EZContext): Promise<Job> {
     if (!child.parentKey) return null;
     const { id, queueName } = getJobKeyProperties(child.parentKey);
-    const { queue } = getQueueManager(queueName);
-    return getJobById(context, queue, id);
+    const { queue } = context.accessors.getQueueManager(queueName);
+    return context.loaders.jobById.load({ queue, id });
   },
 };

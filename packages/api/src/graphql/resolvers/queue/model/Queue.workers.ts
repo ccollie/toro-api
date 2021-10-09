@@ -55,12 +55,7 @@ export const queueWorkers: FieldConfig = {
     args: any,
     context: EZContext,
   ): Promise<QueueWorker[]> {
-    const queueWorkersLoader = context.loaders.getLoader<
-      Queue,
-      QueueWorker[],
-      string
-    >('workers');
-    let workers = await queueWorkersLoader.load(queue);
+    let workers = await context.loaders.workers.load(queue);
     workers = workers.sort((a, b) => a.idle - b.idle);
     if (args.limit) {
       const limit = parseInt(args.limit);

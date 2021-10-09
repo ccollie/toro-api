@@ -1,4 +1,4 @@
-import { getQueueManager } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { QueueTC } from '../../queue/model/Queue';
 import { schemaComposer } from 'graphql-compose';
@@ -22,9 +22,9 @@ export const metricDelete: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, metricId } = input;
-    const manager = getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId);
     const result = await manager.metricManager.deleteMetric(metricId);
 
     if (!result) {

@@ -11,14 +11,13 @@ import {
   JobProgress,
   JobRemoveOption,
   JobStatusEnumType,
+  MetricCategory,
   OrderEnumType,
   PeakSignalDirectionEnum,
   RuleOperatorEnum,
   RuleStateEnum,
   SeverityType,
 } from './scalars';
-
-import { MetricCategoryTC } from './resolvers/metric';
 
 import { schemaComposer } from 'graphql-compose';
 import * as query from './resolvers/root';
@@ -48,7 +47,7 @@ schemaComposer.add(PeakSignalDirectionEnum);
 schemaComposer.add(RuleOperatorEnum);
 schemaComposer.add(RuleStateEnum);
 schemaComposer.add(SeverityType);
-schemaComposer.add(MetricCategoryTC);
+schemaComposer.add(MetricCategory);
 
 schemaComposer.Query.addFields({
   ...query,

@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { JobTC, QueueTC, FieldConfig } from '../../index';
-import { getQueueById } from '../../../helpers';
 import { schemaComposer } from 'graphql-compose';
 import { JobProgress } from '../../../scalars';
 import { JobData, needsJob, subscribeToJob } from './subscribeToJob';
@@ -17,8 +17,13 @@ export const onJobProgress: FieldConfig = {
     queueId: 'String!',
     jobId: 'String!',
   },
-  resolve: async (parent: JobData, { queueId, jobId }, ctx, info) => {
-    const queue = getQueueById(queueId);
+  resolve: async (
+    parent: JobData,
+    { queueId, jobId },
+    ctx: EZContext,
+    info,
+  ) => {
+    const queue = ctx.accessors.getQueueById(queueId);
     const result = {
       queue,
       progress: parent.progress,

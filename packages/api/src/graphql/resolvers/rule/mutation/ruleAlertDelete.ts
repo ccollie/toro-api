@@ -1,6 +1,7 @@
+import { EZContext } from 'graphql-ez';
+import { fieldsList } from 'graphql-fields-list';
 import { FieldConfig, RuleTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager, getResolverFields } from '../../../helpers';
 
 export const ruleAlertDelete: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -22,10 +23,10 @@ export const ruleAlertDelete: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_: unknown, { input }, context, info) {
+  async resolve(_: unknown, { input }, { accessors }: EZContext, info) {
     const { queueId, ruleId, alertId } = input;
-    const fields = getResolverFields(info);
-    const manager = getQueueManager(queueId);
+    const fields = fieldsList(info);
+    const manager = accessors.getQueueManager(queueId);
     const ruleManager = manager.ruleManager;
     const deleted = await ruleManager.deleteAlert(ruleId, alertId);
     if (!deleted) {

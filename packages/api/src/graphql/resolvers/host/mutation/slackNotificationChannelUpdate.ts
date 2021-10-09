@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import {
   SlackNotificationChannelTC,
@@ -19,7 +20,7 @@ export const slackNotificationChannelUpdate: FieldConfig = {
   args: {
     input: SlackNotificationChannelUpdateInputTC.NonNull,
   },
-  resolve: async (_, { input }) => {
-    return updateChannel(input, 'slack');
+  resolve: async (_, { input }, context: EZContext) => {
+    return updateChannel(context, input, 'slack');
   },
 };

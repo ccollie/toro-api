@@ -167,7 +167,10 @@ export async function bulkPromoteJobs(
   return bulkJobHandler('promote', queue, ids);
 }
 
-export function getJobKeyProperties(jobData: string) {
+export function getJobKeyProperties(jobData: string): {
+  id?: string;
+  queueName?: string;
+} {
   if (!jobData) return {};
   const [, queueName, id] = jobData.split(':');
 

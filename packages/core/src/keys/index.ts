@@ -1,4 +1,4 @@
-import config from '../config/index';
+import { config } from '../config/index';
 import { firstChar } from '@alpen/shared';
 import { Queue } from 'bullmq';
 import { StatsGranularity, StatsMetricType } from '../stats/types';

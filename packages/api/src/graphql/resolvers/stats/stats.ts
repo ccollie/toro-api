@@ -9,9 +9,9 @@ export const stats: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   args: {
     input: StatsQueryInputTC.NonNull,
   },
-  async resolve(queue: Queue, { input }) {
+  async resolve(queue: Queue, { input }, context) {
     const { jobName, metric, granularity, range } = input;
 
-    return getStats(queue, jobName, range, metric, granularity);
+    return getStats(context, queue, jobName, range, metric, granularity);
   },
 };

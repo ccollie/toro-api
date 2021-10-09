@@ -1,4 +1,4 @@
-import { QUEUE_UNREGISTERED_PREFIX, getHostById } from '../../../helpers';
+import { QUEUE_UNREGISTERED_PREFIX } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
@@ -19,7 +19,7 @@ export const onQueueUnregistered: FieldConfig = {
     },
   },
   subscribe: (_, { hostId }, context) => {
-    const host = getHostById(hostId);
+    const host = context.accessors.getHostById(hostId);
     const channel = `${QUEUE_UNREGISTERED_PREFIX}${host.id}`;
     return context.pubsub.asyncIterator(channel);
   },

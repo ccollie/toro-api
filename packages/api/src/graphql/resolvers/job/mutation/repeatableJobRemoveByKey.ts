@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, QueueTC } from '../../index';
-import { getQueueById } from '../../../helpers';
 
 export const repeatableJobRemoveByKey: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -19,9 +19,9 @@ export const repeatableJobRemoveByKey: FieldConfig = {
       },
     }).NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, key } = input;
-    const queue = getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     await queue.removeRepeatableByKey(key);
     return {
       key,

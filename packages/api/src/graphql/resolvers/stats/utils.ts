@@ -1,4 +1,4 @@
-import { getStatsClient, normalizeGranularity } from '../../helpers';
+import { EZContext } from 'graphql-ez';
 import { parseRange } from '@alpen/shared';
 import {
   StatsMetricType,
@@ -11,25 +11,35 @@ import { StatsClient } from '@alpen/core';
 import { HostManager } from '@alpen/core';
 import { Queue } from 'bullmq';
 
-export function getClient(model: Queue | HostManager): StatsClient {
+export function normalizeGranularity(granularity: string): StatsGranularity {
+  return (
+    granularity ? granularity.toLowerCase() : granularity
+  ) as StatsGranularity;
+}
+
+export function getClient(
+  context: EZContext,
+  model: Queue | HostManager,
+): StatsClient {
   if (model instanceof HostManager) {
     const host = model as HostManager;
     const manager = host.queueManagers[0];
     return manager.statsClient;
   } else {
     // it's a queue
-    return getStatsClient(model as Queue);
+    return context.accessors.getStatsClient(model as Queue);
   }
 }
 
 export async function getStats(
+  context: EZContext,
   model: Queue | HostManager,
   jobName: string,
   range: string,
   metric: StatsMetricType,
   granularity: StatsGranularity,
 ): Promise<StatisticalSnapshot[]> {
-  const client = getClient(model);
+  const client = getClient(context, model);
   const unit = normalizeGranularity(granularity);
 
   const { startTime, endTime } = parseRange(range);
@@ -41,13 +51,14 @@ export async function getStats(
 }
 
 export async function aggregateStats(
+  context: EZContext,
   model: Queue | HostManager,
   jobName: string,
   range: string,
   metric: StatsMetricType,
   granularity: StatsGranularity,
 ): Promise<StatisticalSnapshot> {
-  const client = getClient(model);
+  const client = getClient(context, model);
   let snapshot: StatisticalSnapshot;
 
   const unit = normalizeGranularity(granularity);
@@ -75,13 +86,14 @@ export async function aggregateStats(
 }
 
 export async function aggregateRates(
+  context: EZContext,
   model: Queue | HostManager,
   jobName: string,
   range: string,
   granularity: StatsGranularity,
   type: StatsRateType,
 ): Promise<MeterSummary> {
-  const client = getClient(model);
+  const client = getClient(context, model);
 
   const unit = normalizeGranularity(granularity);
   const { startTime, endTime } = parseRange(range);

@@ -1,9 +1,9 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
 import { QueueFilterStatusEnum } from '../../../scalars';
 import { HostQueuesFilter as GQLQueueFilter } from '../../../typings';
-import { getQueueId } from '../../../helpers';
 import { getFilteredQueues, HostManager, QueueFilterStatus } from '@alpen/core';
 
 const HostQueuesFilter = schemaComposer.createInputTC({
@@ -41,6 +41,7 @@ export const hostQueues: FieldConfig = {
   async resolve(
     host: HostManager,
     { filter }: { filter: GQLQueueFilter },
+    { accessors }: EZContext,
   ): Promise<Queue[]> {
     if (!filter) {
       return host.getQueues();
@@ -65,7 +66,7 @@ export const hostQueues: FieldConfig = {
       const includeSet = new Set(include);
       const excludeSet = new Set(exclude);
       return queues.filter((q) => {
-        const id = getQueueId(q);
+        const id = accessors.getQueueId(q);
         return (!include.length || includeSet.has(id)) && !excludeSet.has(id);
       });
     }

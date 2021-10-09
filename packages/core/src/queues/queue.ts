@@ -10,11 +10,12 @@ import {
   validateBySchema,
   validateJobData,
 } from './job-schemas';
-import { JobCreationOptions, JobStatusEnum } from './types';
+import { JobCountStates, JobCreationOptions, JobStatusEnum } from './types';
 import { Pipeline } from 'ioredis';
-import index from '../logger';
+import { logger } from '../logger';
 import { Scripts } from '../commands';
 import { StatsGranularity } from '../stats';
+import { JobMemoryLoaderKey, JobMemoryLoaderResult, loaders } from '../loaders';
 
 const JOB_STATES = Object.values(JobStatusEnum);
 
@@ -101,7 +102,7 @@ export async function discoverQueues(
   };
   const result = [];
 
-  index.info('running queue discovery', { pattern });
+  logger.info('running queue discovery', { pattern });
 
   await scanKeys(client, options, (keys) => {
     const current = keys.map((key) => {
@@ -212,84 +213,6 @@ export async function deleteAllQueueData(queue: Queue): Promise<number> {
   return deleteByPattern(client, pattern);
 }
 
-export interface QueueWorker {
-  id: string;
-  addr: string;
-  port: number;
-  name: string;
-  age: number;
-  idle: number;
-  flags: string;
-  db: number;
-  sub: number;
-  psub: number;
-  multi: number;
-  qbuf: number;
-  qbufFree: number;
-  role: string;
-  obl: number;
-  oll: number;
-  omem: number;
-  events: string;
-  cmd: string;
-  started: number;
-}
-
-export function convertWorker(worker: Record<string, string>): QueueWorker {
-  const now = systemClock.getTime();
-  const {
-    age,
-    id,
-    cmd,
-    db,
-    events,
-    flags,
-    idle,
-    multi,
-    name,
-    obl,
-    oll,
-    omem,
-    psub,
-    qbuf,
-    role,
-    sub,
-    addr: address,
-  } = worker;
-  const [addr, port] = address.split(':');
-  const qbufFree = worker['qbuf-free'];
-
-  function toInt(val: string | undefined, defaultVal = 0): number {
-    if (val === undefined) return defaultVal;
-    const res = parseInt(val ?? '0', 10);
-    return isNaN(res) ? defaultVal : res;
-  }
-
-  const _age = toInt(age) * 1000;
-  return {
-    id,
-    addr,
-    age: _age,
-    cmd,
-    db: toInt(db),
-    events,
-    flags,
-    idle: toInt(idle) * 1000,
-    multi: toInt(multi),
-    name,
-    obl: toInt(obl),
-    oll: toInt(oll),
-    omem: toInt(omem),
-    psub: toInt(psub),
-    qbuf: toInt(qbuf),
-    qbufFree: toInt(qbufFree),
-    port: toInt(port, 6379),
-    role,
-    started: now - _age,
-    sub: toInt(sub),
-  };
-}
-
 export function getPipelinedCounts(
   pipeline: Pipeline,
   queue: Queue,
@@ -339,4 +262,46 @@ export async function getPipelinePaused(
   });
 
   return result;
+}
+
+export async function getJobCountByType(
+  queue: Queue,
+  ...states: JobCountStates[]
+): Promise<number> {
+  const key = {
+    queue,
+    types: states,
+  };
+  const counts = await loaders.jobCounts.load(key);
+  return Object.values(counts).reduce((sum, count) => sum + count);
+}
+
+export async function getJobMemoryUsage(
+  queue: Queue,
+  state: JobStatusEnum,
+  limit?: number,
+  jobName?: string,
+): Promise<JobMemoryLoaderResult> {
+  const key: JobMemoryLoaderKey = {
+    queue,
+    state,
+    limit,
+    jobName,
+  };
+  return loaders.jobMemoryUsage.load(key);
+}
+
+export async function getJobMemoryAvg(
+  queue: Queue,
+  state: JobStatusEnum,
+  limit?: number,
+  jobName?: string,
+): Promise<number> {
+  const { byteCount, jobCount } = await getJobMemoryUsage(
+    queue,
+    state,
+    limit,
+    jobName,
+  );
+  return byteCount / (jobCount || 1);
 }

@@ -1,6 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, HostTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueHost } from '../../../helpers';
 import { QUEUE_DELETED_PREFIX } from '../../../helpers';
 
 export const QueueDeleteOptions = schemaComposer.createInputTC({
@@ -46,9 +46,9 @@ export const queueDelete: FieldConfig = {
   resolve: async (
     _,
     { id, options: { checkExistence, checkActivity } },
-    { supervisor, publish },
+    { supervisor, publish, accessors }: EZContext,
   ) => {
-    const host = getQueueHost(id);
+    const host = accessors.getQueueHost(id);
     const queue = supervisor.getQueueById(id);
     const deletedKeys = await supervisor.deleteQueue(queue, {
       checkExists: checkExistence,

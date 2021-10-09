@@ -9,10 +9,21 @@ export * from './queues';
 export * from './redis';
 export * from './rules';
 export * from './supervisor';
+export * from './supervisor/accessors';
 export * from './stats';
 export * from './types';
 export * from './notifications';
 export * from './validation';
 
-import logger from './logger';
-export { logger };
+export { initLoaders } from './loaders/init-loaders';
+
+export { loaders } from './loaders';
+export type {
+  JobCountsLoaderKey,
+  JobInStateLoaderKey,
+  JobMemoryLoaderResult,
+  JobMemoryLoaderKey,
+  MetricDataLoaderKey,
+} from './loaders';
+
+export { logger } from './logger';

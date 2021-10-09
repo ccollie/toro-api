@@ -1,7 +1,6 @@
 import { FieldConfig } from '../../utils';
 import { BaseMetric, Timespan } from '@alpen/core';
 import { TimeSpanTC } from '../../../scalars';
-import { getMetricDateRange } from '../../../loaders/metric-date-range';
 
 export const metricDateRangeFC: FieldConfig = {
   type: TimeSpanTC,
@@ -9,6 +8,6 @@ export const metricDateRangeFC: FieldConfig = {
     'Returns the timestamps of the first and last data items recorded for the metric',
   args: {},
   async resolve(metric: BaseMetric, _, { loaders }): Promise<Timespan> {
-    return getMetricDateRange(loaders, metric);
+    return loaders.metricDateRange.load(metric);
   },
 };

@@ -1,5 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { QueueTC, FieldConfig } from '../../index';
 import { JobData, subscribeToJob } from './subscribeToJob';
 
@@ -15,8 +15,12 @@ export const onJobRemoved: FieldConfig = {
     queueId: 'String!',
     jobId: 'String!',
   },
-  resolve: async (parent: JobData, { queueId, jobId }) => {
-    const queue = getQueueById(queueId);
+  resolve: async (
+    parent: JobData,
+    { queueId, jobId },
+    { accessors }: EZContext,
+  ) => {
+    const queue = accessors.getQueueById(queueId);
     return {
       queue,
       jobId,

@@ -1,12 +1,15 @@
-import { TimeseriesDataPoint } from '@alpen/core';
-import { getQueueById, getQueueHostManager, getQueueManager } from '../helpers';
-import { BaseMetric, HostManager, MetricManager, logger } from '@alpen/core';
 import pMap from 'p-map';
-import { RegisterFn } from './types';
 import DataLoader from 'dataloader';
-import { DataLoaderRegistry } from './registry';
 import { DateLike } from '@alpen/shared';
-import { filterOutlierObjects, OutlierMethod } from '@alpen/core';
+import { BaseMetric, MetricManager } from '../metrics';
+import {
+  filterOutlierObjects,
+  OutlierMethod,
+  TimeseriesDataPoint,
+} from '../stats';
+import { logger } from '../logger';
+import { getQueueById, getQueueHostClient, getQueueManager } from './accessors';
+import { RedisClient } from 'bullmq';
 
 export interface MetricDataLoaderKey {
   metric: BaseMetric;
@@ -59,16 +62,16 @@ async function getDataBatch(
   }
 
   const result = new Array<TimeseriesDataPoint[]>(keys.length);
-  const hostMetrics = new Map<HostManager, QueryMeta[]>();
+  const hostMetrics = new Map<RedisClient, QueryMeta[]>();
 
   keys.forEach((key, index) => {
     const { metric } = key;
     const queue = getQueueById(metric.queueId);
-    const host = getQueueHostManager(queue);
-    let metricsThisHost = hostMetrics.get(host);
+    const client = getQueueHostClient(queue);
+    let metricsThisHost = hostMetrics.get(client);
     if (!metricsThisHost) {
       metricsThisHost = [];
-      hostMetrics.set(host, metricsThisHost);
+      hostMetrics.set(client, metricsThisHost);
     }
     const meta: QueryMeta = {
       index,
@@ -77,8 +80,7 @@ async function getDataBatch(
     metricsThisHost.push(meta);
   });
 
-  await pMap(hostMetrics, async ([host, metas]) => {
-    const client = host.client;
+  await pMap(hostMetrics, async ([client, metas]) => {
     const pipeline = client.pipeline();
 
     metas.forEach((meta) => {
@@ -97,40 +99,26 @@ async function getDataBatch(
   return result;
 }
 
-const LOADER_NAME = 'metricData';
-
-export default function registerLoaders(register: RegisterFn): void {
-  const factory = () =>
-    new DataLoader(getDataBatch, {
-      cacheKeyFn: getCacheKey,
-    });
-
-  register(LOADER_NAME, factory);
-}
+export const metricData = new DataLoader(getDataBatch, {
+  cacheKeyFn: getCacheKey,
+});
 
 export function getMetricData(
-  loaders: DataLoaderRegistry,
   metric: BaseMetric,
   start?: DateLike,
   end?: DateLike,
   limit?: number,
 ): Promise<TimeseriesDataPoint[]> {
-  const loader = loaders.getLoader<
-    MetricDataLoaderKey,
-    TimeseriesDataPoint[],
-    string
-  >(LOADER_NAME);
   const key: MetricDataLoaderKey = {
     metric,
     start,
     end,
     limit,
   };
-  return loader.load(key);
+  return metricData.load(key);
 }
 
 export async function getFilteredMetricData(
-  loaders: DataLoaderRegistry,
   options: MetricDataLoaderKey,
   outlierFilter?: {
     method: OutlierMethod;
@@ -138,7 +126,7 @@ export async function getFilteredMetricData(
   },
 ): Promise<TimeseriesDataPoint[]> {
   const { metric, start, end, limit } = options;
-  const data = await getMetricData(loaders, metric, start, end, limit);
+  const data = await getMetricData(metric, start, end, limit);
   if (outlierFilter) {
     const { method, threshold } = outlierFilter;
     return filterOutlierObjects(method, data, (x) => x.value, { threshold });

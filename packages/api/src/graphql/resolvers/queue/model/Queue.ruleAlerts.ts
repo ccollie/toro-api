@@ -4,8 +4,8 @@ import {
   schemaComposer,
 } from 'graphql-compose';
 import { Queue } from 'bullmq';
+import { EZContext } from 'graphql-ez';
 import { OrderEnumType, SortOrderEnum } from '../../../scalars';
-import { getQueueManager } from '../../../helpers';
 
 const QueueRuleAlertsInput = schemaComposer.createInputTC({
   name: 'QueueRuleAlertsInput',
@@ -37,7 +37,7 @@ export const ruleAlerts: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   type: '[RuleAlert!]!',
   description: 'Gets rule alerts associated with the queue',
   args: { input: QueueRuleAlertsInput },
-  resolve: async (queue: Queue, { input }) => {
+  resolve: async (queue: Queue, { input }, { accessors }: EZContext) => {
     const {
       startDate = '-',
       endDate = '+',
@@ -45,7 +45,7 @@ export const ruleAlerts: ObjectTypeComposerFieldConfigDefinition<any, any> = {
       limit = 100,
     } = input || {};
     const asc = sortOrder.toLowerCase() === 'asc';
-    const manager = getQueueManager(queue);
+    const manager = accessors.getQueueManager(queue);
     return manager.getAlerts(startDate, endDate, asc, limit);
   },
 };

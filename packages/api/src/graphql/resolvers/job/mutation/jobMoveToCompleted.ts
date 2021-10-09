@@ -1,4 +1,4 @@
-import { getQueueById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig, QueueTC } from '../../index';
 import { JobTC } from '../../index';
@@ -15,9 +15,9 @@ export const jobMoveToCompleted: FieldConfig = {
   args: {
     input: JobLocatorInput.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId } = input;
-    const queue = await getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
     const job = await queue.getJob(jobId);
     if (job) {
       await job.moveToCompleted({}, queue.token);

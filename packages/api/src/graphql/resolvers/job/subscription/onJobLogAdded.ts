@@ -1,9 +1,5 @@
-import {
-  getQueueManager,
-  getQueueHost,
-  getQueueById,
-  createSubscriptionResolver,
-} from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig, JobTC } from '../../index';
 import { fieldsList } from 'graphql-fields-list';
@@ -20,13 +16,17 @@ function getResolver(): GraphQLFieldResolver<any, any> {
   let unsub;
   let hostId: string;
 
-  function channelName(_, { queueId, jobId }): string {
+  function channelName(
+    _,
+    { queueId, jobId },
+    { accessors }: EZContext,
+  ): string {
     return `JOB_LOG_ADDED_${queueId}_${jobId}`;
   }
 
-  function onSubscribe(_, { queueId, jobId }, context) {
-    const queueManager = getQueueManager(queueId);
-    const hostManager = getQueueHost(queueId);
+  function onSubscribe(_, { queueId, jobId }, context: EZContext) {
+    const queueManager = context.accessors.getQueueManager(queueId);
+    const hostManager = context.accessors.getQueueHost(queueId);
     const queue = queueManager.queue;
     const { channelName, pubsub } = context;
     const jobKey = queue.toKey(jobId);
@@ -86,8 +86,8 @@ export const onJobLogAdded: FieldConfig = {
     queueId: 'String!',
     jobId: 'String!',
   },
-  resolve: async ({ added }, { queueId, jobId }, ctx, info) => {
-    const queue = await getQueueById(queueId);
+  resolve: async ({ added }, { queueId, jobId }, ctx: EZContext, info) => {
+    const queue = ctx.accessors.getQueueById(queueId);
     const fields = fieldsList(info);
     const needsCount = fields.includes('count');
     const needsJob = fields.includes('job');

@@ -1,6 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager } from '../../../helpers';
 
 export const ruleAlertMarkAsRead: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -21,9 +21,9 @@ export const ruleAlertMarkAsRead: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_: unknown, { input }) {
+  async resolve(_: unknown, { input }, { accessors }: EZContext) {
     const { queueId, ruleId, alertId, isRead } = input;
-    const manager = getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId);
     const ruleManager = manager.ruleManager;
     const alert = await ruleManager.markAlertAsRead(ruleId, alertId, isRead);
     return { alert };

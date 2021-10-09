@@ -1,5 +1,5 @@
 import { FieldConfig } from '../index';
-import { getSnapshotPercentileDistribution } from '@alpen/core';
+import { getSnapshotPercentileDistribution } from '@alpen/core/stats';
 import { aggregateStats } from './utils';
 import {
   PercentileDistributionDefaultPercentiles,

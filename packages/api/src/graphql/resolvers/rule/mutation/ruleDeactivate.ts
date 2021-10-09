@@ -1,6 +1,7 @@
+import { getResolverFields } from '@alpen/core';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager, getResolverFields } from '../../../helpers';
 
 export const ruleDeactivate: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -22,8 +23,8 @@ export const ruleDeactivate: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_: unknown, { queueId, id }, info) {
-    const manager = getQueueManager(queueId);
+  async resolve(_: unknown, { queueId, id }, { accessors }: EZContext, info) {
+    const manager = accessors.getQueueManager(queueId);
     const fields = getResolverFields(info);
     const changed = await manager.ruleManager.setRuleStatus(id, false);
     const result: Record<string, any> = {};

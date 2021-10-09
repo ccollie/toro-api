@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleTC, RuleUpdateInputTC } from '../../index';
-import { getQueueManager } from '../../../helpers';
 import { RuleUpdateInput } from '../../../typings';
 import { convertCondition, translateSeverity } from './utils';
 
@@ -10,9 +10,13 @@ export const ruleUpdate: FieldConfig = {
   args: {
     input: RuleUpdateInputTC.NonNull,
   },
-  async resolve(_, { input }: { input: RuleUpdateInput }): Promise<any> {
+  async resolve(
+    _,
+    { input }: { input: RuleUpdateInput },
+    { accessors }: EZContext,
+  ): Promise<any> {
     const { queueId, id } = input;
-    const manager = getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId);
     const rule = await manager.getRule(id);
     if (!rule) {
       throw boom.notFound(

@@ -3,12 +3,14 @@ import pMap from 'p-map';
 import ms from 'ms';
 import boom from '@hapi/boom';
 import prexit from 'prexit';
-import { isString, isNil } from 'lodash';
+import { isNil, isString } from 'lodash';
 import { Queue } from 'bullmq';
-import { QueueManager, QueueListener } from '../queues';
+import { QueueManager } from '../queues/queue-manager';
+import { QueueListener } from '../queues/queue-listener';
+import { HostManager } from '../hosts/host-manager';
+import { getHosts, HostConfig } from '../hosts/host-config';
 import { logger } from '../logger';
-import config from '../config';
-import { getHosts, HostConfig, HostManager } from '../hosts';
+import { config } from '../config';
 import { AppInfo } from '../types';
 import { registerHelpers } from '../lib/hbs';
 import { parseDuration } from '@alpen/shared';
@@ -48,16 +50,10 @@ export class Supervisor {
     });
   }
 
-  async destroy(): Promise<void> {
-    if (this.sweepTimer) {
-      clearInterval(this.sweepTimer);
-      this.sweepTimer = null;
-    }
-    const dtors = Array.from(hosts.values()).map((x) => () => x.destroy());
-    await pSettle(dtors);
-    _isInit = false;
-    this.initialized = null;
-    Supervisor.instance = null;
+  get hosts(): HostManager[] {
+    return Array.from(hosts.values()).sort((a, b) => {
+      return a.name === b.name ? 0 : a.name > b.name ? 1 : -1;
+    });
   }
 
   public static getInstance(): Supervisor {
@@ -68,12 +64,8 @@ export class Supervisor {
     return Supervisor.instance;
   }
 
-  private initSweepTimer(): void {
-    this.sweepInterval = parseDuration(
-      process.env.SWEEP_INTERVAL,
-      DEFAULT_SWEEP_INTERVAL,
-    );
-    this.sweepTimer = setInterval(() => Supervisor.sweep(), this.sweepInterval);
+  static getAppInfo(): AppInfo {
+    return config.get('appInfo');
   }
 
   /**
@@ -86,24 +78,16 @@ export class Supervisor {
     });
   }
 
-  private async init(): Promise<void> {
-    const hostConfigs = getHosts();
-
-    hostConfigs.forEach((host) => {
-      const manager = new HostManager(host);
-      hosts.set(host.name, manager);
-    });
-
-    await pMap(hosts.values(), (host) => host.waitUntilReady(), {
-      concurrency: 4,
-    });
-
-    await pMap(hosts.values(), (host) => host.listen(), {
-      concurrency: 4,
-    });
-
-    this.initSweepTimer();
-    _isInit = true;
+  async destroy(): Promise<void> {
+    if (this.sweepTimer) {
+      clearInterval(this.sweepTimer);
+      this.sweepTimer = null;
+    }
+    const dtors = Array.from(hosts.values()).map((x) => () => x.destroy());
+    await pSettle(dtors);
+    _isInit = false;
+    this.initialized = null;
+    Supervisor.instance = null;
   }
 
   async registerHost(config: HostConfig): Promise<HostManager> {
@@ -300,19 +284,37 @@ export class Supervisor {
     return count;
   }
 
-  static getAppInfo(): AppInfo {
-    return config.get('appInfo');
-  }
-
-  get hosts(): HostManager[] {
-    return Array.from(hosts.values()).sort((a, b) => {
-      return a.name === b.name ? 0 : a.name > b.name ? 1 : -1;
-    });
-  }
-
   async waitUntilReady(): Promise<Supervisor> {
     await this.initialized;
     return this;
+  }
+
+  private initSweepTimer(): void {
+    this.sweepInterval = parseDuration(
+      process.env.SWEEP_INTERVAL,
+      DEFAULT_SWEEP_INTERVAL,
+    );
+    this.sweepTimer = setInterval(() => Supervisor.sweep(), this.sweepInterval);
+  }
+
+  private async init(): Promise<void> {
+    const hostConfigs = getHosts();
+
+    hostConfigs.forEach((host) => {
+      const manager = new HostManager(host);
+      hosts.set(host.name, manager);
+    });
+
+    await pMap(hosts.values(), (host) => host.waitUntilReady(), {
+      concurrency: 4,
+    });
+
+    await pMap(hosts.values(), (host) => host.listen(), {
+      concurrency: 4,
+    });
+
+    this.initSweepTimer();
+    _isInit = true;
   }
 }
 

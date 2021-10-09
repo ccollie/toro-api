@@ -41,9 +41,10 @@
   "scripts": {
     "dev": "bob-ts-watch -i src",
     "prepack": "yarn run build",
-    "build": "yarn run clean && yarn run compile",
+    "build": "yarn run clean && yarn run typecheck && yarn run compile",
     "clean": "rm -rf ./dist",
     "compile": "bob-ts -i src -f interop",
+    "typecheck": "tsc --noEmit",
     "gen-sdl": "ts-node ./scripts/gen-sdl.ts",
     "gen-types": "yarn run gen-sdl && npx graphql-codegen --config ../api/gql-codegen.yml"
   },

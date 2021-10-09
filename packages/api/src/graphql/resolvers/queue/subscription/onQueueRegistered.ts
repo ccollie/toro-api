@@ -1,4 +1,5 @@
-import { QUEUE_REGISTERED_PREFIX, getHostById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
+import { QUEUE_REGISTERED_PREFIX } from '../../../helpers';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
@@ -18,8 +19,8 @@ export const onQueueRegistered: FieldConfig = {
       description: 'The host to monitor',
     },
   },
-  subscribe: (_, { hostId }, { pubsub }) => {
-    const host = getHostById(hostId);
+  subscribe: (_, { hostId }, { pubsub, accessors }: EZContext) => {
+    const host = accessors.getHostById(hostId);
     const channel = `${QUEUE_REGISTERED_PREFIX}${host.id}`;
     return pubsub.asyncIterator(channel);
   },

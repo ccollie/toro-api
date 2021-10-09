@@ -1,11 +1,11 @@
-import boom from '@hapi/boom';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { SummaryStatisticsTC } from '../../stats/types';
 import { BaseMetric } from '@alpen/core';
 import { MetricDataInput, SummaryStatistics } from '../../../typings';
-import { getMetricData } from '../../../loaders/metric-data';
 import { MetricDataInputTC } from './Metric.data';
 import { calcSummaryStats } from '../../stats/summary';
+import { getMetricData } from './getData';
 
 export const metricSummaryStatsFC: FieldConfig = {
   type: SummaryStatisticsTC.NonNull,
@@ -17,18 +17,15 @@ export const metricSummaryStatsFC: FieldConfig = {
   async resolve(
     metric: BaseMetric,
     { input }: { input: MetricDataInput },
-    { loaders },
+    context: EZContext,
   ): Promise<SummaryStatistics> {
-    const { start, end } = input;
-    let _start, _end;
-    if (start && end) {
-      _start = start;
-      _end = end;
-    } else {
-      throw boom.badRequest('Start and end must be specified');
-    }
+    const { start, end, outlierFilter } = input;
 
-    const data = await getMetricData(loaders, metric, _start, _end);
+    const data = await getMetricData(context, metric, {
+      from: start,
+      to: end,
+      outlierFilter,
+    });
     return calcSummaryStats(data.map((x) => x.value));
   },
 };

@@ -6,7 +6,7 @@ import {
 } from '../../stats/types';
 import { BaseMetric, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
 import { MetricDataOutliersInput } from '../../../typings';
-import { getData } from './getData';
+import { getMetricData } from './getData';
 
 export const MetricDataOutliersInputTC = schemaComposer.createInputTC({
   name: 'MetricDataOutliersInput',
@@ -43,13 +43,17 @@ export const metricDataOutliersFC: FieldConfig = {
   ): Promise<TimeseriesDataPoint[]> {
     const { start, end, threshold, method } = input;
 
-    const filterOpts = method
+    const outlierFilter = method
       ? {
           method,
           threshold,
         }
       : null;
 
-    return getData(loaders, metric, start, end, filterOpts);
+    return getMetricData(loaders, metric, {
+      from: start,
+      to: end,
+      outlierFilter,
+    });
   },
 };

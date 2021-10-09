@@ -15,11 +15,44 @@
   },
   "homepage": "https://github.com/ccollie/toro-api#readme",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
+    },
+    "./hosts": {
+      "require": "./dist/hosts/*.js",
+      "import": "./dist/hosts/*.mjs"
+    },
+    "./lib": {
+      "require": "./dist/lib/*.js",
+      "import": "./dist/lib/*.mjs"
+    },
+    "./loaders": {
+      "require": "./dist/loaders/*.js",
+      "import": "./dist/loaders/*.mjs"
+    },
+    "./notifications": {
+      "require": "./dist/notifications/*.js",
+      "import": "./dist/notifications/*.mjs"
+    },
+    "./metrics": {
+      "require": "./dist/metrics/*.js",
+      "import": "./dist/metrics/*.mjs"
+    },
+    "./queues": {
+      "require": "./dist/queues/*.js",
+      "import": "./dist/queues/*.mjs"
+    },
+    "./rules": {
+      "require": "./dist/rules/*.js",
+      "import": "./dist/rules/*.mjs"
+    },
+    "./stats": {
+      "require": "./dist/stats/*.js",
+      "import": "./dist/stats/*.mjs"
     },
     "./*": {
       "require": "./dist/*.js",
@@ -42,7 +75,7 @@
   },
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "build": "yarn run compile && yarn run copyAssets",
+    "build": "yarn run clean && yarn run compile && yarn run copyAssets",
     "compile": "bob-ts -i src -f interop",
     "dev": "bob-ts-watch -i src -f interop",
     "prepack": "bob-ts -i src -f interop",
@@ -54,6 +87,7 @@
     "test": "ts-jest",
     "test:coverage": "yarn run clean && jest --coverage",
     "clean": "rm -rf ./dist",
+    "typecheck": "tsc",
     "prettier": "prettier --config package.json src/**/*.ts"
   },
   "devDependencies": {
@@ -81,14 +115,14 @@
     "@hapi/boom": "^9.1.4",
     "@stoplight/better-ajv-errors": "^0.2.0",
     "ajv": "^8.6.3",
-    "bullmq": "^1.48.3",
-    "core-js": "^3.18.1",
+    "bullmq": "^1.49.0",
+    "core-js": "^3.18.2",
     "cronstrue": "^1.117.0",
     "date-fns": "^2.25.0",
     "debug": "^4.3.2",
     "denque": "^2.0.1",
     "dotenv": "^10.0.0",
-    "emittery": "^0.9.2",
+    "emittery": "^0.10.0",
     "fnv-plus": "^1.3.1",
     "glob": "^7.2.0",
     "got": "^11.8.2",

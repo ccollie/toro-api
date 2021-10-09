@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobTC } from '../../index';
-import { getJobById } from '../../../helpers';
 import { JobLocatorInput } from './jobLocatorInput';
 
 export const jobDiscard: FieldConfig = {
@@ -15,9 +15,9 @@ export const jobDiscard: FieldConfig = {
   args: {
     input: JobLocatorInput.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId } = input;
-    const job = await getJobById(queueId, jobId);
+    const job = await accessors.getJobById(queueId, jobId);
     await job.discard();
 
     return {

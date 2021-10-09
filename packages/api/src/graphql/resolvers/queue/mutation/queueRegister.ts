@@ -1,9 +1,10 @@
 import { Queue } from 'bullmq';
 import boom from '@hapi/boom';
 import { HostManager, QueueConfig } from '@alpen/core';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { QUEUE_REGISTERED_PREFIX, getHostById } from '../../../helpers';
+import { QUEUE_REGISTERED_PREFIX } from '../../../helpers';
 import { RegisterQueueInput } from '../../../typings';
 
 async function queueExists(
@@ -61,7 +62,7 @@ export const queueRegister: FieldConfig = {
   async resolve(
     _: unknown,
     { input }: { input: RegisterQueueInput },
-    { publish },
+    { publish, accessors }: EZContext,
   ): Promise<Queue> {
     const {
       hostId,
@@ -71,7 +72,7 @@ export const queueRegister: FieldConfig = {
       trackMetrics = false,
     } = input;
 
-    const host = getHostById(hostId);
+    const host = accessors.getHostById(hostId);
 
     // see if we're managing it already
     const queue = host.getQueue(prefix, name);

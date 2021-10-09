@@ -56,5 +56,3 @@ export class CounterWindow extends TimeWindow {
     return compositeAmount * (1000 / compositeDuration);
   }
 }
-
-export default CounterWindow;

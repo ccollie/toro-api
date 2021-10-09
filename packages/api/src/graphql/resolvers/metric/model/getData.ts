@@ -1,37 +1,40 @@
-import boom from '@hapi/boom';
-import { BaseMetric, OutlierMethod } from '@alpen/core';
-import { TimeseriesDataPoint } from '@alpen/core';
-import { OutlierDetectionMethod } from '../../../typings';
 import {
-  getFilteredMetricData,
-  getMetricData,
-} from '../../../loaders/metric-data';
-import { DataLoaderRegistry } from '../../../loaders';
+  BaseMetric,
+  filterOutlierObjects,
+  OutlierMethod,
+  TimeseriesDataPoint,
+} from '@alpen/core';
+import { DateLike } from '@alpen/shared/dist';
+import boom from '@hapi/boom';
+import { EZContext } from 'graphql-ez';
+import {
+  Maybe,
+  OutlierDetectionMethod,
+  OutlierFilterInput,
+} from '../../../typings';
 
-export async function getData(
-  loaders: DataLoaderRegistry,
+export interface GetDataOptions {
+  from?: DateLike;
+  to?: DateLike;
+  outlierFilter?: Maybe<OutlierFilterInput>;
+}
+
+export async function getMetricData(
+  context: EZContext,
   metric: BaseMetric,
-  start: number,
-  end: number,
-  filter?: {
-    method: OutlierDetectionMethod;
-    threshold?: number;
-  },
+  options: GetDataOptions,
 ): Promise<TimeseriesDataPoint[]> {
+  const { from: start, to: end, outlierFilter } = options;
   if (!(start && end)) {
     throw boom.badRequest('Either start/end or range must be specified');
   }
-  if (filter) {
-    const method = (filter?.method ??
+  const data = await context.loaders.metricData.load({ metric, start, end });
+  if (outlierFilter) {
+    const method = (outlierFilter?.method ??
       OutlierDetectionMethod.Sigma) as unknown as OutlierMethod;
-    const threshold = filter?.threshold;
-
-    const _filter = {
-      method,
-      threshold,
-    };
-    return getFilteredMetricData(loaders, { metric, start, end }, _filter);
+    const threshold = outlierFilter?.threshold;
+    return filterOutlierObjects(method, data, (x) => x.value, { threshold });
   }
 
-  return getMetricData(loaders, metric, start, end);
+  return data;
 }

@@ -3,7 +3,6 @@ import { get } from 'lodash';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
 import { JobCountStates, JobStatusEnum } from '@alpen/core';
-import { getJobCounts } from './loaders';
 import { EZContext } from 'graphql-ez';
 
 export const JobCountsTC = schemaComposer.createObjectTC({
@@ -35,6 +34,10 @@ export const jobCounts: FieldConfig = {
       const state = node.name.value;
       if (state !== '__typename') states.push(state as JobCountStates);
     });
-    return getJobCounts(context, queue, ...states);
+    const key = {
+      queue,
+      types: states,
+    };
+    return context.loaders.jobCounts.load(key);
   },
 };

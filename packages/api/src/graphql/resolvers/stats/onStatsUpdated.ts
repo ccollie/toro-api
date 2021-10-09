@@ -1,9 +1,6 @@
-import {
-  createSubscriptionResolver,
-  getHostById,
-  getStatsListener,
-  normalizeGranularity,
-} from '../../helpers';
+import { EZContext } from 'graphql-ez';
+import { normalizeGranularity } from '../stats/utils';
+import { createSubscriptionResolver } from '../../helpers';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { GraphQLFieldResolver } from 'graphql';
@@ -32,19 +29,24 @@ function getStatsUpdatedResolver(
     return parts.join(':');
   }
 
-  function onSubscribe(_, { filter }): AsyncIterator<StatisticalSnapshot> {
+  // eslint-disable-next-line max-len
+  function onSubscribe(
+    _,
+    { filter },
+    { accessors }: EZContext,
+  ): AsyncIterator<StatisticalSnapshot> {
     const { id, jobName, granularity, metric } = filter;
     const unit = normalizeGranularity(granularity);
 
     let listener: StatsListener;
 
     if (isHost) {
-      const hostManager = getHostById(id);
+      const hostManager = accessors.getHostById(id);
       // any queue will do
       const queueId = hostManager.queueManagers?.[0].id;
-      listener = getStatsListener(queueId);
+      listener = accessors.getStatsListener(queueId);
     } else {
-      listener = getStatsListener(id);
+      listener = accessors.getStatsListener(id);
     }
     return listener.onStatsUpdate(
       isHost,

@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
-import { getHostById } from '../../helpers';
 import { Channel } from '@alpen/core';
 import { NotificationChannelTC } from '../host/scalars';
 
@@ -9,8 +9,12 @@ export const notificationChannel: FieldConfig = {
     hostId: 'ID!',
     id: 'ID!',
   },
-  async resolve(_: unknown, { hostId, id }): Promise<Channel> {
-    const host = getHostById(hostId);
+  async resolve(
+    _: unknown,
+    { hostId, id },
+    { accessors }: EZContext,
+  ): Promise<Channel> {
+    const host = accessors.getHostById(hostId);
     return await host.notifications.getChannel(id);
   },
 };

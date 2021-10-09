@@ -1,11 +1,11 @@
 import { Queue } from 'bullmq';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
-import { getQueueManager } from '../../../helpers';
 
 export const queueId: FieldConfig = {
   type: 'String!',
-  resolve: (queue: Queue) => {
-    const manager = getQueueManager(queue);
+  resolve: (queue: Queue, _: unknown, { accessors }: EZContext) => {
+    const manager = accessors.getQueueManager(queue);
     return manager.id;
   },
 };

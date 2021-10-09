@@ -1,7 +1,6 @@
 import { JobData, needsJob, subscribeToJob } from './subscribeToJob';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueById } from '../../../helpers';
 import { Job } from 'bullmq';
 
 const JobUpdatedPayloadTC = schemaComposer.createObjectTC({
@@ -33,7 +32,7 @@ export const onJobUpdated: FieldConfig = {
   },
   resolve: async (parent: JobData, { queueId, jobId }, ctx, info) => {
     const { event, ts, ...rest } = parent;
-    const queue = await getQueueById(queueId);
+    const queue = ctx.accessors.getQueueById(queueId);
     const result = {
       queue,
       event,

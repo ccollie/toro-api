@@ -62,6 +62,3 @@ export const MetricCreateTC = schemaComposer
   })
   .makeOptional('sampleInterval')
   .makeRequired(['name', 'queueId']);
-
-export * from './MetricCategory';
-export * from './MetricValueType';

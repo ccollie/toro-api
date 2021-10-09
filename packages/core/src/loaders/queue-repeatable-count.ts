@@ -1,10 +1,8 @@
 import { Queue } from 'bullmq';
-import { aggregateQueuesByHost, mapQueuesToIndex, queueCacheFn } from './utils';
 import { Pipeline } from 'ioredis';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { RegisterFn } from './types';
-import { DataLoaderRegistry } from './registry';
+import { aggregateQueuesByClient, mapQueuesToIndex } from './utils';
 
 function enqueueFetch(pipeline: Pipeline, queue: Queue) {
   const key = queue.toKey('repeat');
@@ -26,12 +24,12 @@ async function getRepeatableCounts(queues: Queue[]): Promise<number[]> {
   if (queues.length === 1) {
     return getSingle(queues[0]);
   }
-  const hostQueues = aggregateQueuesByHost(queues);
+  const hostQueues = aggregateQueuesByClient(queues);
   const queueIndexMap = mapQueuesToIndex(queues);
   const result = new Array<number>(queues.length).fill(0);
 
-  await pMap(hostQueues, async ([host, queues]) => {
-    const pipeline = host.client.pipeline();
+  await pMap(hostQueues, async ([client, queues]) => {
+    const pipeline = client.pipeline();
     queues.forEach((queue) => void enqueueFetch(pipeline, queue));
     const res = await pipeline.exec();
 
@@ -43,21 +41,9 @@ async function getRepeatableCounts(queues: Queue[]): Promise<number[]> {
   });
   return result;
 }
-const LOADER_NAME = 'queueRepeatableCount';
 
-export default function registerLoaders(register: RegisterFn): void {
-  const factory = () =>
-    new DataLoader(getRepeatableCounts, {
-      cacheKeyFn: queueCacheFn,
-    });
+export const queueRepeatableCount = new DataLoader(getRepeatableCounts);
 
-  register(LOADER_NAME, factory);
-}
-
-export function getQueueRepeatableCount(
-  loaders: DataLoaderRegistry,
-  queue: Queue,
-): Promise<number> {
-  const loader = loaders.getLoader<Queue, number, string>(LOADER_NAME);
-  return loader.load(queue);
+export function getQueueRepeatableCount(queue: Queue): Promise<number> {
+  return queueRepeatableCount.load(queue);
 }

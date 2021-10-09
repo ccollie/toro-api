@@ -9,8 +9,15 @@ export const statsAggregate: ObjectTypeComposerFieldConfigDefinition<any, any> =
     args: {
       input: StatsQueryInputTC.NonNull,
     },
-    async resolve(_, { input }) {
+    async resolve(_, { input }, context) {
       const { jobName, metric, granularity, range } = input;
-      return await aggregateStats(_, jobName, range, metric, granularity);
+      return await aggregateStats(
+        context,
+        _,
+        jobName,
+        range,
+        metric,
+        granularity,
+      );
     },
   };

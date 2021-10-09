@@ -1,4 +1,4 @@
-import { getHostById } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
@@ -13,8 +13,8 @@ export const notificationChannelEnable: FieldConfig = {
     hostId: 'ID!',
     channelId: 'ID!',
   },
-  async resolve(_: unknown, { channelId, hostId }) {
-    const host = getHostById(hostId);
+  async resolve(_: unknown, { channelId, hostId }, { accessors }: EZContext) {
+    const host = accessors.getHostById(hostId);
     const updated = await host.notifications.enableChannel(channelId);
 
     return {

@@ -1,13 +1,13 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { NotificationChannelTC } from '../../host/scalars';
-import { getQueueManager } from '../../../helpers';
 import { Rule } from '@alpen/core';
 
 export const ruleChannels: FieldConfig = {
   type: NotificationChannelTC.NonNull.List.NonNull,
   description: 'Rule notification channels',
-  async resolve(rule: Rule): Promise<any[]> {
-    const queueManager = getQueueManager(rule.queueId);
+  async resolve(rule: Rule, _, { accessors }: EZContext): Promise<any[]> {
+    const queueManager = accessors.getQueueManager(rule.queueId);
     if (rule.channels?.length == 0) {
       return [];
     }

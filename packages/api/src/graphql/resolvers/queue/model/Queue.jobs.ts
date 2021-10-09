@@ -1,10 +1,10 @@
 import { Queue } from 'bullmq';
+import { EZContext } from 'graphql-ez';
 import {
   SortOrderEnum,
   OrderEnumType,
   JobStatusEnumType,
 } from '../../../scalars';
-import { getQueueManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC } from '../../job/model/Job';
@@ -39,6 +39,7 @@ export const queueJobs: FieldConfig = {
   async resolve(
     queue: Queue,
     { input }: { input: QueueJobsInput },
+    { accessors }: EZContext,
   ): Promise<any> {
     const {
       offset = 0,
@@ -47,7 +48,7 @@ export const queueJobs: FieldConfig = {
       sortOrder = SortOrderEnum.DESC,
     } = input || {};
     const asc = sortOrder.toLowerCase() === 'asc';
-    const manager = getQueueManager(queue);
+    const manager = accessors.getQueueManager(queue);
     // todo: check out requested fields. If "states" is requested
     // use the optimized method to get states in bulk
     const state = status as JobStatus;

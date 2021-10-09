@@ -1,6 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { getQueueManager, getQueueRuleManager } from '../../../helpers';
 
 export const ruleAlertsClear: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -23,10 +23,10 @@ export const ruleAlertsClear: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_: unknown, { input }) {
+  async resolve(_: unknown, { input }, { accessors }: EZContext) {
     const { queueId, ruleId } = input;
-    const rules = getQueueRuleManager(queueId);
-    const queueManager = getQueueManager(queueId);
+    const rules = accessors.getQueueRuleManager(queueId);
+    const queueManager = accessors.getQueueManager(queueId);
     const items = await rules.clearAlerts(ruleId);
     // todo: validate rule
     const rule = await queueManager.getRule(ruleId);

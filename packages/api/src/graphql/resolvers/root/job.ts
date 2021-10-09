@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobTC } from '../index';
-import { getQueueById } from '../../helpers';
 import { Job } from 'bullmq';
 import boom from '@hapi/boom';
 import { fieldsList } from 'graphql-fields-list';
@@ -11,8 +11,13 @@ export const job: FieldConfig = {
     queueId: 'ID!',
     id: 'ID!',
   },
-  async resolve(_, { queueId, id }, ctx, info): Promise<Job> {
-    const queue = getQueueById(queueId);
+  async resolve(
+    _,
+    { queueId, id },
+    { accessors }: EZContext,
+    info,
+  ): Promise<Job> {
+    const queue = accessors.getQueueById(queueId);
 
     const fields = fieldsList(info);
     const needState = fields.includes('state');

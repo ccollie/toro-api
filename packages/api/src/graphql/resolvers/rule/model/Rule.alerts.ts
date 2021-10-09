@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { OrderEnumType } from '../../../scalars';
-import { getQueueRuleManager } from '../../../helpers';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { RuleAlert } from '@alpen/core';
@@ -37,13 +37,14 @@ export const ruleAlertsFC: FieldConfig = {
   async resolve(
     parent: Rule,
     { input }: { input: RuleAlertsInput },
+    { accessors }: EZContext,
   ): Promise<RuleAlert[]> {
     const { start, end, sortOrder } = {
       ...(input ?? {}),
       ...DefaultInput,
     } as RuleAlertsInput;
     const asc = sortOrder === SortOrderEnum.Asc;
-    const manager = getQueueRuleManager(parent.queueId);
+    const manager = accessors.getQueueRuleManager(parent.queueId);
     return manager.getRuleAlertsByIndex(parent, start, end, asc);
   },
 };

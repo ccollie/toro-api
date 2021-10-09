@@ -1,4 +1,4 @@
-import { getQueueById } from '../../helpers';
+import { EZContext } from 'graphql-ez';
 import { getJobSchema, validateBySchema } from '@alpen/core';
 import { JobsOptions } from 'bullmq';
 import { FieldConfig, JobOptionsInputTC } from '../index';
@@ -29,9 +29,9 @@ export const jobDataValidate: FieldConfig = {
       },
     }).NonNull,
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, jobName, data = {}, opts = {} } = input;
-    const queue = getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId);
 
     const schema = await getJobSchema(queue, jobName);
 

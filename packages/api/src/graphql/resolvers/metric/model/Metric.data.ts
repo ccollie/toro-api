@@ -1,10 +1,10 @@
-import { FieldConfig } from '../../utils';
+import { BaseMetric, TimeseriesDataPoint } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
-import { OutlierFilterInputTC, TimeseriesDataPointTC } from '../../stats/types';
-import { BaseMetric } from '@alpen/core';
-import { TimeseriesDataPoint } from '@alpen/core';
+import { EZContext } from 'graphql-ez';
 import { MetricDataInput } from '../../../typings';
-import { getData } from './getData';
+import { OutlierFilterInputTC, TimeseriesDataPointTC } from '../../stats/types';
+import { FieldConfig } from '../../utils';
+import { getMetricData } from './getData';
 
 export const MetricDataInputTC = schemaComposer.createInputTC({
   name: 'MetricDataInput',
@@ -27,9 +27,13 @@ export const metricDataFC: FieldConfig = {
   async resolve(
     metric: BaseMetric,
     { input }: { input: MetricDataInput },
-    { loaders },
+    context: EZContext,
   ): Promise<TimeseriesDataPoint[]> {
     const { start, end, outlierFilter } = input;
-    return getData(loaders, metric, start, end, outlierFilter);
+    return getMetricData(context, metric, {
+      from: start,
+      to: end,
+      outlierFilter,
+    });
   },
 };

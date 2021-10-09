@@ -1,5 +1,5 @@
 'use strict';
-import { getQueueManager } from '../../../helpers';
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { MetricCreateTC } from '../scalars';
 import { SerializedMetric } from '@alpen/core';
@@ -11,9 +11,9 @@ export const metricCreate: FieldConfig = {
   args: {
     input: MetricCreateTC.NonNull,
   },
-  resolve: async (_, { input }) => {
+  resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, ...rest } = input;
-    const manager = getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId);
     const data = rest as SerializedMetric;
     const metric = await manager.metricManager.createMetric(data);
     const result = metric.toJSON();
