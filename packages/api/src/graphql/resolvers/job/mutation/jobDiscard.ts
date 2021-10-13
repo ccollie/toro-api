@@ -17,7 +17,7 @@ export const jobDiscard: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId } = input;
-    const job = await accessors.getJobById(queueId, jobId);
+    const job = await accessors.getJobById(queueId, jobId, true);
     await job.discard();
 
     return {

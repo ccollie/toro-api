@@ -17,7 +17,7 @@ export const jobMoveToCompleted: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId } = input;
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
     const job = await queue.getJob(jobId);
     if (job) {
       await job.moveToCompleted({}, queue.token);

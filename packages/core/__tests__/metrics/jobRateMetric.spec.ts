@@ -1,16 +1,18 @@
 /* global test, expect */
-import { advanceBy, clear } from 'jest-date-mock';
+import {advanceBy, clear} from 'jest-date-mock';
+import {random} from 'lodash';
 import pMap from 'p-map';
-import { random } from 'lodash';
 import {
-  JobRateMetric,
-  RateMetricOptions,
   DefaultRateMetricOptions,
   Events,
-} from '../../src/metrics/index';
-import { MetricTestHelper } from './metricTestHelper';
-import { getRandomNumberArray } from './helpers';
-import { MetricCategory, MetricTypes, MetricValueType } from '../../src/types';
+  JobRateMetric,
+  MetricCategory,
+  MetricTypes,
+  MetricValueType,
+  RateMetricOptions,
+} from '../../src/metrics';
+import {getRandomNumberArray} from './helpers';
+import {MetricTestHelper} from './metricTestHelper';
 
 const EVENT_NAME = Events.FINISHED;
 

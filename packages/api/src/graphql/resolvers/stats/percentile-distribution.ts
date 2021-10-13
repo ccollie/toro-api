@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
 import { getSnapshotPercentileDistribution } from '@alpen/core/stats';
 import { aggregateStats } from './utils';
@@ -13,7 +14,7 @@ export const percentileDistribution: FieldConfig = {
   args: {
     input: PercentileDistributionInput.NonNull,
   },
-  async resolve(_, { input }) {
+  async resolve(_, { input }, context: EZContext) {
     const {
       jobName,
       metric,
@@ -23,6 +24,7 @@ export const percentileDistribution: FieldConfig = {
     } = input;
 
     const snapshot = await aggregateStats(
+      context,
       _,
       jobName,
       range,

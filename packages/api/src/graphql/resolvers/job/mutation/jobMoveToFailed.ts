@@ -23,7 +23,7 @@ export const jobMoveToFailed: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId, reason = 'Failed by user' } = input;
-    const job = await accessors.getJobById(queueId, jobId);
+    const job = await accessors.getJobById(queueId, jobId, true);
 
     const err = new Error(reason);
     const queue = accessors.getQueueById(queueId);

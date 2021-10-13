@@ -2,9 +2,8 @@ import { EZContext } from 'graphql-ez';
 import { OrderEnumType } from '../../../scalars';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
-import { RuleAlert } from '@alpen/core';
+import { Rule, RuleAlert } from '@alpen/core/rules';
 import { RuleAlertTC } from './RuleAlert';
-import { Rule } from '@alpen/core';
 import { RuleAlertsInput, SortOrderEnum } from '../../../typings';
 
 const DefaultInput: RuleAlertsInput = {

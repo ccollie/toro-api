@@ -1,7 +1,7 @@
-import { get } from 'lodash';
+import { exec, extractError } from './utils';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, graphql } from 'graphql';
 import { GraphQLJSONSchema } from '../../../src/graphql/scalars';
-import { JobOptionsSchema } from '@alpen/core';
+import { JobOptionsSchema } from '@alpen/core/queues';
 
 const INVALID_SCHEMA = {
   type: 'object',
@@ -36,11 +36,6 @@ function createSchema(type) {
   });
 }
 
-function extractError(err): any {
-  const path = 'originalError.output.payload';
-  return get(err, path);
-}
-
 describe('GraphQLJSONSchema', () => {
   let schema;
 
@@ -49,8 +44,8 @@ describe('GraphQLJSONSchema', () => {
   });
 
   describe('serialize', () => {
-    it('should support serialization', () =>
-      graphql(
+    it('should support serialization', async () => {
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query {
@@ -58,13 +53,13 @@ describe('GraphQLJSONSchema', () => {
           }
         `,
         FIXTURE,
-      ).then(({ data, errors }) => {
-        expect(data.rootValue).toEqual(FIXTURE);
-        expect(errors).toBeUndefined();
-      }));
+      );
+      expect(data.rootValue).toEqual(FIXTURE);
+      expect(errors).toBeUndefined();
+    });
 
     it('should reject string value', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           query {
@@ -72,7 +67,7 @@ describe('GraphQLJSONSchema', () => {
           }
         `,
         'foo',
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data.rootValue).toBeNull();
         expect(errors).toMatchInlineSnapshot(`
           Array [
@@ -82,7 +77,7 @@ describe('GraphQLJSONSchema', () => {
       }));
 
     it('should reject array value', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           query {
@@ -90,7 +85,7 @@ describe('GraphQLJSONSchema', () => {
           }
         `,
         [],
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data.rootValue).toBeNull();
         expect(errors).toMatchInlineSnapshot(`
           Array [
@@ -102,7 +97,7 @@ describe('GraphQLJSONSchema', () => {
 
   describe('parseValue', () => {
     it('should support parsing a valid schema', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           query ($arg: JSONSchema!) {
@@ -114,13 +109,13 @@ describe('GraphQLJSONSchema', () => {
         {
           arg: FIXTURE,
         },
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data.value).toEqual(FIXTURE);
         expect(errors).toBeUndefined();
       }));
 
     it('should fail on invalid schema', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           query ($arg: JSONSchema!) {
@@ -132,7 +127,7 @@ describe('GraphQLJSONSchema', () => {
         {
           arg: INVALID_SCHEMA,
         },
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data).toBeUndefined();
         expect(errors).not.toBeUndefined();
         const err = extractError(errors[0]);
@@ -140,7 +135,7 @@ describe('GraphQLJSONSchema', () => {
       }));
 
     it('should reject string value', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           query ($arg: JSONSchema!) {
@@ -152,7 +147,7 @@ describe('GraphQLJSONSchema', () => {
         {
           arg: 'foo',
         },
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data).toBeUndefined();
         expect(errors).toMatchInlineSnapshot(`
           Array [
@@ -162,7 +157,7 @@ describe('GraphQLJSONSchema', () => {
       }));
 
     it('should reject array value', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           query ($arg: JSONSchema!) {
@@ -203,7 +198,7 @@ describe('GraphQLJSONSchema', () => {
             )
           }
         `,
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data.value).toEqual({
           type: 'object',
           properties: {
@@ -217,7 +212,7 @@ describe('GraphQLJSONSchema', () => {
       }));
 
     it('should reject string literal', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           {
@@ -234,14 +229,14 @@ describe('GraphQLJSONSchema', () => {
       }));
 
     it('should reject array literal', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           {
             value(arg: [])
           }
         `,
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data).toBeUndefined();
         expect(errors).toMatchInlineSnapshot(`
           Array [
@@ -251,7 +246,7 @@ describe('GraphQLJSONSchema', () => {
       }));
 
     it('should reject an invalid JSON schema', () =>
-      graphql(
+      exec(
         schema,
         /* GraphQL */ `
           {
@@ -267,7 +262,7 @@ describe('GraphQLJSONSchema', () => {
             )
           }
         `,
-      ).then(({ data, errors }) => {
+      ).then(({ data, errors }: any) => {
         expect(data).toBeUndefined();
         const err = extractError(errors[0]);
         expect(err.message).toBe('Invalid JSON Schema');

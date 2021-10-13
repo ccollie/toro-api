@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import boom from '@hapi/boom';
-import { HostManager, QueueConfig } from '@alpen/core';
+import { HostManager, QueueConfig } from '@alpen/core/hosts';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';

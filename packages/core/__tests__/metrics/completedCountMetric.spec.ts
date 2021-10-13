@@ -1,13 +1,15 @@
-import { random } from 'lodash';
+import {random} from 'lodash';
 import {
   CompletedCountMetric,
   Events,
+  MetricCategory,
+  MetricTypes,
+  MetricValueType,
   QueueMetricOptions,
 } from '../../src/metrics';
-import { MetricTestHelper } from './metricTestHelper';
-import { MetricCategory, MetricTypes, MetricValueType } from '../../src/types';
-import { createJobEvent } from '../factories';
-import { validateJobNamesFilter } from './helpers';
+import {createJobEvent} from '../factories';
+import {validateJobNamesFilter} from './helpers';
+import {MetricTestHelper} from './metricTestHelper';
 
 describe('CompletedCountMetric', () => {
   let testHelper: MetricTestHelper;

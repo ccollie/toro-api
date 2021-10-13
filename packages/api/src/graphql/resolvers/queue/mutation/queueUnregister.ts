@@ -22,7 +22,7 @@ export const queueUnregister: FieldConfig = {
     { id },
     { supervisor, publish, accessors }: EZContext,
   ) {
-    const manager = accessors.getQueueManager(id);
+    const manager = accessors.getQueueManager(id, true);
     if (!manager) {
       throw boom.notFound(`No queue found with id#${id}`);
     }

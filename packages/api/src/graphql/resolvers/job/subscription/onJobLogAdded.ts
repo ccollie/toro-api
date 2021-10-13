@@ -1,14 +1,14 @@
 import { EZContext } from 'graphql-ez';
-import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig, JobTC } from '../../index';
 import { fieldsList } from 'graphql-fields-list';
 import { schemaComposer } from 'graphql-compose';
 import {
-  debounce,
   getKeyspaceNotifier,
   releaseKeyspaceNotifier,
-} from '@alpen/core';
+} from '@alpen/core/redis';
+import { debounce } from '@alpen/core/lib';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   const DELAY = 250; // todo: read from config (or get from args)
@@ -16,11 +16,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
   let unsub;
   let hostId: string;
 
-  function channelName(
-    _,
-    { queueId, jobId },
-    { accessors }: EZContext,
-  ): string {
+  function channelName(_, { queueId, jobId }): string {
     return `JOB_LOG_ADDED_${queueId}_${jobId}`;
   }
 
@@ -58,7 +54,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     return unsub && unsub();
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName,
     onSubscribe,
     onUnsubscribe,

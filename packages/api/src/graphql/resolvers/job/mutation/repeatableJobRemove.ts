@@ -23,7 +23,7 @@ export const repeatableJobRemove: FieldConfig = {
     }).NonNull,
   },
   resolve: async (_, { id, jobName, repeat }, { accessors }: EZContext) => {
-    const queue = accessors.getQueueById(id);
+    const queue = accessors.getQueueById(id, true);
     await queue.removeRepeatable(jobName, repeat);
     // todo: publish()
     return { queue };

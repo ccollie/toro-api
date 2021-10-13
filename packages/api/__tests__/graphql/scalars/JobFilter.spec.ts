@@ -1,7 +1,8 @@
-import { get } from 'lodash';
+import { exec } from './utils';
 import { graphql, GraphQLInt, GraphQLObjectType, GraphQLSchema } from 'graphql';
+import { get } from 'lodash';
 
-import { GraphQLJobFilterQuery } from '../scalars';
+import { GraphQLJobFilterQuery } from '../../../src/graphql/scalars';
 
 const INVALID_FILTER = { $invalid: [234], '<': 30 };
 
@@ -43,7 +44,7 @@ describe('GraphQLJobFilterQuery', () => {
 
   describe('serialize', () => {
     it('should support serialization', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query {
@@ -58,7 +59,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should parse a valid string filter', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query {
@@ -72,7 +73,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should reject invalid string values', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query {
@@ -90,7 +91,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should reject array values', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query {
@@ -111,7 +112,7 @@ describe('GraphQLJobFilterQuery', () => {
 
   describe('parseValue', () => {
     it('should support parsing a valid filter', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query ($arg: JobFilterQuery!) {
@@ -129,7 +130,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should fail on invalid filter expression', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query ($arg: JobFilterQuery!) {
@@ -149,7 +150,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should reject string value', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query ($arg: JobFilterQuery!) {
@@ -171,7 +172,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should reject array value', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           query ($arg: JobFilterQuery!) {
@@ -214,13 +215,13 @@ describe('GraphQLJobFilterQuery', () => {
             )
           }
         `;
-      const { data, errors } = await graphql(schema, source);
+      const { data, errors } = await exec(schema, source);
       expect(data.value).toEqual(criteria);
       expect(errors).toBeUndefined();
     });
 
     it('should reject an invalid string literal', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           {
@@ -237,7 +238,7 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should reject array literals', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
           {
@@ -254,17 +255,19 @@ describe('GraphQLJobFilterQuery', () => {
     });
 
     it('should reject an invalid filter query', async () => {
-      const { data, errors } = await graphql(
+      const { data, errors } = await exec(
         schema,
         /* GraphQL */ `
-          {
-            value(
-              arg: ${INVALID_FILTER}
-            )
-          }
+              {
+                  value(
+                      arg: ${INVALID_FILTER}
+                  )
+              }
         `,
       );
+
       expect(data).toBeUndefined();
+      expect(Array.isArray(errors)).toBeTruthy();
       expect(errors.length).toBe(1);
     });
   });

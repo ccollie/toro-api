@@ -38,7 +38,8 @@ export * from './metric-manager';
 export * from './sliding-window-counter';
 export * from './factory';
 
-export type { RateMetricOptions, DefaultRateMetricOptions } from './rateMetric';
+export type { RateMetricOptions } from './rateMetric';
+export { DefaultRateMetricOptions } from './rateMetric';
 
 export { createJobNameFilter } from './utils';
 

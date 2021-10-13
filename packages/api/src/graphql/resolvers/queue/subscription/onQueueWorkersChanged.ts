@@ -1,11 +1,12 @@
 import { keyBy } from 'lodash';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
-import { QueueWorker } from '@alpen/core';
+import { QueueWorker } from '@alpen/core/queues';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { QueueWorkerTC } from '../model/Queue.workers';
-import { logger, QueueManager } from '@alpen/core';
+import { logger } from '@alpen/core/logger';
+import { QueueManager } from '@alpen/core/queues';
 
 const POLLING_INTERVAL = 4500; // todo: get from config
 
@@ -81,7 +82,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
     clearInterval(timer);
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName: getChannelName,
     onSubscribe,
     onUnsubscribe,

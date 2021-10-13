@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAlertTC } from '../index';
 import boom from '@hapi/boom';
-import { RuleAlert } from '@alpen/core';
+import { RuleAlert } from '@alpen/core/rules';
 
 export const ruleAlert: FieldConfig = {
   type: RuleAlertTC,

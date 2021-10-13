@@ -1,9 +1,8 @@
-import { FieldConfig } from '../../utils';
-import { schemaComposer } from 'graphql-compose';
-import { processSearch } from '@alpen/core';
+import { JobStatusEnum, processSearch } from '@alpen/core/queues';
 import { Queue } from 'bullmq';
-import { JobStatusEnum } from '@alpen/core';
+import { schemaComposer } from 'graphql-compose';
 import { JobStatusEnumType } from '../../../scalars';
+import { FieldConfig } from '../../utils';
 
 const JobSearchInputTC = schemaComposer.createInputTC({
   name: 'JobSearchInput',

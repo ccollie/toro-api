@@ -1,5 +1,5 @@
 import { createStateSubscription } from './subscribeToJob';
-import { JobStatusEnum } from '@alpen/core';
+import { JobStatusEnum } from '@alpen/core/queues';
 
 export { onJobAdded } from './onJobAdded';
 export { onJobUpdated } from './onJobUpdated';

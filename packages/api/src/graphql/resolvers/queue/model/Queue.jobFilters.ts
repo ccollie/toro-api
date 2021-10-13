@@ -1,5 +1,5 @@
 import { FieldConfig } from '../../utils';
-import { getJobFilters, JobFilter } from '@alpen/core';
+import { getJobFilters, JobFilter } from '@alpen/core/queues';
 import { Queue } from 'bullmq';
 import { JobFilterTC } from '../../job/model/Job.filter';
 

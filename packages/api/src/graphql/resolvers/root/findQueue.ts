@@ -1,5 +1,5 @@
+import { EZContext } from 'graphql-ez';
 import { QueueTC, FieldConfig } from '../index';
-import { Supervisor } from '@alpen/core';
 import { Queue } from 'bullmq';
 
 export const findQueue: FieldConfig = {
@@ -12,7 +12,11 @@ export const findQueue: FieldConfig = {
     prefix: 'String',
     queueName: 'String!',
   },
-  resolve(_, { hostName, prefix, queueName }, { supervisor }): Queue {
-    return (supervisor as Supervisor).getQueue(hostName, prefix, queueName);
+  resolve(
+    _,
+    { hostName, prefix, queueName },
+    { supervisor }: EZContext,
+  ): Queue {
+    return supervisor.getQueue(hostName, prefix, queueName);
   },
 };

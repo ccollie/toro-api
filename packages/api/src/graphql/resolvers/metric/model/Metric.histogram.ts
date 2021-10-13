@@ -4,7 +4,8 @@ import {
   HistogramPayloadTC,
   parseHistogramBinningOptions,
 } from '../../stats';
-import { BaseMetric, BinnedHistogramValues, computeBins } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
+import { BinnedHistogramValues, computeBins } from '@alpen/core/stats';
 import { MetricsHistogramInput } from '../../../typings';
 import { schemaComposer } from 'graphql-compose';
 import { OutlierFilterInputTC } from '../../stats/types';

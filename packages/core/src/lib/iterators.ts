@@ -196,3 +196,36 @@ export function withCancel<T>(
 
   return asyncIterator;
 }
+
+export function withFilter<T = any>(
+    asyncIterator: AsyncIterator<T>,
+    filterFn: (data: T) => boolean | Promise<boolean>,
+): AsyncIterator<T> {
+  const getNextPromise = async () => {
+    const payload = await asyncIterator.next();
+    const filterValue = filterFn(payload.value);
+    const filtered = isPromise(filterValue) ? (await filterValue) : filterValue;
+
+    if (filtered || payload.done === true) {
+      return payload;
+    }
+
+    // Skip the current value and wait for the next one
+    return getNextPromise();
+  };
+
+  return {
+    next() {
+      return getNextPromise();
+    },
+    return() {
+      return asyncIterator.return();
+    },
+    throw(error) {
+      return asyncIterator.throw(error);
+    },
+    [Symbol.asyncIterator]() {
+      return this;
+    },
+  } as Readonly<AsyncIterator<T>>;
+}

@@ -1,4 +1,4 @@
-import { convertToRPN, parse, toInfix } from '../../src/lib/expr/parse';
+import {convertToRPN, parse, toInfix} from '../../src';
 
 describe('Expressions', () => {
   describe('parse', () => {

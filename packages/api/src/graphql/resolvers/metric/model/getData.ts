@@ -1,10 +1,10 @@
+import { BaseMetric } from '@alpen/core/metrics';
 import {
-  BaseMetric,
   filterOutlierObjects,
   OutlierMethod,
   TimeseriesDataPoint,
-} from '@alpen/core';
-import { DateLike } from '@alpen/shared/dist';
+} from '@alpen/core/stats';
+import { DateLike } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
 import {

@@ -64,6 +64,7 @@ export class QueueManager {
   readonly metricManager: MetricManager;
   readonly bus: EventBus;
   readonly clock: Clock;
+  private _isReadOnly = false;
   private readonly _workQueue: PQueue = new PQueue({ concurrency: 6 });
   public readonly statsListener: StatsListener;
   private _uri: string = undefined;
@@ -85,6 +86,7 @@ export class QueueManager {
       this.queueListener,
       this.bus,
     );
+    this._isReadOnly = !!config.isReadonly;
     this.ruleManager = new RuleManager(this);
     this.dispatchMetrics = this.dispatchMetrics.bind(this);
     this.onError = this.onError.bind(this);
@@ -177,6 +179,14 @@ export class QueueManager {
 
   get hasLock(): boolean {
     return this.lock.isOwner;
+  }
+
+  get isReadonly() {
+    return this._isReadOnly;
+  }
+
+  set isReadonly(value) {
+    this._isReadOnly = value;
   }
 
   get rules(): Rule[] {

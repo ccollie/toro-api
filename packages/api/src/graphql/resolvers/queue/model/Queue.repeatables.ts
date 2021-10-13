@@ -4,7 +4,7 @@ import ms from 'ms';
 import cronstrue from 'cronstrue/i18n';
 import { FieldConfig } from '../../utils';
 import { SortOrderEnum, OrderEnumType } from '../../../scalars';
-import { RepeatableJob } from '@alpen/core';
+import { RepeatableJob } from '@alpen/core/queues';
 import { Queue } from 'bullmq';
 
 export const repeatableJob = schemaComposer.createObjectTC({

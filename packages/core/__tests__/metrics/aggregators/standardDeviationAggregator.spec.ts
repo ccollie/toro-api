@@ -1,7 +1,7 @@
 import { LatencyMetric, StandardDeviationAggregator } from '../../../src';
 import random from 'lodash/random';
 import { OnlineNormalEstimator } from '../../../src/stats/online-normal-estimator';
-import { AggregatorTypes } from '../../../src/types';
+import { AggregatorTypes } from '../../../src/metrics';
 import { validateCounts } from './helpers';
 
 describe('StandardDeviationAggregator', () => {

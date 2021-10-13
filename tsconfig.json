@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2019",
     "module": "commonjs",
     "lib": [
       "es2020",
@@ -13,6 +13,8 @@
     "strict": false,
     "alwaysStrict": true,
     "composite": true,
+    "incremental": true,
+    "outDir": "dist",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -22,20 +24,26 @@
     "skipLibCheck": true,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "rootDir": ".",
+    "baseUrl": "./",
+    "paths": {
+      "@alpen/api": ["packages/api/src"],
+      "@alpen/api/*": ["packages/api/src/*"],
+      "@alpen/core": ["packages/core/src/index.ts"],
+      "@alpen/core/*": ["packages/core/src/*/index.ts"],
+      "@alpen/express": ["packages/express/src/index.ts"],
+      "@alpen/fastify": ["packages/fastify/src/index.ts"],
+      "@alpen/hapi": ["packages/hapi/src/index.ts"],
+      "@alpen/koa": ["packages/koa/src/index.ts"],
+      "@alpen/shared/*": ["packages/shared/src/*"],
+      "@alpen/shared": ["packages/shared/src/index.ts"],
+      "@alpen/*": ["packages/*/src/index.ts"],
+      "alpen-testing/*": ["internal/testing/src/*"],
+      "alpen-testing": ["internal/testing/src/index.ts"],
+      "tslib" : ["node_modules/tslib/tslib.d.ts"]
+    }
   },
-  "exclude": ["node_modules"],
-  "files": [],
-  "baseUrl": "./",
-  "paths": {
-    "@alpen/api": ["packages/api/index.ts"],
-    "@alpen/core": ["packages/core/index.ts"],
-    "@alpen/express": ["packages/express/src/index.ts"],
-    "@alpen/fastify": ["packages/fastify/src/index.ts"],
-    "@alpen/hapi": ["packages/hapi/src/index.ts"],
-    "@alpen/koa": ["packages/koa/src/index.ts"],
-    "@alpen/shared": ["packages/shared/src/index.ts"],
-    "@alpen/*": ["packages/*/src"],
-    "tslib" : ["node_modules/tslib/tslib.d.ts"]
-  }
+  "exclude": ["node_modules", "**/dist"],
+  "include": ["packages", "examples", "jest.config.js"],
 }

@@ -75,7 +75,7 @@ export function isNumber(num: string | number): boolean {
   return false;
 }
 
-export function isPromise(obj: any): boolean {
+export function isPromise(obj: any): obj is Promise<any> {
   return !!obj && (isObject(obj) || isFunction(obj)) && isFunction(obj['then']);
 }
 

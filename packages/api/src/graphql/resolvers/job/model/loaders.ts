@@ -1,5 +1,5 @@
 import { Job, Queue } from 'bullmq';
-import { JobStatusEnum } from '@alpen/core';
+import { JobStatusEnum } from '@alpen/core/queues';
 import { EZContext } from 'graphql-ez';
 
 export async function checkState(
@@ -20,7 +20,7 @@ export function getJobById(
   queue: Queue | string,
   id: string,
 ): Promise<Job> {
-  queue =
+  const resolvedQueue =
     typeof queue === 'string' ? context.accessors.getQueueById(id) : queue;
-  return context.loaders.jobById.load({ queue, id });
+  return context.loaders.jobById.load({ queue: resolvedQueue, id });
 }

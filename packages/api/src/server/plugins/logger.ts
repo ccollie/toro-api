@@ -1,7 +1,8 @@
+import { NullableEnvelopPlugin } from 'graphql-ez';
 import { BaseLogger } from 'pino';
 import { Plugin } from '@envelop/core';
 import { Kind, OperationDefinitionNode } from 'graphql';
-import { nanoid } from '@alpen/core';
+import { nanoid } from '@alpen/core/ids';
 
 /**
  * Options for request and response information to include in the log statements
@@ -92,7 +93,9 @@ export type LoggerConfig = {
  * @see https://www.envelop.dev/docs/plugins/lifecycle
  * @returns
  */
-export const useLogger = (loggerConfig: LoggerConfig): Plugin<any> => {
+export const useLogger = (
+  loggerConfig: LoggerConfig,
+): NullableEnvelopPlugin => {
   const logger = loggerConfig.logger;
 
   const childLogger = logger.child({

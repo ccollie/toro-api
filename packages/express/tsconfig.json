@@ -2,16 +2,12 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "./dist",
-    "module": "CommonJS",
+    "outDir": "./dist"
   },
-  "include": [
-    "./src/**/*.ts"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "dist",
     "node_modules"
   ],
-  "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
   "references": [{ "path": "../core" }, { "path": "../api" }, { "path": "../shared" }]
 }

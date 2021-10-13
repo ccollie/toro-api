@@ -1,6 +1,6 @@
-import { MaxAggregator, LatencyMetric } from '@src/../../../../packages/core/src/metrics';
-import { ManualClock } from '@src/../../../../packages/core/src/lib';
-import { AggregatorTypes } from '@src/../../../../packages/core/types';
+
+import {ManualClock} from '../../../src/lib';
+import {AggregatorTypes, LatencyMetric, MaxAggregator} from '../../../src/metrics';
 import { validateCounts } from './helpers';
 
 describe('MaxAggregator', () => {

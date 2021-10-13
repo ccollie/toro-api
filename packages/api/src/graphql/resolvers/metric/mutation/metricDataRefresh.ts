@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
-import { BaseMetric } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
 import { parseRange } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { MetricDataRefreshInput } from '../../../typings';
@@ -61,7 +61,7 @@ export const metricDataRefresh: FieldConfig = {
     } else {
       throw boom.badRequest('Either start/end or range must be specified');
     }
-    const manager = accessors.getQueueManager(parent.queueId);
+    const manager = accessors.getQueueManager(parent.queueId, true);
     const metrics = manager.metricManager;
     const metric = await metrics.getMetric(metricId);
     if (!metric) {

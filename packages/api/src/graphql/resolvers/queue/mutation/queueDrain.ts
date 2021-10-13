@@ -20,7 +20,7 @@ export const queueDrain: FieldConfig = {
     },
   },
   resolve: async (_, { queueId, delayed }, { accessors }: EZContext) => {
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
     await queue.drain(delayed);
     return {
       queue,

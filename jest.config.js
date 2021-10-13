@@ -1,3 +1,6 @@
+const { pathsToModuleNameMapper } = require('ts-jest/utils');
+const { readJSONSync } = require('fs-extra');
+
 module.exports = {
   roots: ['<rootDir>/__tests__'],
   transform: {
@@ -10,14 +13,17 @@ module.exports = {
     '**/__tests__/**/*.ts?(x)',
     '**/?(*.)+(spec|test).ts?(x)',
   ],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  modulePathIgnorePatterns: ['/dist/'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  coveragePathIgnorePatterns: ['node_modules'],
+  moduleFileExtensions: ['ts', 'mts', 'tsx', 'js', 'cjs', 'jsx'],
+  moduleNameMapper: pathsToModuleNameMapper(
+    readJSONSync('./tsconfig.json').compilerOptions.paths,
+    { prefix },
+  ),
   testEnvironment: 'node',
   setupFiles: ['jest-date-mock'],
   preset: 'ts-jest',
-  moduleNameMapper: {
-    '^@src/(.*)$': '<rootDir>/src/$1',
-    'tests/(.*)': '<rootDir>/__tests__/$1',
-  },
   globals: {
     'ts-jest': {
       diagnostics: false, // https://huafu.github.io/ts-jest/user/config/diagnostics

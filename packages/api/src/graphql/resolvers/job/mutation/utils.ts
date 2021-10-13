@@ -5,7 +5,11 @@ import { schemaComposer } from 'graphql-compose';
 import { FieldConfig, QueueTC } from '../../index';
 import { Job, Queue } from 'bullmq';
 import { publishJobAdded } from '../subscription/onJobAdded';
-import { bulkJobHandler, createJob, JobCreationOptions } from '@alpen/core';
+import {
+  bulkJobHandler,
+  createJob,
+  JobCreationOptions,
+} from '@alpen/core/queues';
 
 export async function addJob(
   context: EZContext,
@@ -19,6 +23,7 @@ export async function addJob(
     data,
     opts,
   };
+  const manager = context.accessors.getQueueManager(queue, true); // force check for readonly
   const job = await createJob(queue, jobOptions);
   await publishJobAdded(context, queue, job); // should we just fire and forget instead of waiting ?
   return job;
@@ -65,7 +70,7 @@ export function createBulkMutationHandler(
     },
     async resolve(_, { input }, { accessors }: EZContext): Promise<any> {
       const { queueId, jobIds } = input;
-      const queue = accessors.getQueueById(queueId);
+      const queue = accessors.getQueueById(queueId, true);
 
       const status = await bulkJobHandler(action, queue, jobIds);
 

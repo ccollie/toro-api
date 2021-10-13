@@ -57,7 +57,7 @@ node_modules/
 # Optional REPL history
 .node_repl_history
 
-.yarnrc.yml
+.yarnrc.yml!
 # yarn v2
 .yarn/*
 !.yarn/releases

@@ -26,7 +26,7 @@ export const ruleAlertsClear: FieldConfig = {
   async resolve(_: unknown, { input }, { accessors }: EZContext) {
     const { queueId, ruleId } = input;
     const rules = accessors.getQueueRuleManager(queueId);
-    const queueManager = accessors.getQueueManager(queueId);
+    const queueManager = accessors.getQueueManager(queueId, true);
     const items = await rules.clearAlerts(ruleId);
     // todo: validate rule
     const rule = await queueManager.getRule(ruleId);

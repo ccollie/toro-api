@@ -22,6 +22,6 @@ export const onQueueRegistered: FieldConfig = {
   subscribe: (_, { hostId }, { pubsub, accessors }: EZContext) => {
     const host = accessors.getHostById(hostId);
     const channel = `${QUEUE_REGISTERED_PREFIX}${host.id}`;
-    return pubsub.asyncIterator(channel);
+    return pubsub.subscribe(channel);
   },
 };

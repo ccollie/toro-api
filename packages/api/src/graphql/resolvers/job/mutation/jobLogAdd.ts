@@ -26,7 +26,7 @@ export const jobLogAdd: FieldConfig = {
     row: 'String!',
   },
   resolve: async (_, { queueId, id, row }, { accessors }: EZContext) => {
-    const job = await accessors.getJobById(queueId, id);
+    const job = await accessors.getJobById(queueId, id, true);
 
     const [count, state] = await Promise.all([job.log(row), job.getState()]);
 

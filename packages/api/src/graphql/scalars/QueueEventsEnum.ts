@@ -1,4 +1,4 @@
-import { QueueEventsEnum as Enum } from '@alpen/core';
+import { QueueEventsEnum as Enum } from '@alpen/core/queues';
 import { GraphQLEnumType } from 'graphql';
 
 export const QueueEventsEnum = new GraphQLEnumType({

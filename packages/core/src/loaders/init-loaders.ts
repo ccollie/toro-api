@@ -1,5 +1,4 @@
 import { IAccessorHelper, setAccessor } from './accessors';
-// eslint-disable-next-line max-len
 import {
   getJobQueue,
   getQueueById,

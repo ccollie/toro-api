@@ -5,10 +5,10 @@ import {
   StatisticalSnapshot,
   StatsGranularity,
   MeterSummary,
+  StatsClient,
   StatsRateType,
-} from '@alpen/core';
-import { StatsClient } from '@alpen/core';
-import { HostManager } from '@alpen/core';
+} from '@alpen/core/stats';
+import { HostManager } from '@alpen/core/hosts';
 import { Queue } from 'bullmq';
 
 export function normalizeGranularity(granularity: string): StatsGranularity {

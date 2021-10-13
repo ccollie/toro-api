@@ -1,3 +1,4 @@
+import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
 import {
   computeHistogramBins,
@@ -5,7 +6,7 @@ import {
   HistogramBinningMethod,
   HistogramOptions,
   StatsMetricType,
-} from '@alpen/core';
+} from '@alpen/core/stats';
 import isNumber from 'lodash/isNumber';
 import { GraphQLEnumType } from 'graphql';
 import { StatsMetricsTypeEnum } from '../../scalars';
@@ -165,7 +166,7 @@ export const histogram: FieldConfig = {
   args: {
     input: HistogramInputTC.NonNull,
   },
-  async resolve(_, { input }: { input: HistogramInput }) {
+  async resolve(_, { input }: { input: HistogramInput }, context: EZContext) {
     const { jobName, metric, granularity, from, to, options } = input;
 
     const startTime = toDate(from);
@@ -174,6 +175,7 @@ export const histogram: FieldConfig = {
     const range = `${startTime.getTime()}-${endTime.getTime()}`;
 
     const snapshot = await aggregateStats(
+      context,
       _,
       jobName,
       range,

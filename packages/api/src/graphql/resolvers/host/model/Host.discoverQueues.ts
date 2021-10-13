@@ -3,8 +3,8 @@ import {
   schemaComposer,
 } from 'graphql-compose';
 import boom from '@hapi/boom';
-import { HostManager } from '@alpen/core';
-import { DiscoveredQueue } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
+import { DiscoveredQueue } from '@alpen/core/queues';
 
 const DiscoverQueuesPayloadTC = schemaComposer.createObjectTC({
   name: 'DiscoverQueuesPayload',

@@ -8,7 +8,7 @@ import { metricSummaryStatsFC as summaryStats } from './Metric.summary-stats';
 import { metricDescriptionFC as description } from './Metric.description';
 // eslint-disable-next-line max-len
 import { metricPercentileDistributionFC as percentileDistribution } from './Metric.percentile-distribution';
-import { BaseMetric } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
 import { AggregatorTC } from '../../aggregator/model';
 import { getStaticProp } from '@alpen/shared';
 

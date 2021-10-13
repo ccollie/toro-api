@@ -3,10 +3,10 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
+    "composite": true
   },
   "include": [
-    "src",
-    "__tests__"
+    "src/**/*"
   ],
   "exclude": [
     "dist",

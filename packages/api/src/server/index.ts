@@ -14,10 +14,13 @@ import pMap from 'p-map';
 
 import { ApolloError } from 'apollo-server-errors';
 import { getSchema, publish, pubsub } from '../graphql';
-import { Supervisor, logger, loaders } from '@alpen/core';
+import { Supervisor } from '@alpen/core/supervisor';
+import { loaders } from '@alpen/core/loaders';
+import { initLoaders } from '@alpen/core';
+import { logger } from '@alpen/core/logger';
 import { LoggerConfig, useLogger } from './plugins/logger';
 import { HostConfig } from '@alpen/core/hosts';
-import * as accessors from '@alpen/core/supervisor/accessors';
+import { accessors } from '@alpen/core/supervisor';
 import {
   AppOptions,
   BuildAppOptions,
@@ -25,6 +28,7 @@ import {
   CacheOptions,
   EZPlugin,
   InferContext,
+  NullableEnvelopPlugin,
 } from 'graphql-ez';
 import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
 import {
@@ -165,14 +169,14 @@ function errorHandler(errors: Readonly<GraphQLError[]>) {
   }
 }
 
-/*
+/**
  * Prevent unexpected error messages from leaking to the GraphQL clients.
  *
  * Unexpected errors are those that are not Envelop or Apollo errors
  *
  * Note that error masking should come after useApolloServerErrors since the originalError
  * will could become an ApolloError but if not, then should get masked
- **/
+ */
 export const formatError: FormatErrorHandler = (err): GraphQLError => {
   if (!err) return new GraphQLError('Something went wrong.');
   if (
@@ -234,7 +238,7 @@ export function createAppOptions(
 
   // Important: Plugins are executed in order of their usage, and inject functionality serially,
   // so the order here matters
-  const plugins: Plugin<any>[] = [
+  const plugins: NullableEnvelopPlugin[] = [
     useLogger(loggerConfig),
     // Limits the depth of your GraphQL selection sets.
     useDepthLimit({
@@ -262,6 +266,7 @@ export function createAppOptions(
 
   const prepare = async () => {
     const supervisor = await Supervisor.getInstance();
+    initLoaders();
 
     const initHosts =
       hosts && hosts.length

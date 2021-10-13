@@ -1,5 +1,6 @@
+import { EZContext } from 'graphql-ez';
 import { HostTC, FieldConfig } from '../index';
-import { HostManager, Supervisor } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 
 export const hostByName: FieldConfig = {
   type: HostTC,
@@ -7,7 +8,7 @@ export const hostByName: FieldConfig = {
   args: {
     name: 'String!',
   },
-  resolve(_: unknown, { name }, { supervisor }): HostManager {
-    return (supervisor as Supervisor).getHost(name);
+  resolve(_: unknown, { name }, { supervisor }: EZContext): HostManager {
+    return supervisor.getHost(name);
   },
 };

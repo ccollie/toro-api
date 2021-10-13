@@ -7,7 +7,7 @@ import {
   OutlierMethod,
 } from '../../../src/stats/outliers';
 import { ArrOddLen, RandomData } from './data';
-import { TimeseriesDataPoint } from '../../../src/types';
+
 
 describe('index', () => {
   describe('getOutlierPredicate', () => {
@@ -43,7 +43,7 @@ describe('index', () => {
       const expectedIndexes = [2, 5, 8];
 
       const now = 10;
-      const objList: TimeseriesDataPoint[] = arr.map((x) => ({
+      const objList: { ts: number, value: number }[] = arr.map((x) => ({
         ts: now + 5,
         value: x,
       }));
@@ -66,7 +66,7 @@ describe('index', () => {
       const res = [1, 2, 2, 3, 4];
       const now = Date.now();
 
-      const objList: TimeseriesDataPoint[] = ArrOddLen.map((x) => ({
+      const objList:  { ts: number, value: number }[] = ArrOddLen.map((x) => ({
         ts: now + 5,
         value: x,
       }));

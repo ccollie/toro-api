@@ -1,7 +1,7 @@
 import { FieldConfig } from '../index';
-import { aggregateMap } from '@alpen/core';
+import { aggregateMap } from '@alpen/core/metrics';
 import { schemaComposer } from 'graphql-compose';
-import { AggregatorTypes } from '@alpen/core';
+import { AggregatorTypes } from '@alpen/core/metrics';
 
 export interface AggregateInfo {
   type: AggregatorTypes;

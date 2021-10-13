@@ -1,4 +1,4 @@
-import { validateJobOptions as validate } from '@alpen/core';
+import { validateJobOptions as validate } from '@alpen/core/queues';
 import { FieldConfig, JobOptionsInputTC } from '../index';
 import { JobsOptions } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';

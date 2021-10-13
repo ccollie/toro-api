@@ -1,5 +1,5 @@
 import { EZContext } from 'graphql-ez';
-import { deleteJobSchema } from '@alpen/core';
+import { deleteJobSchema } from '@alpen/core/queues';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import boom from '@hapi/boom';
@@ -24,7 +24,7 @@ export const queueJobSchemaDelete: FieldConfig = {
   },
   async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, jobName } = input;
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
 
     const result = await deleteJobSchema(queue, jobName);
 

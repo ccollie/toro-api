@@ -1,10 +1,10 @@
 import { GraphQLFieldResolver } from 'graphql';
 import { EZContext } from 'graphql-ez';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 import boom from '@hapi/boom';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { TimeseriesDataPoint } from '@alpen/core';
+import { TimeseriesDataPoint } from '@alpen/core/stats';
 
 export type MetricsInput = {
   queueId: string;
@@ -17,7 +17,7 @@ export type MetricsInput = {
 function createResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_, args: MetricsInput): string {
     const { queueId, metricId } = args;
-    return `QUEUE:${queueId}:${metricId}`;
+    return `QUEUE:${queueId}:m:${metricId}`;
   }
 
   function onSubscribe(
@@ -37,7 +37,7 @@ function createResolver(): GraphQLFieldResolver<any, any> {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   function onUnsubscribe(): void {}
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName,
     onSubscribe,
     onUnsubscribe,

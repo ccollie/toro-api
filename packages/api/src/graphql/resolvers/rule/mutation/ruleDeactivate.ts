@@ -1,5 +1,5 @@
-import { getResolverFields } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
+import { fieldsList } from 'graphql-fields-list';
 import { FieldConfig, RuleTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
@@ -24,8 +24,8 @@ export const ruleDeactivate: FieldConfig = {
     }).NonNull,
   },
   async resolve(_: unknown, { queueId, id }, { accessors }: EZContext, info) {
-    const manager = accessors.getQueueManager(queueId);
-    const fields = getResolverFields(info);
+    const manager = accessors.getQueueManager(queueId, true);
+    const fields = fieldsList(info);
     const changed = await manager.ruleManager.setRuleStatus(id, false);
     const result: Record<string, any> = {};
     result.isActive = !changed;

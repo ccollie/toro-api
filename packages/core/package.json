@@ -7,52 +7,23 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/ccollie/toro-api.git",
+    "url": "https://github.com/ccollie/alpen.git",
     "directory": "packages/core"
   },
   "bugs": {
-    "url": "https://github.com/ccollie/toro-api/issues"
+    "url": "https://github.com/ccollie/alpen/issues"
   },
-  "homepage": "https://github.com/ccollie/toro-api#readme",
+  "homepage": "https://github.com/ccollie/alpen#readme",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
-    },
-    "./hosts": {
-      "require": "./dist/hosts/*.js",
-      "import": "./dist/hosts/*.mjs"
-    },
-    "./lib": {
-      "require": "./dist/lib/*.js",
-      "import": "./dist/lib/*.mjs"
-    },
-    "./loaders": {
-      "require": "./dist/loaders/*.js",
-      "import": "./dist/loaders/*.mjs"
-    },
-    "./notifications": {
-      "require": "./dist/notifications/*.js",
-      "import": "./dist/notifications/*.mjs"
-    },
-    "./metrics": {
-      "require": "./dist/metrics/*.js",
-      "import": "./dist/metrics/*.mjs"
-    },
-    "./queues": {
-      "require": "./dist/queues/*.js",
-      "import": "./dist/queues/*.mjs"
-    },
-    "./rules": {
-      "require": "./dist/rules/*.js",
-      "import": "./dist/rules/*.mjs"
-    },
-    "./stats": {
-      "require": "./dist/stats/*.js",
-      "import": "./dist/stats/*.mjs"
     },
     "./*": {
       "require": "./dist/*.js",
@@ -75,19 +46,22 @@
   },
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "build": "yarn run clean && yarn run compile && yarn run copyAssets",
+    "build": "yarn run clean && yarn run compile && yarn run types && yarn run copyAssets",
     "compile": "bob-ts -i src -f interop",
     "dev": "bob-ts-watch -i src -f interop",
     "prepack": "bob-ts -i src -f interop",
-    "copylua": "copyfiles -f ./src/commands/*.lua ./dist/commands",
-    "copyConfig": "copyfiles -f ./src/config/*.json ./dist/src/config && copyfiles -f ./src/config/env/*.json ./dist/src/config/env",
-    "copyPkg": "copyfiles -f ./package.json ./dist",
-    "copyTemplates": "copyfiles -f ./src/notifications/email/templates/*.mjml ./dist/notifications/nodemailer/email/templates",
-    "copyAssets": "yarn run copylua && yarn run copyTemplates && yarn run copyConfig",
-    "test": "ts-jest",
+    "copy:lua": "copyfiles -f ./src/commands/*.lua ./dist/commands",
+    "copy:lua:includes": "copyfiles -f ./src/commands/includes/*.lua ./dist/commands/includes",
+    "copy:config": "copyfiles -f ./src/config/*.json ./dist/src/config && copyfiles -f ./src/config/env/*.json ./dist/src/config/env",
+    "copy:pkg": "copyfiles -f ./package.json ./dist",
+    "copy:templates": "copyfiles -f ./src/notifications/email/templates/*.mjml ./dist/notifications/nodemailer/email/templates",
+    "copyAssets": "yarn run copy:lua && yarn run copy:templates && yarn run copy:config",
+    "test": "jest",
     "test:coverage": "yarn run clean && jest --coverage",
     "clean": "rm -rf ./dist",
-    "typecheck": "tsc",
+    "typecheck": "tsc --noEmit",
+    "types": "tsc --declaration --emitDeclarationOnly",
+    "prepack": "bob-esbuild build",
     "prettier": "prettier --config package.json src/**/*.ts"
   },
   "devDependencies": {
@@ -96,18 +70,20 @@
     "@types/handlebars-helpers": "^0.5.3",
     "@types/hapi__joi": "^17.1.7",
     "@types/html-to-text": "^8.0.1",
-    "@types/lodash": "^4.14.173",
+    "@types/lodash": "^4.14.176",
     "@types/ms": "^0.7.31",
-    "@types/nanoid": "^2.1.0",
+    "@types/nanoid": "^3.0.0",
     "@types/nconf": "^0.10.0",
-    "@types/node": "^14.17.17",
+    "@types/node": "^16.11.6",
     "@types/nodemailer": "^6.4.4",
-    "bob-ts": "^1.1.2",
+    "bob-ts": "^1.1.5",
+    "bob-esbuild-cli": "^2.0.0",
     "copyfiles": "^2.4.1",
     "create-test-server": "^3.0.1",
-    "jest": "^27.2.4",
+    "jest": "^27.3.1",
     "jest-date-mock": "^1.0.8",
-    "nock": "^13.1.3"
+    "nock": "^13.1.4",
+    "unirand": "^2.12.2"
   },
   "dependencies": {
     "@alpen/shared": "^0.0.2",
@@ -115,9 +91,9 @@
     "@hapi/boom": "^9.1.4",
     "@stoplight/better-ajv-errors": "^0.2.0",
     "ajv": "^8.6.3",
-    "bullmq": "^1.49.0",
-    "core-js": "^3.18.2",
-    "cronstrue": "^1.117.0",
+    "bullmq": "^1.51.1",
+    "core-js": "^3.19.0",
+    "cronstrue": "^1.122.0",
     "date-fns": "^2.25.0",
     "debug": "^4.3.2",
     "denque": "^2.0.1",
@@ -131,19 +107,19 @@
     "handlebars-utils": "^1.0.6",
     "hdr-histogram-js": "^2.0.1",
     "html-to-text": "^8.0.0",
-    "ioredis": "^4.27.10",
+    "ioredis": "^4.28.0",
     "joi": "^17.4.2",
     "lodash-es": "^4.17.21",
     "lru-cache": "^6.0.0",
-    "mjml": "4.10.3",
+    "mjml": "4.10.4",
     "ms": "^2.1.3",
-    "nanoid": "^3.1.28",
+    "nanoid": "^3.1.30",
     "nconf": "^0.11.3",
     "node-error-formatter": "^1.0.4",
     "nodejs-snowflake": "^1.6.2",
-    "nodemailer": "^6.6.5",
+    "nodemailer": "^6.7.0",
     "p-all": "^3.0.0",
-    "p-map": "@4.0.0",
+    "p-map": "4.0.0",
     "p-queue": "^6.6.2",
     "p-settle": "^4.1.1",
     "pino": "^6.13.2",
@@ -158,13 +134,12 @@
     "to-json-schema": "^0.2.5",
     "tslib": "^2.3.1"
   },
-  "files": [
-    "dist/**/*",
-    "README",
-    "LICENSE"
-  ],
+  "peerDependencies": {
+    "esbuild": ">=0.13.12",
+    "typescript": ">=4.4.4"
+  },
   "engines": {
-    "node": ">= 16.0.0"
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   },
   "prettier": {
     "singleQuote": true,

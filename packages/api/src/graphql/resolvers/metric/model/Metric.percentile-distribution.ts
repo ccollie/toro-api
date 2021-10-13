@@ -10,7 +10,8 @@ import {
   MetricPercentileDistributionInput,
   PercentileDistribution,
 } from '../../../typings';
-import { BaseMetric, getPercentileDistribution } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
+import { getPercentileDistribution } from '@alpen/core/stats';
 import { getMetricData } from './getData';
 
 export const MetricPercentileDistributionInputTC = schemaComposer.createInputTC(

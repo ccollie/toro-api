@@ -1,15 +1,15 @@
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import { resolve, join } from 'path';
 import { schemaComposer } from 'graphql-compose';
 
 const PATH = '../src/server/graphql/sdl';
 
-const resolvedPath = path.resolve(__dirname, PATH);
+const resolvedPath = resolve(__dirname, PATH);
 if (!fs.existsSync(resolvedPath)) {
   fs.mkdirSync(resolvedPath, { recursive: true });
   console.log('Directory is created.');
 }
-const destFilename = path.join(resolvedPath, 'sdl.graphql');
+const destFilename = join(resolvedPath, 'sdl.graphql');
 const sdl = schemaComposer.toSDL();
 (async () => {
   await fs.promises.writeFile(destFilename, sdl, {

@@ -1,5 +1,5 @@
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 
 export const hostUri: FieldConfig = {
   type: 'String!',

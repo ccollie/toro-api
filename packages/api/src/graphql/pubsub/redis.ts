@@ -1,9 +1,10 @@
 import { PubSubEngine } from 'graphql-subscriptions';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
-import { ConnectionOptions } from '@alpen/core';
 import { RedisClient } from 'bullmq';
 import { isNil, isString } from 'lodash';
-import IORedis from 'ioredis';
+import IORedis, { RedisOptions } from 'ioredis';
+
+export type ConnectionOptions = string | RedisOptions;
 
 function createClient(redisOpts?: ConnectionOptions): RedisClient {
   let client;

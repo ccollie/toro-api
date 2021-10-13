@@ -1,8 +1,6 @@
 import boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import { StatsClient } from '../stats/stats-client';
-import { fieldsList } from 'graphql-fields-list';
-import { GraphQLResolveInfo } from 'graphql';
 import { QueueManager } from '../queues/queue-manager';
 import { QueueListener } from '../queues/queue-listener';
 import { Supervisor } from './supervisor';
@@ -45,8 +43,9 @@ export function getHost(id: string): HostManager {
   return host;
 }
 
-export function getQueueById(id: string): Queue {
-  return getSupervisor().getQueueById(id);
+export function getQueueById(id: string, mutation?: string | boolean): Queue {
+  const manager = getQueueManager(id, mutation);
+  return manager?.queue;
 }
 
 export function getQueueId(queue: Queue): string {
@@ -85,8 +84,8 @@ export function getMetricById(id: string): BaseMetric {
   return null;
 }
 
-export async function getJobById(queueId: string, jobId: string): Promise<Job> {
-  const queue = getQueueById(queueId);
+export async function getJobById(queueId: string, jobId: string, mutation?: string | boolean): Promise<Job> {
+  const queue = getQueueById(queueId, mutation);
   // todo: maybe use loader here
   const job = await queue.getJob(jobId);
   if (!job) {
@@ -114,12 +113,32 @@ export function getQueueHostManager(queue: Queue | string): HostManager {
   return manager.hostManager;
 }
 
-export function getQueueManager(queue: Queue | string): QueueManager {
+export function raiseIfQueueIsReadonly(q: QueueManager | Queue | string, mutation?: string) {
+  let manager: QueueManager;
+  if (typeof q === 'string' || q instanceof Queue) {
+    manager = getSupervisor().getQueueManager(q);
+  } else if (q instanceof QueueManager) {
+    manager = q
+  }
+  const name = manager.queue.name;
+  const opName = mutation || 'modify queue';
+  const message = `Queue ${name} is read-only (${opName})`
+  throw boom.forbidden(message, { name: 'AlpenError' });
+}
+
+function validateQueueReadonly(q: QueueManager | Queue | string, mutation?: string | boolean) {
+  if (mutation === undefined || mutation === false) return;
+  const opName = (typeof mutation === 'string') ? mutation : undefined;
+  return raiseIfQueueIsReadonly(q, opName);
+}
+
+export function getQueueManager(queue: Queue | string, mutation?: string | boolean): QueueManager {
   const manager = getSupervisor().getQueueManager(queue);
   if (!manager) {
     const id = typeof queue === 'string' ? queue : queue.name;
-    throw boom.notFound(`Cannot find queue #${id}`);
+    throw boom.notFound(`Cannot find queue #${id}`, { name: 'AlpenError' });
   }
+  validateQueueReadonly(manager, mutation);
   return manager;
 }
 
@@ -133,12 +152,8 @@ export function getStatsListener(queue: Queue | string): StatsListener {
   return manager.statsListener;
 }
 
-export function getResolverFields(info: GraphQLResolveInfo): string[] {
-  return fieldsList(info);
-}
-
-export function getQueueRuleManager(queueId: Queue | string): RuleManager {
-  const manager = getQueueManager(queueId);
+export function getQueueRuleManager(queueId: Queue | string, mutation?: string | boolean): RuleManager {
+  const manager = getQueueManager(queueId, mutation);
   return manager.ruleManager;
 }
 

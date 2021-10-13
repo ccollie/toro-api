@@ -18,6 +18,8 @@ export interface QueueConfig {
   jobTypes?: string[];
   /** Should we keep stats for this queue */
   trackMetrics?: boolean;
+  /** Is the queue readonly? If so prevent updates from client */
+  isReadonly?: boolean;
 }
 
 /** A grouped collection of bull queues on a single redis instance */
@@ -50,6 +52,7 @@ const queueConfigSchema = Joi.object().keys({
   description: Joi.string().optional(),
   jobTypes: Joi.array().items(Joi.string()).single().default([]),
   trackMetrics: Joi.boolean().optional().default(true),
+  isReadonly: Joi.boolean().optional().default(true),
 });
 
 const channelConfig = Joi.object()

@@ -22,6 +22,6 @@ export const onNotificationChannelDeleted: FieldConfig = {
   subscribe: (_, { hostId }, { pubsub, accessors }: EZContext) => {
     const host = accessors.getHostById(hostId);
     const channel = `${NOTIFICATION_CHANNEL_DELETED_PREFIX}${host.id}`;
-    return pubsub.asyncIterator(channel);
+    return pubsub.subscribe(channel);
   },
 };

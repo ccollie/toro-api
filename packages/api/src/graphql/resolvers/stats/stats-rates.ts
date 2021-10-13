@@ -2,17 +2,18 @@ import { EZContext } from 'graphql-ez';
 import { StatsRateQueryInputTC } from './types';
 import { aggregateRates, getClient } from './utils';
 import { MeterTC } from './MeterTC';
-import { MeterSummary, StatsGranularity, StatsRateType } from '@alpen/core';
-import { HostManager, QueueStats } from '@alpen/core';
+import {
+  MeterSummary,
+  QueueStats,
+} from '@alpen/core/stats';
+import { StatsRateType, StatsGranularity } from '@alpen/core/stats';
+import { HostManager } from '@alpen/core/hosts';
 import { FieldConfig } from '../index';
 import { Queue } from 'bullmq';
 import boom from '@hapi/boom';
 
-export function getQueueRatesResolver(
-  context: EZContext,
-  type: StatsRateType,
-): FieldConfig {
-  function getInstantRate(queue: Queue, jobName?: string) {
+export function getQueueRatesResolver(type: StatsRateType): FieldConfig {
+  function getInstantRate(context: EZContext, queue: Queue, jobName?: string) {
     const listener = context.accessors.getStatsListener(queue);
     const stats: QueueStats = jobName
       ? listener.getJobNameStats(jobName)
@@ -42,7 +43,7 @@ export function getQueueRatesResolver(
     },
     async resolve(queue: Queue, { input }, context: EZContext) {
       if (!input) {
-        return getInstantRate(queue);
+        return getInstantRate(context, queue);
       }
       const { jobName, granularity, range } = input;
       return aggregateRates(context, queue, jobName, range, granularity, type);

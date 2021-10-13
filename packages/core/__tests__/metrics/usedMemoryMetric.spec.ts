@@ -1,14 +1,15 @@
-import { UsedMemoryMetric, MinAggregator } from '../../src/metrics/index';
-import { MetricTestHelper } from './metricTestHelper';
-import { getRedisInfo } from '../../src/redis/index';
+import nanoid from 'nanoid';
 import {
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType,
-} from '../../src/types';
-import nanoid from 'nanoid';
+  MinAggregator,
+  UsedMemoryMetric,
+} from '../../src/metrics';
+import { getRedisInfo } from '../../src/redis';
 import { validateMetricToJSON } from './helpers';
+import { MetricTestHelper } from './metricTestHelper';
 
 describe('UsedMemoryMetric', () => {
   describe('static properties', () => {

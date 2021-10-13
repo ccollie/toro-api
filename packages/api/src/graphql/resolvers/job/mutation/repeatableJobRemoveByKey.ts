@@ -21,7 +21,7 @@ export const repeatableJobRemoveByKey: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, key } = input;
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
     await queue.removeRepeatableByKey(key);
     return {
       key,

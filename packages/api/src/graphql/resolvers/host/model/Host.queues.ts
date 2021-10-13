@@ -4,7 +4,11 @@ import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
 import { QueueFilterStatusEnum } from '../../../scalars';
 import { HostQueuesFilter as GQLQueueFilter } from '../../../typings';
-import { getFilteredQueues, HostManager, QueueFilterStatus } from '@alpen/core';
+import {
+  getFilteredQueues,
+  HostManager,
+  QueueFilterStatus,
+} from '@alpen/core/hosts';
 
 const HostQueuesFilter = schemaComposer.createInputTC({
   name: 'HostQueuesFilter',

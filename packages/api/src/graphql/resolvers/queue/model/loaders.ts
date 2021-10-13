@@ -1,7 +1,9 @@
 import { Queue } from 'bullmq';
-import { JobCounts, JobCountStates, loaders } from '@alpen/core';
+import { JobCounts, JobCountStates } from '@alpen/core/queues';
+import { EZContext } from 'graphql-ez';
 
 export async function getJobCounts(
+  context: EZContext,
   queue: Queue,
   ...states: JobCountStates[]
 ): Promise<JobCounts> {
@@ -9,13 +11,14 @@ export async function getJobCounts(
     queue,
     types: states,
   };
-  return loaders.jobCounts.load(key);
+  return context.loaders.jobCounts.load(key);
 }
 
 export async function getJobCountByType(
+  context: EZContext,
   queue: Queue,
   ...states: JobCountStates[]
 ): Promise<number> {
-  const counts = await getJobCounts(queue, ...states);
+  const counts = await getJobCounts(context, queue, ...states);
   return Object.values(counts).reduce((sum, count) => sum + count);
 }

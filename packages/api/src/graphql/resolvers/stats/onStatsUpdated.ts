@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { normalizeGranularity } from '../stats/utils';
-import { createSubscriptionResolver } from '../../helpers';
+import { createSharedSubscriptionResolver } from '../../pubsub';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
 import { GraphQLFieldResolver } from 'graphql';
@@ -8,9 +8,9 @@ import { FieldConfig } from '../index';
 import { StatsSnapshotTC } from './types';
 import {
   StatsListener,
-  StatisticalSnapshot,
-  StatsMetricType,
-} from '@alpen/core';
+  StatisticalSnapshot
+} from '@alpen/core/stats';
+import type { StatsMetricType } from '@alpen/core/stats';
 import { firstChar } from '@alpen/shared';
 
 function getStatsUpdatedResolver(
@@ -56,7 +56,7 @@ function getStatsUpdatedResolver(
     );
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName,
     onSubscribe,
   });

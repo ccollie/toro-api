@@ -1,5 +1,5 @@
 import { FieldConfig } from '../../index';
-import { HostManager } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 
 export const queueCount: FieldConfig = {
   type: 'Int!',

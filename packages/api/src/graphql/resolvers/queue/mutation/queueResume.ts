@@ -8,7 +8,7 @@ export const queueResume: FieldConfig = {
     id: 'ID!',
   },
   resolve: async (_, { id }, { accessors }: EZContext) => {
-    const queue = accessors.getQueueById(id);
+    const queue = accessors.getQueueById(id, true);
     await queue.resume();
     return queue;
   },

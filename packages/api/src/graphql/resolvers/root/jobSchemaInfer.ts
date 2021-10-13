@@ -1,5 +1,5 @@
 import { EZContext } from 'graphql-ez';
-import { inferJobSchema, JobSchema } from '@alpen/core';
+import { inferJobSchema, JobSchema } from '@alpen/core/queues';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobSchemaTC } from '../job/model/Job.schema';

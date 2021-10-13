@@ -33,7 +33,7 @@ export const ruleDelete: FieldConfig = {
     { accessors }: EZContext,
   ): Promise<RuleDeletePayload> {
     const { queueId, ruleId } = input;
-    const manager = accessors.getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId, true);
     const isDeleted = await manager.deleteRule(ruleId);
     return {
       queueId,

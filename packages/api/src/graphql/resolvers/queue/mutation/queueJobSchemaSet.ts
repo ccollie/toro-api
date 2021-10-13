@@ -1,6 +1,6 @@
 'use strict';
 import { EZContext } from 'graphql-ez';
-import { addJobSchema } from '@alpen/core';
+import { addJobSchema } from '@alpen/core/queues';
 import { FieldConfig, JobOptionsInputTC } from '../../index';
 import { JobSchemaTC } from '../../job/model/Job.schema';
 import { schemaComposer } from 'graphql-compose';
@@ -28,7 +28,7 @@ export const queueJobSchemaSet: FieldConfig = {
     { accessors }: EZContext,
   ): Promise<JobSchema> => {
     const { queueId, jobName, schema, defaultOpts } = input;
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
 
     const _schema = await addJobSchema(queue, jobName, schema, defaultOpts);
     return {

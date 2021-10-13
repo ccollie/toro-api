@@ -4,7 +4,7 @@ import {
   WebhookNotificationChannelInputTC,
 } from '../scalars';
 import { addChannel } from './utils';
-import { WebhookChannel } from '@alpen/core';
+import { WebhookChannel } from '@alpen/core/notifications';
 import { schemaComposer } from 'graphql-compose';
 
 const WebhookNotificationChannelAddInput = schemaComposer.createInputTC({

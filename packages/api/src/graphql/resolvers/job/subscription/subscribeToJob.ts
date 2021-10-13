@@ -1,15 +1,12 @@
-import { UnsubscribeFn } from 'emittery';
-import { JobEventData, systemClock } from '@alpen/core';
+import { systemClock } from '@alpen/core/lib';
+import { AppJob, JobEventData, JobStatusEnum } from '@alpen/core/queues';
 import { EZContext } from 'graphql-ez';
-import { createSubscriptionResolver } from '../../../helpers';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
-import { AppJob, JobStatusEnum } from '@alpen/core';
 import { fieldsList } from 'graphql-fields-list';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { FilterFn } from 'graphql-subscriptions';
-import { diff } from '../../../helpers/diff';
-import { isNumber } from '@alpen/shared';
+import { isNumber, diff } from '@alpen/shared';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 
 export type JobData = Partial<AppJob> & {
   ts: number;
@@ -19,9 +16,8 @@ export type JobData = Partial<AppJob> & {
 };
 
 export function subscribeToJob(
-  filter?: FilterFn,
+  filter?: (job: any) => boolean,
 ): GraphQLFieldResolver<any, any> {
-  let listenerCleanup: UnsubscribeFn;
   const clock = systemClock;
   let prevData: JobData = null;
 
@@ -53,7 +49,7 @@ export function subscribeToJob(
 
   function getChannelName(_, { input }): string {
     const { queueId, id } = input;
-    return `JOB_UPDATED:${queueId}${id}`;
+    return `JOB_UPDATED:${queueId}:${id}`;
   }
 
   function onSubscribe(
@@ -70,16 +66,10 @@ export function subscribeToJob(
     });
   }
 
-  function onUnsubscribe(): void {
-    listenerCleanup?.();
-    listenerCleanup = null;
-  }
-
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName: getChannelName,
     onSubscribe,
-    onUnsubscribe,
-    filter,
+    filter
   });
 }
 
@@ -100,7 +90,7 @@ export function createStateSubscription(state: JobStatusEnum): FieldConfig {
       queueId: 'String!',
       jobId: 'String!',
     },
-    resolve: async (_, { queueId, jobId }, ctx, info) => {
+    resolve: async (_, { queueId, jobId }, ctx: EZContext, info) => {
       const queue = ctx.accessors.getQueueById(queueId);
       const result = {
         queue,

@@ -1,3 +1,2 @@
 export * from './consts';
-export * from './subscriptionManager';
-export * from './types';
+export * from './errors';

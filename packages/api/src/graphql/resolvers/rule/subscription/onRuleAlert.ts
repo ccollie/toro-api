@@ -1,9 +1,9 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { RuleAlert } from '@alpen/core';
+import { RuleAlert } from '@alpen/core/rules';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   function channelName(_: unknown, { input }): string {
@@ -33,7 +33,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     });
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName,
     onSubscribe,
   });

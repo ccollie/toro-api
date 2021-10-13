@@ -5,7 +5,7 @@ import {
   RuleEventsEnum,
   RuleOperator,
   RuleType,
-} from '@alpen/core';
+} from '@alpen/core/rules';
 import { Rule, RuleStorage } from '../../src/rules';
 import { EventBus, getUniqueId, RedisStreamAggregator } from '../common';
 import { getQueueBusKey } from '../../src/keys';

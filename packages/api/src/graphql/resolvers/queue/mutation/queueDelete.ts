@@ -49,7 +49,7 @@ export const queueDelete: FieldConfig = {
     { supervisor, publish, accessors }: EZContext,
   ) => {
     const host = accessors.getQueueHost(id);
-    const queue = supervisor.getQueueById(id);
+    const queue = accessors.getQueueById(id, true);
     const deletedKeys = await supervisor.deleteQueue(queue, {
       checkExists: checkExistence,
       checkActivity,

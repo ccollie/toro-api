@@ -12,7 +12,7 @@ export const queuePause: FieldConfig = {
     id: 'ID!',
   },
   resolve: async (_, { id }, { accessors }: EZContext) => {
-    const queue = accessors.getQueueById(id);
+    const queue = accessors.getQueueById(id, true);
     await queue.pause();
     return queue;
   },

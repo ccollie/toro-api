@@ -1,7 +1,8 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { MetricTC } from '../../metric/model';
-import { Rule, BaseMetric } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
+import { Rule } from '@alpen/core/rules';
 
 export const ruleMetric: FieldConfig = {
   type: MetricTC,

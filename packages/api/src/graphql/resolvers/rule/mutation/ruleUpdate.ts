@@ -16,7 +16,7 @@ export const ruleUpdate: FieldConfig = {
     { accessors }: EZContext,
   ): Promise<any> {
     const { queueId, id } = input;
-    const manager = accessors.getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId, true);
     const rule = await manager.getRule(id);
     if (!rule) {
       throw boom.notFound(

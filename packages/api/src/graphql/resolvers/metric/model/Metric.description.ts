@@ -1,5 +1,5 @@
 import { FieldConfig } from '../../utils';
-import { BaseMetric } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
 
 export const metricDescriptionFC: FieldConfig = {
   type: 'String!',

@@ -18,7 +18,6 @@ type AnyExpression =
   | jsep.ConditionalExpression
   | jsep.Identifier
   | jsep.Literal
-  | jsep.LogicalExpression
   | jsep.ThisExpression
   | jsep.UnaryExpression;
 
@@ -102,7 +101,7 @@ function toRpn(_node: jsep.Expression, context: any[]) {
     }
   }
 
-  function binop(node: jsep.LogicalExpression | jsep.BinaryExpression) {
+  function binop(node: jsep.BinaryExpression) {
     toRpn(node.right, context);
     toRpn(node.left, context);
     push({ type: 'binary', op: node.operator });
@@ -134,9 +133,6 @@ function toRpn(_node: jsep.Expression, context: any[]) {
 
     case 'Literal':
       return push({ type: 'literal', value: node.value });
-
-    case 'LogicalExpression':
-      return binop(node);
 
     case 'MemberExpression':
       return visitMemberExpression(node, context);

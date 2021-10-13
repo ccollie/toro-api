@@ -3,7 +3,11 @@ import {
   schemaComposer,
 } from 'graphql-compose';
 import { Queue } from 'bullmq';
-import { getJobMemoryAvg, getJobMemoryUsage, JobStatusEnum } from '@alpen/core';
+import {
+  getJobMemoryAvg,
+  getJobMemoryUsage,
+  JobStatusEnum,
+} from '@alpen/core/queues';
 import { JobStatusEnumType } from '../../../scalars';
 
 export const JobMemoryAvgInputTC = schemaComposer.createInputTC({

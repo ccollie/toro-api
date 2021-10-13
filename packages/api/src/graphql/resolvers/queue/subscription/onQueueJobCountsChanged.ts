@@ -1,24 +1,25 @@
+import {EZContext} from 'graphql-ez';
 import ms from 'ms';
 import { throttle, isEmpty } from 'lodash';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnum, QueueEventsEnum } from '@alpen/core';
+import { JobStatusEnum, QueueEventsEnum, QueueManager } from '@alpen/core/queues';
 import { diff } from '@alpen/shared';
 
 const DEFAULT_COUNT_INTERVAL = ms('1.5 s');
-const JOB_STATES = Object.values(JobStatusEnum);
-const EVENT_NAMES = Object.values(QueueEventsEnum);
+const JOB_STATES = Object.values(JobStatusEnum) as string[];
+const EVENT_NAMES = Object.values(QueueEventsEnum) as string[];
 
 // ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   const cleanups = [];
   let savedCounts;
-  let queueManager;
+  let queueManager: QueueManager;
   let pubsub;
-  let channelName;
+  let channelName: string;
 
   async function sendCounts(): Promise<void> {
     const queueId = queueManager.id;
@@ -42,12 +43,12 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     return `QUEUE_JOB_COUNTS:${queueId}`;
   }
 
-  function onSubscribe(_, args, context): void {
+  function onSubscribe(_, args, context: EZContext): void {
     const { queueId } = args;
     channelName = context.channelName;
     pubsub = context.pubsub;
     const { supervisor } = context;
-    const queueManager = supervisor.getQueueById(queueId);
+    const queueManager = supervisor.getQueueManager(queueId);
     const queueListener = queueManager.queueListener;
     const queue = queueManager.queue;
 
@@ -73,7 +74,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     });
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName: getChannelName,
     onSubscribe,
     onUnsubscribe,

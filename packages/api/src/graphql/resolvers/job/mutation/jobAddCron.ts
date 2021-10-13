@@ -28,7 +28,7 @@ export const jobAddCron: FieldConfig = {
   },
   resolve: async (_, { input }, context: EZContext) => {
     const { queueId, jobName, data, options } = input;
-    const queue = context.accessors.getQueueById(queueId);
+    const queue = context.accessors.getQueueById(queueId, true);
     const job = await addJob(context, queue, jobName, data, options);
     return {
       job,

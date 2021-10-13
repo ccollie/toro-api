@@ -1,8 +1,8 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { logger } from '@alpen/core';
+import { logger } from '@alpen/core/logger';
 
 const POLLING_INTERVAL = 2500; // todo: get from config
 
@@ -42,7 +42,7 @@ export function createResolver(): GraphQLFieldResolver<any, any> {
     clearInterval(timer);
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName: getChannelName,
     onSubscribe,
     onUnsubscribe,

@@ -1,6 +1,6 @@
 import { ObjectTypeComposerFieldConfigDefinition } from 'graphql-compose';
 import { Queue } from 'bullmq';
-import { Scripts } from '@alpen/core';
+import { Scripts } from '@alpen/core/commands';
 
 export const waitTimeAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   type: 'Int!',

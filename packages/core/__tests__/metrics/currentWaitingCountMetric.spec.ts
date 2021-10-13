@@ -1,15 +1,15 @@
-import { CurrentWaitingCountMetric } from '../../src/metrics';
-import { clearDb, createQueue } from '../factories';
-import { MetricTestHelper } from './metricTestHelper';
-import { Job, Queue } from 'bullmq';
+import {Job, Queue} from 'bullmq';
 import random from 'lodash/random';
 import {
+  CurrentWaitingCountMetric,
   MetricCategory,
   MetricOptions,
   MetricTypes,
-  MetricValueType,
-} from '../../src/types';
-import { randomString } from '../utils';
+  MetricValueType
+} from '../../src/metrics';
+import {clearDb, createQueue} from '../factories';
+import {randomString} from '../utils';
+import {MetricTestHelper} from './metricTestHelper';
 
 describe('CurrentWaitingCountMetric', () => {
   describe('static properties', () => {

@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
-import { AggregatorTypes, BaseAggregator } from '@alpen/core';
-import { createEnumFromTS } from '../../../helpers';
+import { AggregatorTypes, BaseAggregator } from '@alpen/core/metrics';
+import { createEnumFromTS } from '../../../scalars';
 import { getStaticProp } from '@alpen/shared';
 
 export const AggregateTypeEnum = createEnumFromTS(

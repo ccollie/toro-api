@@ -1,14 +1,16 @@
-import { ErrorPercentageMetric, Events, BaseMetric } from '../../src/metrics';
-import { MetricTestHelper } from './metricTestHelper';
+import {round} from 'lodash';
 import {
+  BaseMetric,
+  ErrorPercentageMetric,
+  Events,
   MetricCategory,
   MetricTypes,
   MetricValueType,
-  QueueMetricOptions,
-} from '../../src/types';
-import { round } from 'lodash';
-import { createJobEvent } from '../factories';
-import { validateJobNamesFilter } from './helpers';
+  QueueMetricOptions
+} from '../../src/metrics';
+import {createJobEvent} from '../factories';
+import {validateJobNamesFilter} from './helpers';
+import {MetricTestHelper} from './metricTestHelper';
 
 describe('ErrorPercentageMetric', () => {
   const defaultOptions: QueueMetricOptions = {};

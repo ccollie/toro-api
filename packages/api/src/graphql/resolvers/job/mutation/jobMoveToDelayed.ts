@@ -35,7 +35,7 @@ export const jobMoveToDelayed: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId, delay } = input;
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
     const job = await queue.getJob(jobId);
     if (!job) {
       throw boom.notFound('Job not found!');

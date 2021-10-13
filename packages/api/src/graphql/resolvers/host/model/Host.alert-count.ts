@@ -1,6 +1,6 @@
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core';
-import { RuleScripts } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
+import { RuleScripts } from '@alpen/core/commands';
 
 export const hostAlertCount: FieldConfig = {
   type: 'Int!',

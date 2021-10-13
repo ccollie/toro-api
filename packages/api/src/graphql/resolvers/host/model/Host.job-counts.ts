@@ -1,6 +1,6 @@
 import { get } from 'lodash';
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 
 export const jobCounts: FieldConfig = {
   type: 'JobCounts!',

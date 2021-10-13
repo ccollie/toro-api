@@ -1,9 +1,10 @@
 import { EZContext } from 'graphql-ez';
 import { NOTIFICATION_CHANNEL_ADDED_PREFIX } from '../../../helpers';
-import { HostManager, Channel, NotificationChannel } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
+import { Channel, NotificationChannel } from '@alpen/core/notifications';
 
 export function publishCreatedEvent(
-  context: any,
+  context: EZContext,
   host: HostManager,
   channel: NotificationChannel,
 ): void {

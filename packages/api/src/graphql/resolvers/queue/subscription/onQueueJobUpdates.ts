@@ -2,9 +2,10 @@ import { EZContext } from 'graphql-ez';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { isEmpty, isNumber } from 'lodash';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
-import { JobStatusEnum, createJobNameFilter } from '@alpen/core';
+import { JobStatusEnum } from '@alpen/core/queues';
+import { createJobNameFilter } from '@alpen/core/metrics';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { diff, hashObject, isFinishedStatus } from '@alpen/shared';
@@ -196,7 +197,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
     cache.reset();
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName: getChannelName,
     onSubscribe,
     onUnsubscribe,

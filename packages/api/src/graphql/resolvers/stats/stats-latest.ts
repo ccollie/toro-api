@@ -1,5 +1,5 @@
 import { FieldConfig } from '../index';
-import { HostManager } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 import { getClient, normalizeGranularity } from './utils';
 import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
@@ -7,7 +7,7 @@ import {
   StatsMetricType,
   StatsGranularity,
   StatisticalSnapshot,
-} from '@alpen/core';
+} from '@alpen/core/stats';
 import { StatsSnapshotTC } from './types';
 
 export const StatsLatestInputTC = schemaComposer.createInputTC({

@@ -10,7 +10,7 @@
 import { Kind } from 'graphql';
 import { stringify } from 'jest-matcher-utils';
 import { parseDateMath } from '@alpen/shared';
-import { GraphQLDateTime } from '../../../dist';
+import { GraphQLDateTime } from '../../../src/graphql/scalars';
 
 const invalidDates = [
   // General

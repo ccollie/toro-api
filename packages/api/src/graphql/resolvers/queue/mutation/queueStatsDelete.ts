@@ -1,4 +1,4 @@
-import { deleteQueueStats } from '@alpen/core';
+import { deleteQueueStats } from '@alpen/core/queues';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { QueueTC } from '../../index';
@@ -34,7 +34,7 @@ export const queueStatsDelete: FieldConfig = {
   },
   async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, jobName } = input;
-    const queue = accessors.getQueueById(queueId);
+    const queue = accessors.getQueueById(queueId, true);
 
     const count = await deleteQueueStats(queue, jobName);
     // exposing key count makes no sense to an end user and leaks implementation

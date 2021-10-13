@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "description": "Fastify adapter for Alpen",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
     "compile": "bob-ts -i src -f interop",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [
     "bullmq",
@@ -18,17 +19,19 @@
   "author": "clayton collie <collie.clayton@gmail.com>",
   "license": "ISC",
   "dependencies": {
-    "@alpen/core": "^0.0.2",
     "@alpen/api": "^0.0.2",
-    "@graphql-ez/fastify": "^0.8.1",
-    "graphql-ez": "^0.13.1"
+    "@alpen/core": "^0.0.2",
+    "@graphql-ez/fastify": "^0.9.4",
+    "graphql": "15.4.0-experimental-stream-defer.1",
+    "graphql-ez": "^0.13.3"
   },
   "peerDependencies": {
     "fastify": "3.x"
   },
   "devDependencies": {
-    "bob-ts": "^1.1.2",
     "@types/node": "^14.17.5",
-    "fastify": "^3.15.0"
+    "bob-ts": "^1.1.4",
+    "esbuild": "^0.13.12",
+    "fastify": "^3.22.1"
   }
 }

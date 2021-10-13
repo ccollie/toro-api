@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAddInputTC, RuleTC } from '../../index';
-import { Rule } from '@alpen/core';
+import { Rule } from '@alpen/core/rules';
 import { RuleAddInput } from '../../../typings';
 import { convertCondition, translateSeverity } from './utils';
 
@@ -16,7 +16,7 @@ export const ruleAdd: FieldConfig = {
     { accessors }: EZContext,
   ): Promise<Rule> {
     const { queueId, severity, condition: cond, ...rest } = input;
-    const manager = accessors.getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId, true);
     const condition = convertCondition(cond);
     const ruleOptions = {
       queueId,

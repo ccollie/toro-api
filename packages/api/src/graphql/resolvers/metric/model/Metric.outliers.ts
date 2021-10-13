@@ -4,7 +4,8 @@ import {
   OutlierDetectionMethod,
   TimeseriesDataPointTC,
 } from '../../stats/types';
-import { BaseMetric, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
+import { BaseMetric } from '@alpen/core/metrics';
+import { OutlierMethod, TimeseriesDataPoint } from '@alpen/core/stats';
 import { MetricDataOutliersInput } from '../../../typings';
 import { getMetricData } from './getData';
 

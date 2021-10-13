@@ -1,8 +1,8 @@
 import { schemaComposer } from 'graphql-compose';
-import { getJobsByFilterId } from '@alpen/core';
+import { getJobsByFilterId } from '@alpen/core/queues';
 import { Queue } from 'bullmq';
 import { JobSearchPayloadTC } from './Queue.jobSearch';
-import { FilteredJobsResult } from '@alpen/core';
+import { FilteredJobsResult } from '@alpen/core/queues';
 import { FieldConfig } from '../../index';
 
 const JobsByFilterIdInput = schemaComposer.createInputTC({

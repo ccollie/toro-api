@@ -1,6 +1,7 @@
 {
   "name": "@alpen/express",
   "version": "0.0.2",
+  "private": true,
   "description": "Express handler for Alpen",
   "keywords": [
     "bullmq",
@@ -16,6 +17,7 @@
   "license": "MIT",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "exports": {
     ".": {
       "require": "./dist/index.js",
@@ -29,22 +31,27 @@
   "scripts": {
     "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop"
+    "compile": "bob-ts -i src -f interop && yarn run emitTypes",
+    "typecheck": "tsc --noEmit",
+    "emitTypes": "tsc --declaration",
+    "prepack": "bob-esbuild build"
   },
   "dependencies": {
-    "@alpen/core": "^0.0.2",
     "@alpen/api": "^0.0.2",
+    "@alpen/core": "^0.0.2",
     "@graphql-ez/express": "^0.9.5",
-    "graphql-ez": "^0.13.1"
+    "graphql": "15.4.0-experimental-stream-defer.1",
+    "graphql-ez": "^0.13.3"
   },
   "peerDependencies": {
-    "express": "4.x",
-    "esbuild": ">=0.13.0"
+    "esbuild": ">=0.13.12",
+    "express": "4.x"
   },
   "devDependencies": {
     "@types/express": "^4.17.11",
-    "express": "^4.17.1",
-    "bob-ts": "^1.1.2",
-    "graphql": "15.4.0-experimental-stream-defer.1"
+    "@types/node": "^16.11.4",
+    "bob-ts": "^1.1.5",
+    "bob-esbuild-cli": "^2.0.0",
+    "express": "^4.17.1"
   }
 }

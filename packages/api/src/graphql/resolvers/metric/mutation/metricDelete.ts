@@ -24,7 +24,7 @@ export const metricDelete: FieldConfig = {
   },
   async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, metricId } = input;
-    const manager = accessors.getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId, true);
     const result = await manager.metricManager.deleteMetric(metricId);
 
     if (!result) {

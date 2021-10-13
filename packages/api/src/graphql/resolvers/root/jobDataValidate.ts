@@ -1,5 +1,5 @@
 import { EZContext } from 'graphql-ez';
-import { getJobSchema, validateBySchema } from '@alpen/core';
+import { getJobSchema, validateBySchema } from '@alpen/core/queues';
 import { JobsOptions } from 'bullmq';
 import { FieldConfig, JobOptionsInputTC } from '../index';
 import { schemaComposer } from 'graphql-compose';

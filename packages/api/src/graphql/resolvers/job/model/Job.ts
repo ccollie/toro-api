@@ -1,6 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { jobStateFC } from './Job.state';
 import { JobOptionsTC } from './Job.opts';
+import { jobFullIdFC } from './Job.fullId';
 import { jobQueueIdFC } from './Job.queueId';
 import { jobLogs } from './Job.logs';
 import { JobProgress } from '../../../scalars';
@@ -8,7 +9,7 @@ import { Job } from 'bullmq';
 import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';
 import { parent } from './Job.parent';
-import { JobStatusEnum } from '@alpen/core';
+import { JobStatusEnum } from '@alpen/core/queues';
 import { checkState } from './loaders';
 import { EZContext } from 'graphql-ez';
 
@@ -44,6 +45,7 @@ export const JobTC = schemaComposer.createObjectTC({
       type: JobOptionsTC.NonNull,
     },
     state: jobStateFC,
+    fullId: jobFullIdFC,
     queueId: jobQueueIdFC,
     parentKey: 'String',
     logs: jobLogs,

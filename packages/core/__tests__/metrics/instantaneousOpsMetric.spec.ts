@@ -1,12 +1,12 @@
-import { InstantaneousOpsMetric } from '../../src/metrics';
-import { MetricTestHelper } from './metricTestHelper';
-import { getRedisInfo } from '../../src/redis';
 import {
+  InstantaneousOpsMetric,
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType,
-} from '../../src/types';
+} from '../../src/metrics';
+import { getRedisInfo } from '../../src/redis';
+import { MetricTestHelper } from './metricTestHelper';
 
 describe('InstantaneousOpsMetric', () => {
   describe('static properties', () => {

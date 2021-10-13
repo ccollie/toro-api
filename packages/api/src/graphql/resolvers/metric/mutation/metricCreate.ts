@@ -2,7 +2,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { MetricCreateTC } from '../scalars';
-import { SerializedMetric } from '@alpen/core';
+import { SerializedMetric } from '@alpen/core/metrics';
 import { MetricTC } from '../model';
 
 export const metricCreate: FieldConfig = {
@@ -13,7 +13,7 @@ export const metricCreate: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, ...rest } = input;
-    const manager = accessors.getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId, true);
     const data = rest as SerializedMetric;
     const metric = await manager.metricManager.createMetric(data);
     const result = metric.toJSON();

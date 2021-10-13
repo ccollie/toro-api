@@ -1,8 +1,7 @@
-import { ConnectedClientsMetric } from '../../src/metrics';
-import { delay } from '../utils';
-import { MetricTestHelper } from './metricTestHelper';
-import { getRedisInfo } from '../../src/redis';
-import { MetricCategory, MetricOptions, MetricTypes } from '../../src/types';
+import {ConnectedClientsMetric, MetricCategory, MetricOptions, MetricTypes} from '../../src/metrics';
+import {getRedisInfo} from '../../src/redis';
+import {delay} from '../utils';
+import {MetricTestHelper} from './metricTestHelper';
 
 describe('ConnectedClientsMetric', () => {
   describe('static properties', () => {

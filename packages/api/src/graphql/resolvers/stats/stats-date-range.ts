@@ -1,10 +1,10 @@
 import { normalizeGranularity } from '../stats/utils';
 import { FieldConfig } from '../index';
-import { HostManager } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 import { getClient } from './utils';
 import { StatsGranularityEnum, TimeSpanTC } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';
-import { StatsGranularity } from '@alpen/core';
+import { StatsGranularity } from '@alpen/core/stats';
 
 const StatsSpanInput = schemaComposer.createInputTC({
   name: 'StatsSpanInput',

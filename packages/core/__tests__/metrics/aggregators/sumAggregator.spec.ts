@@ -1,7 +1,6 @@
-import { LatencyMetric, SumAggregator } from '@src/../../../../packages/core/src/metrics';
+import { LatencyMetric, SumAggregator, AggregatorTypes } from '../../../src/metrics';
 import random from 'lodash/random';
 import { validateCounts } from './helpers';
-import { AggregatorTypes } from '../../../dist';
 
 describe('SumAggregator', () => {
   describe('static properties', () => {

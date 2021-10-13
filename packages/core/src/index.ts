@@ -8,12 +8,11 @@ export * from './metrics';
 export * from './queues';
 export * from './redis';
 export * from './rules';
-export * from './supervisor';
-export * from './supervisor/accessors';
 export * from './stats';
 export * from './types';
 export * from './notifications';
 export * from './validation';
+export * from './errors';
 
 export { initLoaders } from './loaders/init-loaders';
 

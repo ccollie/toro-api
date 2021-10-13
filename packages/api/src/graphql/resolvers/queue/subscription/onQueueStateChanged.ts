@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
-import { createSubscriptionResolver } from '../../../helpers';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
-import { QueueEventsEnum } from '@alpen/core';
+import { QueueEventsEnum } from '@alpen/core/queues';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
@@ -34,7 +34,7 @@ function getResolver(): GraphQLFieldResolver<any, any> {
     });
   }
 
-  return createSubscriptionResolver({
+  return createSharedSubscriptionResolver({
     channelName,
     onSubscribe,
   });

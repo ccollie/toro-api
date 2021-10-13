@@ -1,5 +1,5 @@
 import { SummaryStatistics } from '../../typings';
-import { OnlineNormalEstimator, median } from '@alpen/core';
+import { OnlineNormalEstimator, median } from '@alpen/core/stats';
 
 export function calcSummaryStats(
   data: number[],

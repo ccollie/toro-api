@@ -1,6 +1,6 @@
 import { FailedCountMetric, Events, BaseMetric } from '../../src';
 import { MetricTestHelper } from './metricTestHelper';
-import { MetricCategory, MetricTypes, QueueMetricOptions } from '../../src/types';
+import { MetricCategory, MetricTypes, QueueMetricOptions } from '@alpen/core/metrics';
 import { createJobEvent } from '../factories';
 import { validateJobNamesFilter } from './helpers';
 

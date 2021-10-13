@@ -5,6 +5,7 @@ import { schemaComposer } from 'graphql-compose';
 import { repeatableJobCount, repeatableJobs } from './Queue.repeatables';
 import { queueJobs as jobs } from './Queue.jobs';
 import { queueId } from './Queue.id';
+import { queueIsReadonly as isReadonly } from './Queue.isReadonly';
 import { isPaused } from './Queue.isPaused';
 import { jobNames } from './Queue.jobNames';
 import { jobDurationAvg } from './Queue.jobDurationAvg';
@@ -36,7 +37,7 @@ import {
   statsLatest as lastStatsSnapshot,
   getQueueRatesResolver,
 } from '../../stats';
-import { StatsRateType } from '@alpen/core';
+import { StatsRateType } from '@alpen/core/stats';
 
 const throughput = getQueueRatesResolver(StatsRateType.Throughput);
 const errorRate = getQueueRatesResolver(StatsRateType.Errors);
@@ -59,6 +60,7 @@ export const QueueTC = schemaComposer.createObjectTC({
     host,
     hostId,
     isPaused,
+    isReadonly,
     jobCounts,
     jobNames,
     jobFilters,

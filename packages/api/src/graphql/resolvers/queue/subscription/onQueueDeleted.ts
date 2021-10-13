@@ -34,6 +34,6 @@ export const onQueueDeleted: FieldConfig = {
   subscribe: (_, { hostId }, { pubsub, accessors }: EZContext) => {
     const host = accessors.getHostById(hostId);
     const channel = `${QUEUE_DELETED_PREFIX}${host.id}`;
-    return pubsub.asyncIterator(channel);
+    return pubsub.subscribe(channel);
   },
 };

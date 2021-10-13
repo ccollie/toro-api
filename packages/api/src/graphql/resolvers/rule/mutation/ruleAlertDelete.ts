@@ -26,7 +26,7 @@ export const ruleAlertDelete: FieldConfig = {
   async resolve(_: unknown, { input }, { accessors }: EZContext, info) {
     const { queueId, ruleId, alertId } = input;
     const fields = fieldsList(info);
-    const manager = accessors.getQueueManager(queueId);
+    const manager = accessors.getQueueManager(queueId, true);
     const ruleManager = manager.ruleManager;
     const deleted = await ruleManager.deleteAlert(ruleId, alertId);
     if (!deleted) {

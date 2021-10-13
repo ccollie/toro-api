@@ -604,10 +604,6 @@ local function split (str, sep)
     return fields
 end
 
-local function stringReplace(s)
-
-end
-
 local function stringConcat(str, ...)
     local args = { ... }
     assert(isString(str), 'String.concat: string required');
@@ -657,9 +653,7 @@ end
 local function regexEscape(str)
     return str:gsub("[%(%)%.%%%+%-%*%?%[%^%$%]]", "%%%1")
 end
--- you can use return and set your own name if you do require() or dofile()
 
--- like this: str_replace = require("string-replace")
 -- return function (str, this, that) -- modify the line below for the above to work
 local function stringReplace(str, this, that)
     return str:gsub(regexEscape(this), that:gsub("%%", "%%%%")) -- only % needs to be escaped for 'that'
@@ -1517,12 +1511,14 @@ local function createCompareFn(fn)
     return function(a, b)
         local fn = fn
         local getType = getType
+
         local atype = getType(a)
+        if (atype == 'nil') then return nil end
+
         local btype = getType(b)
-        if (atype == 'nil' or btype == 'nil') then
-            return nil
-        end
-        return (btype == atype) and fn(a, b)
+        if (btype == 'nil') then return nil end
+
+        return (btype == atype) and fn(a, b) or false
     end
 end
 

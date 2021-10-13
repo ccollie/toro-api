@@ -3,7 +3,7 @@ import { FieldConfig, JobTC } from '../index';
 import { Job } from 'bullmq';
 import boom from '@hapi/boom';
 import { fieldsList } from 'graphql-fields-list';
-import { Scripts } from '@alpen/core';
+import { Scripts } from '@alpen/core/commands';
 
 export const job: FieldConfig = {
   type: JobTC.NonNull,

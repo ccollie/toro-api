@@ -1,5 +1,5 @@
 {
-  "name": "toro-api",
+  "name": "alpen",
   "private": true,
   "npmClient": "yarn",
   "useWorkspaces": true,
@@ -9,51 +9,49 @@
   "version": "0.0.2",
   "author": "clayton collie <collie.clayton@gmail.com>",
   "license": "MIT",
-  "description": "Toro-api - API for a real-time interactive dashboard for BullMq",
+  "description": "Alpen - API for a real-time interactive dashboard for BullMq",
   "bugs": {
-    "url": "https://github.com/ccollie/toro-api/issues"
+    "url": "https://github.com/ccollie/alpen/issues"
   },
-  "homepage": "https://github.com/ccollie/toro-api#readme",
+  "homepage": "https://github.com/ccollie/alpen#readme",
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
     "clean": "rimraf \"**/{node_modules,dist,.next,coverage}\"",
-    "api": "yarn workspace @alpen/api",
-    "core": "yarn workspace @alpen/core",
-    "shared": "yarn workspace @alpen/shared",
-    "express": "yarn workspace @alpen/express",
-    "fastify": "yarn workspace @alpen/fastify",
     "pretty": "prettier --config package.json --write \"**/*.{ts,tsx,json,yaml,js,cjs,mjs,mdx,md}\"",
     "pretty:check": "prettier --check \"**/*.{ts,tsx,json,yaml,js,cjs,mjs,mdx}\"",
     "typecheck": "bob-esbuild tsc",
-    "dev:core": "yarn workspace shared build && yarn workspace code build && yarn workspace api build"
+    "build:core": "yarn workspace @alpen/shared build && yarn workspace @alpen/core build && yarn workspace @alpen/api build",
+    "build": "bob-esbuild tsc && yarn prepack -r"
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",
-    "@types/node": "^16.10.1",
-    "@typescript-eslint/eslint-plugin": "^4.31.2",
-    "@typescript-eslint/parser": "^4.31.2",
+    "@types/node": "^16.11.6",
+    "@typescript-eslint/eslint-plugin": "^5.2.0",
+    "@typescript-eslint/parser": "^5.2.0",
+    "bob-esbuild": "^2.1.1",
     "bob-esbuild-cli": "^2.0.0",
-    "bob-ts": "^1.1.1",
-    "esbuild": "^0.13.4",
-    "eslint": "^7.32.0",
-    "eslint-plugin-import": "^2.24.2",
+    "bob-ts": "^1.1.5",
+    "esbuild": "^0.13.12",
+    "eslint": "^8.1.0",
+    "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-prettier": "^4.0.0",
-    "jest": "^27.2.4",
+    "fs-extra": "^10.0.0",
+    "jest": "^27.3.1",
     "jest-date-mock": "^1.0.8",
     "prettier": "^2.4.1",
     "rimraf": "^3.0.2",
-    "ts-jest": "^27.0.5",
-    "typescript": "^4.4.3"
+    "ts-jest": "^27.0.7",
+    "typescript": "^4.4.4"
   },
   "dependencies": {
+    "core-js": "^3.19.0",
     "tslib": "^2.3.1"
   },
   "engines": {
     "node": ">=14.13.0"
   },
   "peerDependencies": {
-    "@types/node": "*",
-    "graphql": "*"
+    "@types/node": "*"
   },
   "prettier": {
     "singleQuote": true,
@@ -62,7 +60,9 @@
   },
   "resolutions": {
     "graphql": "15.4.0-experimental-stream-defer.1",
-    "esbuild": ">=0.13.0",
-    "typescript": ">=4.4.3"
-  }
+    "esbuild": ">=0.13.12",
+    "typescript": ">=4.4.4",
+    "bob-ts": "^1.1.5"
+  },
+  "packageManager": "yarn@3.1.0-rc.12"
 }

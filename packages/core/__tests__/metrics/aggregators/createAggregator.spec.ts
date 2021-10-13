@@ -1,6 +1,5 @@
-import { createAggregator } from '@src/../../../../packages/core/src/metrics';
-import { systemClock } from '@src/../../../../packages/core/src/lib';
-import { AggregatorTypes } from '@src/../../../../packages/core/types';
+import {AggregatorTypes, createAggregator} from '../../../src/metrics';
+import { systemClock } from '../../../src/lib';
 
 describe('createAggregator', () => {
   it('can create an aggregator', () => {

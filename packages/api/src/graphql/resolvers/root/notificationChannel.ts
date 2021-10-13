@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
-import { Channel } from '@alpen/core';
+import { Channel } from '@alpen/core/notifications';
 import { NotificationChannelTC } from '../host/scalars';
 
 export const notificationChannel: FieldConfig = {

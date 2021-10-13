@@ -1,5 +1,5 @@
-import { MetricValueType } from '@alpen/core';
-import { createEnumFromTS } from '../helpers';
+import { MetricValueType } from '@alpen/core/metrics';
+import { createEnumFromTS } from './types';
 
 export const MetricValueTypeTC = createEnumFromTS(
   MetricValueType,

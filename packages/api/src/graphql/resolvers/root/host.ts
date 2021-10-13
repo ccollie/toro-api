@@ -1,5 +1,5 @@
 import { HostTC, FieldConfig } from '../index';
-import { HostManager } from '@alpen/core';
+import { HostManager } from '@alpen/core/hosts';
 
 export const host: FieldConfig = {
   type: HostTC,
