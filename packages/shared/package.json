@@ -36,7 +36,7 @@
   "scripts": {
     "build": "yarn run clean && yarn run types && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop",
+    "compile": "bob-ts -i src -f interop --path",
     "dev": "bob-ts-watch -i src",
     "types": "tsc --declaration --emitDeclarationOnly",
     "typecheck": "tsc --noEmit",
@@ -46,16 +46,16 @@
   "dependencies": {
     "@hapi/boom": "^9.1.4",
     "date-fns": "^2.25.0",
-    "jsep": "^1.0.3",
+    "jsep": "^1.2.0",
     "lodash-es": "^4.17.21",
     "ms": "^2.1.3"
   },
   "devDependencies": {
     "@types/node": "^16.11.4",
-    "bob-ts": "^1.1.5",
+    "bob-ts": "^1.2.0",
     "typescript": "^4.4.4"
   },
   "peerDependencies": {
-    "esbuild": ">=0.13.8"
+    "esbuild": ">=0.13.12"
   }
 }

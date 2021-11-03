@@ -12,96 +12,22 @@
 --  EVALSHA sha1 1 key add 100000 key value
 --  EVALSHA sha1 1 key range 100000 100500 0 25
 
-local function ts_debug(msg)
-  redis.call('rpush', 'ts-debug', msg)
-end
+--- @include "includes/debug"
+--- @include "includes/isString"
+--- @include "includes/isNumber"
+--- @include "includes/isNil"
+--- @include "includes/isArray"
+--- @include "includes/toStr"
+--- @include "includes/incrementTimestamp"
 
 --- UTILS ------
-local utils = {}
-local find = string.find
-
-function utils.isString(s)
-  return type(s) == 'string'
-end
 
 --- does s only contain digits?
 -- @string s a string
-function utils.isdigit(s)
-  assert(1,s)
-  return find(s,'^%d+$') == 1
+function isdigit(s)
+  return string.find(s,'^%d+$') == 1
 end
 
-function utils.isNil(s)
-  return type(s) == nil
-end
-
-function utils.isNumber(s)
-  return type(s) == 'number'
-end
-
-function utils.isBoolean(s)
-  return type(s) == 'boolean'
-end
-
-function utils.isTable(s)
-  return type(s) == 'table'
-end
-
-function utils.isFunction(s)
-  return type(s) == 'function'
-end
-
-function utils.isArray(t)
-  if (type(t) ~= 'table') then
-    return false
-  end
-  local i = 0
-  for _ in pairs(t) do
-    i = i + 1
-    -- note: explicitly check against nil here !!!
-    -- for arrays coming from JSON, we can have cjson.null, which we
-    -- want to support
-    if (t[i] == nil) then
-      return false
-    end
-  end
-  return true
-end
-
-function utils.dblQuote(v)
-  return '"' .. v .. '"'
-end
-
-function utils.tostring(value, ...)
-  local str = ''
-  if utils.isString(value) then
-    return value
-  elseif (utils.isBoolean(value)) then
-    return (value and 'true' or 'false')
-  elseif utils.isNil(value) then
-    return 'nil'
-  elseif utils.isNumber(value) then
-    return value .. ''
-  elseif (utils.isFunction(value)) then
-    return utils.tostring(value(...))
-  elseif (utils.isTable(value)) then
-    local delims = { '{', '}' }
-    if utils.isArray(value) then
-      delims = { '[', ']' }
-    end
-    str = delims[1]
-    for k, v in pairs(value) do
-      v = utils.isString(v) and utils.dblQuote(v) or utils.tostring(v, ...)
-      if utils.isNumber(k) then
-        str = str .. v .. ', '
-      else
-        str = str .. utils.dblQuote(k) .. ': ' .. v .. ', '
-      end
-    end
-    str = str:sub(0, #str - 2) .. delims[2]
-  end
-  return str
-end
 
 local SEPARATOR = '|'
 
@@ -166,7 +92,6 @@ local function getFirstScore(key)
   return nil
 end
 
-local ASCII_ZERO = 48
 -- From internet sleuthing. This is apparently not in the docs
 local MAX_INTEGER = 9007199254740994
 
@@ -175,46 +100,16 @@ local function isSpecialTimestamp(val)
 end
 
 local function isValidTimestamp(val)
-  if (utils.isNumber(val)) then return true end
+  if (isNumber(val)) then return true end
   local num = tonumber(val)
   if (num ~= nil) then return true end
   val = tostring(val)
-  return utils.isdigit(val) or isSpecialTimestamp(val)
-end
-
-local function incrementTimestamp(val)
-  local num = tonumber(val)
-  if (num == nil) or (num >= MAX_INTEGER) then
-    val = tostring(val)
-    if (utils.isString(val) and utils.isdigit(val)) then
-      -- bigint/snowflake id
-      local j = #val
-      local carry = 1
-      local right = ''
-      while j > 1 do
-        local digit = val:byte(j) - ASCII_ZERO
-        digit = digit + carry
-        if (digit > 9) then
-          carry = digit - 9
-          right = '0' .. right
-        else
-          right = digit .. right
-          break
-        end
-        j = j - 1
-      end
-      local res = val:sub(1, j - 1) .. right
-      return res
-    end
-  else
-    return num + 1
-  end
-  return assert(false, "timestamp must be a number. got: " .. tostring(val))
+  return isdigit(val) or isSpecialTimestamp(val)
 end
 
 --- PARAMETER PARSING --------
 local function assertTimestamp(ts)
-  assert(isValidTimestamp(ts), "timestamp must be a number. Got: " .. utils.tostring(ts))
+  assert(isValidTimestamp(ts), "timestamp must be a number. Got: " .. toStr(ts))
   return ts
 end
 
@@ -366,7 +261,7 @@ local function get_single_value(key, timestamp, name)
   elseif #ra > 1 then
     error(
     'Multiple values for timeseries.' .. name .. '. key: "' .. key ..'", ' ..
-    'ts: ' .. utils.tostring(timestamp)
+    'ts: ' .. toStr(timestamp)
     )
   end
   return nil
@@ -541,7 +436,7 @@ end
 -- Set the value associated with *timestamp*
 function Timeseries.set(key, timestamp, value)
   local current = get_single_value(key, timestamp, 'set')
-  assert(value ~= nil, 'timeseries.set: Must specify a value ' .. key .. '(' .. utils.tostring(timestamp) .. ') ')
+  assert(value ~= nil, 'timeseries.set: Must specify a value ' .. key .. '(' .. toStr(timestamp) .. ') ')
 
   -- remove old value
   if (current ~= nil) then

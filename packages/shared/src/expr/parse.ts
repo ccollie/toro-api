@@ -1,4 +1,4 @@
-import jsep, { CallExpression } from 'jsep';
+import jsep from 'jsep';
 import {
   BinaryOpNode,
   FunctionCallNode,

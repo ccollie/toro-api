@@ -1,7 +1,7 @@
-import { createClient as _createClient } from '../../src/redis/utils';
 import { ConnectionOptions } from '../../src/redis';
 import { RedisClient } from 'bullmq';
 import { loadScripts } from '../../src/commands/utils';
+import IORedis from 'ioredis';
 
 export const TEST_DB = 13;
 export const TEST_QUEUE_PREFIX = 'test';
@@ -13,10 +13,19 @@ export const DEFAULT_CONNECTION_OPTIONS: ConnectionOptions = {
 
 export async function createClient(
   options?: ConnectionOptions,
+  withScripts = true,
 ): Promise<RedisClient> {
   options = options || DEFAULT_CONNECTION_OPTIONS;
-  const client = _createClient(options);
-  await loadScripts(client);
+  let client;
+
+  if (!options) {
+    client = new IORedis(); // supported in 4.19.0
+  } else if (typeof options === 'string') {
+    client = new IORedis(options as string);
+  } else {
+    client = new IORedis(options);
+  }
+  if (withScripts) await loadScripts(client);
   return client;
 }
 

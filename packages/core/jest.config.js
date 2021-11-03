@@ -11,7 +11,7 @@ module.exports = {
     '**/?(*.)+(spec|test).ts?(x)',
   ],
   testPathIgnorePatterns: ['/dist/'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'mjs'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'mjs', 'node'],
   testEnvironment: 'node',
   setupFiles: ['jest-date-mock'],
   preset: 'ts-jest',

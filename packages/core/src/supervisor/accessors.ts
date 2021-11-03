@@ -1,12 +1,10 @@
 import boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
-import { StatsClient } from '../stats/stats-client';
-import { QueueManager } from '../queues/queue-manager';
-import { QueueListener } from '../queues/queue-listener';
+import { StatsClient, StatsListener } from '../stats';
+import { QueueManager, QueueListener } from '../queues';
 import { Supervisor } from './supervisor';
 import { HostManager } from '../hosts/host-manager';
 import { BaseMetric } from '../metrics/baseMetric';
-import { StatsListener } from '../stats';
 import { RuleManager } from '../rules/rule-manager';
 import { createAsyncIterator } from '../lib';
 

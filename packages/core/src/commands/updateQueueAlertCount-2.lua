@@ -11,16 +11,17 @@
 
 local rulesIndexKey = KEYS[1]
 local destination = KEYS[2]
+local rcall = redis.call
 
 local fieldPattern = rulesIndexKey .. ':*->alertCount'
-local counts = redis.call("SORT", rulesIndexKey, "BY", "nosort", "GET", fieldPattern) or {}
+local counts = rcall("SORT", rulesIndexKey, "BY", "nosort", "GET", fieldPattern) or {}
 local total = 0
 
 for _, count in ipairs(counts) do
     total = total + (count or 0)
 end
 
-redis.call("SET", destination, total)
+rcall("SET", destination, total)
 
 return total
 

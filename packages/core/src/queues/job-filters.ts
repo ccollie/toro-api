@@ -8,26 +8,11 @@ import { Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
 import { getMultipleJobsById } from './queue';
 import { getJobFiltersKey } from '../keys';
-import {
-  convertToRPN,
-  parse as parseExpression,
-  KeywordValueFn,
-  RpnNode,
-  ValueKeyword,
-  ValueKeywordNode,
-  LiteralNode,
-} from '@alpen/shared';
-import fnv from 'fnv-plus';
+import { parse as parseExpression } from '@alpen/shared';
 import { isEmpty, isObject, uniq } from 'lodash';
 import { getConfigNumeric } from '../lib/config-utils';
 import { safeParse } from '@alpen/shared';
-
-type FilterMeta = {
-  rpn: RpnNode[];
-  filter: string;
-  hash: string;
-  preprocessor: () => RpnNode[];
-};
+import { compileFilter, FilterMeta, getExpressionHash } from './expr-utils';
 
 // map filter expression to rpn
 const filterCache = new LRUCache({
@@ -35,51 +20,14 @@ const filterCache = new LRUCache({
   maxAge: 60000,
 });
 
-const KeywordValues: Record<ValueKeyword, KeywordValueFn> = {
-  $NOW: () => Date.now(),
-};
-
-function getExpressionHash(expr: string): string {
-  return fnv.hash(expr).hex();
-}
-
-function getCompiled(filter: string, hash?: string): RpnNode[] {
+function getCompiled(filter: string, hash?: string): FilterMeta {
   hash = hash ?? getExpressionHash(filter);
   let filterMeta = filterCache.get(hash) as FilterMeta;
   if (!filterMeta) {
-    const rpn = convertToRPN(filter);
-    // search node list for keywords to replace at runtime
-    const substitutions: Array<[number, KeywordValueFn]> = [];
-    rpn.forEach((node, i) => {
-      if (node.type === 'keyword') {
-        const name = (node as ValueKeywordNode).name;
-        substitutions.push([i, KeywordValues[name]]);
-      }
-    });
-    let preprocessor: () => RpnNode[] = () => rpn;
-    if (substitutions.length) {
-      preprocessor = () => {
-        const result = [...rpn];
-        substitutions.forEach((substitution) => {
-          const [index, fn] = substitution;
-          result[index] = {
-            type: 'literal',
-            value: fn(),
-          } as LiteralNode;
-        });
-        return result;
-      };
-    }
-    filterMeta = {
-      filter,
-      hash,
-      rpn,
-      preprocessor,
-    };
+    filterMeta = compileFilter(filter);
     filterCache.set(hash, filterMeta);
   }
-
-  return filterMeta.preprocessor();
+  return filterMeta;
 }
 
 function unserialize(data: string): JobFilter {
@@ -121,7 +69,7 @@ export async function addJobFilter(
   status: JobStatusEnum | null,
   expression: string,
 ): Promise<JobFilter> {
-  const hash = fnv.hash(expression).hex();
+  const hash = getExpressionHash(expression);
   const filter: JobFilter = {
     id: getUniqueId(),
     name,
@@ -338,7 +286,8 @@ export async function processSearch(
       } = await Scripts.getJobsByFilter(
         queue,
         status,
-        compiled,
+        compiled.expr,
+        compiled.globals,
         meta.cursor,
         requestCount,
       );

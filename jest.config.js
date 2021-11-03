@@ -16,7 +16,7 @@ module.exports = {
   modulePathIgnorePatterns: ['/dist/'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   coveragePathIgnorePatterns: ['node_modules'],
-  moduleFileExtensions: ['ts', 'mts', 'tsx', 'js', 'cjs', 'jsx'],
+  moduleFileExtensions: ['ts', 'mts', 'tsx', 'js', 'cjs', 'jsx', 'node'],
   moduleNameMapper: pathsToModuleNameMapper(
     readJSONSync('./tsconfig.json').compilerOptions.paths,
     { prefix },

@@ -2,18 +2,9 @@ export interface RpnNode {
   readonly type: string;
 }
 
-export interface ThisNode extends RpnNode {
-  readonly type: 'this';
-}
-
 export interface LiteralNode extends RpnNode {
   readonly type: 'literal';
   value: string | number | boolean | null;
-}
-
-export interface ConditionalNode extends RpnNode {
-  readonly type: 'conditional';
-  readonly elseOfs?: number;
 }
 
 export interface IdentifierNode extends RpnNode {
@@ -48,11 +39,6 @@ export interface BinaryOpNode extends RpnNode {
   left: RpnNode;
   right: RpnNode;
   op: string;
-}
-
-export interface ValueKeywordNode extends RpnNode {
-  readonly type: 'keyword';
-  name: string;
 }
 
 export type KeywordValueFn = () => any;

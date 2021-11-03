@@ -1,8 +1,9 @@
 import { clearDb, createClient, createQueue } from '../factories';
 import { Job, Queue } from 'bullmq';
-import { Scripts } from '../../src';
-import { convertToRPN } from '@alpen/shared';
+import { loadCommand, Scripts} from '../../src/commands';
+import { parse as parseExpression } from '@alpen/shared';
 import ms from 'ms';
+import * as path from 'path';
 
 const Person = {
   _id: '100',
@@ -53,16 +54,20 @@ const Person = {
 };
 
 function quote(source: string): string {
-  return "'" + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, "$1\\'") + "'";
+  return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
 }
 
 describe('filterJobs', () => {
   let client;
   let queue: Queue;
 
+  const SCRIPT_NAME = path.normalize(path.join(__dirname, '../../src/commands/jobFilter-1.lua'));
+
   beforeEach(async () => {
-    client = await createClient();
+    client = await createClient(null, false);
     await clearDb(client);
+    const command = await loadCommand(SCRIPT_NAME);
+    client.defineCommand(command.name, command.options);
     queue = createQueue();
   });
 
@@ -79,12 +84,12 @@ describe('filterJobs', () => {
       return { name: 'default', data: item };
     });
     await queue.addBulk(bulkData);
-    const compiled = convertToRPN(criteria);
+    const compiled = parseExpression(criteria);
     const { jobs } = await Scripts.getJobsByFilter(
       queue,
       'waiting',
       compiled,
-      0,
+      null,
       100,
     );
     return jobs.map((job) => job.data);
@@ -112,14 +117,15 @@ describe('filterJobs', () => {
   }
 
   async function check(criteria: string, expectMatch = true): Promise<void> {
-    const compiled = convertToRPN(criteria);
+    const compiled = parseExpression(criteria);
     const { jobs } = await Scripts.getJobsByFilter(
       queue,
       'waiting',
       compiled,
+      undefined,
       0,
     );
-    expect(!!jobs.length).toEqual(expectMatch);
+    expect(!!jobs?.length).toEqual(expectMatch);
   }
 
   async function checkExpression(

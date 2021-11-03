@@ -50,8 +50,8 @@
   "devDependencies": {
     "@types/express": "^4.17.11",
     "@types/node": "^16.11.4",
-    "bob-ts": "^1.1.5",
-    "bob-esbuild-cli": "^2.0.0",
+    "bob-ts": "^1.2.0",
+    "bob-esbuild-cli": "^3.0.0",
     "express": "^4.17.1"
   }
 }

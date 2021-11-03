@@ -13,23 +13,12 @@
         job states, or "unknown" if not found
 ]]
 
+--- @include "includes/isInRedisList"
+
 local jobId = ARGV[1]
 
-local hasLPOS = redis.call('COMMAND', 'INFO', 'LPOS') ~= nil
-
-local function isInList (key)
-    local jobId = jobId
-    local hasLPOS = hasLPOS
-    if (hasLPOS) then
-        return redis.call("LPOS", key, jobId) ~= false
-    end
-    local list = redis.call("LRANGE", key, 0, -1)
-    for _, v in pairs(list) do
-        if v == jobId then
-            return true
-        end
-    end
-    return false
+local function isInList(key)
+    return isInRedisList(key, jobId)
 end
 
 local function isInZSet(key)

@@ -461,7 +461,7 @@ export class RuleStorage {
     RuleScripts.pipelineAggregateAlertCounts(pipeline, this.host, this.queue);
 
     const res = await pipeline.exec();
-    const [err, deleted] = res[0];
+    const [, deleted] = res[0];
     const [, alertCount] = res[1];
 
     if (!!deleted) {
@@ -769,6 +769,7 @@ export function deserializeRule(data?: any): Rule {
 }
 
 function serializeAlert(data: RuleAlert): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { state, ...res } = data;
   res.failures = res.failures || 0;
   return res;

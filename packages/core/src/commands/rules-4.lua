@@ -57,111 +57,14 @@ local rule = {}
 local ruleState = {}
 local result = {}
 local isLoaded = false
-local debug_flag = true
 
-local ASCII_ZERO = 48
--- From internet sleuthing. This is apparently not in the docs
-local MAX_INTEGER = 9007199254740994
-
-local function isNil(val)
-    return (val == cjson.null) or ('nil' == type(val))
-end
-
-local function isArray(t)
-    local isNil = isNil
-    if (type(t) ~= 'table') then
-        return false
-    end
-    local i = 1
-    for _, v in pairs(t) do
-        -- note: explicitly check against nil here !!!
-        -- for arrays coming from JSON, we can have cjson.null, which we
-        -- want to support
-        if (type(_) ~= 'number' or isNil(t[i])) then
-            return false
-        end
-        i = i + 1
-    end
-    return true
-end
-
-local dblQuote = function(v)
-    return '"' .. v .. '"'
-end
-
-local function toStr(value, ...)
-    -- local v;
-    if (isNil(value)) then
-        return 'null'
-    end
-    local str = '';
-    local t = type(value)
-    if (t == 'string') then
-        return value
-    elseif (t == 'boolean') then
-        return (value and 'true' or 'false')
-    elseif t == 'nil' then
-        return 'nil'
-    elseif (t == 'number') then
-        return value .. ''
-    elseif (t == 'table') then
-        local delims = { '{', '}' }
-        if isArray(value) then
-            delims = { '[', ']' }
-        end
-        str = delims[1]
-        for k, v in pairs(value) do
-            local s = (t == 'string') and dblQuote(v) or toStr(v, ...)
-            if type(k) == 'number' then
-                str = str .. s .. ', '
-            else
-                str = str .. dblQuote(k) .. ': ' .. s .. ', '
-            end
-        end
-        str = str:sub(0, #str - 2) .. delims[2]
-    end
-    return str
-end
-
-local function debug(msg, ...)
-    if (debug_flag) then
-        local str = ''
-        local args = { ... }
-        for i = 1, #args do
-            str = str .. toStr(args[i])
-        end
-        redis.call('rpush', 'rules-debug', toStr(msg), str)
-    end
-end
-
-local function toBool(value)
-    local bool = false
-    local t = type(value)
-    if (t == 'string') then
-        if (value == 'true' or value == '1') then
-            return true
-        end
-        if (value == 'false' or value == '0') then
-            return false
-        end
-        return #value > 0
-    elseif t == 'boolean' then
-        bool = value
-    elseif (t == 'number') then
-        bool = value ~= 0
-    end
-    return bool
-end
-
---- does s only contain digits?
--- @string s a string
-local function isDigit(s)
-    return string.find(s,'^%d+$') == 1
-end
-
-local function isString(s)
-    return type(s) == 'string'
-end
+--- @include "includes/isNil"
+--- @include "includes/isArray"
+--- @include "includes/toStr"
+--- @include "includes/debug"
+--- @include "includes/isTruthy"
+--- @include "includes/isString"
+--- @include "includes/incrementTimestamp"
 
 local function arrayHashAppend(arr, ...)
     local arg = { ... }
@@ -199,39 +102,6 @@ local function storeValue(timestamp, value, is_hash)
     return val
 end
 
-local function incrementTimestamp(val)
-    local isString = isString
-    local isDigit = isDigit
-
-    local num = tonumber(val)
-    if (num == nil) or (num >= MAX_INTEGER) then
-        val = tostring(val)
-        if (isString(val) and isDigit(val)) then
-            -- bigint/snowflake id
-            local j = #val
-            local carry = 1
-            local right = ''
-            while j > 1 do
-                local digit = val:byte(j) - ASCII_ZERO
-                digit = digit + carry
-                if (digit > 9) then
-                    carry = digit - 9
-                    right = '0' .. right
-                else
-                    right = digit .. right
-                    break
-                end
-                j = j - 1
-            end
-            local res = val:sub(1, j - 1) .. right
-            return res
-        end
-    else
-        return num + 1
-    end
-    return assert(false, "timestamp must be a number. got: " .. tostring(val))
-end
-
 local stateLoaded = false
 local function loadState()
     if not stateLoaded then
@@ -267,7 +137,7 @@ local function loadRule()
         else
             rule.channels = {}
         end
-        rule.isActive = toBool(rule.isActive)
+        rule.isActive = isTruthy(rule.isActive)
         isLoaded = true
         --- debug(rule)
     end
@@ -278,12 +148,23 @@ local function getOption(name, defaultValue)
 end
 
 local function getNumberOption(name, defaultValue)
-    local result = tonumber(rule.opts[name] or defaultValue)
-    return result ~= nil and result or defaultValue
+    local val = tonumber(rule.opts[name] or defaultValue)
+    return val ~= nil and val or defaultValue
+end
+
+local function getBoolOption(name, defaultValue)
+    if (defaultValue == nil) then defaultValue = false end
+    return isTruthy(getOption(name, defaultValue))
 end
 
 local function getState(name, defaultValue)
     return ruleState[name] or defaultValue
+end
+
+local function getBoolState(name, defaultValue)
+    if (defaultValue == nil) then defaultValue = false end
+    local val = ruleState[name] or defaultValue
+    return isTruthy(val)
 end
 
 local function getNumberState(name, defaultValue)
@@ -426,7 +307,7 @@ local function shouldNotify(oldState)
             return false
         end
         -- we transitioned from error to normal
-        local alertOnReset = toBool( getOption('alertOnReset', false) )
+        local alertOnReset = getBoolOption('alertOnReset', false)
         if not alertOnReset then
             return false
         end
@@ -546,7 +427,7 @@ local function calculateState()
 end
 
 local function resetAndCloseCircuit()
-    local result = false
+    local res = false
     local alertId = ruleState.alertId
     if (alertId ~= nil) then
         local alert = getAlert(alertId)
@@ -560,10 +441,10 @@ local function resetAndCloseCircuit()
 
             --- Raise event
             emitEvent(ALERT_RESET_EVENT, 'id', alertId, 'data', serialized)
-            result = true
+            res = true
         end
     end
-    return result
+    return res
 end
 
 local function updateCircuit()
@@ -691,7 +572,7 @@ local function markNotification(alertId)
         end
     end
     local alertCount = getNumberState('alertCount', 0)
-    local doNotify = toBool(getNumberState('notifyPending', 0))
+    local doNotify = getBoolState('notifyPending')
     if doNotify then
         alertCount = alertCount + 1
         setState('lastNotify', now, 'alertCount', alertCount, 'notifyPending', 0)
@@ -728,7 +609,7 @@ local function clearState()
 end
 
 local function isStarted()
-    return toBool(getState('isStarted', false))
+    return getBoolState('isStarted')
 end
 
 local function start()

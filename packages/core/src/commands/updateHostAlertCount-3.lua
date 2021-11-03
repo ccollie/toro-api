@@ -12,14 +12,15 @@
 local queuesIndexKey = KEYS[1]
 local destination = KEYS[2]
 local scratchKey = KEYS[3]
+local rcall = redis.call
 
 -- SORT doesnt work on HASHes as source, so we copy the keys (queues) to a scratch set
 -- Fortunately for us, the hash keys are also the key prefixes
-local queues = redis.call('HKEYS', queuesIndexKey)
-redis.call('SADD', scratchKey, unpack(queues))
+local queues = rcall('HKEYS', queuesIndexKey)
+rcall('SADD', scratchKey, unpack(queues))
 local fieldPattern = queuesIndexKey .. ':*->alertCount'
-local counts = redis.call("SORT", scratchKey, "BY", "nosort", "GET", fieldPattern) or {}
-redis.call('DEL', scratchKey)
+local counts = rcall("SORT", scratchKey, "BY", "nosort", "GET", fieldPattern) or {}
+rcall('DEL', scratchKey)
 
 local total = 0
 
@@ -27,7 +28,7 @@ for i = 1, #counts do
     total = total + (counts[i] or 0)
 end
 
-redis.call("SET", destination, total)
+rcall("SET", destination, total)
 
 return total
 

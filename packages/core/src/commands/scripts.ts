@@ -209,19 +209,26 @@ export class Scripts {
     queue: Queue,
     type: string,
     filter: any,
+    globals: Record<string, any> | undefined | null,
     cursor: number,
     count = 10,
   ): Promise<ScriptFilteredJobsResult> {
-    const client = await loadScripts(await queue.client);
+    let client = await queue.client;
+    if (!(client as any).jobFilter) {
+        await loadScripts(client);
+    }
     type = type === 'waiting' ? 'wait' : type; // alias
     const key = type ? queue.toKey(type) : '';
     const prefix = queue.toKey('');
     const criteria = JSON.stringify(filter);
 
-    const response = await (client as any).filterJobs(
+    const globStr = globals ? JSON.stringify(globals) : '';
+
+    const response = await (client as any).jobFilter(
       key,
       prefix,
       criteria,
+      globStr,
       cursor,
       count,
     );

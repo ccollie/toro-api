@@ -2,7 +2,7 @@ import handlebars from 'handlebars';
 import handlebarsHelpers from 'handlebars-helpers';
 import ms from 'ms';
 import prettyMilliseconds from 'pretty-ms';
-import { markdownToHtml } from './index';
+import { markdownToHtml } from './markdown';
 import {
   capitalize,
   isEmpty,
