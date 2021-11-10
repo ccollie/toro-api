@@ -4,9 +4,11 @@
 --- @include "toBool.lua"
 --- @include "isFalsy.lua"
 --- @include "isTruthy.lua"
+--- @include "isNil"
 --- @include "toInt.lua"
 --- @include "toNum.lua"
 --- @include "getType.lua"
+--- @include "debug.lua"
 
 local operator = {}
 
@@ -44,6 +46,7 @@ end
 -- @param b value
 function operator.lt(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l < r
 end
 
@@ -52,6 +55,7 @@ end
 -- @param b value
 function operator.le(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l <= r
 end
 
@@ -60,6 +64,7 @@ end
 -- @param b value
 function operator.gt(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l > r
 end
 
@@ -68,6 +73,7 @@ end
 -- @param b value
 function operator.ge(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l >= r
 end
 
@@ -76,6 +82,7 @@ end
 -- @param b value
 function operator.add(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l + r
 end
 
@@ -84,6 +91,7 @@ end
 -- @param b value
 function operator.sub(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l - r
 end
 
@@ -92,6 +100,7 @@ end
 -- @param b value
 function operator.mul(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l * r
 end
 
@@ -99,6 +108,8 @@ end
 -- @param a value
 -- @param b value
 function operator.div(a,b)
+    local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return a/b
 end
 
@@ -107,6 +118,7 @@ end
 -- @param b value
 function operator.pow(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l ^ r
 end
 
@@ -115,6 +127,7 @@ end
 -- @param b value
 function operator.mod(a,b)
     local l, r = normalizeNils(a, b)
+    if (l == nil or r == nil) then return cjson.null end
     return l % r
 end
 
@@ -128,13 +141,14 @@ end
 --- return the negative of a value **-**
 -- @param a value
 function operator.unm(a)
+    if (isNil(a)) then return cjson.null end
     return -a
 end
 
 --- false if value evaluates as true **not**
 -- @param a value
 function operator.lnot(a)
-    return not a
+    return not isTruthy(a)
 end
 
 --- true if both values evaluate as true **and**
@@ -169,7 +183,7 @@ end
 -- @include "matches.lua"
 
 function operator.matches(a, pattern)
-    return matches(e, pattern)
+    return matches(a, pattern)
 end
 
 function operator.noMatches(str, pattern)
@@ -220,8 +234,6 @@ operator.optable = {
     ['/']=operator.div,
     ['%']=operator.mod,
     ['^']=operator.pow,
-    ['()']=operator.call,
-    ['[]']=operator.index,
     ['<']=operator.lt,
     ['<=']=operator.le,
     ['>']=operator.gt,
@@ -258,7 +270,7 @@ end
 operator.unops = {
     ['!'] = function(value) return not toBool(value) end,
     ['!!'] = function(value) return not isFalsy(value) end,
-    ['-'] = function(value) return -1 * toDouble(value) end,
+    ['-'] = function(value) return isNil(value) and cjson.null or (-1 * toDouble(value)) end,
     ['+'] = toNum,
     ['typeof'] = getType
 }

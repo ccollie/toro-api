@@ -22,17 +22,25 @@ local function getFilteredJobs(key, keyPrefix, criteria, context, cursor, count)
 
     count = count or 25
 
-    context = context or {}
-
-    debug("getFilteredJobs: ========================")
-    debug(criteria)
+    -- fiddling with Globals is hacky, but scripts are meant to be short-lived
+    if (context and #context > 0) then
+        for k, v in pairs(context) do
+            -- don't overwrite existing globals
+            if (not EXPR_GLOBALS[k]) then
+                EXPR_GLOBALS[k] = v
+            end
+        end
+    end
+    context = EXPR_GLOBALS
+    --- debug("getFilteredJobs: ========================")
+    --- debug(criteria)
 
     local n = 0
     local jobs = {}
     local newCursor, total = scanJobIds(key, keyPrefix, cursor, count, function(jobId)
         local job = Job:new(keyPrefix .. jobId, jobId)
 
-        debug('in callback. Id = ', jobId, ' job = ', job)
+        --- debug('in callback. Id = ', jobId, ' job = ', job)
         if (job.found) then
             context['job'] = job
             context['this'] = job

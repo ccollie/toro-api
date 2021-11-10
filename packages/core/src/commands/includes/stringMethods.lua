@@ -20,7 +20,7 @@ function stringMethods.substr(s, start, count)
         start = start + 1
         if (start > len) then return '' end
     end
-    count = assert(tonumber(count or len), 'count should be a number')
+    count = assert(tonumber(count or len), 'substr: count should be a number')
     if (count < 0) then
         return ''
     end
@@ -74,7 +74,7 @@ function stringMethods.slice(s, startIndex, endIndex)
     return s:sub(startIndex + 1, endIndex + 1)
 end
 
-function stringMethods.toLower(value)
+function stringMethods.toLowerCase(value)
     if (isNil(value)) then
         return nil
     end
@@ -82,7 +82,7 @@ function stringMethods.toLower(value)
     return #value > 0 and string.lower(value) or ''
 end
 
-function stringMethods.toUpper(value)
+function stringMethods.toUpperCase(value)
     if (isNil(value)) then
         return nil
     end
@@ -90,7 +90,7 @@ function stringMethods.toUpper(value)
     return #value > 0 and string.upper(value) or ''
 end
 
-function stringMethods.contains(haystack, needle, start)
+function stringMethods.includes(haystack, needle, start)
     debug('Haystack = ' .. toStr(haystack) .. ' needle = ' .. toStr(needle))
     if type(haystack) ~= 'string' or type(needle) ~= 'string' then return false end
     local plen = #needle
@@ -132,7 +132,7 @@ function stringMethods.charAt(str, idx)
     return nil
 end
 
-function stringMethods.indexOfString(haystack, needle, start)
+function stringMethods.indexOf(haystack, needle, start)
     if (isNil(haystack)) then
         return cjson.null
     end
@@ -221,11 +221,11 @@ function stringMethods.trim(input, chars)
     return stringMethods.trimInternal('trim', input, chars,true, true)
 end
 
-function stringMethods.ltrim(input, chars)
+function stringMethods.trimStart(input, chars)
     return stringMethods.trimInternal('ltrim', input, chars,true, false)
 end
 
-function stringMethods.rtrim(input, chars)
+function stringMethods.trimEnd(input, chars)
     return stringMethods.trimInternal('rtrim', input, chars, false, true)
 end
 

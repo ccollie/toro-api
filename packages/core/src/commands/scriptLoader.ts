@@ -27,16 +27,12 @@ export interface FileInfo {
   includes: FileInfo[];
 }
 
-function hash(data: any, algorithm = 'sha1'): string {
-  return crypto.createHash(algorithm).update(data).digest('hex');
-}
-
-function calcSha1(str: string): string {
-  return hash(str);
+function calcSha1(data: string): string {
+  return crypto.createHash('sha1').update(data).digest('hex');
 }
 
 function getReplacementToken(normalizedPath: string): string {
-  return `--- @${hash(normalizedPath)}`;
+  return `--- @${calcSha1(normalizedPath)}`;
 }
 
 function bannerize(fileName: string, baseDir: string, content: string): string {
@@ -64,6 +60,13 @@ function ensureExt(filename: string, ext = 'lua'): string {
   return `${filename}${ext}`;
 }
 
+/**
+ * Recursively collect all scripts included in a file
+ * @param file  the parent file
+ * @param cache a cache for file metadata to increase efficiency. Since a file can be included
+ * multiple times, we make sure to load it only once.
+ * @param stack internal stack to prevent circular references
+ */
 function collectFilesInternal(
   file: FileInfo,
   cache: Map<string, FileInfo>,
@@ -141,6 +144,12 @@ function collectFiles(file: FileInfo, cache: Map<string, FileInfo>) {
   return collectFilesInternal(file, cache, []);
 }
 
+/**
+ * Construct the final version of a file by interpolating its includes in dependency order.
+ * @param file the file whose content we want to construct
+ * @param baseDir the base directory of the file. Used only to massage the filename for the banner
+ * @param cache a cache to keep track of which includes have already been processed
+ */
 function mergeInternal(
   file: FileInfo,
   baseDir: string,

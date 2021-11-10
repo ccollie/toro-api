@@ -19,8 +19,8 @@ local globals = ARGV[3]
 local cursor = ARGV[4]
 local count = tonumber(ARGV[5] or 10)
 
-debug("===================== EXPRESSION ========================")
-debug(expression)
+-- debug("===================== EXPRESSION ========================")
+-- debug(expression)
 
 if (globals ~= nil and #globals > 0) then
     globals = assert(cjson.decode(globals), 'Invalid globals. Expected a JSON encoded string')

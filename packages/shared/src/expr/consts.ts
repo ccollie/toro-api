@@ -1,4 +1,4 @@
-// maybe move to ast.ts
+// maybe move to types.ts
 // make sure this is in-sync with jobFilter-1.lua
 
 export const SupportedFunctions: string[] = [

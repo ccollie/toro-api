@@ -77,12 +77,12 @@ local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
         if (not idSeen[id]) then
             idSeen[id] = true
             n = n + 1
-            debug("About to callback. Id = ", id)
+            --- debug("About to callback. Id = ", id)
             return callback(id, n, itemCount)
         end
     end
 
-    debug('Here. Key = ', redisKey, ' keyType = ', keyType, ' fullscan = ', fullScan, ' scannedIds = ', scannedJobIds)
+    --- debug('Here. Key = ', redisKey, ' keyType = ', keyType, ' fullscan = ', fullScan, ' scannedIds = ', scannedJobIds)
 
     if (fullScan) then
         -- does a keyspace as opposed to list scan. Filter out non-ids

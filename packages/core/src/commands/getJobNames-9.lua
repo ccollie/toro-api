@@ -22,7 +22,7 @@ local scratchKey = KEYS[8]
 local destination = KEYS[9]
 
 local MAX_ITEMS = 160
-local function add_from_list (key, result, dedupe)
+local function addFromList (key, result, dedupe)
     local items = {}
 
     local type = redis.call("TYPE", key)
@@ -61,7 +61,7 @@ result = {}
 
 for i = 1, #KEYS-2 do
     if (#result < MAX_ITEMS) then
-        add_from_list(KEYS[i], result, dedup)
+        addFromList(KEYS[i], result, dedup)
     end
 end
 

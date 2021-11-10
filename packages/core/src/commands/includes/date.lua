@@ -30,7 +30,7 @@ local centuryflip = 0 -- year >= centuryflip == 1900, < centuryflip == 2000
 local function fix(n) n = tonumber(n) return n and ((n > 0 and math.floor or math.ceil)(n)) end
 -- returns the modulo n % d;
 local function mod(n,d) return n - d*math.floor(n/d) end
--- is `str` in string list `tbl`, `ml` is the minimun len
+-- is `str` in string list `tbl`, `ml` is the minimum len
 local function inlist(str, tbl, ml, tn)
     local lwr = string.lower
     local sub = string.sub
@@ -70,7 +70,7 @@ local sl_timezone = {
     [480]="pst",  [420.2]="pdt",
 }
 -- set the day fraction resolution
-local function setticks(t)
+local function setTicks(t)
     TICKSPERSEC = t;
     TICKSPERDAY = SECPERDAY*TICKSPERSEC
     TICKSPERHOUR= SECPERHOUR*TICKSPERSEC
@@ -204,7 +204,7 @@ local function getequivyear(y)
     for _ = 0, 3000 do
         de:setYear(de:getYear() + 1, 1, 1)
         dy = de:getYear()
-        dw = de:getweekday() * (isLeapYear(dy) and  -1 or 1)
+        dw = de:getWeekDay() * (isLeapYear(dy) and  -1 or 1)
         if not yt[dw] then yt[dw] = dy end  --print(de)
         if yt[1] and yt[2] and yt[3] and yt[4] and yt[5] and yt[6] and yt[7] and yt[-1] and yt[-2] and yt[-3] and yt[-4] and yt[-5] and yt[-6] and yt[-7] then
             getequivyear = function(y)  return yt[ (weekday(makedaynum(y, 0, 1)) + 1) * (isLeapYear(y) and  -1 or 1) ]  end
@@ -240,7 +240,7 @@ end
 local function date_parse(str)
     local gsub = string.gsub
     local tonumber = tonumber
-    local floor = floor
+    local floor = math.floor
     local y,m,d, h,r,s,  z,  w,u, j,  e,  x,c,  dn,df
     local sw = newstrwalker(gsub(gsub(str, "(%b())", ""),"^(%s*)","")) -- remove comment, trim leading space
     --local function error_out() print(y,m,d,h,r,s) end
@@ -359,6 +359,7 @@ function dobj:_ensureDateCache()
         self._cache['d'] = d
     end
 end
+
 function dobj:getdate()
     self._ensureDateCache()
     local y, m, d = self._cache['y'], self._cache['m'], self._cache['d']
@@ -377,7 +378,7 @@ end
 function dobj:getClockHour() local h = self:getHours() return h>12 and mod(h,12) or (h==0 and 12 or h) end
 
 function dobj:getYearDay() return yearday(self.daynum) + 1 end
-function dobj:getweekday()
+function dobj:getWeekDay()
     -- in lua weekday is sunday = 1, monday = 2 ...
     local wd = self._cache['wd']
     if wd == nil then
@@ -412,9 +413,9 @@ function dobj:getMinutes()  return self._getdaypart('mn', MINPERHOUR) end
 function dobj:getSeconds()  return self._getdaypart('s', SECPERMIN) end
 function dobj:getMilliseconds() return self._getdaypart('ms', MSECPERMIN) end
 function dobj:getfracsec()  return mod(math.floor(self.dayfrc/TICKSPERSEC ),SECPERMIN)+(mod(self.dayfrc,TICKSPERSEC)/TICKSPERSEC) end
-function dobj:getticks(u)  local x = mod(self.dayfrc,TICKSPERSEC) return u and ((x*u)/TICKSPERSEC) or x  end
+function dobj:getTicks(u)  local x = mod(self.dayfrc,TICKSPERSEC) return u and ((x*u)/TICKSPERSEC) or x  end
 
-function dobj:getweeknumber(wdb)
+function dobj:getWeekNumber(wdb)
     local wd, yd = weekday(self.daynum), yearday(self.daynum)
     if wdb then
         wdb = tonumber(wdb)
@@ -436,13 +437,13 @@ function dobj:getisoweekday()
     end
     return value
 end
-function dobj:getisoweeknumber() return (isowy(self.daynum)) end
-function dobj:getisoyear() return isoy(self.daynum)  end
+function dobj:getISOWeekNumber() return (isowy(self.daynum)) end
+function dobj:getISOYear() return isoy(self.daynum)  end
 function dobj:getISODate()
     local w, y = isowy(self.daynum)
     return y, w, self:getisoweekday()
 end
-function dobj:setisoyear(y, w, d)
+function dobj:setISOYear(y, w, d)
     local cy, cw, cd = self:getISODate()
     if y then cy = fix(tonumber(y))end
     if w then cw = fix(tonumber(w))end
@@ -455,8 +456,8 @@ function dobj:setisoyear(y, w, d)
     end
 end
 
-function dobj:setisoweekday(d) return self:setisoyear(nil, nil, d) end
-function dobj:setisoweeknumber(w,d) return self:setisoyear(nil, w, d) end
+function dobj:setisoweekday(d) return self:setISOYear(nil, nil, d) end
+function dobj:setisoweeknumber(w,d) return self:setISOYear(nil, w, d) end
 
 function dobj:setYear(y, m, d)
     local cy, cm, cd = breakdaynum(self.daynum)
@@ -487,7 +488,7 @@ end
 
 function dobj:setMinutes(m,s,t)  return self:setHours(nil,   m,   s, t) end
 function dobj:setSeconds(s, t)  return self:setHours(nil, nil,   s, t) end
-function dobj:setticks(t)    return self:setHours(nil, nil, nil, t) end
+function dobj:setTicks(t)    return self:setHours(nil, nil, nil, t) end
 
 function dobj:spanticks()  return (self.daynum*TICKSPERDAY + self.dayfrc) end
 function dobj:spanSeconds()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERSEC  end
@@ -543,9 +544,9 @@ local tvspec = {
     -- The day of the month as a number (range 1 - 31)
     ['%d']=function(self) return string.format("%.2d", self:getDay())  end,
     -- year for ISO 8601 week, from 00 (79)
-    ['%g']=function(self) return string.format("%.2d", mod(self:getisoyear() ,100)) end,
+    ['%g']=function(self) return string.format("%.2d", mod(self:getISOYear() ,100)) end,
     -- year for ISO 8601 week, from 0000 (1979)
-    ['%G']=function(self) return string.format("%.4d", self:getisoyear()) end,
+    ['%G']=function(self) return string.format("%.4d", self:getISOYear()) end,
     -- same as %b
     ['%h']=function(self) return self:fmt0("%b") end,
     -- hour of the 24-hour day, from 00 (06)
@@ -565,13 +566,13 @@ local tvspec = {
     -- ISO 8601 day of the week, to 7 for Sunday (7, 1)
     ['%u']=function(self) return self:getisoweekday() end,
     -- Sunday week of the year, from 00 (48)
-    ['%U']=function(self) return string.format("%.2d", self:getweeknumber()) end,
+    ['%U']=function(self) return string.format("%.2d", self:getWeekNumber()) end,
     -- ISO 8601 week of the year, from 01 (48)
-    ['%V']=function(self) return string.format("%.2d", self:getisoweeknumber()) end,
+    ['%V']=function(self) return string.format("%.2d", self:getISOWeekNumber()) end,
     -- The day of the week as a decimal, Sunday being 0
-    ['%w']=function(self) return self:getweekday() - 1 end,
+    ['%w']=function(self) return self:getWeekDay() - 1 end,
     -- Monday week of the year, from 00 (48)
-    ['%W']=function(self) return string.format("%.2d", self:getweeknumber(2)) end,
+    ['%W']=function(self) return string.format("%.2d", self:getWeekNumber(2)) end,
     -- The year as a number without a century (range 00 to 99)
     ['%y']=function(self) return string.format("%.2d", mod(self:getYear() ,100)) end,
     -- Year with century (2000, 1914, 0325, 0001)
@@ -623,6 +624,10 @@ function dobj:fmt(str)
     str = str or self.fmtstr or fmtstr
     return self:fmt0((string.gmatch(str, "${%w+}")) and
             (string.gsub(str, "${%w+}", function(x)local f=tvspec[x];return (f and f(self)) or x end)) or str)
+end
+
+function dobj:toJSON()
+    return self.fmt('${iso}')
 end
 
 function dobj.__lt(a, b)
@@ -707,17 +712,17 @@ end
 function date.epoch() return date_epoch:copy()  end
 
 function date.isodate(y,w,d) return date_new(makedaynum_isoywd(y + 0, w and (w+0) or 1, d and (d+0) or 1), 0)  end
-function date.setcenturyflip(y)
+function date.setCenturyFlip(y)
     if y ~= math.floor(y) or y < 0 or y > 100 then date_error_arg() end
     centuryflip = y
 end
-function date.getcenturyflip() return centuryflip end
+function date.getCenturyFlip() return centuryflip end
 
 -- Internal functions
 function date.fmt(str) if str then fmtstr = str end; return fmtstr end
 function date.daynummin(n)  DAYNUM_MIN = (n and n < DAYNUM_MAX) and n or DAYNUM_MIN  return n and DAYNUM_MIN or date_new(DAYNUM_MIN, 0):normalize()end
 function date.daynummax(n)  DAYNUM_MAX = (n and n > DAYNUM_MIN) and n or DAYNUM_MAX return n and DAYNUM_MAX or date_new(DAYNUM_MAX, 0):normalize()end
-function date.ticks(t) if t then setticks(t) end return TICKSPERSEC  end
+function date.ticks(t) if t then setTicks(t) end return TICKSPERSEC  end
 --#end -- not DATE_OBJECT_AFX
 
 -- utc = "!*t"

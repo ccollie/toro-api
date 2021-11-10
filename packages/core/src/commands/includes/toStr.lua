@@ -10,7 +10,7 @@ local function toStr(value, ...)
     elseif (t == 'nil' or value == cjson.null) then
         return 'null'
     elseif (t == 'function') then
-        return toStr(value(...))
+        return 'fn()'
     elseif (t == 'table') then
         local isArr = true
         for k, v in pairs(value) do

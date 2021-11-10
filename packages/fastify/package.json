@@ -22,15 +22,15 @@
     "@alpen/api": "^0.0.2",
     "@alpen/core": "^0.0.2",
     "@graphql-ez/fastify": "^0.9.4",
-    "graphql": "15.4.0-experimental-stream-defer.1",
-    "graphql-ez": "^0.13.3"
+    "graphql": "16.0.0",
+    "graphql-ez": "^0.13.4"
   },
   "peerDependencies": {
     "fastify": "3.x"
   },
   "devDependencies": {
     "@types/node": "^14.17.5",
-    "bob-ts": "^1.2.0",
+    "bob-ts": "^1.2.1",
     "esbuild": "^0.13.12",
     "fastify": "^3.23.0"
   }

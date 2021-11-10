@@ -1,3 +1,5 @@
+--- @include "debug.lua"
+
 ----- Job Definition -----------------------------------------------------
 -- https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L23
 local JOB_JSON_FIELDS = {
@@ -72,7 +74,17 @@ Job.__metatable = Job
 function Job:new(key, id)
     -- the new instance
     local jobHash = redis.pcall('HGETALL', key) or {}
-    local found = jobHash ~= nil and #jobHash > 0
+    local len = #jobHash
+    local found = len > 0
+    if (found) then
+        local hash = {}
+        for i = 1, len, 2 do
+            local k = jobHash[i]
+            local v = jobHash[(i+1)]
+            hash[k] = v
+        end
+        jobHash = hash
+    end
     return setmetatable({_hash = jobHash, id = id, key = key, found = found}, Job)
 end
 

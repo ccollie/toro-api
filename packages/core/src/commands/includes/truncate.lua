@@ -5,11 +5,13 @@
 -- @param {Number} places
 -- @param {Boolean} roundOff
 --
+local function _trunc(val) local x, _ = math.modf(val) return x end
+
 local function truncate(num, places, roundOff)
     local sign = math.abs(num) == num and 1 or -1
     num = math.abs(num)
 
-    local result, _ = math.modf(val)
+    local result = _trunc(num)
     local decimals = num - result
 
     if (places == nil) then places = 0 end

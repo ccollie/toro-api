@@ -7,6 +7,7 @@
 --- @include "isEqual.lua"
 --- @include "isNil.lua"
 --- @include "some.lua"
+--- @include "intersect.lua"
 
 local arrayMethods = {}
 
@@ -151,10 +152,8 @@ function arrayMethods.slice(arr, startIndex, endIndex)
     return res
 end
 
--- @include "intersect.lua"
-
-function arrayMethods.all(a, b)
-    if (isArray(a) and isArray(b)) then
+function arrayMethods.includesAll(a, b)
+    if (type(a) == 'table' and type(b) == 'table') then
         -- order of arguments matter
         local int = intersect(b, a)
         return #b == #int

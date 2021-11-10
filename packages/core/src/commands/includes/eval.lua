@@ -29,7 +29,8 @@ ExprEval.__index = ExprEval
 
 --- todo: cache dates
 local DateOps = {
-    parse = function(_, ...) return date(...) end
+    parse = function(_, ...) return date(...) end,
+    isLeapYear = function(_, d) return date.isLeapYear(d) end
 }
 
 local TypeProps = {
@@ -60,10 +61,10 @@ local Ctors = {
 
 -- globals
 local EXPR_GLOBALS = {
-    ['Math'] = mathMethods,
-    ['JSON'] = jsonMethods,
-    ['Object'] = objectMethods,
-    ['Date'] = DateOps,
+    Math = mathMethods,
+    JSON = jsonMethods,
+    Object = objectMethods,
+    Date = DateOps,
     parseBoolean = toBool,
     parseDate = date,
     parseFloat = toDouble,
@@ -88,50 +89,83 @@ local EXPR_GLOBALS = {
     end
 }
 
-function ExprEval.evaluateArray(list, context)
-    local res = {}
+function ExprEval.evaluateArray(list, context, res)
+    res = res or {}
+    local i = #res + 1
     local eval = ExprEval.evaluate
     for _, v in ipairs(list) do
-        res[_] = eval(v, context)
+        res[i] = eval(v, context)
+        i = i + 1
     end
     return res
 end
 
-function ExprEval.evaluateMember(node, context)
-    local eval = ExprEval.evaluate
-    local ObjectTypeMethods = ObjectTypeMethods
-    local object = eval(node.object, context)
-    local prop = node.property
-    local key = node.computed and eval(prop, context) or prop['name']
+function ExprEval.getProp(object, key)
+    if (type(key) == 'number') then key = key + 1 end
     local val = object[key]
 
-    if (isNil(val)) then
+    debug(' getProp: key = ', toStr(key), ', val = ', val)
+    if (val == nil or val == cjson.null) then
         local t = type(object)
-        local obj = ObjectTypeMethods[t]
-        if (obj == nil) then
-            obj = TypeProps[t]
-            if (obj == nil) then
-                -- all because of lua's handling of tables
-                if (t == 'table') then
-                    -- possibly array
-                    obj = arrayMethods
-                end
-            else
-                val = obj()
-                return {object, val}
+        debug('Here 1D, object Type = ', t, ' object = ', object)
+
+        --- all because of lua's handling of tables
+        if (t == 'table') then
+            val = arrayMethods[key] or objectMethods[key]
+        else
+            local obj = ObjectTypeMethods[t]
+            val = obj and obj[key]
+            if (isTruthy(val)) then
+                debug(t .. ' Method ',  key)
             end
         end
-        if (obj and obj[key]) then
-            val = obj[key]
-        else
-            val = cjson.null
+
+        if (val == nil) then
+            debug('HERE 3: possibly a prop = ')
+            local obj = TypeProps[t]
+            if (obj) then
+                val = obj[key] and obj[key](object)
+            end
         end
     end
-    return {object, val}
+    return val
+end
+
+function ExprEval.evalMember(node, context)
+    local eval = ExprEval.evaluate
+    local getProp = ExprEval.getProp
+
+    local object = context
+    local val, key
+    local saveObj
+    debug('EvalMember. Node = ', node)
+    for _, segment in ipairs(node.path) do
+
+        local t = segment.type
+        if (t == 'Literal') then
+            key = segment.value
+        elseif t == 'Identifier' then
+            key = segment.name
+        else
+            key = eval(segment, context)
+        end
+
+        val = getProp(object, key)
+
+        if (val == nil) then
+            return {saveObj, val}
+        end
+
+        saveObj = object
+        object = val
+    end
+    return {saveObj, val}
 end
 
 function ExprEval.MemberExpression(node, context)
-    local value = ExprEval.evaluateMember(node, context)
+    debug('MemberExpression ', node)
+    local value = ExprEval.evalMember(node, context)
+    debug('value = ', value)
     return value[2]
 end
 
@@ -140,20 +174,22 @@ function ExprEval.UnaryExpression(node, context)
 end
 
 function ExprEval.CallExpression(node, context)
-    local caller, fn, assign
+    local caller, fn
+    local callerArg
     if (node.callee.type == 'MemberExpression') then
-        assign = ExprEval.evaluateMember(node.callee, context)
+        local assign = ExprEval.evalMember(node.callee, context)
         caller = assign[1]
         fn = assign[2]
+        callerArg = { caller }
     else
         fn = ExprEval.evaluate(node.callee, context)
     end
     if (type(fn) ~= 'function') then
         local name = ExprEval.nodeFunctionName(caller or node);
-        error(name .. " is not a function",0)
+        error('"' .. toStr(name) .. '" is not a function',0)
         return cjson.null
     end
-    local args = ExprEval.evaluateArray(node.arguments, context)
+    local args = ExprEval.evaluateArray(node.arguments, context, callerArg)
     return fn( unpack(args) )
 end
 
@@ -162,7 +198,7 @@ function ExprEval.NewExpression(node, context)
     local ctorName = node.callee.name or '<unknown>'
     local fn = Ctors[ctorName]
     if (type(fn) ~= 'function') then
-        error(ctorName .. " is not a constructor function",0)
+        error('"' .. toStr(ctorName) .. '" is not a constructor function',0)
     end
     local args = ExprEval.evaluateArray(node.arguments, context)
     return fn( unpack(args) )
@@ -181,7 +217,6 @@ end
 function ExprEval.BinaryExpression(node, context)
     local eval = ExprEval.evaluate
     local left = eval(node.left, context)
-    debug('BinaryExpression: ', node.left, ' ', node.operator, " ", node.right)
     if (node.operator == '||') then
         return left or eval(node.right, context);
     elseif (node.operator == '&&') then
@@ -196,6 +231,7 @@ end
 
 function ExprEval.Identifier(node, context)
     local name = node.name
+    debug('Here in Identifier. name = ', name)
     local val = context[name] or EXPR_GLOBALS[name]
     return (val == nil) and cjson.null or val
 end
@@ -224,9 +260,9 @@ function ExprEval.nodeFunctionName(callee)
         local v = callee.name
         if (v == nil) then
             v = callee.property and callee.property.name or nil
+        else
+            return v
         end
-        return v
     end
     return '<unknown>'
 end
-

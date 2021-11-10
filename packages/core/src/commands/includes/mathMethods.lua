@@ -1,3 +1,6 @@
+--- @include "sign"
+--- @include "round"
+--- @include "truncate"
 
 local function createMathFn(name)
     local fn = math[name]
@@ -30,7 +33,7 @@ local mathMethods = {
     ['log10'] = createMathFn('log10'),
     ['round'] = function(_, val, places) return round(val, places) end,
     ['sign'] = function(_, val) return sign(val) end,
-    ['trunc'] = function(_, val, places) return trunc(val, places) end
+    ['trunc'] = function(_, val, places) return truncate(val, places) end
 }
 
 function mathMethods.extrema(name, items, comparator)

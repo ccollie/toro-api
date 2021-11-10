@@ -7,7 +7,7 @@ local function matches(a, pattern)
         return (type(x) == 'string') and x:match(pattern)
     end
 
-    if (type(a) ~= 'table') then return isMatch(x) end
+    if (type(a) ~= 'table') then return isMatch(a) end
 
     return some(a, function(x)
         local t = type(x)

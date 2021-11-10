@@ -39,14 +39,14 @@
     "@alpen/core": "^0.0.2",
     "@graphql-ez/koa": "^0.8.7",
     "@koa/router": "^10.1.1",
-    "graphql": "15.4.0-experimental-stream-defer.1",
-    "graphql-ez": "^0.13.3"
+    "graphql": "16.0.0",
+    "graphql-ez": "^0.13.4"
   },
   "devDependencies": {
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.8",
     "@types/node": ">=16.11.1",
-    "bob-ts": "^1.2.0",
+    "bob-ts": "^1.2.1",
     "esbuild": "^0.13.12",
     "bob-esbuild-cli": "^3.0.0",
     "typescript": "^4.4.4"

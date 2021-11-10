@@ -14,6 +14,18 @@ function objectMethods.keys(obj)
     return res
 end
 
+function objectMethods.getOwnProperties(obj)
+    local res = {}
+    local i = 1
+    for k, _ in pairs(obj) do
+        if (type(k) == 'string') then
+            res[i] = k
+            i = i + 1
+        end
+    end
+    return res
+end
+
 function objectMethods.values(obj)
     local res = {}
     local i = 1

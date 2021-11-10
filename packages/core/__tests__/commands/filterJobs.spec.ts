@@ -1,7 +1,7 @@
+import {compileFilter} from '../../src/queues/expr-utils';
 import { clearDb, createClient, createQueue } from '../factories';
 import { Job, Queue } from 'bullmq';
-import { loadCommand, Scripts} from '../../src/commands';
-import { parse as parseExpression } from '@alpen/shared';
+import { loadCommand, Scripts } from '../../src/commands';
 import ms from 'ms';
 import * as path from 'path';
 
@@ -72,7 +72,7 @@ describe('filterJobs', () => {
   });
 
   afterEach(async () => {
-    await clearDb(client);
+    // await clearDb(client);
     return client.quit();
   });
 
@@ -84,7 +84,7 @@ describe('filterJobs', () => {
       return { name: 'default', data: item };
     });
     await queue.addBulk(bulkData);
-    const compiled = parseExpression(criteria);
+    const {expr: compiled } = compileFilter(criteria);
     const { jobs } = await Scripts.getJobsByFilter(
       queue,
       'waiting',
@@ -117,7 +117,7 @@ describe('filterJobs', () => {
   }
 
   async function check(criteria: string, expectMatch = true): Promise<void> {
-    const compiled = parseExpression(criteria);
+    const { expr: compiled } = compileFilter(criteria);
     const { jobs } = await Scripts.getJobsByFilter(
       queue,
       'waiting',
@@ -339,14 +339,6 @@ describe('filterJobs', () => {
       await check('job.data.projects.C[1] == "student_record"');
     });
 
-    test('in', async () => {
-      await check('job.data.circles.school in ["Henry"]');
-    });
-
-    test('in (false)', async () => {
-      await check('job.data.middlename in [null, "David"]');
-    });
-
     test('%', async () => {
       await check('job.data.date.month % 8 == 1');
     });
@@ -440,36 +432,6 @@ describe('filterJobs', () => {
     });
   });
 
-  describe('xor', () => {
-    test('true XOR true', async () => {
-      await check(
-        'job.data.firstName == "Francis" ^ job.data.lastName "^%a.+e"',
-        false,
-      );
-    });
-
-    test('true XOR false', async () => {
-      await check(
-        'job.data.firstName == "Francis" ^ job.data.lastName == "Amoah"',
-        true,
-      );
-    });
-
-    test('false XOR true', async () => {
-      await check(
-        'job.data.firstName == "Enoch" ^ job.data.lastName == "Asante"',
-        true,
-      );
-    });
-
-    test('false XOR false', async () => {
-      await check(
-        'job.data.firstName == "Enoch" ^ job.data.age != null',
-        false,
-      );
-    });
-  });
-
   describe('Query array operators', function () {
     describe('selector tests', () => {
       const data = {
@@ -535,34 +497,12 @@ describe('filterJobs', () => {
       );
     });
 
-    it('^', async () => {
-      const condition = '(job.data.qty > 250) ^ (job.data.qty < 200)';
-      const xor = (a: boolean, b: boolean) => a !== b;
-
-      await checkExpressionByList(
-        inventory,
-        condition,
-        (data) => xor(data.qty > 250, data.qty < 200),
-        '_id',
-      );
-    });
-
     it('!', async () => {
       const condition = '!(job.data.qty > 250)';
       await checkExpressionByList(
         inventory,
         condition,
         (data) => !(data.qty > 250),
-        '_id',
-      );
-    });
-
-    it('in', async () => {
-      const condition = 'job.data.sku in ["abc1", "abc2"]';
-      await checkExpressionByList(
-        inventory,
-        condition,
-        (data) => ['abc1', 'abc2'].includes(data.sku),
         '_id',
       );
     });
@@ -614,18 +554,6 @@ describe('filterJobs', () => {
       });
     });
 
-    describe('ifNull', () => {
-      test('uses default value if null is found', async () => {
-        const conditional =
-          'ifNull(job.data.missing_value, "default") == "default"';
-        await check(conditional);
-      });
-
-      test('uses non null value', async () => {
-        const conditional = 'ifNull(job.data.score, -1) == job.data.score';
-        await check(conditional);
-      });
-    });
   });
 
   describe('Arithmetic Operators', () => {
@@ -676,6 +604,7 @@ describe('filterJobs', () => {
 
   describe('Strings', () => {
     test('length', async () => {
+      await queue.add('default', Person);
       await check('job.data.title.length == ' + Person.title.length);
     });
 
@@ -938,38 +867,6 @@ describe('filterJobs', () => {
 
       test('"null"', async () => {
         await check('typeof job.data.retirement == "null"');
-      });
-    });
-
-    describe('instanceof', () => {
-      let job: Job;
-
-      beforeEach(async () => {
-        job = await queue.add('default', Person);
-      });
-
-      test('"object"', async () => {
-        await check('job.data instanceof "object"');
-      });
-
-      test('"number"', async () => {
-        await check('job.data.jobs instanceof "number"');
-      });
-
-      test('"array"', async () => {
-        await check('job.data.grades instanceof "array"');
-      });
-
-      test('"boolean"', async () => {
-        await check('job.data.isActive instanceof "boolean"');
-      });
-
-      test('"string"', async () => {
-        await check('job.name instanceof "string"');
-      });
-
-      test('"null"', async () => {
-        await check('job.data.missing instanceof "null"');
       });
     });
 
@@ -1310,7 +1207,7 @@ describe('filterJobs', () => {
       });
     });
 
-    test('isEmpty', async () => {
+    describe('isEmpty', () => {
       const cases = [
         [null, true],
         [0, false],

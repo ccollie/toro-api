@@ -113,7 +113,7 @@ local function assertTimestamp(ts)
   return ts
 end
 
-local function parse_timestamp(ts)
+local function parseTimestamp(ts)
   if (ts == '*') then
     local val = redis.call('TIME')
     return val[1]
@@ -121,7 +121,7 @@ local function parse_timestamp(ts)
   return assertTimestamp(ts)
 end
 
-local function parse_timestamp_value(key, ts)
+local function parseTimestampValue(key, ts)
   if (ts == '*') then
     local val = redis.call('TIME')
     return val[1]
@@ -133,7 +133,7 @@ local function parse_timestamp_value(key, ts)
   return assertTimestamp(ts)
 end
 
-local function parse_timestamp_ex(key, ts, allowRangeChars)
+local function parseTimestampEx(key, ts, allowRangeChars)
   if (ts == '*') then
     local val = redis.call('TIME')
     return val[1]
@@ -144,9 +144,9 @@ local function parse_timestamp_ex(key, ts, allowRangeChars)
   return assertTimestamp(ts)
 end
 
-local function parse_range_min_max(key, timestamp1, timestamp2, addSeparator)
-  local min_val = parse_timestamp_ex(key, timestamp1, true)
-  local max_val = parse_timestamp_ex(key, timestamp2, true)
+local function parseRangeMinMax(key, timestamp1, timestamp2, addSeparator)
+  local min_val = parseTimestampEx(key, timestamp1, true)
+  local max_val = parseTimestampEx(key, timestamp2, true)
   local sep = (addSeparator or false) and SEPARATOR or ''
 
   local min, max = min_val, max_val
@@ -165,7 +165,7 @@ local function parse_range_min_max(key, timestamp1, timestamp2, addSeparator)
   }
 end
 
-local function get_key_val_varargs(method, ...)
+local function getKeyValVarargs(method, ...)
   local arg = { ... }
   local n = #arg
 
@@ -182,8 +182,8 @@ local COPY_OPTIONS = {
   LIMIT = 1
 }
 
-local function parse_range_params(key, valid_options, min, max, ...)
-  local result = parse_range_min_max(key, min, max)
+local function parseRangeParams(key, valid_options, min, max, ...)
+  local result = parseRangeMinMax(key, min, max)
 
   valid_options = valid_options or PARAMETER_OPTIONS
 
@@ -229,7 +229,7 @@ local function parse_range_params(key, valid_options, min, max, ...)
   return result
 end
 
-local function process_range(range)
+local function processRange(range)
   local decode = decode_value
 
   local result = {}
@@ -244,8 +244,8 @@ local function process_range(range)
   return result
 end
 
-local function get_single_value(key, timestamp, name)
-  timestamp = parse_timestamp_value(key, timestamp)
+local function getSingleValue(key, timestamp, name)
+  timestamp = parseTimestampValue(key, timestamp)
   local min = '[' .. tostring(timestamp) .. SEPARATOR
   local max = '(' .. tostring(incrementTimestamp(timestamp)) .. SEPARATOR
 
@@ -267,7 +267,7 @@ local function get_single_value(key, timestamp, name)
   return nil
 end
 
-local function base_range(cmd, key, params)
+local function baseRange(cmd, key, params)
   local fetch_params = { key, params.min, params.max }
   if (params.limit) then
     fetch_params[#fetch_params + 1] = 'LIMIT'
@@ -283,22 +283,21 @@ local Timeseries = {
 
 Timeseries.__index = Timeseries;
 
-
 -- Add timestamp,value pair to the Timeseries
 function Timeseries.add(key, timestamp, value)
-  timestamp = parse_timestamp_ex(key, timestamp, false)
+  timestamp = parseTimestampEx(key, timestamp, false)
   store_value(key, timestamp, value, false)
   return timestamp
 end
 
 
 function Timeseries.bulkAdd(key, ...)
-  local values = get_key_val_varargs('bulkAdd', ...)
+  local values = getKeyValVarargs('bulkAdd', ...)
   local len = #values
   local count = 0
 
   for i = 1, len, 2 do
-    local ts = parse_timestamp(values[i])
+    local ts = parseTimestamp(values[i])
     -- should be a string
     local val = values[i + 1]
     store_value(key, ts, val, false)
@@ -316,10 +315,10 @@ function Timeseries.del(key, ...)
   local count = 0
 
   for _, timestamp in ipairs(args) do
-    local ts = parse_timestamp_value(key, timestamp)
+    local ts = parseTimestampValue(key, timestamp)
     local min = '[' .. tostring(ts) .. SEPARATOR
     local max = '(' .. tostring(incrementTimestamp(ts)) .. SEPARATOR
-    --- local range = parse_range_min_max(key, timestamp, timestamp, true)
+    --- local range = parseRangeMinMax(key, timestamp, timestamp, true)
     local entries = redis.call('zrangebylex', key, min, max)
     if entries and #entries then
       for _, raw_value in ipairs(entries) do
@@ -342,13 +341,13 @@ end
 
 -- Count the number of elements between *min* and *max*
 function Timeseries.count(key, min, max, ...)
-  local params = parse_range_params(key,{}, min, max, ...)
+  local params = parseRangeParams(key,{}, min, max, ...)
   return redis.call('zlexcount', key, params.min, params.max)
 end
 
 -- Check if *timestamp* exists in the timeseries
 function Timeseries.exists(key, timestamp)
-  local value = get_single_value(key, timestamp, 'exists')
+  local value = getSingleValue(key, timestamp, 'exists')
   return value ~= nil and 1 or 0
 end
 
@@ -376,7 +375,7 @@ end
 ]]
 function Timeseries.gaps(key, startScore, endScore, interval, max)
   max = tonumber(max) or 250
-  local params = parse_range_params(key,{}, startScore, endScore)
+  local params = parseRangeParams(key,{}, startScore, endScore)
   interval = assert(tonumber(interval), 'interval value must be a number (ms)')
   local ids = {}
   local lastSetIndex = -10
@@ -414,7 +413,7 @@ function Timeseries.gaps(key, startScore, endScore, interval, max)
 end
 
 function Timeseries._get(remove, key, timestamp)
-  local entry = get_single_value(key, timestamp, 'get')
+  local entry = getSingleValue(key, timestamp, 'get')
   if entry then
     if (remove) then
       redis.call("zrem", key, entry.raw_value)
@@ -435,7 +434,7 @@ end
 
 -- Set the value associated with *timestamp*
 function Timeseries.set(key, timestamp, value)
-  local current = get_single_value(key, timestamp, 'set')
+  local current = getSingleValue(key, timestamp, 'set')
   assert(value ~= nil, 'timeseries.set: Must specify a value ' .. key .. '(' .. toStr(timestamp) .. ') ')
 
   -- remove old value
@@ -449,8 +448,8 @@ end
 -- Merge the value associated with *timestamp* with an update fragment.
 -- Does a shallow merge
 function Timeseries.updateJson(key, timestamp, value)
-  timestamp = parse_timestamp_ex(key, timestamp)
-  local current = get_single_value(key, timestamp, 'updateJson')
+  timestamp = parseTimestampEx(key, timestamp)
+  local current = getSingleValue(key, timestamp, 'updateJson')
   local update = assert(cjson.decode(value),
           'updateJson: Must specify a json encoded string ' .. key .. '(' .. tostring(timestamp) .. ') ')
 
@@ -469,12 +468,12 @@ function Timeseries.updateJson(key, timestamp, value)
 end
 
 function Timeseries._range(remove, cmd, key, min, max, ...)
-  local params = parse_range_params(key, PARAMETER_OPTIONS, min, max, ...)
-  local data = base_range(cmd, key, params)
+  local params = parseRangeParams(key, PARAMETER_OPTIONS, min, max, ...)
+  local data = baseRange(cmd, key, params)
   if data and #data > 0 then
-    local range = process_range(data, params)
+    local range = processRange(data, params)
     if remove then
-      remove_values(key, data)
+      removeValues(key, data)
     end
     return range
   end
@@ -497,7 +496,7 @@ function Timeseries.revrange(key, min, max, ...)
   return Timeseries._range(false,'zrevrangebylex', key, min, max, ...)
 end
 
-local function remove_values(key, values)
+local function removeValues(key, values)
   if values and #values > 0 then
     return redis.call('zrem', key, unpack(values))
   end
@@ -506,12 +505,12 @@ end
 
 -- Remove a range between *min* and *max*
 function Timeseries.remrange(key, min, max, ...)
-  local params = parse_range_params(key,{ LIMIT = 1 }, min, max, ...)
+  local params = parseRangeParams(key,{ LIMIT = 1 }, min, max, ...)
   if (params.limit == nil) then
     return redis.call('zremrangebylex', key, params.min, params.max)
   end
-  local data = base_range('zrangebylex', key, params)
-  return remove_values(key, data)
+  local data = baseRange('zrangebylex', key, params)
+  return removeValues(key, data)
 end
 
 --[[
@@ -539,7 +538,7 @@ end
 -- increment value(s) at key(s)
 --- incrby(key, ts, name1, value1, name2, value2, ...)
 function Timeseries.incrBy(key, timestamp, ...)
-  local current = get_single_value(key, timestamp, 'incrBy')
+  local current = getSingleValue(key, timestamp, 'incrBy')
 
   local hash = {}
   if (current ~= nil) then
@@ -547,7 +546,7 @@ function Timeseries.incrBy(key, timestamp, ...)
     assert(type(hash) == "table", 'incrBy. The value at ' .. key .. '(' .. tostring(timestamp) .. ') is not a hash')
   end
 
-  local values = get_key_val_varargs('incrby', ...)
+  local values = getKeyValVarargs('incrby', ...)
 
   local len, count = #values, 0
   local result = {}
@@ -580,8 +579,8 @@ end
 --- copy data from a timeseries and store it in another key
 function Timeseries.copy(key, dest, min, max, ...)
 
-  local params = parse_range_params(key, COPY_OPTIONS, min, max, ...)
-  local data = base_range('zrangebylex', key, params)
+  local params = parseRangeParams(key, COPY_OPTIONS, min, max, ...)
+  local data = baseRange('zrangebylex', key, params)
 
   if (#data == 0) then
     return 0
@@ -621,9 +620,9 @@ function Timeseries.merge(firstKey, secondKey, dest, min, max, ...)
     LIMIT = 1
   }
 
-  local params = parse_range_params(firstKey, MERGE_OPTIONS, min, max, ...)
-  local first = base_range('zrangebylex', firstKey, params)
-  local second = base_range('zrangebylex', secondKey, params)
+  local params = parseRangeParams(firstKey, MERGE_OPTIONS, min, max, ...)
+  local first = baseRange('zrangebylex', firstKey, params)
+  local second = baseRange('zrangebylex', secondKey, params)
   local merged = merge(first, second)
   if (#merged) then
     storeTimeseries(dest, merged)
