@@ -37,8 +37,9 @@ for _, job in ipairs(jobs) do
     table.insert(result, "jobId")
     table.insert(result, job.id)
     local hash = job._hash;
-    for _, value in pairs(hash) do
-        table.insert(result, value)
+    for k, v in pairs(hash) do
+        table.insert(result, k)
+        table.insert(result, v)
     end
     n = n + 1
 end
