@@ -1,4 +1,13 @@
-import boom from '@hapi/boom';
+import { Queue } from 'bullmq';
+import { compile, TemplateDelegate } from 'handlebars';
+import { round } from 'lodash';
+import ms from 'ms';
+import {
+  AlertData,
+  CheckAlertResult,
+  CircuitState,
+  RuleScripts,
+} from '../commands';
 import {
   AccurateInterval,
   Clock,
@@ -6,47 +15,31 @@ import {
   getUniqueId,
 } from '../lib';
 import { logger } from '../logger';
-import {
-  AlertData,
-  CheckAlertResult,
-  CircuitState,
-  RuleScripts,
-} from '../commands';
-import { Queue } from 'bullmq';
-import { Rule } from './rule';
-import handlebars from 'handlebars';
-import { createRuleTemplateHelpers } from './rule-template-helpers';
+import type { NotificationContext } from '../types';
+import { NotificationManager } from '../notifications';
 import { QueueManager } from '../queues';
-import { NotificationContext, NotificationManager } from '../notifications';
-import ms from 'ms';
-import { round } from 'lodash';
-import { ErrorLevel, RuleEventsEnum, RuleState } from './types';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
-  RuleOperator,
-  RuleType,
-} from './rule-conditions';
-import {
+  ErrorStatus,
   EvaluationResult,
-  isPeakRuleEvaluationState,
+  RuleAlert,
   RuleEvaluationState,
-} from './condition-evaluator';
-import { RuleAlert } from './rule-alert';
+  RuleEventsEnum,
+  RuleOperator,
+  RuleState,
+  RuleType,
+} from '../types';
 import {
   ChangeRuleEvaluationState,
   isChangeRuleEvaluationState,
 } from './change-condition-evaluator';
+import { isPeakRuleEvaluationState } from './condition-evaluator';
+import { Rule } from './rule';
+import { createRuleTemplateHelpers } from './rule-template-helpers';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
-}
-
-function getRuleState(result: EvaluationResult): RuleState {
-  if (!result.triggered) return RuleState.NORMAL;
-  return result.errorLevel === ErrorLevel.WARNING
-    ? RuleState.WARNING
-    : RuleState.ERROR;
 }
 
 /**
@@ -57,16 +50,12 @@ export class RuleAlerter {
   private _state: CircuitState = CircuitState.CLOSED;
   private _failures = 0;
   private _alertCount = 0;
-  private _shouldNotify = false;
-  private _alertId: string;
-  private _alert: RuleAlert = null;
   /** The timestamp marking the end of the warmupWindow period */
   private _warmupEnd = 0;
-  private _lastFailedAt = 0;
   private _resetTimer: AccurateInterval;
   private readonly clock: Clock;
   private readonly _baseContext: Record<string, any>;
-  private _template: handlebars.TemplateDelegate;
+  private _template: TemplateDelegate;
 
   public readonly rule: Rule;
   public readonly notifications: NotificationManager; // public for testing
@@ -102,19 +91,6 @@ export class RuleAlerter {
     return !!this._warmupEnd && this.getTime() < this._warmupEnd;
   }
 
-  private get recoveryWindow(): number {
-    return this.rule.alertOptions.recoveryWindow ?? 0;
-  }
-
-  private get timeSinceLastFailure(): number {
-    return this._lastFailedAt ? this.getTime() - this._lastFailedAt : 0;
-  }
-
-  get isInCooldown(): boolean {
-    const diff = this.timeSinceLastFailure;
-    return diff && diff < this.recoveryWindow;
-  }
-
   get failures(): number {
     return this._failures;
   }
@@ -128,7 +104,7 @@ export class RuleAlerter {
   }
 
   /**
-   * Returns true if this rule in an violated states.
+   * Returns true if this rule in a violated state.
    * @type {Boolean}
    */
   get isTriggered(): boolean {
@@ -138,11 +114,8 @@ export class RuleAlerter {
   private clearState(): void {
     this._alertCount = 0;
     this._failures = 0;
-    this._shouldNotify = false;
     this._state = CircuitState.CLOSED;
     this.rule.state = RuleState.NORMAL;
-    this._alert = null;
-    this._alertId = null;
   }
 
   async clear(): Promise<void> {
@@ -175,21 +148,31 @@ export class RuleAlerter {
     result: EvaluationResult,
   ): void {
     this._state = response.state;
-    this.rule.isActive = !['not_found', 'inactive'].includes(response.status);
+    this.rule.isActive = response.status === 'active';
 
     this._alertCount = response.alertCount ?? 0;
     this._failures = response.failures ?? 0;
-    this._warmupEnd = response.status === 'warmup' ? response.endDelay ?? 0 : 0;
+    this._warmupEnd =
+      response.status === 'warmup' ? response.warmupEnd ?? 0 : 0;
 
-    this._shouldNotify = response.notify;
-    this._ruleState = getRuleState(result);
-    this._alertId = response.alertId;
-    this.rule.state = this._ruleState;
-    if (response.state === CircuitState.CLOSED) {
-      this._lastFailedAt = 0;
+    if (response.status === 'inactive') {
+      this.rule.state = RuleState.MUTED;
+    } else {
+      if (
+        response.state === CircuitState.OPEN ||
+        response.state === CircuitState.HALF_OPEN
+      ) {
+        const status = response.errorStatus || result.errorLevel;
+        this.rule.state =
+          status === ErrorStatus.ERROR ? RuleState.ERROR : RuleState.WARNING;
+      } else {
+        this.rule.state = RuleState.NORMAL;
+      }
     }
 
-    if (result.triggered && response.status === 'ok') {
+    this._ruleState = this.rule.state;
+
+    if (result.triggered && response.status === 'active') {
       this.rule.totalFailures++;
     }
   }
@@ -201,89 +184,89 @@ export class RuleAlerter {
       if (this._ruleState === RuleState.NORMAL) return;
     }
 
-    const wasTriggered = this.isTriggered;
-
     const now = this.clock.getTime();
+    const alertData = this.createAlertData(result);
+
     const response = await RuleScripts.checkAlert(
       this.queue,
       this.rule,
-      result.errorLevel,
+      alertData,
       now,
     );
-    if (response.status === 'not_found') {
-      const id = this.rule.id;
-      throw boom.notFound(`Rule #${id} not found!`);
-    }
+    // if (response.status === 'not_found') {
+    //   const id = this.rule.id;
+    //   throw notFound(`Rule #${id} not found!`);
+    // }
     this.updateLocalState(response, result);
 
-    // check to see if we need to write the alert
-    if (response.status === 'ok' && !wasTriggered && this.isTriggered) {
-      this._alert = await this.writeAlert(result);
-      this._alertId = this._alert ? this._alert.id : '';
-    } else if (!response.alertId) {
-      this._alert = null;
+    if (response.state === CircuitState.CLOSED && !response.changed) {
+      // we're golden.
+      return;
     }
 
-    if (!result.triggered) {
-      this.handleReset();
-    } else {
-      this._lastFailedAt = now;
-      this.handleTrigger(result);
-    }
-    // cleanup current state. needs to be here since we rely on state
-    // for notifications
-    if (wasTriggered && !this.isTriggered) {
-      this.clearState();
+    this.handleNotify(response);
+  }
+
+  private async getAlert(alertId: string): Promise<RuleAlert | null> {
+    let alert: RuleAlert;
+    try {
+      alert = await RuleScripts.getAlert(this.queue, this.rule, alertId);
+      return alert;
+    } catch (e) {
+      logger.error(e);
+      return;
     }
   }
 
-  private handleTrigger(result: EvaluationResult): void {
-    this.notifyAlert(result);
-  }
+  private handleNotify(response: CheckAlertResult): void {
+    if (!response.alertId) return;
 
-  private handleReset(): void {
-    const alert = this._alert;
+    if (!response.notify && (response.earliestNotification ?? 0) == 0) {
+      return;
+    }
 
-    if (!alert) return;
+    const triggered = response.state === CircuitState.OPEN;
+    const event = triggered
+      ? RuleEventsEnum.ALERT_TRIGGERED
+      : RuleEventsEnum.ALERT_RESET;
 
     const run = (): void => {
-      this._alert = null;
-      if (this.isTriggered) {
-        alert.resetAt = this.clock.getTime();
-        (alert as any).status = 'close';
-        this.clear()
-          .then(() => this.dispatchAlert(RuleEventsEnum.ALERT_RESET, alert))
-          .catch(RuleAlerter.onError);
-      }
+      this.clearResetTimer();
+      const chain = triggered ? this.clear() : Promise.resolve();
+      chain
+        .then(() => {
+          const data = Object.create(null);
+          data.failures = response.failures;
+          data.alertCount = response.alertCount;
+          return this.dispatchAlert(event, response.alertId, data);
+        })
+        .catch(RuleAlerter.onError);
     };
-
-    if (!this.isInCooldown) {
-      return run();
-    }
 
     // It is possible for the rule state to be triggered followed by
     // a period of inactivity. We set a timeout so that if this happens
     // we automatically clear the alert
-
     this.clearResetTimer();
 
-    this._resetTimer = createAccurateInterval(
-      () => {
-        if (!this.isInCooldown) {
-          this.clearResetTimer();
-          run();
-        }
-      },
-      1000, // TODO: tune this interval based on size of diff
-      { clock: this.clock },
-    );
+    if (response.earliestNotification) {
+      const timeout = (response.earliestNotification ?? 0) - this.getTime();
+      if (timeout <= 0) {
+        return run();
+      } else {
+        this._resetTimer = createAccurateInterval(run, timeout, {
+          clock: this.clock,
+        });
+      }
+    } else {
+      run();
+    }
   }
 
   public createAlertData(result: EvaluationResult): AlertData {
     const alert: AlertData = {
       id: getUniqueId(),
       value: result.value,
-      errorLevel: result.errorLevel,
+      errorStatus: result.errorLevel,
       state: { ...result.state },
     };
 
@@ -305,24 +288,20 @@ export class RuleAlerter {
     return RuleScripts.writeAlert(host, this.queue, this.rule, data);
   }
 
-  protected notifyAlert(result: EvaluationResult): void {
-    const event = result.triggered
-      ? RuleEventsEnum.ALERT_TRIGGERED
-      : RuleEventsEnum.ALERT_RESET;
-    if (!this._shouldNotify) return;
-    this.dispatchAlert(event, this._alert).catch(RuleAlerter.onError);
-  }
-
   protected async dispatchAlert(
     event: RuleEventsEnum,
-    alert: RuleAlert,
+    alertId: string,
+    data?: Record<string, any>,
   ): Promise<void> {
-    if (!alert || !this.queueManager.hasLock) return;
+    if (!this.queueManager.hasLock) return;
+
+    const alert = await this.getAlert(alertId);
+    if (!alert) return;
+    data = data ?? {};
     // by the time we get here, the alert is already stored in redis
     const channels = this.rule.channels || [];
     const templateData = {
-      failures: this._failures,
-      alertCount: this._alertCount,
+      ...data,
       ...this._baseContext,
       ...alert,
     };
@@ -333,12 +312,7 @@ export class RuleAlerter {
 
   private async markNotify(alertId: string): Promise<void> {
     if (alertId) {
-      await RuleScripts.markNotify(
-        this.queue,
-        this.rule,
-        alertId,
-        this.clock.getTime(),
-      );
+      await RuleScripts.markNotify(this.queue, this.rule, alertId);
     }
   }
 
@@ -349,9 +323,9 @@ export class RuleAlerter {
     }
   }
 
-  get messageTemplate(): handlebars.TemplateDelegate {
+  get messageTemplate(): TemplateDelegate {
     if (!this._template && this.rule.message) {
-      this._template = handlebars.compile(this.rule.message);
+      this._template = compile(this.rule.message);
     }
     return this._template;
   }
@@ -485,7 +459,7 @@ export function describeResult(state: RuleEvaluationState): string {
 }
 
 function getThreshold(state: RuleEvaluationState): number {
-  return state.errorLevel === ErrorLevel.WARNING
+  return state.errorLevel === ErrorStatus.WARNING
     ? state.warningThreshold
     : state.errorThreshold;
 }

@@ -1,14 +1,13 @@
-import { EZContext } from 'graphql-ez';
-import ms from 'ms';
-import LRUCache from 'lru-cache';
-import { isEmpty, isNumber } from 'lodash';
-import { createSharedSubscriptionResolver } from '../../../pubsub';
-import { GraphQLFieldResolver } from 'graphql';
-import { JobStatusEnum } from '@alpen/core/queues';
-import { createJobNameFilter } from '@alpen/core/metrics';
-import { FieldConfig, JobStatusEnumType } from '../../index';
-import { schemaComposer } from 'graphql-compose';
+import { createJobNameFilter, JobStatusEnum } from '@alpen/core';
 import { diff, hashObject, isFinishedStatus } from '@alpen/shared';
+import { GraphQLFieldResolver } from 'graphql';
+import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
+import { isEmpty, isNumber } from 'lodash';
+import LRUCache from 'lru-cache';
+import ms from 'ms';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
+import { FieldConfig, JobStatusEnumType } from '../../index';
 
 const EVENT_NAMES = Object.values(JobStatusEnum)
   .map((name) => `job.${name}`)
@@ -69,7 +68,7 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
     filters.push(fn);
   }
 
-  if (isNumber(filterArg.attemptsMade)) {
+  if (typeof (filterArg.attemptsMade) === 'number') {
     fn = ({ job }) => job.attemptsMade >= filterArg.attemptsMade;
     filters.push(fn);
   }
@@ -116,7 +115,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
         delta.waitTime = wait;
       }
     } else {
-      delta = diff(job, prev, { trackRemoved: false });
+      delta = diff(job, prev as Record<string, any>, { trackRemoved: false });
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { prevState, lastSeen, id, ...data } = delta;

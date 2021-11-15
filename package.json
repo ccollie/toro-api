@@ -3,9 +3,11 @@
   "private": true,
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "version": "0.0.2",
   "author": "clayton collie <collie.clayton@gmail.com>",
   "license": "MIT",
@@ -19,29 +21,28 @@
     "clean": "rimraf \"**/{node_modules,dist,.next,coverage}\"",
     "pretty": "prettier --config package.json --write \"**/*.{ts,tsx,json,yaml,js,cjs,mjs,mdx,md}\"",
     "pretty:check": "prettier --check \"**/*.{ts,tsx,json,yaml,js,cjs,mjs,mdx}\"",
-    "typecheck": "bob-esbuild tsc",
-    "build:core": "yarn workspace @alpen/shared build && yarn workspace @alpen/core build && yarn workspace @alpen/api build",
-    "build": "bob-esbuild tsc && yarn prepack -r"
+    "typecheck": "tsc --no-emit",
+    "build:core": "yarn workspace @alpen/shared build && yarn workspace @alpen/core build && yarn workspace @alpen/api build"
   },
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.6",
-    "@typescript-eslint/eslint-plugin": "^5.2.0",
-    "@typescript-eslint/parser": "^5.2.0",
-    "bob-esbuild": "^3.0.0",
-    "bob-esbuild-cli": "^3.0.0",
-    "bob-ts": "^1.2.1",
-    "esbuild": "^0.13.12",
-    "eslint": "^8.1.0",
-    "eslint-plugin-import": "^2.25.2",
-    "eslint-plugin-prettier": "^4.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.5.0",
+    "@typescript-eslint/parser": "^5.5.0",
+    "alpen-testing": "file:./internal/testing",
+    "eslint": "^8.4.1",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-prettier": "4.0.0",
     "fs-extra": "^10.0.0",
-    "jest": "^27.3.1",
+    "jest": "^27.4.4",
     "jest-date-mock": "^1.0.8",
-    "prettier": "^2.4.1",
+    "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
-    "ts-jest": "^27.0.7",
-    "typescript": "^4.4.4"
+    "ts-jest": "^27.1.1",
+    "ts-node": "^10.4.0",
+    "tsc-alias": "^1.4.2",
+    "ttypescript": "^1.5.13",
+    "typescript": "^4.5.3"
   },
   "dependencies": {
     "core-js": "^3.19.1",
@@ -59,10 +60,9 @@
     "printWidth": 80
   },
   "resolutions": {
-    "graphql": "16.0.0",
-    "esbuild": ">=0.13.12",
-    "typescript": ">=4.4.4",
-    "bob-ts": "^1.2.1"
+    "graphql": "16.1.0",
+    "tsc-alias": "^1.4.2",
+    "typescript": ">=4.5.3"
   },
   "packageManager": "yarn@3.1.0-rc.12"
 }

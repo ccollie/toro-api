@@ -16,3 +16,4 @@ export { jobPromoteBulk } from './jobPromoteBulk';
 export { jobRetryBulk } from './jobRetryBulk';
 export { repeatableJobRemoveByKey } from './repeatableJobRemoveByKey';
 export { repeatableJobRemove } from './repeatableJobRemove';
+export { jobChangeDelay } from './jobChangeDelay';

@@ -5,8 +5,8 @@ import { BaseMetric, MetricManager } from '../metrics';
 import {
   filterOutlierObjects,
   OutlierMethod,
-  TimeseriesDataPoint,
-} from '../stats';
+} from '../stats/outliers';
+import { TimeseriesDataPoint } from '../stats/types';
 import { logger } from '../logger';
 import { getQueueById, getQueueHostClient, getQueueManager } from './accessors';
 import { RedisClient } from 'bullmq';

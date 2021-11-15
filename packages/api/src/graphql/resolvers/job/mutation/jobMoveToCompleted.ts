@@ -1,7 +1,6 @@
-import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
-import { FieldConfig, QueueTC } from '../../index';
-import { JobTC } from '../../index';
+import { EZContext } from 'graphql-ez';
+import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { JobLocatorInput } from './jobLocatorInput';
 
 export const jobMoveToCompleted: FieldConfig = {

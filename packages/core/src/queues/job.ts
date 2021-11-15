@@ -1,8 +1,8 @@
-import boom from '@hapi/boom';
+import {  notFound, badRequest } from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
-import { JobStatusEnum } from './types';
+import { JobStatusEnum } from '../types';
 import { Scripts } from '../commands';
 
 // https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
@@ -33,12 +33,12 @@ async function processJobInternal(
       if (state === JobStatusEnum.COMPLETED || state === JobStatusEnum.FAILED) {
         await job.retry(state);
       } else {
-        throw boom.notFound('Only COMPLETED or FAILED jobs can be retried');
+        throw notFound('Only COMPLETED or FAILED jobs can be retried');
       }
       break;
     case 'promote':
       if (state !== JobStatusEnum.DELAYED) {
-        throw boom.badRequest(
+        throw badRequest(
           `Only "delayed" jobs can be promoted (job ${job.name}#${job.id})`,
         );
       }
@@ -64,7 +64,7 @@ export async function processJobCommand(
 ): Promise<Job> {
   const job = await queue.getJob(id);
   if (!job) {
-    throw boom.notFound(
+    throw notFound(
       `no job with id "${id}" found in queue "${queue.name}"`,
     );
   }

@@ -1,15 +1,15 @@
 'use strict';
-import boom from '@hapi/boom';
-import handlebars from 'handlebars';
+import * as boom from '@hapi/boom';
+import * as handlebars from 'handlebars';
 import mjml2html from 'mjml';
-import path from 'path';
-import fs from 'fs';
+import * as path from 'path';
+import * as fs from 'fs';
 import { getTitle } from '../../utils';
-import Mail from 'nodemailer/lib/mailer';
+import * as Mail from 'nodemailer/lib/mailer';
 import { markdownToHtml, systemClock } from '../../../lib';
 import { handlebarsHelpers } from './helpers';
 import { logger } from '../../../logger';
-import { NotificationContext } from '../../types';
+import { NotificationContext } from '../../../types';
 
 type TemplateFn = handlebars.TemplateDelegate<any>;
 
@@ -40,7 +40,6 @@ function transformTemplate(data: Record<string, any>): string {
     filePath: EmailTemplatePath,
     keepComments: !isProd,
     minify: isProd,
-    beautify: !isProd,
     preprocessors: [
       (xml) => {
         const handler = getTemplateFn(xml);

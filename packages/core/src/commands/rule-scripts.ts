@@ -1,5 +1,7 @@
-import { Queue } from 'bullmq';
-import { getUniqueId, systemClock } from '../lib';
+import { Queue, RedisClient } from 'bullmq';
+import { TimeSeries } from './timeseries';
+import { ensureScriptsLoaded } from '../commands/utils';
+import { getUniqueId } from '../lib';
 import {
   getAlertsKey,
   getHostAlertCountKey,
@@ -9,15 +11,16 @@ import {
   getRuleKey,
   getRuleStateKey,
 } from '../keys';
-import { has } from 'lodash';
+import { systemClock } from '../lib/clock';
+import { has, isObject } from 'lodash';
 import { Rule } from '../rules/rule';
-import { RuleAlert } from '../rules/rule-alert';
-import { ErrorLevel, RuleState } from '../rules/types';
+import { ErrorStatus, RuleAlert } from '../types';
 import { parseObjectResponse } from '../redis';
 import { Pipeline } from 'ioredis';
 import { HostManager } from '../hosts';
 import { logger } from '../logger';
-import { parseBool, safeParseInt } from '@alpen/shared';
+import { parseBool, parseTimestamp, safeParseInt } from '@alpen/shared';
+import { encode as pack } from '../lib/msgpack';
 
 export enum CircuitState {
   CLOSED = 'CLOSED',
@@ -25,20 +28,34 @@ export enum CircuitState {
   HALF_OPEN = 'HALF_OPEN',
 }
 
+export type RuleRunState = 'inactive' | 'active' | 'warmup';
+
 export interface CheckAlertResult {
-  status: 'inactive' | 'warmup' | 'not_found' | 'ok';
+  status: RuleRunState;
   notify: boolean;
+  /**
+   * If the rule has a notificationInterval (i.e. minimum time between alerts) and
+   * we attempt to notify more frequently, notify is set to false and this is set
+   * to the earliest time we should next attempt to notify.
+   */
+  earliestNotification?: number;
   state: CircuitState;
-  endDelay?: number;
+  triggered: boolean;
+  errorStatus: ErrorStatus;
+  /**
+   * If we're warming up, this is the end of the warmup period.
+   */
+  warmupEnd?: number;
   alertId?: string;
   alertCount?: number;
   failures?: number;
+  changed: boolean;
 }
 
 export interface AlertData {
   id: string;
   value: number;
-  errorLevel: ErrorLevel;
+  errorStatus: ErrorStatus;
   title?: string;
   message?: string;
   state: Record<string, any>;
@@ -46,8 +63,9 @@ export interface AlertData {
 
 export interface RuleAlertState {
   isActive: boolean;
-  state: CircuitState;
-  ruleState: RuleState;
+  isStarted: boolean;
+  errorStatus: ErrorStatus;
+  circuitState: CircuitState;
   failures: number;
   totalFailures: number;
   successes: number;
@@ -72,19 +90,27 @@ function getRuleId(rule: Rule | string): string {
   return rule.id;
 }
 
+async function getClient(queue: Queue): Promise<RedisClient> {
+  // horrible. fix this a the source
+  const client = await ensureScriptsLoaded(await queue.client);
+  return client;
+}
+
+type ParameterType = string | number | Record<string, any> | Buffer;
+
 export class RuleScripts {
   private static getRuleActionArgs(
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | number | Record<string, any>,
+    parameter?: ParameterType,
     timestamp?: number,
-  ): Array<string | number> {
+  ): Array<string | number | Buffer> {
     timestamp = timestamp || systemClock.getTime();
 
     if (parameter === undefined) {
       parameter = '';
-    } else if (typeof parameter !== 'string') {
+    } else if (typeof parameter !== 'string' && !Buffer.isBuffer(parameter)) {
       parameter = JSON.stringify(parameter);
     }
 
@@ -94,7 +120,6 @@ export class RuleScripts {
       getRuleStateKey(queue, id),
       getAlertsKey(queue, id),
       getQueueBusKey(queue),
-      id,
       timestamp,
       action,
       parameter,
@@ -105,7 +130,7 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | number | Record<string, any>,
+    parameter?: ParameterType,
     timestamp?: number,
   ): Promise<any> {
     const args = this.getRuleActionArgs(
@@ -115,9 +140,9 @@ export class RuleScripts {
       parameter,
       timestamp,
     );
-
-    const client = await queue.client;
-    return (client as any).rules(...args);
+    // horrible. fix this at the source
+    const client = await getClient(queue);
+    return (client as any).rules2(...args);
   }
 
   static pipelineRuleAction(
@@ -125,7 +150,7 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | number | Record<string, any>,
+    parameter?: ParameterType,
     timestamp?: number,
   ): Pipeline {
     const args = this.getRuleActionArgs(
@@ -135,7 +160,7 @@ export class RuleScripts {
       parameter,
       timestamp,
     );
-    (pipeline as any).rules(...args);
+    (pipeline as any).rules2(...args);
     return pipeline;
   }
 
@@ -143,62 +168,72 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     timestamp?: number,
-  ): Promise<boolean> {
-    const val = await RuleScripts.execRuleAction(
+  ): Promise<RuleRunState> {
+    return RuleScripts.execRuleAction(
       queue,
       rule,
       'start',
       '',
       timestamp,
     );
-    return val === '1';
   }
 
-  static async stopRule(queue: Queue, rule: Rule | string): Promise<boolean> {
-    const val = await RuleScripts.execRuleAction(queue, rule, 'stop');
-    return val === '1';
+  static async stopRule(queue: Queue, rule: Rule | string): Promise<RuleRunState> {
+    return RuleScripts.execRuleAction(queue, rule, 'stop');
   }
 
   static async checkAlert(
     queue: Queue,
     rule: Rule | string,
-    evalResult: ErrorLevel,
+    alertData: AlertData,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
     const response = await RuleScripts.execRuleAction(
       queue,
       rule,
       'check',
-      evalResult,
+      pack(alertData),
       timestamp,
     );
 
     const res = parseObjectResponse(response);
 
-    return {
+    const result:CheckAlertResult = {
       status: res['status'],
+      errorStatus: res['errorStatus'] || ErrorStatus.NONE,
       alertCount: res['alerts'] ?? 0,
       failures: res['failures'] ?? 0,
-      endDelay: res['endDelay'] ?? 0,
+      alertId: res['alertId'] ?? '',
       state: (res['state'] ?? CircuitState.CLOSED) as CircuitState,
+      triggered: ((res['state'] ?? CircuitState.CLOSED) as CircuitState) === CircuitState.OPEN,
       notify: parseBool(res['notify'], false),
+      changed: parseBool(res['changed'], false),
     };
+    if (res['earliestNotification']) {
+      result.earliestNotification = parseInt(res['earliestNotification'], 10);
+    }
+    if (res['warmupEnd']) {
+      result.warmupEnd = parseInt(res['warmupEnd'], 10);
+    }
+    return result;
   }
 
   static async signalSuccess(
     queue: Queue,
     rule: Rule | string,
+    alertData: AlertData,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
-    return RuleScripts.checkAlert(queue, rule, ErrorLevel.NONE, timestamp);
+    return RuleScripts.checkAlert(queue, rule, alertData, timestamp);
   }
 
   static async signalError(
     queue: Queue,
     rule: Rule | string,
+    alertData: AlertData,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
-    return RuleScripts.checkAlert(queue, rule, ErrorLevel.CRITICAL, timestamp);
+    return RuleScripts.checkAlert(queue, rule, alertData, timestamp);
   }
 
   static async getState(
@@ -219,6 +254,7 @@ export class RuleScripts {
     const result: RuleAlertState = res as RuleAlertState;
     result.isRead = parseBool(res['isRead'], true);
     result.isActive = parseBool(res['isActive'], true);
+    result.isStarted = parseBool(res['isStarted'], false);
     result.notifyPending = has(res, 'notifyPending')
       ? parseBool(res.notifyPending)
       : undefined;
@@ -247,14 +283,30 @@ export class RuleScripts {
     return parseInt(val);
   }
 
+  static async resetAlert(
+    queue: Queue,
+    rule: Rule | string,
+    alertId: string,
+    timestamp?: number,
+  ): Promise<boolean> {
+    const val = await RuleScripts.execRuleAction(
+      queue,
+      rule,
+      'reset-alert',
+      alertId,
+      timestamp,
+    );
+    return parseBool(val);
+  }
+
   static async writeAlert(
     host: string,
     queue: Queue,
     rule: Rule | string,
     data: AlertData,
     timestamp?: number,
-  ): Promise<RuleAlert> {
-    const client = await queue.client;
+  ): Promise<RuleAlert | null> {
+    const client = await getClient(queue);
     const pipeline = client.pipeline();
 
     RuleScripts.pipelineRuleAction(
@@ -327,13 +379,13 @@ export class RuleScripts {
 
   static async updateQueueAlertCount(queue: Queue): Promise<number> {
     const args = RuleScripts.getUpdateQueueAlertCountArgs(queue);
-    const client = await queue.client;
+    const client = await getClient(queue);
     return (client as any).updateQueueAlertCount(...args);
   }
 
   static async getQueueAlertCount(queue: Queue): Promise<number> {
     const countsKey = getQueueAlertCountKey(queue);
-    const client = await queue.client;
+    const client = await getClient(queue);
     const count = await client.get(countsKey);
     return parseInt(count ?? '0', 10);
   }
@@ -365,6 +417,21 @@ export class RuleScripts {
     };
   }
 
+  /**
+   * Get an alert by {@link Rule} and id
+   * @param {Rule|string} rule
+   * @param {string} id alert id
+   * @return {Promise<RuleAlert>}
+   */
+  static async getAlert(queue: Queue, rule: Rule | string, id: string): Promise<RuleAlert> {
+    const ruleId = getRuleId(rule);
+    const key = getAlertsKey(queue, ruleId);
+    const client = await getClient(queue);
+    const data = await TimeSeries.get(client, key, id);
+    if (data) data['ruleId'] = ruleId;
+    return deserializeAlert(data);
+  }
+
   static async markAlertAsRead(
     queue: Queue,
     rule: Rule | string,
@@ -383,5 +450,40 @@ export class RuleScripts {
       notified: parseBool(res['notified']),
       alertCount: res['alertCount'],
     };
+  }
+}
+
+export function deserializeAlert(data: any): RuleAlert | null {
+  if (typeof data === 'string') {
+    data = JSON.parse(data);
+  }
+  if (!isObject(data)) return null;
+
+  const alertData: Record<string, any> = { ...data };
+  alertData.raisedAt = parseTimestamp(data['raisedAt']);
+  alertData.resetAt = parseTimestamp(data['resetAt']);
+  alertData.state = deserializeObject(data['state']);
+  alertData.payload = deserializeObject(data['payload']);
+  alertData.failures = data['failures'] || 0;
+  alertData.isRead = parseBool(data['isRead'], false);
+
+  return alertData as RuleAlert;
+}
+
+function deserializeObject(val: any): any {
+  const type = typeof val;
+  const empty = Object.create(null);
+
+  if (type === 'object') return val;
+
+  if (['undefined', 'null'].includes(type)) {
+    return empty;
+  }
+
+  try {
+    return type === 'string' ? JSON.parse(val) : empty;
+  } catch {
+    // console.log
+    return empty;
   }
 }

@@ -9,8 +9,8 @@ import { StatsSnapshotTC } from './types';
 import {
   StatsListener,
   StatisticalSnapshot
-} from '@alpen/core/stats';
-import type { StatsMetricType } from '@alpen/core/stats';
+} from '@alpen/core';
+import type { StatsMetricType } from '@alpen/core';
 import { firstChar } from '@alpen/shared';
 
 function getStatsUpdatedResolver(

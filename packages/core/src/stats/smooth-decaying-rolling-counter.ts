@@ -282,7 +282,7 @@ class Phase {
 
     let sum = this.total;
 
-    // if this is oldest chunk then we need to reduce its weight
+    // if this is the oldest chunk then we need to reduce its weight
     const beforeInvalidateMillis =
       proposedInvalidationTimestamp - currentTimeMillis;
     if (beforeInvalidateMillis < this.intervalBetweenResettingMillis) {

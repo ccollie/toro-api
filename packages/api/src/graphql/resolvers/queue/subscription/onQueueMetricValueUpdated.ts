@@ -4,7 +4,7 @@ import { createSharedSubscriptionResolver } from '../../../pubsub';
 import boom from '@hapi/boom';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { TimeseriesDataPoint } from '@alpen/core/stats';
+import { TimeseriesDataPoint } from '@alpen/core';
 
 export type MetricsInput = {
   queueId: string;

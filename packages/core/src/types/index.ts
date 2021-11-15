@@ -1,5 +1,10 @@
 export * from './app-info';
+export * from './notifications';
 export * from './timespan';
+export * from './queues';
+export * from './queue-filters';
+export * from './rules';
+export * from './rule-conditions';
 
 export interface Constructor<T> {
   new (...args: any[]): T;

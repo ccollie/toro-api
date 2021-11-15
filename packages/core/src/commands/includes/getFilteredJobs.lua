@@ -1,7 +1,7 @@
 --[[
   Get Jobs by filter criteria
      Input:
-        key redis key of collectio holding ids
+        key redis key of collection holding ids
         keyPrefix prefix for job keys
         criteria filter criteria as a json encoded string. Essentially a jsep AST
         context additional context
@@ -21,21 +21,10 @@ local function getFilteredJobs(key, keyPrefix, criteria, context, cursor, count)
     local Job = Job
 
     count = count or 25
-
-    -- fiddling with Globals is hacky, but scripts are meant to be short-lived
-    if (context and #context > 0) then
-        for k, v in pairs(context) do
-            -- don't overwrite existing globals
-            if (not EXPR_GLOBALS[k]) then
-                EXPR_GLOBALS[k] = v
-            end
-        end
-    end
-    context = EXPR_GLOBALS
+    context = context or {}
     --- debug("getFilteredJobs: ========================")
     --- debug(criteria)
 
-    local n = 0
     local jobs = {}
     local newCursor, total = scanJobIds(key, keyPrefix, cursor, count, function(jobId)
         local job = Job:new(keyPrefix .. jobId, jobId)
@@ -44,10 +33,8 @@ local function getFilteredJobs(key, keyPrefix, criteria, context, cursor, count)
         if (job.found) then
             context['job'] = job
             context['this'] = job
-            local accept = isTruthy(eval(criteria, context))
-            if (accept == true) then
-                n = n + 1
-                jobs[n] = job
+            if isTruthy(eval(criteria, context)) then
+                table.insert(jobs, job)
             end
         end
     end)

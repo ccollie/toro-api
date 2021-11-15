@@ -1,5 +1,4 @@
-import { BaseMetric } from '@alpen/core/metrics';
-import { TimeseriesDataPoint } from '@alpen/core/stats';
+import { BaseMetric, TimeseriesDataPoint } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
 import { MetricDataInput } from '../../../typings';

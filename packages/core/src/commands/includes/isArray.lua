@@ -3,9 +3,7 @@ local function isArray(t)
         return false
     end
     for _, v in pairs(t) do
-        if (type(_) ~= 'number' or v == nil) then
-            return false
-        end
+        if (type(_) ~= 'number' or v == nil) then return false end
     end
     return true
 end

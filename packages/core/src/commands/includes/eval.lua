@@ -1,7 +1,3 @@
----
---- Evaluation code from JSEP project, under MIT License.
---- Copyright (c) 2013 Stephen Oney, http://jsep.from.so/
----
 
 --- @include "debug.lua"
 --- @include "date.lua"
@@ -9,7 +5,6 @@
 --- @include "isFalsy.lua"
 --- @include "isTruthy.lua"
 --- @include "operators.lua"
---- @include "isNaN.lua"
 --- @include "isNil.lua"
 --- @include "isArray.lua"
 --- @include "isDate.lua"
@@ -29,29 +24,29 @@ ExprEval.__index = ExprEval
 
 --- todo: cache dates
 local DateOps = {
-    parse = function(_, ...) return date(...) end,
-    isLeapYear = function(_, d) return date.isLeapYear(d) end
+    parse = date,
+    isLeapYear = date.isLeapYear
 }
 
 local TypeProps = {
-    ["string"] = {
-        ['length'] = function(value) return #value end
+    string = {
+        length = function(value) return #value end
     },
-    ["array"] = {
-        ['length'] = function(value) return #value end
+    array = {
+        length = function(value) return #value end
     },
-    ["table"] = {
-        ['length'] = function(value) return #value end
+    table = {
+        length = function(value) return #value end
     }
 }
 
 local ObjectTypeMethods = {
-    ["string"] = stringMethods,
-    ["array"] = arrayMethods,
-    ["table"] = objectMethods,
-    ["object"] = objectMethods,
-    ["number"] = {
-        ["toString"] = toStr,
+    string = stringMethods,
+    array = arrayMethods,
+    table = objectMethods,
+    object = objectMethods,
+    number = {
+        toString = toStr,
     }
 }
 
@@ -72,13 +67,12 @@ local EXPR_GLOBALS = {
     toString = toStr,
     isString = isString,
     isNumber = isNumber,
-    isNaN = isNaN,
     isArray = isArray,
     isEmpty = isEmpty,
     ms = ms,
     strcasecmp = stringMethods.strcasecmp,
     typeof = getType,
-    ['cmp'] = function(a, b)
+    cmp = function(a, b)
         if (a < b) then
             return -1
         end
@@ -91,40 +85,36 @@ local EXPR_GLOBALS = {
 
 function ExprEval.evaluateArray(list, context, res)
     res = res or {}
-    local i = #res + 1
+    local len = #res
     local eval = ExprEval.evaluate
-    for _, v in ipairs(list) do
-        res[i] = eval(v, context)
-        i = i + 1
+    -- assumes non-sparse arrays
+    for i, v in ipairs(list) do
+        res[len + i] = eval(v, context)
     end
     return res
 end
 
 function ExprEval.getProp(object, key)
-    if (type(key) == 'number') then key = key + 1 end
     local val = object[key]
 
-    debug(' getProp: key = ', toStr(key), ', val = ', val)
+    debug(' getProp: key = ' .. toStr(key), ', val = ', toStr(val))
     if (val == nil or val == cjson.null) then
         local t = type(object)
-        debug('Here 1D, object Type = ', t, ' object = ', object)
 
-        --- all because of lua's handling of tables
         if (t == 'table') then
+            --- lua's handling of tables is "special"
             val = arrayMethods[key] or objectMethods[key]
         else
             local obj = ObjectTypeMethods[t]
             val = obj and obj[key]
-            if (isTruthy(val)) then
-                debug(t .. ' Method ',  key)
-            end
         end
 
         if (val == nil) then
             debug('HERE 3: possibly a prop = ')
             local obj = TypeProps[t]
             if (obj) then
-                val = obj[key] and obj[key](object)
+                local propFn = obj[key]
+                val = propFn and propFn(object)
             end
         end
     end
@@ -134,13 +124,15 @@ end
 function ExprEval.evalMember(node, context)
     local eval = ExprEval.evaluate
     local getProp = ExprEval.getProp
+    local key
+    local saveObj
 
     local object = context
-    local val, key
-    local saveObj
-    debug('EvalMember. Node = ', node)
+    debug('EvalMember. Path = ' .. toStr(node.path) .. ' context ', context)
     for _, segment in ipairs(node.path) do
 
+        saveObj = object
+        debug('Segment = ' .. toStr(segment))
         local t = segment.type
         if (t == 'Literal') then
             key = segment.value
@@ -150,22 +142,16 @@ function ExprEval.evalMember(node, context)
             key = eval(segment, context)
         end
 
-        val = getProp(object, key)
-
-        if (val == nil) then
-            return {saveObj, val}
+        object = (type(key) == 'number') and object[key+1] or getProp(object, key)
+        if (object == nil or object == cjson.null) then
+            break
         end
-
-        saveObj = object
-        object = val
     end
-    return {saveObj, val}
+    return {saveObj, object, key}
 end
 
 function ExprEval.MemberExpression(node, context)
-    debug('MemberExpression ', node)
     local value = ExprEval.evalMember(node, context)
-    debug('value = ', value)
     return value[2]
 end
 
@@ -174,21 +160,35 @@ function ExprEval.UnaryExpression(node, context)
 end
 
 function ExprEval.CallExpression(node, context)
-    local caller, fn
+    local caller, name
     local callerArg
-    if (node.callee.type == 'MemberExpression') then
-        local assign = ExprEval.evalMember(node.callee, context)
-        caller = assign[1]
-        fn = assign[2]
-        callerArg = { caller }
-    else
-        fn = ExprEval.evaluate(node.callee, context)
+
+    local fn = node.fn  -- cached fn
+    if (not fn) then
+        local cacheable = false;
+        local callee = node.callee
+        if (callee.type == 'MemberExpression') then
+            local ctx = callee.isBuiltIn and EXPR_GLOBALS or false
+            local assign = ExprEval.evalMember(callee, ctx or context)
+            caller = assign[1]
+            fn = assign[2]
+            name = assign[3]
+            callerArg = ctx and {} or { caller }
+            cacheable = (not callee.computed) and ctx
+        else
+            cacheable = callee.type == 'Identifier'
+            fn = ExprEval.evaluate(callee, context)
+        end
+        if (type(fn) ~= 'function') then
+            name = name or ExprEval.nodeFunctionName(caller or callee or node);
+            error('"' .. toStr(name) .. '" is not a function',0)
+            return cjson.null
+        end
+        -- cache the lookup result if its not computed
+        -- i.e. we ha an expression like Math.round(n) rather than user.profiles[x].roles.includes("admin")
+        if (cacheable) then node.fn = fn end
     end
-    if (type(fn) ~= 'function') then
-        local name = ExprEval.nodeFunctionName(caller or node);
-        error('"' .. toStr(name) .. '" is not a function',0)
-        return cjson.null
-    end
+
     local args = ExprEval.evaluateArray(node.arguments, context, callerArg)
     return fn( unpack(args) )
 end
@@ -217,12 +217,15 @@ end
 function ExprEval.BinaryExpression(node, context)
     local eval = ExprEval.evaluate
     local left = eval(node.left, context)
-    if (node.operator == '||') then
-        return left or eval(node.right, context);
-    elseif (node.operator == '&&') then
-        return left and eval(node.right, context);
+    local op = node.operator
+    local right = node.right
+
+    if (op == '||') then
+        return isTruthy(left) or isTruthy(eval(right, context))
+    elseif (op == '&&') then
+        return isTruthy(left) and isTruthy(eval(right, context))
     end
-    return operator.binops[node.operator](left, eval(node.right, context));
+    return operator.binops[op](left, eval(right, context));
 end
 
 function ExprEval.ArrayExpression(node, context)
@@ -230,14 +233,20 @@ function ExprEval.ArrayExpression(node, context)
 end
 
 function ExprEval.Identifier(node, context)
-    local name = node.name
-    debug('Here in Identifier. name = ', name)
-    local val = context[name] or EXPR_GLOBALS[name]
+    local val = context[node.name] or EXPR_GLOBALS[node.name]
     return (val == nil) and cjson.null or val
 end
 
 function ExprEval.Literal(node, context)
     return node.value
+end
+
+function ExprEval.BuiltIn(node)
+    local v = EXPR_GLOBALS[node.name]
+    if (not v) then
+        error('Unknown built-in: "' .. node.name .. '"')
+    end
+    return v
 end
 
 function ExprEval.ThisExpression(node, context)
@@ -246,7 +255,6 @@ end
 
 function ExprEval.NullExpression(node, context)
     debug('Invalid handler found for node ', node)
-    debug('context', context)
     return cjson.null
 end
 
@@ -265,4 +273,16 @@ function ExprEval.nodeFunctionName(callee)
         end
     end
     return '<unknown>'
+end
+
+
+local function evalExpression(expr, context)
+    debug('Context = ' .. toStr(context))
+    local val = ExprEval.evaluate(expr, context or {}) --ctx
+    -- Redis has some funky lua => redis conversion rules that cause
+    -- unexpected results on the client. We avoid this by json encoding
+    -- the result
+    -- Read https://redis.io/commands/eval - specifically the section
+    -- Lua to Redis
+    return cjson.encode(val)
 end

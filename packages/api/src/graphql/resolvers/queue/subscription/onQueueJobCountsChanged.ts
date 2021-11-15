@@ -5,7 +5,7 @@ import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnum, QueueEventsEnum, QueueManager } from '@alpen/core/queues';
+import { JobStatusEnum, QueueEventsEnum, QueueManager } from '@alpen/core';
 import { diff } from '@alpen/shared';
 
 const DEFAULT_COUNT_INTERVAL = ms('1.5 s');

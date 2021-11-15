@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badImplementation } from '@hapi/boom';
 import { getValue } from '../config';
 import querystring from 'querystring';
 import { isEmpty } from 'lodash';
@@ -18,7 +18,7 @@ function getUri(name: string, data: Record<string, any>, options = {}): string {
     }
     return url;
   }
-  throw boom.badImplementation(`missing ${name} uri template config`);
+  throw badImplementation(`missing ${name} uri template config`);
 }
 
 export function getQueueUri(queue: Record<string, any>, options = {}): string {

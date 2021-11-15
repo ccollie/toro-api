@@ -20,11 +20,6 @@ export interface IMovingAverage {
 }
 
 export function MovingAverage(timespan: number): IMovingAverage {
-  if (typeof timespan !== 'number') {
-    throw new Error(
-      'must provide a timespan to the moving average constructor',
-    );
-  }
 
   if (timespan <= 0) {
     throw new Error(
@@ -37,23 +32,10 @@ export function MovingAverage(timespan: number): IMovingAverage {
   let d = 0; // deviation
   let f = 0; // forecast
 
-  let previousTime;
-  let firstTime;
-  let primed = false;
+  let previousTime: number;
 
   function alpha(t: number, pt: number): number {
-    let localTimespan = timespan;
-
-    if (!primed) {
-      if (!firstTime) {
-        firstTime = t;
-      }
-
-      localTimespan = Math.max(1, Math.min(t - firstTime, timespan));
-      primed = localTimespan === timespan;
-    }
-
-    return 1 - Math.exp(-(t - pt) / localTimespan);
+    return 1 - Math.exp(-(t - pt) / timespan);
   }
 
   function update(tm: number, value: number) {
@@ -76,12 +58,9 @@ export function MovingAverage(timespan: number): IMovingAverage {
   }
 
   function reset(value?: number) {
-    primed = false;
     v = 0;
     f = 0;
     ma = 0;
-    firstTime = undefined;
-    previousTime = undefined;
     if (typeof value !== 'undefined') {
       ma = value;
     }

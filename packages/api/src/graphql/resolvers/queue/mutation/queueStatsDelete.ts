@@ -1,4 +1,4 @@
-import { deleteQueueStats } from '@alpen/core/queues';
+import { deleteQueueStats } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { QueueTC } from '../../index';

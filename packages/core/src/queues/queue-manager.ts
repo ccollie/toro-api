@@ -1,15 +1,17 @@
-import boom from '@hapi/boom';
+import {  badRequest, notFound } from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
 import { Job, Queue } from 'bullmq';
-import { StatsClient, StatsListener } from '../stats';
-import { Rule, RuleAlert, RuleConfigOptions, RuleManager } from '../rules';
+import { StatsClient } from '../stats/stats-client';
+import { StatsListener } from '../stats/stats-listener';
+import { Rule, RuleManager } from '../rules';
+import { RuleAlert, RuleConfigOptions } from '../types';
 import { EventBus, LockManager } from '../redis';
 import { QueueListener } from './queue-listener';
 import { deleteAllQueueData, getJobTypes, getMultipleJobsById } from './queue';
 import { HostManager, QueueConfig } from '../hosts';
 import { Clock, getQueueUri } from '../lib';
-import { JobStatus, RepeatableJob } from './types';
+import { JobStatus, RepeatableJob } from '../types/queues';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../keys';
 import { MetricManager, BaseMetric } from '../metrics';
@@ -79,7 +81,12 @@ export class QueueManager {
     this.queueListener = this.createQueueListener();
     this.clock = this.queueListener.clock;
     this.bus = new EventBus(host.streamAggregator, getQueueBusKey(queue));
-    this.statsClient = new StatsClient(this);
+
+    this.statsClient = new StatsClient({
+      queueId: this.id,
+      queue,
+      host: host.name
+    });
     this.statsListener = this.createStatsListener();
     this.metricManager = new MetricManager(
       this.id,
@@ -202,7 +209,13 @@ export class QueueManager {
   }
 
   private createStatsListener(): StatsListener {
-    return new StatsListener(this);
+    return new StatsListener({
+      queue: this.queue,
+      queueId: this.id,
+      host: this.host,
+      writer: this.hostManager.writer,
+      bus: this.bus
+    });
   }
 
   getRule(id: string): Promise<Rule> {
@@ -237,21 +250,21 @@ export class QueueManager {
    */
   async addRule(rule: RuleConfigOptions): Promise<Rule> {
     if (!rule) {
-      throw boom.badRequest('must pass a valid rule');
+      throw badRequest('must pass a valid rule');
     }
     if (rule.id) {
       const oldRule = await this.getRule(rule.id);
       if (oldRule) {
-        throw boom.badRequest(`An rule with id "${rule.id}" already exists`);
+        throw badRequest(`An rule with id "${rule.id}" already exists`);
       }
     }
     if (!rule.metricId) {
-      throw boom.badRequest('No metric id was specified');
+      throw badRequest('No metric id was specified');
     }
 
     const metric = this.findMetric(rule.metricId);
     if (!metric) {
-      throw boom.badRequest(
+      throw badRequest(
         `No metric with id "${rule.metricId}" was found in queue "${this.name}"`,
       );
     }
@@ -261,21 +274,21 @@ export class QueueManager {
 
   async updateRule(rule: Rule): Promise<Rule> {
     if (!rule) {
-      throw boom.badRequest('must pass a valid rule');
+      throw badRequest('must pass a valid rule');
     }
     const oldRule = await this.getRule(rule.id);
     if (!oldRule) {
-      throw boom.notFound(
+      throw notFound(
         `No rule with id "${rule.id}" found in queue "${this.name}"`,
       );
     }
     if (!rule.metricId) {
-      throw boom.badRequest('No metric id was specified');
+      throw badRequest('No metric id was specified');
     }
 
     const metric = this.findMetric(rule.metricId);
     if (!metric) {
-      throw boom.badRequest(
+      throw badRequest(
         `No metric with id "${rule.metricId}" was found in queue "${this.name}"`,
       );
     }
@@ -454,7 +467,7 @@ export class QueueManager {
     if (this.hasLock) {
       this._workQueue
         .addAll([
-          () => this.statsListener.sweep(),
+          () => this.statsListener.sweep(this.statsClient),
           () => this.ruleManager.pruneAlerts(this.dataRetention),
           () => this.bus.cleanup(),
           () => this.metricManager.pruneData(this.dataRetention),

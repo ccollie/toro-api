@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { JobCounts, JobCountStates } from '@alpen/core/queues';
+import { JobCounts, JobCountStates } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export async function getJobCounts(

@@ -4,7 +4,7 @@ import DataLoader from 'dataloader';
 import { aggregateQueuesByClient, mapQueuesToIndex } from './utils';
 import { convertWorker, QueueWorker } from '../queues/queue-worker';
 
-async function getQueueWorkers(
+export async function getQueueWorkers(
   client: RedisClient,
   queues: Queue[],
 ): Promise<Map<Queue, QueueWorker[]>> {

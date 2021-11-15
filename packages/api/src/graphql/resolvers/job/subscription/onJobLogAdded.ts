@@ -1,19 +1,15 @@
-import { EZContext } from 'graphql-ez';
+import { debounce, getKeyspaceNotifier, releaseKeyspaceNotifier, UnsubscribeFn } from '@alpen/core';
 import { GraphQLFieldResolver } from 'graphql';
-import { FieldConfig, JobTC } from '../../index';
-import { fieldsList } from 'graphql-fields-list';
 import { schemaComposer } from 'graphql-compose';
-import {
-  getKeyspaceNotifier,
-  releaseKeyspaceNotifier,
-} from '@alpen/core/redis';
-import { debounce } from '@alpen/core/lib';
+import { EZContext } from 'graphql-ez';
+import { fieldsList } from 'graphql-fields-list';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
+import { FieldConfig, JobTC } from '../../index';
 
 function getResolver(): GraphQLFieldResolver<any, any> {
   const DELAY = 250; // todo: read from config (or get from args)
 
-  let unsub;
+  let unsub: UnsubscribeFn;
   let hostId: string;
 
   function channelName(_, { queueId, jobId }): string {
@@ -38,15 +34,11 @@ function getResolver(): GraphQLFieldResolver<any, any> {
 
     const update = debounce(handler, DELAY, { maxItems: 4 });
 
-    notifier
-      .subscribeKey(logsKey, ({ event }) => {
-        if (event === 'rpush') {
-          update();
-        }
-      })
-      .then((fn) => {
-        unsub = fn;
-      });
+    unsub = notifier.subscribeKey(logsKey, ({ event }) => {
+      if (event === 'rpush') {
+        update();
+      }
+    });
   }
 
   async function onUnsubscribe(): Promise<any> {

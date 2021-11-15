@@ -7,7 +7,7 @@ import {
   MetricValueType,
   QueueMetricOptions,
 } from './types';
-import { JobStatusEnum } from '../queues/types';
+import { JobStatusEnum } from '../types';
 
 /**
  * Base class to provide spot/instant values of job counts from a queue.
@@ -59,7 +59,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
   }
 
   static get description(): string {
-    return 'Active jobs';
+    return 'Active Jobs';
   }
 }
 

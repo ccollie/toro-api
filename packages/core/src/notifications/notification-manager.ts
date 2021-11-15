@@ -1,14 +1,10 @@
 import pMap from 'p-map';
-import ms from 'ms';
-import LRUCache from 'lru-cache';
+import { HostConfig, HostManager } from '../hosts';
+
+import { NotificationChannel, NotificationContext, } from '../types';
 import { Channel } from './channel';
 import { ChannelStorage } from './channel-storage';
-import { HostConfig, HostManager } from '../hosts';
-import {
-  ChannelConfig,
-  NotificationChannel,
-  NotificationContext,
-} from './types';
+import { ChannelConfig, } from './types';
 
 function getChannelId(channel: NotificationChannel | string): string {
   if (typeof channel === 'string') return channel;
@@ -16,24 +12,20 @@ function getChannelId(channel: NotificationChannel | string): string {
 }
 
 export class NotificationManager {
-  private readonly cache: LRUCache;
   private readonly channels: Channel[] = [];
   private readonly hostManager: HostManager;
   private readonly context: NotificationContext;
-  private _initialized: Promise<Channel[]> = null;
   private storage: ChannelStorage;
 
   constructor(hostManager: HostManager) {
     this.hostManager = hostManager;
-    this.cache = new LRUCache({
-      max: 250,
-      maxAge: ms('1 hour'),
-    });
     this.storage = new ChannelStorage(hostManager);
     this.context = hostManager.notificationContext;
     this.dispatch = this.dispatch.bind(this);
     this.init();
   }
+
+  private _initialized: Promise<Channel[]> = null;
 
   get initialized(): Promise<Channel[]> {
     return this._initialized;
@@ -43,29 +35,9 @@ export class NotificationManager {
     return this.hostManager.config;
   }
 
-  private init(): void {
-    if (this._initialized !== null) return;
-
-    this._initialized = this.loadChannels().then((channels) => {
-      if (channels.length) return channels;
-      // none stored as yet. Bootstrap from config
-      // load defaults
-      const fromConfig = this.config?.channels || [];
-      if (fromConfig.length) {
-        return pMap(fromConfig, (channel) => this.addChannel(channel));
-      }
-    });
-  }
-
   async getChannels(): Promise<Channel[]> {
     await this.initialized;
     return this.channels;
-  }
-
-  private async loadChannels(): Promise<Channel[]> {
-    const channels = await this.storage.getChannels();
-    this.channels.push(...channels);
-    return channels;
   }
 
   async getChannel(id: string): Promise<Channel> {
@@ -76,21 +48,6 @@ export class NotificationManager {
       channel && this.channels.push(channel);
     }
     return channel;
-  }
-
-  private getLocalChannelIndex(channel: string | Channel): number {
-    let id: string;
-    if (typeof channel !== 'string') {
-      id = getChannelId(channel);
-    } else {
-      id = channel;
-    }
-    return this.channels.findIndex((x) => x.id === id);
-  }
-
-  private getLocalChannel(channel: string | Channel): Channel | undefined {
-    const idx = this.getLocalChannelIndex(channel);
-    return idx === -1 ? undefined : this.channels[idx];
   }
 
   async addChannel<T = Channel>(channel: ChannelConfig): Promise<T> {
@@ -131,22 +88,6 @@ export class NotificationManager {
     return this.setEnabled(channel, false);
   }
 
-  protected async setEnabled(
-    channel: Channel | string,
-    value: boolean,
-  ): Promise<boolean> {
-    const success = this.storage.setChannelStatus(channel, value);
-    if (success) {
-      const id = getChannelId(channel);
-      const found = await this.getChannel(id);
-      const changed = found && found.enabled !== value;
-      if (changed) {
-        found.enabled = value;
-      }
-    }
-    return success;
-  }
-
   async dispatch(
     event: string,
     data: Record<string, any>,
@@ -163,5 +104,56 @@ export class NotificationManager {
       );
     }
     return handlers.length;
+  }
+
+  protected async setEnabled(
+    channel: Channel | string,
+    value: boolean,
+  ): Promise<boolean> {
+    const success = await this.storage.setChannelStatus(channel, value);
+    if (success) {
+      const id = getChannelId(channel);
+      const found = await this.getChannel(id);
+      const changed = found && found.enabled !== value;
+      if (changed) {
+        found.enabled = value;
+      }
+    }
+    return success;
+  }
+
+  private init(): void {
+    if (this._initialized !== null) return;
+
+    this._initialized = this.loadChannels().then((channels) => {
+      if (channels.length) return channels;
+      // none stored as yet. Bootstrap from config
+      // load defaults
+      const fromConfig = this.config?.channels || [];
+      if (fromConfig.length) {
+        return pMap(fromConfig, (channel) => this.addChannel(channel));
+      }
+    });
+  }
+
+  private async loadChannels(): Promise<Channel[]> {
+    const channels = await this.storage.getChannels();
+    this.channels.push(...channels);
+    return channels;
+  }
+
+  private getLocalChannelIndex(channel: string | Channel): number {
+    let id: string;
+    if (typeof channel !== 'string') {
+      id = getChannelId(channel);
+    } else {
+      id = channel;
+    }
+    return this.channels.findIndex((x) => x.id === id);
+  }
+
+  private getLocalChannel(channel: string | Channel): Channel | undefined {
+    const idx = this.getLocalChannelIndex(channel);
+    return idx === -1 ? undefined : this.channels[idx];
   }
 }

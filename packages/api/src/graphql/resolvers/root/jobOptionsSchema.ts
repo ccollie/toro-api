@@ -1,4 +1,4 @@
-import { JobOptionsSchema } from '@alpen/core/queues';
+import { JobOptionsSchema } from '@alpen/core';
 import { FieldConfig } from '../index';
 
 export const jobOptionsSchema: FieldConfig = {

@@ -19,36 +19,15 @@
 --- @include "includes/isArray"
 --- @include "includes/toStr"
 --- @include "includes/incrementTimestamp"
+--- @include "includes/isDigitsOnly"
 
 --- UTILS ------
-
---- does s only contain digits?
--- @string s a string
-function isdigit(s)
-  return string.find(s,'^%d+$') == 1
-end
-
 
 local SEPARATOR = '|'
 
 local function shallow_merge(dest, src)
   for k, v in pairs(src) do dest[k] = v end
   return dest
-end
-
-local function tableMerge(t1, t2)
-  for k,v in pairs(t2) do
-    if type(v) == "table" then
-      if type(t1[k] or false) == "table" then
-        tableMerge(t1[k] or {}, t2[k] or {})
-      else
-        t1[k] = v
-      end
-    else
-      t1[k] = v
-    end
-  end
-  return t1
 end
 
 local function split(source, sep)
@@ -104,7 +83,7 @@ local function isValidTimestamp(val)
   local num = tonumber(val)
   if (num ~= nil) then return true end
   val = tostring(val)
-  return isdigit(val) or isSpecialTimestamp(val)
+  return isDigitsOnly(val) or isSpecialTimestamp(val)
 end
 
 --- PARAMETER PARSING --------
@@ -190,7 +169,7 @@ local function parseRangeParams(key, valid_options, min, max, ...)
   local arg = { ... }
   local i = 1
 
-  --- ts_debug('args = ' .. table.tostring(arg))
+  --- debug('args = ' .. table.tostring(arg))
   --- [LIMIT count]
   while i < #arg do
     local option_name = assert(arg[i], 'range: no option specified')
@@ -342,6 +321,7 @@ end
 -- Count the number of elements between *min* and *max*
 function Timeseries.count(key, min, max, ...)
   local params = parseRangeParams(key,{}, min, max, ...)
+  debug('params ', params)
   return redis.call('zlexcount', key, params.min, params.max)
 end
 
@@ -381,8 +361,8 @@ function Timeseries.gaps(key, startScore, endScore, interval, max)
   local lastSetIndex = -10
   local range = redis.call('zrangebylex', key, params.min, params.max)
 
-  -- ts_debug(tostring(key) .. '[' .. tostring(params.min) .. ',' .. tostring(params.max) ..']')
-  -- ts_debug('count [' .. tostring(#range) .. ']')
+  -- debug(tostring(key) .. '[' .. tostring(params.min) .. ',' .. tostring(params.max) ..']')
+  -- debug('count [' .. tostring(#range) .. ']')
 
   local count, diff = 0, 0
   local score, prev = 0, 0
@@ -505,7 +485,7 @@ end
 
 -- Remove a range between *min* and *max*
 function Timeseries.remrange(key, min, max, ...)
-  local params = parseRangeParams(key,{ LIMIT = 1 }, min, max, ...)
+  local params = parseRangeParams(key, { LIMIT = 1 }, min, max, ...)
   if (params.limit == nil) then
     return redis.call('zremrangebylex', key, params.min, params.max)
   end
@@ -525,10 +505,10 @@ function Timeseries.truncate(key, retention)
   retention = assert(tonumber(retention), 'retention value must be a number (ms)')
   local last = getLastScore(key)
   if (last ~= nil) then
-    -- ts_debug("last score " .. tostring(last))
+    -- debug("last score " .. tostring(last))
     local max = last - retention - 1
     if (max > 0) then
-      -- ts_debug("max " .. tostring(max))
+      -- debug("max " .. tostring(max))
       return Timeseries.remrange(key, '-', max)
     end
   end
@@ -650,7 +630,7 @@ if (command == nil) then
   error('Timeseries: unknown command ' .. command_name)
 end
 
--- ts_debug('running ' .. command_name .. '(' .. KEYS[1] .. ',' .. table.tostring(ARGV) .. ')')
+-- debug('running ' .. command_name .. '(' .. KEYS[1] .. ',' .. table.tostring(ARGV) .. ')')
 
 if (command_name == 'copy') or (command_name == 'COPY') then
   return command(KEYS[1], KEYS[2], unpack(ARGV))

@@ -1,17 +1,17 @@
-import pSettle from 'p-settle';
-import pMap from 'p-map';
-import ms from 'ms';
-import boom from '@hapi/boom';
-import prexit from 'prexit';
-import { isNil, isString } from 'lodash';
-import { Queue } from 'bullmq';
-import { QueueManager, QueueListener } from '../queues';
-import { HostManager, HostConfig, getHosts } from '../hosts';
-import { logger } from '../logger';
-import { config } from '../config';
-import { AppInfo } from '../types';
-import { registerHelpers } from '../lib/hbs';
 import { parseDuration } from '@alpen/shared';
+import { badRequest, notFound } from '@hapi/boom';
+import { Queue } from 'bullmq';
+import { isNil, isString } from 'lodash';
+import ms from 'ms';
+import pMap from 'p-map';
+import pSettle from 'p-settle';
+import prexit from 'prexit';
+import { appInfo } from '../config';
+import { getHosts, HostConfig, HostManager } from '../hosts';
+import { registerHelpers } from '../lib/hbs';
+import { logger } from '../logger';
+import { QueueListener, QueueManager } from '../queues';
+import type { AppInfo } from '../types';
 
 let _isInit = false;
 
@@ -32,13 +32,14 @@ const DEFAULT_SWEEP_INTERVAL = ms('15 mins');
 export class Supervisor {
   private static instance: Supervisor;
   private sweepTimer: NodeJS.Timer;
-  private sweepInterval: number;
+  private sweepInterval = 0;
 
-  private queueManagersById: Map<string, QueueManager>;
+  private queueManagersById: Map<string, QueueManager> = new Map();
   private hostManagerByQueue: Map<string, HostManager> = new Map<
     string,
     HostManager
   >();
+  private queueIdMap = new WeakMap<Queue, string>();
 
   private initialized: Promise<void> = null;
 
@@ -63,7 +64,7 @@ export class Supervisor {
   }
 
   static getAppInfo(): AppInfo {
-    return config.get('appInfo');
+    return appInfo;
   }
 
   /**
@@ -92,7 +93,7 @@ export class Supervisor {
     await this.waitUntilReady();
     let manager = this.getHost(config.name);
     if (manager) {
-      throw boom.badRequest(`Host "${config.name}" already registered`);
+      throw badRequest(`Host "${config.name}" already registered`);
     }
     manager = new HostManager(config);
     hosts.set(config.name, manager);
@@ -121,7 +122,7 @@ export class Supervisor {
     return host && host.getQueue(prefixOrName, name);
   }
 
-  getQueueManager(queue: Queue | string): QueueManager {
+  getQueueManager(queue: Queue | string): QueueManager | null {
     const addToCache = (manager: QueueManager): void => {
       const queue = manager.queue;
       this.queueManagersById.set(manager.id, manager);
@@ -129,14 +130,13 @@ export class Supervisor {
     };
 
     if (isNil(queue)) return null;
-    if (!this.queueManagersById) {
-      this.queueManagersById = new Map<string, QueueManager>();
+    if (!this.queueManagersById.size) {
       this.hosts.forEach((host) => {
         host.queueManagers.forEach(addToCache);
       });
     }
     if (isString(queue)) {
-      return this.queueManagersById.get(queue as string);
+      return this.queueManagersById.get(queue as string) ?? null;
     }
 
     let result = queueManagerMap.get(queue);
@@ -153,7 +153,7 @@ export class Supervisor {
         }
       }
     }
-    return result;
+    return result || null;
   }
 
   getQueueById(id: string): Queue {
@@ -161,10 +161,34 @@ export class Supervisor {
     return manager && manager.queue;
   }
 
-  getQueueHostManager(queueOrId: Queue | string): HostManager {
-    let result: HostManager;
+  getQueueId(queue: Queue): string {
+    const queueIdMap = this.queueIdMap;
+    let id = queueIdMap.get(queue);
+    if (!id) {
+      const hosts = this.hosts;
+      for (let i = 0; i < hosts.length; i++) {
+        const managers = hosts[i].queueManagers;
+        for (let j = 0; j < managers.length; j++) {
+          const manager = managers[j];
+          if (queue === manager.queue) {
+            id = manager.id;
+            queueIdMap.set(queue, id);
+            return id;
+          }
+          // do useful work
+          if (!queueIdMap.get(manager.queue)) {
+            queueIdMap.set(manager.queue, manager.id);
+          }
+        }
+      }
+    }
+    return id;
+  }
+
+  getQueueHostManager(queueOrId: Queue | string): HostManager | null {
+    let result: HostManager | undefined;
     let id: string;
-    let mgr: QueueManager;
+    let mgr: QueueManager | null;
 
     if (isString(queueOrId)) {
       result = this.hostManagerByQueue.get(queueOrId);
@@ -184,7 +208,7 @@ export class Supervisor {
         result = host;
       }
     }
-    return result;
+    return result ?? null;
   }
 
   async ensureQueueExists(queueOrId: Queue | string): Promise<void> {
@@ -193,7 +217,7 @@ export class Supervisor {
     if (isString(queueOrId)) {
       queue = this.getQueueById(queueOrId);
       if (!queue) {
-        throw boom.notFound(`Queue with id#"${queueOrId}" not found`);
+        throw notFound(`Queue with id#"${queueOrId}" not found`);
       }
     } else {
       queue = queueOrId as Queue;
@@ -204,7 +228,7 @@ export class Supervisor {
     const queueExists = await client.exists(metaKey);
 
     if (!queueExists) {
-      throw boom.notFound(`Queue "${queue.name}" not found in db`);
+      throw notFound(`Queue "${queue.name}" not found in db`);
     }
   }
 
@@ -242,7 +266,7 @@ export class Supervisor {
       } else if (queue) {
         fragment = `name "${queue.name}"`;
       }
-      throw boom.notFound(`no queue found with ${fragment}`);
+      throw notFound(`no queue found with ${fragment}`);
     }
     queue = manager.queue as Queue;
 
@@ -270,7 +294,7 @@ export class Supervisor {
       }
 
       if (msgParts.length > 1) {
-        throw boom.badRequest(msgParts.join(''));
+        throw badRequest(msgParts.join(''));
       }
     }
 

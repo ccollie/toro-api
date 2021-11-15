@@ -9,7 +9,8 @@ import { Job } from 'bullmq';
 import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';
 import { parent } from './Job.parent';
-import { JobStatusEnum } from '@alpen/core/queues';
+import { parentQueue } from './Job.parentQueue';
+import { JobStatusEnum } from '@alpen/core';
 import { checkState } from './loaders';
 import { EZContext } from 'graphql-ez';
 
@@ -85,11 +86,16 @@ export const JobTC = schemaComposer.createObjectTC({
       description:
         'Get this jobs children result values as an object indexed by job key, if any.',
       async resolve(job: Job): Promise<Record<string, any>> {
-        const values = await job.getChildrenValues();
-        return values ?? Object.create(null);
+        const empty = Object.create(null);
+        if (job.parentKey) {
+          const values = await job.getChildrenValues();
+          return values ?? empty;
+        }
+        return empty;
       },
     },
     parent,
+    parentQueue,
     dependencies,
     dependenciesCount,
   },

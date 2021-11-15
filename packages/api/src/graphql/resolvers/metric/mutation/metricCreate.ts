@@ -2,7 +2,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { MetricCreateTC } from '../scalars';
-import { SerializedMetric } from '@alpen/core/metrics';
+import { SerializedMetric } from '@alpen/core';
 import { MetricTC } from '../model';
 
 export const metricCreate: FieldConfig = {

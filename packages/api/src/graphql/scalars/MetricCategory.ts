@@ -1,4 +1,4 @@
-import { MetricCategory as MC } from '@alpen/core/metrics';
+import { MetricCategory as MC } from '@alpen/core';
 import { createEnumFromTS } from './types';
 
 const MetricCategoryTC = createEnumFromTS(MC, 'MetricCategory');

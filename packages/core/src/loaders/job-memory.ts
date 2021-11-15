@@ -1,7 +1,7 @@
 import { Queue, RedisClient } from 'bullmq';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { JobStatusEnum } from '../queues/types';
+import { JobStatusEnum } from '../types';
 import { Scripts } from '../commands';
 import { getAccessor } from './accessors';
 

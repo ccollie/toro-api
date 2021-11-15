@@ -1,5 +1,4 @@
-import { Rule } from '@alpen/core/rules';
-import { CircuitState } from '@alpen/core/commands';
+import { ErrorStatus, Rule, CircuitState } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
 import { createEnumFromTS, RuleStateEnum } from '../../../scalars';
@@ -62,7 +61,7 @@ export const ruleStatus: FieldConfig = {
     const ruleManager = manager.ruleManager;
     const val = await ruleManager.getRuleStatus(parent);
     let state: RuleCircuitState;
-    switch (val.state) {
+    switch (val.circuitState) {
       case CircuitState.CLOSED:
         state = RuleCircuitState.Closed;
         break;
@@ -73,9 +72,21 @@ export const ruleStatus: FieldConfig = {
         state = RuleCircuitState.Open;
         break;
     }
+    let status: RuleState;
+    if (!parent.isActive) {
+      status = RuleState.Muted;
+    } else if (val.circuitState === CircuitState.CLOSED) {
+      status = RuleState.Normal;
+    } else if (val.errorStatus === ErrorStatus.ERROR) {
+      status = RuleState.Error;
+    } else if (val.errorStatus === ErrorStatus.WARNING) {
+      status = RuleState.Warning;
+    } else {
+      status = RuleState.Normal;
+    }
     return {
       circuitState: state,
-      state: val.state as any as RuleState,
+      state: status,
       failures: val.failures,
       totalFailures: val.totalFailures,
       successes: val.successes,

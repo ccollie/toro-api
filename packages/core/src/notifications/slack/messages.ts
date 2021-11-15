@@ -1,6 +1,9 @@
-import { getTitle } from '../utils';
-import { NotificationContext } from '../types';
+import { DateLike } from '@alpen/shared';
+import toDate from 'date-fns/toDate';
 import { isEmpty } from 'lodash';
+import { systemClock } from '../../lib';
+import { NotificationContext, RuleEventsEnum } from '../../types';
+import { getTitle } from '../utils';
 import {
   formatFieldName,
   getDateField,
@@ -11,17 +14,7 @@ import {
   getTextBlock,
   markdownToSlack,
 } from './msg-builder';
-import {
-  Block,
-  BlockType,
-  ContextBlock,
-  Field,
-  TextBlock,
-} from './slack.types';
-import { DateLike } from '@alpen/shared';
-import toDate from 'date-fns/toDate';
-import { systemClock } from '../../lib';
-import { RuleEventsEnum } from '../../rules';
+import { Block, BlockType, ContextBlock, Field, TextBlock } from './slack.types';
 
 export const getUnixTimestamp = (date: DateLike) =>
   Math.round(toDate(date).getTime() / 1000);

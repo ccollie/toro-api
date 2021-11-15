@@ -4,7 +4,8 @@ import { Pipeline } from 'ioredis';
 import { IteratorOptions, createAsyncIterator, nanoid } from '../lib';
 import { RedisClient } from 'bullmq';
 import { safeParse } from '@alpen/shared';
-import { toKeyValueList } from './utils';
+import { parseObjectResponse, toKeyValueList } from './utils';
+import { isEmpty } from 'lodash';
 
 const SENDER_ID_KEY = '__sid';
 const EVENT_KEY = '__evt';
@@ -13,7 +14,7 @@ function baseEmit(
   client: Pipeline | RedisClient,
   key: string,
   event: string,
-  data,
+  data: unknown,
 ) {
   return client.xadd(key, '*', EVENT_KEY, event, ...toKeyValueList(data));
 }
@@ -40,15 +41,13 @@ export class EventBus {
    * Construct a {@link EventBus}
    * @param {RedisStreamAggregator} aggregator stream aggregator
    * @param {String} key
-   * @param {String} [lastEventId="$"] the start for the stream cursor
    */
   constructor(
     aggregator: RedisStreamAggregator,
-    key: string,
-    lastEventId = '$',
+    key: string
   ) {
     this.aggregator = aggregator;
-    this._lastEventId = lastEventId;
+    this._lastEventId = '$';
     this._key = key;
     this._onBusMessage = this._onBusMessage.bind(this);
     this._emitter = new Emittery();
@@ -66,7 +65,9 @@ export class EventBus {
   }
 
   waitUntilReady(): Promise<void> {
-    return this.aggregator.connect();
+    return this.aggregator.waitUntilReady().then(() => {
+      return this.subscribeIfNeeded();
+    });
   }
 
   get client(): RedisClient {
@@ -96,7 +97,6 @@ export class EventBus {
     if (!this.isSubscribed) {
       this._subscriptionInfo = await this.aggregator.subscribe(
         this.key,
-        this.lastId,
         this._onBusMessage,
       );
     }
@@ -104,8 +104,7 @@ export class EventBus {
 
   private unsubscribeIfNeeded(): void {
     if (this._emitter.listenerCount() === 0) {
-      this.aggregator.unsubscribe(this.key, this._onBusMessage);
-      this._subscriptionInfo = null;
+      this.unsubscribe();
     }
   }
 
@@ -115,6 +114,7 @@ export class EventBus {
   private unsubscribe(): void {
     if (this.isSubscribed) {
       this.aggregator.unsubscribe(this._key, this._onBusMessage);
+      this._subscriptionInfo = null;
     }
   }
 
@@ -129,6 +129,10 @@ export class EventBus {
    */
   off(event: string, handler: BusEventHandler): void {
     this._emitter.off(event, handler);
+  }
+
+  getListenerCount(eventNames: string | string[]): number {
+    return this._emitter.listenerCount(eventNames);
   }
 
   async emit(event: string, data = {}): Promise<void> {
@@ -152,7 +156,29 @@ export class EventBus {
    * Returns the number of events remaining in the stream
    */
   getLength(): Promise<number> {
-    return this.aggregator.readClient.xlen(this._key);
+    return this.client.xlen(this._key);
+  }
+
+  /**
+   * Utility method to get the last item in the stream
+   */
+  async getLastEvent(): Promise<{
+    event: string;
+    data: Record<string, any>;
+  }> {
+    const res = await this.client.xrevrange(this._key, '+', '-', 'COUNT', 1);
+    const event = res?.[0];
+    if (event) {
+      const eventData = parseObjectResponse(event?.[1]);
+      const [name, data] = parseEventData(eventData);
+      if (name) {
+        return {
+          event: name,
+          data,
+        };
+      }
+    }
+    return null;
   }
 
   cleanup(maxLen = 1000): Promise<number> {
@@ -184,17 +210,33 @@ export class EventBus {
     if (!subscription) return;
     this._lastEventId = subscription.cursor;
     if (data) {
-      const [, other] = data;
-      const { __sid, __evt, ...rest } = other;
+      const [id, other] = data;
+      this._lastEventId = id;
       // if __sid is set, it means it was already emitted locally
       // make sure we weren't the ones doing it
-      if (__sid !== this._senderId) {
-        const event = __evt ?? other[EVENT_KEY];
+      if (other && other.__sid !== this._senderId) {
+        const [event, data] = parseEventData(other);
         if (event) {
-          const data = safeParse(rest.data);
           return this._localEmit(event, data);
         }
       }
     }
   }
+}
+
+function parseEventData(data: any): [string, Record<string, any>] {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { __sid, __evt, ...rest } = data;
+  const event = __evt ?? (rest ?? {})[EVENT_KEY];
+  if (event) {
+    if (rest.data) {
+      const { data: eventData, ...other } = rest;
+      const data = safeParse(eventData);
+      if (isEmpty(other)) {
+        return [event, data];
+      }
+      rest.data = data;
+    }
+  }
+  return [event, rest];
 }

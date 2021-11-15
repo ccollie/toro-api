@@ -1,0 +1,342 @@
+import { random } from 'lodash';
+import { Rule, RuleAlerter, RuleStorage } from '../';
+import {
+  ErrorStatus,
+  EvaluationResult,
+  RuleAlert,
+  RuleConfigOptions,
+  RuleOperator,
+  RuleState,
+  RuleType,
+} from '../../types';
+import {
+  clearDb,
+  getRandomBool,
+  createQueueManager,
+  createRule,
+} from '../../__tests__/factories';
+import { QueueManager } from '../../queues';
+import { ManualClock, nanoid, delay } from '../../lib';
+
+describe('RuleAlerter', () => {
+  let queueManager: QueueManager;
+  let storage: RuleStorage;
+  let clock: ManualClock;
+  let successResult: EvaluationResult;
+  let errorResult: EvaluationResult;
+  let warningResult: EvaluationResult;
+  let hostName: string;
+
+  beforeEach(async () => {
+    hostName = 'host-' + nanoid();
+    queueManager = await createQueueManager();
+    storage = new RuleStorage(hostName, queueManager.queue, queueManager.bus);
+    clock = new ManualClock();
+    successResult = createSuccessResult();
+    errorResult = createFailResult(ErrorStatus.ERROR);
+    warningResult = createFailResult(ErrorStatus.WARNING);
+  });
+
+  afterEach(async () => {
+    const client = await queueManager.queue.client;
+    await clearDb(client);
+    await queueManager.destroy();
+  });
+
+  async function getLastAlert(rule: Rule): Promise<RuleAlert> {
+    return storage.getAlert(rule, '+');
+  }
+
+  async function createAlerter(
+    options?: Partial<RuleConfigOptions>,
+  ): Promise<RuleAlerter> {
+    const rule = createRule(options);
+    await storage.saveRule(rule);
+    return new RuleAlerter(queueManager, rule, clock);
+  }
+
+  function createResult(
+    opts: Partial<EvaluationResult> = {},
+  ): EvaluationResult {
+    const triggered = opts.triggered ?? getRandomBool();
+    let level = ErrorStatus.NONE;
+    if (opts.errorLevel === undefined) {
+      level = !triggered
+        ? ErrorStatus.NONE
+        : [ErrorStatus.WARNING, ErrorStatus.ERROR][random(0, 1)];
+    }
+    const value = random(10, 1000);
+    return {
+      triggered,
+      errorLevel: level,
+      value,
+      state: {
+        ruleType: RuleType.THRESHOLD,
+        errorLevel: level,
+        value,
+        errorThreshold: 240,
+        comparator: RuleOperator.GT,
+        unit: 'ms',
+      },
+      ...opts,
+    };
+  }
+
+  function createSuccessResult() {
+    return createResult({ triggered: false });
+  }
+
+  function createFailResult(level?: ErrorStatus.WARNING | ErrorStatus.ERROR) {
+    return createResult({ triggered: true, errorLevel: level });
+  }
+
+  async function postResult(
+    sut: RuleAlerter,
+    result: EvaluationResult,
+    wait = true,
+  ): Promise<void> {
+    await sut.handleResult(result);
+    if (wait) {
+      await delay(30);
+    }
+  }
+
+  async function trigger(
+    sut: RuleAlerter,
+    level?: ErrorStatus.WARNING | ErrorStatus.ERROR,
+    wait = true,
+  ): Promise<void> {
+    return postResult(sut, createFailResult(level), wait);
+  }
+
+  async function reset(sut: RuleAlerter, wait = true): Promise<void> {
+    return postResult(sut, successResult, wait);
+  }
+
+  describe('constructor', () => {
+    it('can create a RuleAlerter', () => {
+      const rule = createRule({});
+
+      const alerter = new RuleAlerter(queueManager, rule, clock);
+      expect(alerter).toBeDefined();
+      expect(alerter.queue).toBe(queueManager.queue);
+      expect(alerter.rule).toBe(rule);
+    });
+  });
+
+  describe('.handleResult', () => {
+    it('does not notify if the rule is not active', async () => {
+      const sut = await createAlerter({ isActive: false });
+      await trigger(sut);
+      expect(sut.state).toBeUndefined();
+      expect(sut.isTriggered).toBe(false);
+    });
+  });
+
+  describe('Alerts', () => {
+    it('raises an alert on trigger', async () => {
+      const payload = {
+        num: random(0, 99),
+        str: nanoid(),
+      };
+
+      const sut = await createAlerter({
+        isActive: true,
+        payload,
+        message: '{{rule.id}} is fantastic',
+      });
+
+      const result = createFailResult(ErrorStatus.WARNING);
+      await sut.handleResult(result);
+
+      await delay(40);
+      const alert = await getLastAlert(sut.rule);
+
+      expect(alert).toBeDefined();
+      expect(alert.raisedAt).toBeDefined();
+      expect(alert.status).toBe('open');
+      expect(alert.errorLevel).toBe(result.errorLevel);
+      expect(alert.message).toBeDefined();
+      expect(alert.value).toBe(result.value);
+    });
+
+    it('raises an event on reset', async () => {
+      const sut = await createAlerter({
+        isActive: true,
+      });
+
+      await trigger(sut);
+      // should be triggered
+
+      await reset(sut);
+
+      await delay(20);
+      // expect(triggerSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not raise an alert if the rule is not ACTIVE', async () => {
+      const sut = await createAlerter({ isActive: false });
+
+      await trigger(sut);
+      expect(sut.isTriggered).toBeFalsy();
+    });
+
+    it('triggers a states change on a warning', async () => {
+      const sut = await createAlerter({ isActive: true });
+
+      await trigger(sut, ErrorStatus.WARNING);
+      expect(sut.state).toBe(RuleState.WARNING);
+    });
+
+    it('increases the number of failures when triggered', async () => {
+      const sut = await createAlerter({ isActive: true });
+
+      await trigger(sut);
+      expect(sut.failures).toBe(1);
+
+      await trigger(sut);
+      expect(sut.failures).toBe(2);
+    });
+
+    it('zeroes the failure count when reset', async () => {
+      const sut = await createAlerter({ isActive: true });
+
+      await trigger(sut);
+      expect(sut.failures).toBe(1);
+
+      await reset(sut);
+      expect(sut.failures).toBe(0);
+    });
+
+    describe('Options', () => {
+      it('respects the warmupWindow option', async () => {
+        const timeout = 100;
+        const sut = await createAlerter({
+          options: {
+            warmupWindow: timeout,
+          },
+        });
+
+        await sut.start();
+
+        expect(sut.isWarmingUp).toBe(true);
+        await trigger(sut);
+
+        expect(sut.isWarmingUp).toBe(true);
+
+        clock.advanceBy(timeout);
+        await trigger(sut);
+
+        expect(sut.isWarmingUp).toBe(false);
+      });
+
+      it('only raises an alert after a minimum number of violations', async () => {
+        const MIN_VIOLATIONS = 3;
+
+        const sut = await createAlerter({
+          options: {
+            failureThreshold: MIN_VIOLATIONS,
+          },
+        });
+
+        for (let i = 0; i < MIN_VIOLATIONS - 1; i++) {
+          await sut.handleResult(errorResult);
+        }
+        await delay(50);
+
+        expect(sut.alertCount).toBe(0);
+        expect(sut.failures).toBe(MIN_VIOLATIONS);
+
+        await trigger(sut);
+        expect(sut.alertCount).toBe(1);
+
+        const alert = getLastAlert(sut.rule);
+        expect(alert).toBeDefined();
+      });
+
+      it('respects the max number of repeats per event', async () => {
+        const MAX_ALERTS = 4;
+
+        const sut = await createAlerter({
+          options: {
+            maxAlertsPerEvent: MAX_ALERTS,
+          },
+        });
+
+        for (let i = 0; i < MAX_ALERTS + 2; i++) {
+          await sut.handleResult(errorResult);
+        }
+
+        await delay(40);
+        expect(sut.alertCount).toBe(MAX_ALERTS);
+      });
+
+      it('waits a specified amount of time between alerts', async () => {
+        const options = {
+          notifyInterval: 100,
+        };
+
+        const sut = await createAlerter({
+          options,
+        });
+        await sut.start();
+
+        await trigger(sut);
+        expect(sut.alertCount).toBe(1);
+        clock.advanceBy(20);
+
+        await trigger(sut);
+        expect(sut.alertCount).toBe(1);
+        clock.advanceBy(20);
+
+        await trigger(sut);
+        expect(sut.alertCount).toBe(1);
+
+        clock.advanceBy(60);
+
+        await trigger(sut);
+        expect(sut.alertCount).toBe(2);
+      });
+
+      it('waits a specified amount of time before resetting', async () => {
+        // jest.useFakeTimers();
+        const payload = {
+          num: random(0, 99),
+          str: nanoid(),
+        };
+        const options = {
+          alertOnReset: true,
+          recoveryWindow: 5000,
+        };
+        const sut = await createAlerter({
+          options,
+          payload,
+        });
+        const rule = sut.rule;
+        await sut.start();
+
+        try {
+          await trigger(sut);
+          expect(sut.isTriggered).toBe(true);
+
+          await reset(sut);
+          // should not call yet
+          expect(sut.isTriggered).toBe(true);
+
+          // wait for the expected period
+          clock.advanceBy(options.recoveryWindow);
+
+          // i hate this, but i can't get jest to fake setInterval
+          await delay(520);
+
+          expect(rule.state).toBe(RuleState.NORMAL);
+          expect(sut.isTriggered).toBe(false);
+        } finally {
+          await sut.stop(); // kill timer
+        }
+      });
+    });
+
+    // todo: should not add a new alert if previous is not reset
+  });
+});

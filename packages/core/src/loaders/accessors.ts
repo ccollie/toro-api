@@ -1,6 +1,6 @@
 import { Job, Queue, RedisClient } from 'bullmq';
 import { JobLocator } from './types';
-import boom from '@hapi/boom';
+import { notFound, notImplemented } from '@hapi/boom';
 import { QueueManager } from '../queues';
 
 export interface IAccessorHelper {
@@ -18,7 +18,7 @@ const DefaultAccessor: IAccessorHelper = {
       const queue = (job as any).queue as Queue;
       if (!queue) {
         const msg = `No queue found for Job ${job.name}#${job.id}`;
-        throw boom.notFound(msg);
+        throw notFound(msg);
       }
       return queue;
     } else {
@@ -30,13 +30,13 @@ const DefaultAccessor: IAccessorHelper = {
     return '';
   },
   getQueueManager(_queue): QueueManager {
-    throw boom.notImplemented('"getQueueManager" not implemented');
+    throw notImplemented('"getQueueManager" not implemented');
   },
   getQueueById(id: string): Queue {
-    throw boom.notImplemented('"getQueueById" not implemented');
+    throw notImplemented('"getQueueById" not implemented');
   },
   getQueueHostClient(queue: Queue): RedisClient {
-    throw boom.notImplemented('"getQueueHostClient" not implemented');
+    throw notImplemented('"getQueueHostClient" not implemented');
   },
 };
 

@@ -1,5 +1,5 @@
 import { FieldConfig } from '../index';
-import { getClassMetadata, metricsMap, MetricInfo } from '@alpen/core/metrics';
+import { getClassMetadata, metricsMap, MetricInfo } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { MetricTypeTC } from '../metric/scalars';
 

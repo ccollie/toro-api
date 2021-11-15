@@ -1,6 +1,6 @@
-import { ConnectionOptions } from '../redis';
+import { ConnectionOptions } from 'bullmq';
 import { getValue } from '../config';
-import Joi from 'joi';
+import * as Joi from 'joi';
 import { isString } from 'lodash';
 import { parseRedisURI } from '../redis/utils';
 import fnv from 'fnv-plus';
@@ -81,7 +81,7 @@ const hostConfigSchema = Joi.object().keys({
 
 // Generate host and queue ids
 
-function generateHostId(config: HostConfig): string {
+export function generateHostId(config: HostConfig): string {
   const conn = isString(config.connection)
     ? parseRedisURI(config.connection)
     : config.connection;

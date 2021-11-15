@@ -2,7 +2,7 @@
 -- @include "isDate.lua"
 
 local function getType(val)
-    if (val == cjson.null) then
+    if (val == cjson.null or val == nil) then
         return 'null'
     end
     local t = type(val)

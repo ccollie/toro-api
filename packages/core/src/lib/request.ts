@@ -1,5 +1,5 @@
-import boom from '@hapi/boom';
-import got from 'got';
+import { badRequest } from '@hapi/boom';
+import { default as got } from 'got';
 import { isEmpty, isObject } from 'lodash';
 import { packageInfo } from '../packageInfo';
 
@@ -10,13 +10,13 @@ const defaultOptions = {
   },
 };
 
-export default async function request(url: string, options) {
+export default async function request(url: string, options: any) {
   if (isEmpty(url)) {
     // todo: validate url
-    throw boom.badRequest('url missing or invalid', { url });
+    throw badRequest('url missing or invalid', { url });
   }
 
-  const overrides = {};
+  const overrides:any = {};
 
   if (isObject(options.body)) {
     overrides['body'] = JSON.stringify(options.body);

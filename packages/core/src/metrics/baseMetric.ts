@@ -1,7 +1,7 @@
-import boom from '@hapi/boom';
+import { badData, notImplemented } from '@hapi/boom';
 import Emittery from 'emittery';
 import ms from 'ms';
-import Joi, { ObjectSchema } from 'joi';
+import * as Joi from 'joi';
 import { JobEventData } from '../queues';
 import { BaseAggregator, NullAggregator } from './aggregators';
 import { Events } from './constants';
@@ -121,7 +121,7 @@ export abstract class BaseMetric {
     if (typeof value === 'string') {
       newValue = ms(value);
       if (isNaN(newValue)) {
-        throw boom.badData('Invalid value for "sampleInterval"');
+        throw badData('Invalid value for "sampleInterval"');
       }
     } else {
       newValue = value;
@@ -147,7 +147,7 @@ export abstract class BaseMetric {
     return MetricCategory.Queue;
   }
 
-  static get schema(): ObjectSchema {
+  static get schema(): Joi.ObjectSchema {
     return BaseMetricSchema;
   }
 
@@ -256,7 +256,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
     this._filter = createJobNameFilter(values);
   }
 
-  static get schema(): ObjectSchema {
+  static get schema(): Joi.ObjectSchema {
     return QueueBasedMetricSchema;
   }
 
@@ -290,7 +290,7 @@ export abstract class PollingMetric
   }
 
   checkUpdate(listener?: MetricsListener, ts?: number): Promise<void> {
-    throw boom.notImplemented('checkUpdate');
+    throw notImplemented('checkUpdate');
   }
 }
 
@@ -303,10 +303,10 @@ export abstract class QueuePollingMetric
   }
 
   checkUpdate(): Promise<void> {
-    throw boom.notImplemented('checkUpdate');
+    throw notImplemented('checkUpdate');
   }
 
-  static get schema(): ObjectSchema {
+  static get schema(): Joi.ObjectSchema {
     return QueueBasedMetricSchema;
   }
 }

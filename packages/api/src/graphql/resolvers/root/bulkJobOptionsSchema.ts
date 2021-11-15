@@ -1,5 +1,5 @@
 import { FieldConfig } from '../index';
-import { BulkJobsOptionsSchema } from '@alpen/core/queues';
+import { BulkJobsOptionsSchema } from '@alpen/core';
 
 export const bulkJobOptionsSchema: FieldConfig = {
   description: 'Returns the JSON Schema for the BullMq BulkJobOptions type',

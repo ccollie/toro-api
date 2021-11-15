@@ -136,7 +136,7 @@
  */
 export class OnlineNormalEstimator {
   private _count = 0;
-  private mS = 0;
+  private _meanSq = 0;
   private _mean = 0.0;
 
   /**
@@ -150,8 +150,14 @@ export class OnlineNormalEstimator {
   reset(): this {
     this._count = 0;
     this._mean = 0.0;
-    this.mS = 0.0;
+    this._meanSq = 0.0;
     return this;
+  }
+
+  init(count: number, mean: number, meanSq = 0) {
+    this._count = count;
+    this._mean = mean;
+    this._meanSq = meanSq;
   }
 
   /**
@@ -163,7 +169,7 @@ export class OnlineNormalEstimator {
   add(x: number): this {
     ++this._count;
     const nextMean = this._mean + (x - this._mean) / this._count;
-    this.mS += (x - this._mean) * (x - nextMean);
+    this._meanSq += (x - this._mean) * (x - nextMean);
     this._mean = nextMean;
     return this;
   }
@@ -189,11 +195,11 @@ export class OnlineNormalEstimator {
     if (this._count === 1) {
       this._count = 0;
       this._mean = 0.0;
-      this.mS = 0.0;
+      this._meanSq = 0.0;
       return this;
     }
     const oldMean = (this._count * this._mean - x) / (this._count - 1);
-    this.mS -= (x - this._mean) * (x - oldMean);
+    this._meanSq -= (x - this._mean) * (x - oldMean);
     this._mean = oldMean;
     --this._count;
     return this;
@@ -210,8 +216,8 @@ export class OnlineNormalEstimator {
     sum += newValue;
     this._mean = sum / this._count;
 
-    this.mS -= (oldValue - prevM) * (oldValue - this._mean);
-    this.mS += (newValue - prevM) * (newValue - this._mean);
+    this._meanSq -= (oldValue - prevM) * (oldValue - this._mean);
+    this._meanSq += (newValue - prevM) * (newValue - this._mean);
     return this;
   }
 
@@ -223,12 +229,20 @@ export class OnlineNormalEstimator {
     const delta = this._mean - that._mean;
     const delta2 = delta * delta;
     const varianceDeltaSum =
-      this.mS + that.mS + (delta2 * this._count * that._count) / both;
+      this._meanSq + that._meanSq + (delta2 * this._count * that._count) / both;
 
     this._count = both;
     this._mean = newMean;
-    this.mS = varianceDeltaSum;
+    this._meanSq = varianceDeltaSum;
     return this;
+  }
+
+  toJSON() {
+    return {
+      count: this.count,
+      meanSq: this._meanSq,
+      mean: this.mean
+    };
   }
 
   /**
@@ -265,7 +279,7 @@ export class OnlineNormalEstimator {
    * @returns {number}
    */
   get variance(): number {
-    return this._count > 1 ? this.mS / this._count : 0.0;
+    return this._count > 1 ? this._meanSq / this._count : 0.0;
   }
 
   /**
@@ -273,7 +287,7 @@ export class OnlineNormalEstimator {
    * @returns {number}
    */
   get varianceUnbiased(): number {
-    return this._count > 1 ? this.mS / (this._count - 1) : 0.0;
+    return this._count > 1 ? this._meanSq / (this._count - 1) : 0.0;
   }
 
   /**

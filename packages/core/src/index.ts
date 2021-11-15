@@ -3,6 +3,7 @@ export * from './config';
 export * from './hosts';
 export * from './ids';
 export * from './lib';
+export * from './logger';
 export * from './keys';
 export * from './metrics';
 export * from './queues';
@@ -12,6 +13,7 @@ export * from './stats';
 export * from './types';
 export * from './notifications';
 export * from './validation';
+export * from './supervisor';
 export * from './errors';
 
 export { initLoaders } from './loaders/init-loaders';

@@ -1,4 +1,10 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["__tests__", "**/*.spec.ts", "**/*.test.ts"]
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": true
+  },
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__mocks__/*", "src/**/__tests__/*.ts"],
+  "references": [{ "path": "../shared" }]
 }

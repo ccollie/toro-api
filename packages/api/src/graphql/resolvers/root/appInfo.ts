@@ -1,7 +1,6 @@
-import { FieldConfig } from '../index';
-import { AppInfo } from '@alpen/core/types';
-import { Supervisor } from '@alpen/core/supervisor';
+import { AppInfo, Supervisor } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
+import { FieldConfig } from '../index';
 
 const AppInfoTC = schemaComposer.createObjectTC({
   name: 'AppInfo',

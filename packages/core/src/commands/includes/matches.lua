@@ -10,9 +10,8 @@ local function matches(a, pattern)
     if (type(a) ~= 'table') then return isMatch(a) end
 
     return some(a, function(x)
-        local t = type(x)
         if (isMatch(x)) then return true end
-        if (t == 'table') then
+        if (type(x) == 'table') then
             for _, str in ipairs(x) do
                 if isMatch(str) then
                     return true

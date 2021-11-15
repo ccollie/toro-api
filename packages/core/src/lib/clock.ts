@@ -5,29 +5,29 @@ import { isDate } from 'lodash';
 
 export interface Clock {
   //set(val);
-  clear();
+  clear(): void;
   getTime(): number;
 }
 
-function normalize(val: any): number {
-  const type = typeof val;
+function normalize(val: unknown): number {
   let value;
-  if (type === 'string') {
-    val = val.split(val, '-')[0];
-    value = parseInt(val);
+  if (typeof val === 'string') {
+    val = val.split('-')[0];
+    value = parseInt(val as string, 10);
   } else if (isDate(val)) {
     value = val.getTime();
   } else {
     value = val;
   }
-  return value;
+  return Number(value);
 }
 
 export class ManualClock implements Clock {
   private _value: number = Date.now();
 
   constructor(initValue?: number) {
-    this._value = arguments.length > 0 ? initValue : Date.now();
+    const now = Date.now();
+    this._value = arguments.length > 0 ? (initValue || now) : now;
   }
 
   clear(): void {
@@ -64,25 +64,25 @@ export function createAlignedClock(clock: Clock, interval: number): Clock {
   };
 }
 
-export function create(currentTimeFn = undefined): Clock {
-  currentTimeFn = currentTimeFn || (() => Date.now());
+export function create(currentTimeFn?: () => number): Clock {
+  currentTimeFn = currentTimeFn ?? (() => Date.now());
 
-  let value = null;
+  let value: number;
 
   function clockFn() {
-    let current = currentTimeFn();
+    let current = currentTimeFn?.() ?? Date.now();
     if (value && value < current) {
       current = value;
     }
     return current;
   }
 
-  function set(val) {
+  function set(val: unknown) {
     value = normalize(val);
   }
 
   function clear() {
-    value = null;
+    value = 0;
   }
 
   const getTime = () => clockFn();

@@ -6,7 +6,7 @@ import {
   HistogramBinningMethod,
   HistogramOptions,
   StatsMetricType,
-} from '@alpen/core/stats';
+} from '@alpen/core';
 import isNumber from 'lodash/isNumber';
 import { GraphQLEnumType } from 'graphql';
 import { StatsMetricsTypeEnum } from '../../scalars';

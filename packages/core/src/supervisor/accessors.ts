@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import { StatsClient, StatsListener } from '../stats';
 import { QueueManager, QueueListener } from '../queues';
@@ -7,8 +7,6 @@ import { HostManager } from '../hosts/host-manager';
 import { BaseMetric } from '../metrics/baseMetric';
 import { RuleManager } from '../rules/rule-manager';
 import { createAsyncIterator } from '../lib';
-
-const queueIdMap = new WeakMap<Queue, string>();
 
 export function getQueueNameKey(manager: QueueManager): string {
   const queue = manager.queue;
@@ -47,26 +45,7 @@ export function getQueueById(id: string, mutation?: string | boolean): Queue {
 }
 
 export function getQueueId(queue: Queue): string {
-  let id = queueIdMap.get(queue);
-  if (!id) {
-    const hosts = getSupervisor().hosts;
-    for (let i = 0; i < hosts.length; i++) {
-      const managers = hosts[i].queueManagers;
-      for (let j = 0; j < managers.length; j++) {
-        const manager = managers[j];
-        if (queue === manager.queue) {
-          id = manager.id;
-          queueIdMap.set(queue, id);
-          return id;
-        }
-        // do useful work
-        if (!queueIdMap.get(manager.queue)) {
-          queueIdMap.set(manager.queue, manager.id);
-        }
-      }
-    }
-  }
-  return id;
+  return getSupervisor().getQueueId(queue);
 }
 
 export function getMetricById(id: string): BaseMetric {
@@ -82,7 +61,11 @@ export function getMetricById(id: string): BaseMetric {
   return null;
 }
 
-export async function getJobById(queueId: string, jobId: string, mutation?: string | boolean): Promise<Job> {
+export async function getJobById(
+  queueId: string,
+  jobId: string,
+  mutation?: string | boolean,
+): Promise<Job> {
   const queue = getQueueById(queueId, mutation);
   // todo: maybe use loader here
   const job = await queue.getJob(jobId);
@@ -111,26 +94,35 @@ export function getQueueHostManager(queue: Queue | string): HostManager {
   return manager.hostManager;
 }
 
-export function raiseIfQueueIsReadonly(q: QueueManager | Queue | string, mutation?: string) {
-  let manager: QueueManager;
+export function raiseIfQueueIsReadonly(
+  q: QueueManager | Queue | string,
+  mutation?: string,
+) {
+  let manager: QueueManager | null = null;
   if (typeof q === 'string' || q instanceof Queue) {
     manager = getSupervisor().getQueueManager(q);
-  } else if (q instanceof QueueManager) {
-    manager = q
+  } else {
+    manager = q;
   }
-  const name = manager.queue.name;
+  const name = manager?.queue.name;
   const opName = mutation || 'modify queue';
-  const message = `Queue ${name} is read-only (${opName})`
+  const message = `Queue ${name} is read-only (${opName})`;
   throw boom.forbidden(message, { name: 'AlpenError' });
 }
 
-function validateQueueReadonly(q: QueueManager | Queue | string, mutation?: string | boolean) {
+function validateQueueReadonly(
+  q: QueueManager | Queue | string,
+  mutation?: string | boolean,
+) {
   if (mutation === undefined || mutation === false) return;
-  const opName = (typeof mutation === 'string') ? mutation : undefined;
+  const opName = typeof mutation === 'string' ? mutation : undefined;
   return raiseIfQueueIsReadonly(q, opName);
 }
 
-export function getQueueManager(queue: Queue | string, mutation?: string | boolean): QueueManager {
+export function getQueueManager(
+  queue: Queue | string,
+  mutation?: string | boolean,
+): QueueManager {
   const manager = getSupervisor().getQueueManager(queue);
   if (!manager) {
     const id = typeof queue === 'string' ? queue : queue.name;
@@ -150,7 +142,10 @@ export function getStatsListener(queue: Queue | string): StatsListener {
   return manager.statsListener;
 }
 
-export function getQueueRuleManager(queueId: Queue | string, mutation?: string | boolean): RuleManager {
+export function getQueueRuleManager(
+  queueId: Queue | string,
+  mutation?: string | boolean,
+): RuleManager {
   const manager = getQueueManager(queueId, mutation);
   return manager.ruleManager;
 }

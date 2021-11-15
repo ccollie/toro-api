@@ -19,7 +19,7 @@ const idConfig = {
   // Defaults to false. If set to true, the returned ids will be of type bigint
   // or else of type string
   returnNumber: false,
-  customEpoch: Epoch, // Defaults to 1546300800000 (01-01-2019). This is UNIX timestamp in ms
+  customEpoch: Epoch, // This is UNIX timestamp in ms
   machineID: getMachineID(),
 };
 

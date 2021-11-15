@@ -1,6 +1,6 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import Ajv, { ValidateFunction } from 'ajv';
-import betterAjvErrors from '@stoplight/better-ajv-errors';
+import AjvErrors from 'ajv-errors';
 import cronstrue from 'cronstrue';
 
 const ajv = new Ajv({
@@ -8,7 +8,9 @@ const ajv = new Ajv({
   coerceTypes: true,
   useDefaults: true,
   verbose: true,
+  allErrors: true,
 });
+AjvErrors(ajv);
 
 ajv.addFormat('identifier', {
   type: 'string',
@@ -40,14 +42,12 @@ export function validate(
   data: any,
 ): any {
   if (!validator(data)) {
-    const output = betterAjvErrors(schema, validator.errors, {
-      propertyPath: [],
-      targetValue: data,
-    });
-    if (output.length === 1) {
-      throw boom.badRequest(output[0].error);
+    const errors = validator.errors;
+    if (errors.length === 1) {
+      const { message, ...rest } = errors[0];
+      throw boom.badRequest(message, rest);
     }
-    throw boom.badRequest('Error validating job data', output);
+    throw boom.badRequest('Error validating job data', errors);
   }
 }
 

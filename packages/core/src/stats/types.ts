@@ -1,3 +1,5 @@
+export * from './outliers/types';
+
 export type StatsMetricType = 'latency' | 'wait' | 'counts';
 
 export interface TimeseriesDataPoint {

@@ -3,7 +3,7 @@ import { Pipeline } from 'ioredis';
 import DataLoader from 'dataloader';
 import { aggregateQueuesByClient } from './utils';
 import pMap from 'p-map';
-import { JobCounts, JobCountStates, JobStatusEnum } from '../queues/types';
+import { JobCounts, JobCountStates, JobStatusEnum } from '../types/queues';
 import { getAccessor } from './accessors';
 
 const DefaultTypes: JobCountStates[] = [

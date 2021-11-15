@@ -23,15 +23,15 @@ if (#ids > 0) then
   for _, id in ipairs(ids) do
     local jobKey = prefix .. id
     local job = redis.call('hmget', jobKey, 'timestamp', 'processedOn', 'name')
-    local timestamp = tonumber(job[1])
+    local ts = tonumber(job[1])
     local processedOn = tonumber(job[2])
     local name = job[3]
 
-    local timestampsValid = (timestamp ~= nil and processedOn ~= nil);
+    local timestampsValid = (ts ~= nil and processedOn ~= nil);
     local jobNameValid = (jobName == nil) or (name == jobName)
 
     if (timestampsValid and jobNameValid) then
-      amount = amount + (processedOn - timestamp)
+      amount = amount + (processedOn - ts)
       counter = counter + 1
     end
   end

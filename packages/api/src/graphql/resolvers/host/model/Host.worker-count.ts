@@ -1,5 +1,5 @@
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core/hosts';
+import { HostManager } from '@alpen/core';
 
 export const hostWorkerCount: FieldConfig = {
   type: 'Int!',

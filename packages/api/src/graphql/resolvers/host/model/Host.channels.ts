@@ -1,4 +1,4 @@
-import { HostManager } from '@alpen/core/hosts';
+import { HostManager } from '@alpen/core';
 import { NotificationChannelTC } from '../scalars';
 import { FieldConfig } from '../../utils';
 

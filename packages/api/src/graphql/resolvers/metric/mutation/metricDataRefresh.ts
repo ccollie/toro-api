@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
-import { BaseMetric } from '@alpen/core/metrics';
+import { BaseMetric } from '@alpen/core';
 import { parseRange } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { MetricDataRefreshInput } from '../../../typings';

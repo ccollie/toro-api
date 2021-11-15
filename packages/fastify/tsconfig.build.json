@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "composite": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "filesGlob": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "references": [{ "path": "../core" }, { "path": "../api" }, { "path": "../shared" }]
+}

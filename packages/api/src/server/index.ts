@@ -1,4 +1,15 @@
 import {
+  accessors,
+  HostConfig,
+  initLoaders,
+  loaders,
+  logger,
+  isDevelopment,
+  isProduction,
+  Supervisor,
+} from '@alpen/core';
+import { useApolloServerErrors } from '@envelop/apollo-server-errors';
+import {
   EnvelopError,
   FormatErrorHandler,
   Plugin,
@@ -8,19 +19,17 @@ import {
 import { DepthLimitConfig, useDepthLimit } from '@envelop/depth-limit';
 import type { AllowedOperations } from '@envelop/filter-operation-type';
 import { useFilterAllowedOperations } from '@envelop/filter-operation-type';
-import { useApolloServerErrors } from '@envelop/apollo-server-errors';
-import { GraphQLError } from 'graphql';
-import pMap from 'p-map';
+import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
+import type { PersistedQueryStore } from '@graphql-ez/plugin-automatic-persisted-queries';
+import {
+  AutomaticPersistedQueryOptions,
+  createLRUStore,
+  ezAutomaticPersistedQueries,
+} from '@graphql-ez/plugin-automatic-persisted-queries';
+import boom from '@hapi/boom';
 
 import { ApolloError } from 'apollo-server-errors';
-import { getSchema, publish, pubsub } from '../graphql';
-import { Supervisor } from '@alpen/core/supervisor';
-import { loaders } from '@alpen/core/loaders';
-import { initLoaders } from '@alpen/core';
-import { logger } from '@alpen/core/logger';
-import { LoggerConfig, useLogger } from './plugins/logger';
-import { HostConfig } from '@alpen/core/hosts';
-import { accessors } from '@alpen/core/supervisor';
+import { GraphQLError, OperationTypeNode } from 'graphql';
 import {
   AppOptions,
   BuildAppOptions,
@@ -30,32 +39,22 @@ import {
   InferContext,
   NullableEnvelopPlugin,
 } from 'graphql-ez';
-import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
-import {
-  AutomaticPersistedQueryOptions,
-  createLRUStore,
-  ezAutomaticPersistedQueries,
-} from '@graphql-ez/plugin-automatic-persisted-queries';
-import type { PersistedQueryStore } from '@graphql-ez/plugin-automatic-persisted-queries';
 import ms from 'ms';
-import boom from '@hapi/boom';
-
-const isDevEnv = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
+import pMap from 'p-map';
+import { getSchema, publish, pubsub } from '../graphql';
+import { LoggerConfig, useLogger } from './plugins/logger';
 
 export type PlaygroundOptions = Omit<AltairOptions, 'endpoint'>;
 
 const INITIAL_GRAPHQL_QUERY = `
  query hostQueues {
-    host {
+    hosts {
       id
       name
       description
       queues {
         id
         name
-        host
-        hostId
         prefix
         isPaused
         jobCounts {
@@ -161,6 +160,16 @@ export interface GraphQLHandlerOptions {
   cacheOptions?: CacheOptions;
 
   persistedQueryOptions?: PersistedQueryOptions;
+
+  /**
+   * @description  Allow query batching
+   *
+   * Allow query batching.
+   *
+   * Supply a number to set a limit on the number of queries (inclusive) that can be
+   * batched together in a single network request.
+   */
+  allowBatchedQueries?: number | boolean;
 }
 
 function errorHandler(errors: Readonly<GraphQLError[]>) {
@@ -180,7 +189,7 @@ function errorHandler(errors: Readonly<GraphQLError[]>) {
 export const formatError: FormatErrorHandler = (err): GraphQLError => {
   if (!err) return new GraphQLError('Something went wrong.');
   if (
-    !isDevEnv &&
+    !isDevelopment &&
     err instanceof GraphQLError &&
     err.originalError &&
     !(err.originalError instanceof EnvelopError) &&
@@ -221,6 +230,7 @@ export function createAppOptions(
     depthLimitOptions,
     allowIntrospection,
     cacheOptions,
+    allowBatchedQueries = 5
   } = {
     extraPlugins: [],
     ...(opts ?? {
@@ -236,6 +246,11 @@ export function createAppOptions(
     }),
   };
 
+  const DefaultAllowedOperations = [
+    OperationTypeNode.MUTATION,
+    OperationTypeNode.QUERY,
+  ];
+
   // Important: Plugins are executed in order of their usage, and inject functionality serially,
   // so the order here matters
   const plugins: NullableEnvelopPlugin[] = [
@@ -246,7 +261,9 @@ export function createAppOptions(
       ignore: (depthLimitOptions && depthLimitOptions.ignore) || [],
     }),
     // Only allow execution of specific operation types
-    useFilterAllowedOperations(opts.allowedOperations || ['mutation', 'query']),
+    useFilterAllowedOperations(
+      opts.allowedOperations || DefaultAllowedOperations,
+    ),
     // Apollo Server compatible errors.
     // Important: *must* be listed before useMaskedErrors
     useApolloServerErrors(),
@@ -265,7 +282,7 @@ export function createAppOptions(
   }
 
   const prepare = async () => {
-    const supervisor = await Supervisor.getInstance();
+    const supervisor = Supervisor.getInstance();
     initLoaders();
 
     const initHosts =
@@ -291,7 +308,7 @@ export function createAppOptions(
     introspection: {
       disable: !allowIntrospection,
     },
-    allowBatchedQueries: 5,
+    allowBatchedQueries,
     envelop: {
       plugins,
     },
@@ -318,7 +335,7 @@ export type AdapterOptions = GraphQLHandlerOptions & {
   playgroundOptions?: PlaygroundOptions;
 };
 
-export abstract class ServerAdapter<
+export class ServerAdapter<
   TApp,
   TOptions extends AppOptions,
   TBuildOptions extends BuildAppOptions,
@@ -326,7 +343,6 @@ export abstract class ServerAdapter<
   protected _hosts: HostConfig[] = [];
   protected options: TOptions;
   protected gqlBasePath = '/graphql';
-  protected _app: TApp;
   protected readonly config: AdapterOptions;
 
   constructor(config: AdapterOptions) {

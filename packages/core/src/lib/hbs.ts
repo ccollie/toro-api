@@ -20,14 +20,10 @@ const helpers = handlebarsHelpers(['math', 'comparison', 'number'], {
 });
 
 // Markdown block helper
-function markdown(str, options) {
+function markdown(str: string, options: any) {
   if (utils.isOptions(str)) {
     options = str;
     str = options.fn(this);
-  }
-
-  if (typeof str !== 'string') {
-    return ''; // todo: throw
   }
 
   const trim = !!options?.hash?.trim;
@@ -51,11 +47,12 @@ function markdown(str, options) {
  * <!-- results in: false -->
  * ```
  * @param {String} `str`
+ * @param regex
+ * @param options
  * @return {RegExp}
  * @core public
  */
-
-function regexMatch(str, regex, options): boolean {
+function regexMatch(str: string, regex: string | RegExp, options: any): boolean {
   if (!isString(str)) {
     throw new TypeError('expected a string');
   }
@@ -80,7 +77,7 @@ function regexMatch(str, regex, options): boolean {
  * @block
  * @core public
  */
-function getProperty(prop, context, options) {
+function getProperty(prop: string, context: object, options: any): string {
   if (utils.isOptions(context)) {
     options = context;
     context = options.data.root;
@@ -96,7 +93,7 @@ const extras = {
   capitalize,
   isEmpty,
   lowercase: lowerCase,
-  ms: (val, opts = { long: false }, options) => {
+  ms: (val: number, opts = { long: false }, options: any) => {
     const defaults = { long: false };
     return ms(val, opts);
   },
@@ -110,10 +107,10 @@ const extras = {
     }
     return prettyMilliseconds(num, options);
   },
-  date: (timestamp) => {
+  date: (timestamp: number) => {
     return toDate(timestamp).toString();
   },
-  formatDate: (date, formatString) => {
+  formatDate: (date: Date | number, formatString: string): string => {
     formatString = formatString || 'yyyy-MM-dd h:mm:ss bb';
     return formatDate(date, formatString);
   },

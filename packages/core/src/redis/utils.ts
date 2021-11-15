@@ -1,11 +1,12 @@
-import IORedis, { Pipeline, RedisOptions, parseUrl } from 'ioredis';
+import IORedis, { Pipeline, RedisOptions } from 'ioredis';
+import { parseURL } from 'ioredis/built/utils';
 import { isObject, chunk, isNil, isString } from 'lodash';
-import { isValidDate, isNumber, hashObject } from '@alpen/shared';
-import { loadScripts } from '../commands/utils';
-import { RedisClient } from 'bullmq';
+import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
+import { RedisClient, ConnectionOptions, isRedisInstance, scriptLoader } from 'bullmq';
 import { logger } from '../logger';
+import * as path from 'path';
 
-export type ConnectionOptions = string | RedisOptions;
+const ScriptPath = path.join(__dirname, '../commands');
 
 export type RedisMetrics = {
   /* eslint-disable */
@@ -35,43 +36,37 @@ export interface RedisStreamItem {
   data: any;
 }
 
-export function createClient(redisOpts?: ConnectionOptions): RedisClient {
+export function createClient(redisOpts?: ConnectionOptions | string): RedisClient {
   let client;
   if (isNil(redisOpts)) {
-    client = new IORedis(); // supported in 4.19.0
+    client = new IORedis({
+      lazyConnect: false,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    }); // supported in 4.19.0
   } else if (isString(redisOpts)) {
     client = new IORedis(redisOpts as string);
+  } else if (isRedisInstance(redisOpts)) {
+    client = (redisOpts as RedisClient).duplicate();
   } else {
-    client = new IORedis(redisOpts);
+    const opts = {
+      lazyConnect: false,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      ...redisOpts,
+    } as RedisOptions;
+    client = new IORedis(opts);
   }
 
-  loadScripts(client).catch((err) => logger.warn(err));
+  loadBaseScripts(client).catch((e) => logger.error(e));
   return client;
 }
 
-/**
- * Waits for a redis client to be ready.
- * @param {RedisClient} client redis client
- */
-export async function waitUntilReady(client: RedisClient): Promise<void> {
-  return new Promise(function (resolve, reject) {
-    if (client.status === 'ready') {
-      resolve();
-    } else {
-      async function handleReady() {
-        client.removeListener('error', handleError);
-        resolve();
-      }
-
-      function handleError(err: Error) {
-        client.removeListener('ready', handleReady);
-        reject(err);
-      }
-
-      client.once('ready', handleReady);
-      client.once('error', handleError);
-    }
-  });
+export async function loadBaseScripts(
+  client: RedisClient,
+): Promise<RedisClient> {
+  await scriptLoader.load(client, ScriptPath);
+  return client;
 }
 
 export async function disconnect(client: RedisClient): Promise<void> {
@@ -193,14 +188,14 @@ export function normalizePrefixGlob(prefixGlob: string): string {
 }
 
 export function parseRedisURI(urlString: string): Record<string, any> {
-  return parseUrl(urlString);
+  return parseURL(urlString);
 }
 
 export function getClientHash(redis: RedisClient | string): string {
   let options: Record<string, any>;
 
   if (typeof redis === 'string') {
-    options = parseUrl(redis);
+    options = parseURL(redis);
   } else {
     options = redis.options;
   }
@@ -359,4 +354,27 @@ export async function getRedisInfo(client: RedisClient): Promise<RedisMetrics> {
 
     return acc;
   }, {} as Record<MetricName, any>);
+}
+
+// parse result of redis client list command
+export function parseClientList(
+  list: string,
+  handler: (key: string, value: any) => boolean | void,
+): void {
+  const lines = list.split('\n');
+  let done = false;
+  for (let i = 0; i < lines.length && !done; i++) {
+    const line = lines[i];
+    const keyValues = line.split(' ');
+    keyValues.forEach(function (keyValue) {
+      const index = keyValue.indexOf('=');
+      const key = keyValue.substring(0, index);
+      const v = keyValue.substring(index + 1);
+      const val = safeParse(v);
+      if (handler(key, val) === false) {
+        done = true;
+        return;
+      }
+    });
+  }
 }

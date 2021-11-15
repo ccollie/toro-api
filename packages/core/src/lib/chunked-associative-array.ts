@@ -114,7 +114,8 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
 
   private forEachChunk(handler: (chunk: Chunk<TKey, TValue>) => void) {
     for (let i = 0; i < this.chunks.length; i++) {
-      handler(this.chunks.get(i));
+      const chunk = this.chunks.get(i);
+      chunk && handler(chunk);
     }
   }
 
@@ -138,6 +139,9 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
     const len = this.chunks.length;
     for (let i = 0; i < len && !found; i++) {
       const chunk = this.chunks.get(i);
+      if (!chunk) {
+        continue;
+      }
       let startIndex = chunk.startIndex;
       if (!found) {
         if (chunk.isEmpty) {
@@ -180,6 +184,8 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
 
     for (let i = 0; i < this.chunks.length; i++) {
       const chunk = this.chunks.get(i);
+      if (!chunk) continue;
+
       let startIndex = chunk.startIndex;
       if (!foundStart) {
         if (chunk.isEmpty) {
@@ -248,6 +254,7 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
 
     for (let k = 0; k < this.chunks.length; k++) {
       const chunk = this.chunks.get(k);
+      if (!chunk) continue;
 
       let startIndex = chunk.startIndex;
       if (!foundStart) {
@@ -281,7 +288,7 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
     let result = 0;
     for (let k = 0; k < this.chunks.length; k++) {
       const chunk = this.chunks.get(k);
-      result += chunk.length;
+      result += chunk?.length;
     }
     return result;
   }
@@ -301,6 +308,7 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
     for (let i = 0; i < this.chunks.length; i++) {
       builder.push('[');
       const chunk = this.chunks.get(i);
+      if (!chunk) continue;
       for (let i = chunk.startIndex; i < chunk.cursor; i++) {
         builder.push('(', chunk.keys[i], ': ', chunk.values[i], ')', ' ');
       }
@@ -327,6 +335,7 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
     if (arguments.length > 1) {
       while (!this.chunks.isEmpty()) {
         const chunk = this.chunks.peekBack();
+        if (!chunk) continue;
         if (chunk.isFirstElementEmptyOrGreaterEqualThanKey(endKey)) {
           this.freeChunk(this.chunks.pop());
         } else {
@@ -338,6 +347,7 @@ export class ChunkedAssociativeArray<TKey = number, TValue = TKey> {
 
     while (!this.chunks.isEmpty()) {
       const chunk = this.chunks.peekFront();
+      if (!chunk) continue;
       if (chunk.isLastElementLessThanKey(startKey)) {
         this.freeChunk(this.chunks.shift());
       } else {

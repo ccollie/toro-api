@@ -7,8 +7,13 @@ export const RuleAlertOptionsTC = schemaComposer.createObjectTC({
     warmupWindow: {
       type: 'Duration',
       description:
-        'a timeout after startup (in ms) during which no alerts are raised, irrespective of ' +
+        'Timeout after startup (in ms) during which no alerts are raised, irrespective of ' +
         'the truthiness of the rule condition.',
+    },
+    triggerDelay: {
+      type: 'Duration',
+      // eslint-disable-next-line max-len
+      description: 'Wait a certain duration between first encountering a failure and triggering an alert'
     },
     failureThreshold: {
       type: 'Int',

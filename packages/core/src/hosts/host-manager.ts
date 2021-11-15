@@ -1,5 +1,6 @@
 import boom from '@hapi/boom';
 import {
+  ConnectionOptions,
   FlowJob,
   FlowProducer,
   JobNode,
@@ -12,7 +13,8 @@ import pSettle from 'p-settle';
 import pAll from 'p-all';
 import pMap from 'p-map';
 import { sortBy, uniqBy } from 'lodash';
-import { JobCounts, JobStatusEnum } from '../queues/types';
+import { ensureScriptsLoaded } from '../commands';
+import { JobCounts, JobStatusEnum } from '../types';
 import { QueueManager } from '../queues/queue-manager';
 import {
   DiscoveredQueue,
@@ -22,7 +24,6 @@ import {
 import { JobValidationResult, validateJobData } from '../queues/job-schemas';
 import {
   checkMultiErrors,
-  ConnectionOptions,
   createClient,
   EventBus,
   getRedisInfo,
@@ -32,10 +33,10 @@ import {
   WriteCache,
 } from '../redis';
 
-import { config, getValue } from '../config';
+import { env as environment, appInfo } from '../config';
 import { logger } from '../logger';
 import {
-  fixupQueueConfig,
+  fixupQueueConfig, generateHostId,
   generateQueueId,
   getHostConfig,
   HostConfig,
@@ -45,9 +46,9 @@ import {
 import { getHostBusKey, getHostKey, getLockKey } from '../keys';
 import {
   Channel,
-  NotificationContext,
   NotificationManager,
 } from '../notifications';
+import { NotificationContext } from '../types';
 import { getHostUri } from '../lib';
 import { convertWorker, QueueWorker } from '../queues';
 
@@ -57,6 +58,7 @@ const queueConfigKey = (prefix: string, name: string): string => {
 
 /** Manages all resource (queues specifically) grouped under a named host */
 export class HostManager {
+  private readonly _id: string;
   public readonly name: string;
   public readonly description: string;
   public readonly config: HostConfig;
@@ -75,6 +77,7 @@ export class HostManager {
   private readonly _initialized: Promise<void>;
 
   constructor(opts: HostConfig) {
+    this._id = opts.id = generateHostId(opts);
     this.name = opts.name;
     this.config = opts;
     this.description = opts.description;
@@ -84,7 +87,7 @@ export class HostManager {
     this.defaultRedisClient = client;
 
     this.streamAggregator = new RedisStreamAggregator({
-      connectionOptions: this.connectionOpts,
+      connection: this.createClient(),
     });
 
     this.bus = new EventBus(this.streamAggregator, getHostBusKey(this.name));
@@ -104,8 +107,6 @@ export class HostManager {
 
   get notificationContext(): NotificationContext {
     if (!this._notificationContext) {
-      const env = config.get('env');
-      const app = getValue('appInfo');
       const { id, name, uri } = this;
       this._notificationContext = {
         host: {
@@ -113,8 +114,8 @@ export class HostManager {
           name,
           uri,
         },
-        app,
-        env,
+        app: appInfo,
+        env: environment,
       };
     }
     return this._notificationContext;
@@ -141,7 +142,7 @@ export class HostManager {
   }
 
   get id(): string {
-    return this.config.id;
+    return this._id;
   }
 
   get client(): RedisClient {
@@ -204,6 +205,8 @@ export class HostManager {
     let manager = this.queueManagerMap.get(key);
     if (!manager) {
       const queue = new Queue(config.name, opts);
+      await ensureScriptsLoaded(await queue.client);
+
       manager = new QueueManager(this, queue, config);
       this.queueManagers.push(manager);
       this.queueManagerMap.set(key, manager);
@@ -402,7 +405,7 @@ export class HostManager {
     this.queueManagers.forEach((handler) => handler.sweep());
   }
 
-  private createClient(redisOpts?: ConnectionOptions): RedisClient {
+  private createClient(redisOpts?: ConnectionOptions | string): RedisClient {
     if (this.defaultRedisClient && !redisOpts) {
       return this.defaultRedisClient.duplicate();
     }
@@ -447,6 +450,7 @@ export class HostManager {
   }
 
   private async init(): Promise<void> {
+    await ensureScriptsLoaded(this.defaultRedisClient);
     // createChannel queues
     const config = this.config;
     const queueConfigs: QueueConfig[] = [];

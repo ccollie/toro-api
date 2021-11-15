@@ -51,7 +51,7 @@ export interface MetricsUpdatedPayload {
  * queue metrics, as well as storing metric data at a preset interval.
  * Instead of each metric subscribing to the listener
  * we handle dispatching in a central place. This is backed by a work queue
- * so we don't slow down the reading of events from the queue listener
+ * so we don't slow down the reading of events from the queue listener,
  * and we also have fine-tuned control over concurrency
  */
 export class MetricsListener {

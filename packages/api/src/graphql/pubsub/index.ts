@@ -1,4 +1,4 @@
-import { logger } from '@alpen/core/logger';
+import { logger } from '@alpen/core';
 import { isPromise } from '@alpen/shared';
 import { InMemoryPubSub, PubSubEngine } from 'graphql-ez/pubsub';
 import { createSharedSubscriptionResolver } from './subscriptionManager';

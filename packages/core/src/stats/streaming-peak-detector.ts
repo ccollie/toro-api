@@ -1,5 +1,5 @@
 import { OnlineNormalEstimator } from './online-normal-estimator';
-import { systemClock } from '../lib';
+import { systemClock } from '../lib/clock';
 
 /**
  * "Smoothed zero-score algorithm" shamelessly copied from

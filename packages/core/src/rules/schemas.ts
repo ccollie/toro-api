@@ -1,18 +1,21 @@
-import Joi from 'joi';
-import { DurationSchema } from '../validation';
-import { RuleState, Severity } from './types';
+import * as Joi from 'joi';
 import {
   ChangeAggregationType,
   PeakSignalDirection,
+  RuleAlertOptions,
   RuleCondition,
   RuleOperator,
+  RuleState,
   RuleType,
-} from './rule-conditions';
-import { RuleAlertOptions } from './rule-alert';
+  Severity
+} from '../types';
+import { DurationSchema } from '../validation';
+
 
 export const ruleAlertOptionsSchema = Joi.object().keys({
   warmupWindow: DurationSchema.optional(),
   recoveryWindow: DurationSchema.optional().default(0),
+  triggerDelay: DurationSchema.optional().default(0),
   maxAlertsPerEvent: Joi.number().integer().positive().optional().default(1),
   alertOnReset: Joi.boolean().optional().default(true),
   notifyInterval: DurationSchema.optional(),
@@ -97,6 +100,7 @@ export const defaultRuleAlertOptions: RuleAlertOptions = {
   warmupWindow: 0,
   alertOnReset: true,
   maxAlertsPerEvent: 1,
+  triggerDelay: 0,
   recoveryWindow: 0,
   failureThreshold: 1,
   successThreshold: 0,

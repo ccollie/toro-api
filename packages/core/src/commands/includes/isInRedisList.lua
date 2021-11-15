@@ -7,21 +7,26 @@
         1 if id is in any of the lists specified by KEYS
         0 otherwise
 ]]
-local hasLPOS = nil
-
+local _inlistFn = nil
 local function isInRedisList (key, item)
-    local rcall = redis.call
-    if (hasLPOS == nil) then
-        hasLPOS = rcall('COMMAND', 'INFO', 'LPOS') ~= nil
-    end
-    if (hasLPOS) then
-        return rcall("LPOS", key, item) ~= false
-    end
-    local list = rcall("LRANGE", key, 0, -1)
-    for _, v in pairs(list) do
-        if v == item then
-            return true
+    if (not _inlistFn) then
+        local rcall = redis.call
+        local hasLPOS = rcall('COMMAND', 'INFO', 'LPOS') ~= nil
+        if hasLPOS then
+            _inlistFn = function(k, v)
+                return rcall("LPOS", k, v) ~= false
+            end
+        else
+            _inlistFn = function(key, item)
+                local list = rcall("LRANGE", key, 0, -1)
+                for _, v in pairs(list) do
+                    if v == item then
+                        return true
+                    end
+                end
+                return false
+            end
         end
     end
-    return false
+    return _inlistFn(key, item)
 end

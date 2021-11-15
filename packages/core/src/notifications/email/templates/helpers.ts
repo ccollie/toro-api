@@ -1,7 +1,7 @@
 import { humanize, titleCase } from '../../utils';
 import { chunk, isNumber, isObject, keys as _keys } from 'lodash';
 import utils from 'handlebars-utils';
-import handlebars from 'handlebars';
+import * as handlebars from 'handlebars';
 
 /**
  * @description Create a stat section from arbitrary JavaScript objects

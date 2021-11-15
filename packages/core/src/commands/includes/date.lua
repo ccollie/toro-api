@@ -9,7 +9,7 @@
 --[[ CONSTANTS ]]--
 local HOURPERDAY  = 24
 local MINPERHOUR  = 60
-local MINPERDAY    = 1440  -- 24*60
+local MINPERDAY   = 1440  -- 24*60
 local SECPERMIN   = 60
 local SECPERHOUR  = 3600  -- 60*60
 local SECPERDAY   = 86400 -- 24*60*60
@@ -76,14 +76,23 @@ local function setTicks(t)
     TICKSPERHOUR= SECPERHOUR*TICKSPERSEC
     TICKSPERMIN = SECPERMIN*TICKSPERSEC
 end
+
+-- todo have cache clearing mechanism
+local __dfy_cache = {};
+
 -- is year y leap year?
 local function isLeapYear(y) -- y must be int!
     return (mod(y, 4) == 0 and (mod(y, 100) ~= 0 or mod(y, 400) == 0))
 end
 -- day since year 0
 local function dayfromyear(y) -- y must be int!
-    local floor = math.floor
-    return 365*y + floor(y/4) - floor(y/100) + floor(y/400)
+    local res = __dfy_cache[y]
+    if (res == nil) then
+        local floor = math.floor
+        res = 365*y + floor(y/4) - floor(y/100) + floor(y/400)
+        __dfy_cache[y] = res
+    end
+    return res
 end
 -- day number from date, month is zero base
 local function makedaynum(y, m, d)
@@ -103,19 +112,6 @@ local function breakdaynum(g)
     local mi = floor((100*d + 52)/3060)
     return (floor((mi + 2)/12) + y), mod(mi + 2,12), (d - floor((mi*306 + 5)/10) + 1)
 end
---[[ for floats or int32 Lua Number data type
-local function breakdaynum2(g)
-  local g, n = g + 306;
-  local n400 = floor(g/DI400Y);n = mod(g,DI400Y);
-  local n100 = floor(n/DI100Y);n = mod(n,DI100Y);
-  local n004 = floor(n/DI4Y);   n = mod(n,DI4Y);
-  local n001 = floor(n/365);   n = mod(n,365);
-  local y = (n400*400) + (n100*100) + (n004*4) + n001  - ((n001 == 4 or n100 == 4) and 1 or 0)
-  local d = g - dayfromyear(y)
-  local mi = floor((100*d + 52)/3060)
-  return (floor((mi + 2)/12) + y), mod(mi + 2,12), (d - floor((mi*306 + 5)/10) + 1)
-end
-]]
 -- day fraction from time
 local function makedayfrc(h,r,s,t)
     return ((h*60 + r)*60 + s)*TICKSPERSEC + t
@@ -140,12 +136,21 @@ local function getmontharg(v)
     local m = tonumber(v);
     return (m and fix(m - 1)) or inlist(tostring(v) or "", sl_months, 2)
 end
+
+-- todo have cache clearing mechanism
+local __iswo1_cache = {};
+
 -- get daynum of isoweek one of year y
 local function isow1(y)
-    local f = makedaynum(y, 0, 4) -- get the date for the 4-Jan of year `y`
-    local d = weekday(f)
-    d = d == 0 and 7 or d -- get the ISO day number, 1 == Monday, 7 == Sunday
-    return f + (1 - d)
+    local v = __iswo1_cache[y]
+    if (v == nil) then
+        local f = makedaynum(y, 0, 4) -- get the date for the 4-Jan of year `y`
+        local d = weekday(f)
+        d = d == 0 and 7 or d -- get the ISO day number, 1 == Monday, 7 == Sunday
+        v = f + (1 - d)
+        __iswo1_cache[y] = v
+    end
+    return v
 end
 local function isowy(dn)
     local w1;
@@ -193,35 +198,8 @@ local function date_new(dn, df)
     return setmetatable({daynum=dn, dayfrc=df, _cache={}}, dobj)
 end
 
---#if not NO_LOCAL_TIME_SUPPORT then
 -- magic year table
-local date_epoch, yt;
-local function getequivyear(y)
-    assert(not yt)
-    yt = {}
-    local de = date_epoch:copy()
-    local dw, dy
-    for _ = 0, 3000 do
-        de:setYear(de:getYear() + 1, 1, 1)
-        dy = de:getYear()
-        dw = de:getWeekDay() * (isLeapYear(dy) and  -1 or 1)
-        if not yt[dw] then yt[dw] = dy end  --print(de)
-        if yt[1] and yt[2] and yt[3] and yt[4] and yt[5] and yt[6] and yt[7] and yt[-1] and yt[-2] and yt[-3] and yt[-4] and yt[-5] and yt[-6] and yt[-7] then
-            getequivyear = function(y)  return yt[ (weekday(makedaynum(y, 0, 1)) + 1) * (isLeapYear(y) and  -1 or 1) ]  end
-            return getequivyear(y)
-        end
-    end
-end
--- TimeValue from date and time
-local function totv(y,m,d,h,r,s)
-    return makedaynum(y, m, d) * SECPERDAY  + ((h*60 + r)*60 + s)
-end
--- TimeValue from TimeTable
-local function tmtotv(tm)
-    return tm and totv(tm.year, tm.month - 1, tm.day, tm.hour, tm.min, tm.sec)
-end
-
---#end -- not NO_LOCAL_TIME_SUPPORT
+local date_epoch;
 
 --#if not DATE_OBJECT_AFX then
 -- the date parser
@@ -241,7 +219,7 @@ local function date_parse(str)
     local gsub = string.gsub
     local tonumber = tonumber
     local floor = math.floor
-    local y,m,d, h,r,s,  z,  w,u, j,  e,  x,c,  dn,df
+    local y,m,d, h,r,s,  z,  w,u, j,  e, x,c, dn,df
     local sw = newstrwalker(gsub(gsub(str, "(%b())", ""),"^(%s*)","")) -- remove comment, trim leading space
     --local function error_out() print(y,m,d,h,r,s) end
     local function error_dup(q) --[[error_out()]] error("duplicate value: " .. (q or "") .. sw:aimchr()) end
@@ -324,13 +302,13 @@ local function date_fromtable(v)
     return (y or h or r or s or t) and date_new(y and makedaynum(y, m, d) or DAYNUM_DEF, makedayfrc(h or 0, r or 0, s or 0, t or 0))
 end
 local tmap = {
-    ['number'] = function(v) return date_epoch:copy():addSeconds(v) end,
+    ['number'] = function(v) return date_epoch:copy():addMilliseconds(v) end,
     ['string'] = function(v) return date_parse(v) end,
     ['table']  = function(v) local ref = getmetatable(v) == dobj; return ref and v or date_fromtable(v), ref end
 }
 local function date_getdobj(v)
     local o, r = (tmap[type(v)] or fnil)(v);
-    return (o and o:normalize() or error"invalid date time value"), r -- if r is true then o is a reference to a date obj
+    return (o and o:normalize() or error"invalid date time value: " .. v), r -- if r is true then o is a reference to a date obj
 end
 --#end -- not DATE_OBJECT_AFX
 local function date_from(arg1, arg2, arg3, arg4, arg5, arg6, arg7)
@@ -351,17 +329,17 @@ function dobj:normalize()
     return (dn >= DAYNUM_MIN and dn <= DAYNUM_MAX) and self or error("date beyond imposed limits:"..self)
 end
 
-function dobj:_ensureDateCache()
-    if self._cache['y'] == nil then
-        local y, m, d = breakdaynum(self.daynum)
-        self._cache['y'] = y
-        self._cache['m'] = m + 1 -- in lua month is 1 base
-        self._cache['d'] = d
+local function dobj_ensureDateCache(dobj)
+    if dobj._cache['y'] == nil then
+        local y, m, d = breakdaynum(dobj.daynum)
+        dobj._cache['y'] = y
+        dobj._cache['m'] = m + 1 -- in lua month is 1 base
+        dobj._cache['d'] = d
     end
 end
 
 function dobj:getdate()
-    self._ensureDateCache()
+    dobj_ensureDateCache(self)
     local y, m, d = self._cache['y'], self._cache['m'], self._cache['d']
     return y, m, d
 end
@@ -389,18 +367,19 @@ function dobj:getWeekDay()
 end
 
 function dobj:getYear()
-    self._ensureDateCache()
+    dobj_ensureDateCache(self)
     return self._cache['y']
 end
 function dobj:getMonth()
-    self._ensureDateCache()
+    dobj_ensureDateCache(self)
     return self._cache['m']
 end
 function dobj:getDay()
-    self._ensureDateCache()
+    dobj_ensureDateCache(self)
     return self._cache['d']
 end
-function dobj._getdaypart(key, divisor)
+
+local function dobj_getdaypart(self, key, divisor)
     local value = self._cache[key]
     if value == nil then
         value = mod(math.floor(self.dayfrc/TICKSPERMIN), divisor)
@@ -408,10 +387,11 @@ function dobj._getdaypart(key, divisor)
     end
     return value
 end
-function dobj:getHours() return self._getdaypart('h', HOURPERDAY) end
-function dobj:getMinutes()  return self._getdaypart('mn', MINPERHOUR) end
-function dobj:getSeconds()  return self._getdaypart('s', SECPERMIN) end
-function dobj:getMilliseconds() return self._getdaypart('ms', MSECPERMIN) end
+
+function dobj:getHours() return dobj_getdaypart(self,'h', HOURPERDAY) end
+function dobj:getMinutes()  return dobj_getdaypart(self,'mn', MINPERHOUR) end
+function dobj:getSeconds()  return dobj_getdaypart(self,'s', SECPERMIN) end
+function dobj:getMilliseconds() return dobj_getdaypart(self,'ms', MSECPERMIN) end
 function dobj:getfracsec()  return mod(math.floor(self.dayfrc/TICKSPERSEC ),SECPERMIN)+(mod(self.dayfrc,TICKSPERSEC)/TICKSPERSEC) end
 function dobj:getTicks(u)  local x = mod(self.dayfrc,TICKSPERSEC) return u and ((x*u)/TICKSPERSEC) or x  end
 
@@ -428,7 +408,7 @@ function dobj:getWeekNumber(wdb)
     return (yd < wd and 0) or (math.floor(yd/7) + ((mod(yd, 7)>=wd) and 1 or 0))
 end
 
-function dobj:getisoweekday()
+function dobj:getISOWeekDay()
     -- sunday = 7, monday = 1 ...
     local value = self._cache['iwd']
     if value == nil then
@@ -441,7 +421,7 @@ function dobj:getISOWeekNumber() return (isowy(self.daynum)) end
 function dobj:getISOYear() return isoy(self.daynum)  end
 function dobj:getISODate()
     local w, y = isowy(self.daynum)
-    return y, w, self:getisoweekday()
+    return y, w, self:getISOWeekDay()
 end
 function dobj:setISOYear(y, w, d)
     local cy, cw, cd = self:getISODate()
@@ -456,8 +436,8 @@ function dobj:setISOYear(y, w, d)
     end
 end
 
-function dobj:setisoweekday(d) return self:setISOYear(nil, nil, d) end
-function dobj:setisoweeknumber(w,d) return self:setISOYear(nil, w, d) end
+function dobj:setISOWeekDay(d) return self:setISOYear(nil, nil, d) end
+function dobj:setISOWeekNumber(w,d) return self:setISOYear(nil, w, d) end
 
 function dobj:setYear(y, m, d)
     local cy, cm, cd = breakdaynum(self.daynum)
@@ -473,7 +453,7 @@ function dobj:setYear(y, m, d)
 end
 
 function dobj:setMonth(m, d)return self:setYear(nil, m, d) end
-function dobj:setDay(d)    return self:setYear(nil, nil, d) end
+function dobj:setDay(d) return self:setYear(nil, nil, d) end
 
 function dobj:setHours(h, m, s, t)
     local ch,cm,cs,ck = breakdayfrc(self.dayfrc)
@@ -488,13 +468,14 @@ end
 
 function dobj:setMinutes(m,s,t)  return self:setHours(nil,   m,   s, t) end
 function dobj:setSeconds(s, t)  return self:setHours(nil, nil,   s, t) end
+function dobj:setMilliseconds(m) return self:setHours(nil, nil, nil, m * TICKSPERMSEC) end
 function dobj:setTicks(t)    return self:setHours(nil, nil, nil, t) end
 
 function dobj:spanticks()  return (self.daynum*TICKSPERDAY + self.dayfrc) end
 function dobj:spanSeconds()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERSEC  end
-function dobj:spanminutes()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERMIN  end
-function dobj:spanhours()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERHOUR end
-function dobj:spandays()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERDAY  end
+function dobj:spanMinutes()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERMIN  end
+function dobj:spanHours()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERHOUR end
+function dobj:spanDays()  return (self.daynum*TICKSPERDAY + self.dayfrc)/TICKSPERDAY  end
 
 function dobj:addYears(y, m, d)
     local fix = fix
@@ -529,6 +510,7 @@ function dobj:addDays(n)  return dobj_adddayfrc(self,n,TICKSPERDAY,1) end
 function dobj:addHours(n)  return dobj_adddayfrc(self,n,TICKSPERHOUR,HOURPERDAY) end
 function dobj:addMinutes(n)  return dobj_adddayfrc(self,n,TICKSPERMIN,MINPERDAY)  end
 function dobj:addSeconds(n)  return dobj_adddayfrc(self,n,TICKSPERSEC,SECPERDAY)  end
+function dobj:addMilliseconds(n)  return dobj_adddayfrc(self,n,TICKSPERMSEC, MSECPERDAY) end
 function dobj:addTicks(n)  return dobj_adddayfrc(self,n,1,TICKSPERDAY) end
 local tvspec = {
     -- Abbreviated weekday name (Sun)
@@ -564,7 +546,7 @@ local tvspec = {
     -- The second as a number (59, 20 , 01)
     ['%S']=function(self) return string.format("%.2d", self:getSeconds())  end,
     -- ISO 8601 day of the week, to 7 for Sunday (7, 1)
-    ['%u']=function(self) return self:getisoweekday() end,
+    ['%u']=function(self) return self:getISOWeekDay() end,
     -- Sunday week of the year, from 00 (48)
     ['%U']=function(self) return string.format("%.2d", self:getWeekNumber()) end,
     -- ISO 8601 week of the year, from 01 (48)

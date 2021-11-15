@@ -9,7 +9,7 @@ import {
   bulkJobHandler,
   createJob,
   JobCreationOptions,
-} from '@alpen/core/queues';
+} from '@alpen/core';
 
 export async function addJob(
   context: EZContext,

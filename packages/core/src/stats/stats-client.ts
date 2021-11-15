@@ -1,4 +1,4 @@
-import { Queue, RedisClient } from 'bullmq';
+import { Queue } from 'bullmq';
 import { DateLike } from '@alpen/shared';
 import { getHostStatsKey, getQueueMetaKey, getStatsKey } from '../keys';
 import { StatsGranularity, StatsMetricType, StatsRateType } from './types';
@@ -8,7 +8,6 @@ import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
-import { QueueManager } from '../queues';
 import { aggregateSnapshots, getRetention, aggregateMeter } from './utils';
 import { WriteCache } from '../redis';
 import { isEmpty } from 'lodash';
@@ -24,18 +23,28 @@ export interface RangeOpts {
   count?: number;
 }
 
+export interface StatsClientArgs {
+  host: string;
+  queueId: string;
+  queue: Queue;
+  writer?: WriteCache;
+}
+
 /**
  * Base class for manipulating and querying collected queue stats in redis
  */
 export class StatsClient extends Emittery {
-  private readonly queueManager;
-  private readonly _client: RedisClient;
-  private readonly cache: LRUCache;
+  private readonly cache: LRUCache<string, any>;
+  protected readonly host: string;
+  protected readonly queue: Queue;
+  protected readonly queueId: string;
 
-  constructor(queueManager: QueueManager) {
+  constructor(args: StatsClientArgs) {
     super();
-    this.queueManager = queueManager;
-    this._client = queueManager.hostManager.client;
+    const { host, queueId, queue } = args;
+    this.host = host;
+    this.queue = queue;
+    this.queueId = queueId;
     this.onError = this.onError.bind(this);
     this.cache = new LRUCache({
       max: 200,
@@ -45,18 +54,6 @@ export class StatsClient extends Emittery {
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   destroy(): any {}
-
-  get queue(): Queue {
-    return this.queueManager.queue;
-  }
-
-  protected get writer(): WriteCache {
-    return this.queueManager.hostManager.writer;
-  }
-
-  get client(): RedisClient {
-    return this._client;
-  }
 
   protected _emit(name: string, data?: unknown): void {
     this.emit(name, data).catch(this.onError);
@@ -69,8 +66,9 @@ export class StatsClient extends Emittery {
     offset?: number,
     count?: number,
   ): Promise<T[]> {
+    const client = await this.queue.client;
     const results = await TimeSeries.getRange<T>(
-      this.client,
+      client,
       key,
       start,
       end,
@@ -90,8 +88,9 @@ export class StatsClient extends Emittery {
     metric: StatsMetricType,
     unit?: StatsGranularity,
   ): Promise<Timespan | null> {
+    const client = await this.queue.client;
     const key = this.getKey(jobName, metric, unit);
-    return TimeSeries.getTimeSpan(this.client, key);
+    return TimeSeries.getTimeSpan(client, key);
   }
 
   async getHostSpan(
@@ -99,17 +98,19 @@ export class StatsClient extends Emittery {
     metric: StatsMetricType,
     unit: StatsGranularity,
   ): Promise<Timespan | null> {
+    const client = await this.queue.client;
     const key = this.getHostKey(jobName, metric, unit);
-    return TimeSeries.getTimeSpan(this.client, key);
+    return TimeSeries.getTimeSpan(client, key);
   }
 
   async getLast(
     jobName: string,
     metric: StatsMetricType,
     unit: StatsGranularity,
-  ): Promise<StatisticalSnapshot> {
+  ): Promise<StatisticalSnapshot | null> {
+    const client = await this.queue.client;
     const key = this.getKey(jobName, metric, unit);
-    return TimeSeries.get<StatisticalSnapshot>(this.client, key, '+');
+    return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
   }
 
   private static getFetchManyArgs(
@@ -291,9 +292,10 @@ export class StatsClient extends Emittery {
     jobName: string,
     metric: StatsMetricType,
     unit: StatsGranularity,
-  ): Promise<StatisticalSnapshot> {
+  ): Promise<StatisticalSnapshot | null> {
     const key = this.getHostKey(jobName, metric, unit);
-    return TimeSeries.get<StatisticalSnapshot>(this.client, key, '+');
+    const client = await this.queue.client;
+    return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
   }
 
   async getMeta(): Promise<Record<string, string>> {
@@ -345,7 +347,7 @@ export class StatsClient extends Emittery {
   }
 
   async getLastWriteCursor(
-    jobType: string,
+    jobType: string | null,
     type: string,
     unit?: string,
   ): Promise<number | null> {
@@ -364,6 +366,7 @@ export class StatsClient extends Emittery {
 
   /**
    * Clean a range of items
+   * @param pipeline
    * @param isHost are we cleaning up host level resources ?
    * @param jobName
    * @param type
@@ -372,6 +375,7 @@ export class StatsClient extends Emittery {
    * @return the number of items removed
    */
   cleanup(
+    pipeline: Pipeline,
     isHost: boolean,
     jobName: string,
     type: StatsMetricType,
@@ -383,8 +387,6 @@ export class StatsClient extends Emittery {
       ? this.getHostKey(jobName, type, unit)
       : this.getKey(jobName, type, unit);
 
-    const multi = this.writer.pipeline;
-    const event = (isHost ? 'host.' : '') + 'stats.cleanup';
     const data = {
       key,
       type,
@@ -392,10 +394,12 @@ export class StatsClient extends Emittery {
       retention,
     };
     if (!isHost) {
-      data['queueId'] = this.queueManager.id;
+      data['queueId'] = this.queueId;
     }
-    TimeSeries.multi.truncate(multi, key, retention);
-    this.queueManager.bus.pipelineEmit(multi, event, data);
+    TimeSeries.multi.truncate(pipeline, key, retention);
+    // TODO: pass in bus
+    // const event = (isHost ? 'host.' : '') + 'stats.cleanup';
+    // this.queueManager.bus.pipelineEmit(pipeline, event, data);
   }
 
   async removeRange(
@@ -405,7 +409,8 @@ export class StatsClient extends Emittery {
     offset?: number,
     count?: number,
   ): Promise<number> {
-    return TimeSeries.removeRange(this.client, key, start, end, offset, count);
+    const client = await this.queue.client;
+    return TimeSeries.removeRange(client, key, start, end, offset, count);
   }
 
   getKey(
@@ -421,8 +426,7 @@ export class StatsClient extends Emittery {
     metric: StatsMetricType,
     unit: StatsGranularity,
   ): string {
-    const host = this.queueManager.hostManager.name;
-    return getHostStatsKey(host, jobName, metric, unit);
+    return getHostStatsKey(this.host, jobName, metric, unit);
   }
 
   onError(err: Error): void {
@@ -430,8 +434,8 @@ export class StatsClient extends Emittery {
   }
 }
 
-function getCursorKey(jobType: string, type: string, unit: string): string {
-  jobType = jobType || '~QUEUE';
+function getCursorKey(jobType: string | null, type: string, unit: string): string {
+  jobType = (jobType && jobType.length) ? jobType : '~QUEUE';
   const key = [jobType, type, unit].filter((value) => !!value).join('-');
   return `cursor:${key}`;
 }

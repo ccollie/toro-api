@@ -19,18 +19,7 @@
     "/dist"
   ],
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
-    },
-    "./*": {
-      "require": "./dist/*.js",
-      "import": "./dist/*.mjs"
-    }
-  },
   "typesVersions": {
     "*": {
       "dist/index.d.ts": [
@@ -43,53 +32,54 @@
     }
   },
   "scripts": {
-    "dev": "bob-ts-watch -i src",
     "prepack": "yarn run build",
-    "build": "yarn run clean && yarn run types && yarn run compile",
+    "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop && yarn run types",
+    "compile": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "types": "tsc --emitDeclarationOnly",
+    "types": "tsc --declaration --emitDeclarationOnly",
+    "replace-paths": "tsc-alias -p tsconfig.json",
     "gen-sdl": "ts-node ./scripts/gen-sdl.ts",
     "gen-types": "yarn run gen-sdl && npx graphql-codegen --config ../api/gql-codegen.yml"
   },
   "dependencies": {
     "@alpen/core": "^0.0.2",
     "@alpen/shared": "^0.0.2",
-    "@envelop/apollo-server-errors": "^1.1.0",
-    "@envelop/core": "^1.6.0",
-    "@envelop/depth-limit": "^1.2.0",
-    "@envelop/filter-operation-type": "^1.1.0",
+    "@envelop/apollo-server-errors": "^1.2.1",
+    "@envelop/core": "^1.6.4",
+    "@envelop/depth-limit": "^1.2.1",
+    "@envelop/filter-operation-type": "^1.2.1",
     "@graphql-ez/plugin-altair": "^0.9.4",
     "@graphql-ez/plugin-automatic-persisted-queries": "^1.0.3",
     "@hapi/boom": "^9.1.4",
     "apollo-server-errors": "^3.3.0",
     "dataloader": "^2.0.0",
-    "graphql": "16.0.0",
+    "graphql": "16.1.0",
     "graphql-compose": "^9.0.4",
-    "graphql-ez": "^0.13.4",
+    "graphql-ez": "^0.13.5",
     "graphql-fields-list": "^2.2.4",
-    "graphql-redis-subscriptions": "^2.4.0",
-    "graphql-scalars": "^1.13.1",
-    "graphql-subscriptions": "^1.2.1",
-    "pino": "^6.13.2",
-    "pino-pretty": "^5.1.3"
+    "graphql-redis-subscriptions": "^2.4.2",
+    "graphql-scalars": "^1.14.1",
+    "graphql-subscriptions": "^2.0.0",
+    "node-error-formatter": "^1.0.4",
+    "pino": "^7.5.1"
   },
   "peerDependencies": {
     "@types/node": "*",
     "esbuild": "*"
   },
   "devDependencies": {
-    "@envelop/types": "^1.5.0",
+    "@envelop/types": "^1.5.1",
     "@graphql-codegen/add": "^3.1.0",
-    "@graphql-codegen/cli": "^2.2.2",
-    "@graphql-codegen/typescript": "^2.3.1",
-    "@graphql-codegen/typescript-operations": "^2.2.0",
-    "@graphql-codegen/typescript-resolvers": "^2.4.0",
-    "@types/node": "^16.11.4",
-    "bob-ts": "^1.2.0",
-    "bob-esbuild-cli": "^3.0.0",
+    "@graphql-codegen/cli": "^2.3.0",
+    "@graphql-codegen/typescript": "^2.4.1",
+    "@graphql-codegen/typescript-operations": "^2.2.1",
+    "@graphql-codegen/typescript-resolvers": "^2.4.2",
+    "@types/node": "^16.11.11",
+    "bob-ts": "^1.2.2",
+    "bob-esbuild-cli": "^3.0.1",
     "jest": "^27.3.1",
-    "typescript": "^4.4.4"
+    "tsc-alias": "^1.4.2",
+    "typescript": "^4.5.3"
   }
 }

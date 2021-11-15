@@ -1,5 +1,5 @@
 import ms from 'ms';
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 const durationValidator = (value, helpers) => {
   const num = parseFloat(value);
@@ -19,7 +19,6 @@ const durationValidator = (value, helpers) => {
 export const DurationSchema = Joi.alternatives()
   .try(
     Joi.number().integer().unit('milliseconds').example(5000),
-
     Joi.string().trim().min(2).example('5 mins'),
   )
   .custom(

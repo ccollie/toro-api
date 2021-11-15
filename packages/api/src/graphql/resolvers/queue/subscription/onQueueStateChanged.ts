@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
-import { QueueEventsEnum } from '@alpen/core/queues';
+import { QueueEventsEnum } from '@alpen/core';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 

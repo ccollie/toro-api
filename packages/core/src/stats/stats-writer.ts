@@ -1,18 +1,15 @@
-import { deserializePipeline, EventBus } from '../redis';
+import { deserializePipeline, EventBus, WriteCache } from '../redis';
 import { DateLike, endOf, parseTimestamp, startOf } from '@alpen/shared';
 import {
   StatisticalSnapshotOptions,
   StatsGranularity,
   StatsMetricType,
 } from './types';
-import { StatsClient } from './stats-client';
+import { StatsClient, StatsClientArgs } from './stats-client';
 import { QueueStats } from './queue-stats';
-import { QueueManager } from '../queues';
 import { TimeSeries } from '../commands';
 import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
-import { HostManager } from '../hosts';
-import random from 'lodash/random';
-import isNil from 'lodash/isNil';
+import { isNil, random } from 'lodash';
 import { systemClock } from '../lib';
 import { StatisticalSnapshot } from './timer';
 
@@ -36,27 +33,34 @@ interface RollupMeta {
 
 // Cache for host rollups
 interface HostRollupMeta {
-  host: HostManager;
+  host: string;
   jobName: string;
   start: number;
   metric: StatsMetricType;
+  // keys for minute
+  keys: Set<string>;
   timeout?: ReturnType<typeof setTimeout>;
 }
 
 const HostRollupCache = new Map<string, HostRollupMeta>();
+
+export interface StatsWriterArgs extends StatsClientArgs {
+  writer: WriteCache;
+  bus: EventBus;
+}
 
 /**
  * A helper class responsible for managing collected queue stats in redis
  */
 export class StatsWriter extends StatsClient {
   private readonly bus: EventBus;
-  private readonly hostManager: HostManager;
+  protected readonly writer: WriteCache;
   private isFinished = false;
 
-  constructor(queueManager: QueueManager) {
-    super(queueManager);
-    this.bus = queueManager.bus;
-    this.hostManager = queueManager.hostManager;
+  constructor(args: StatsWriterArgs) {
+    super(args);
+    this.writer = args.writer;
+    this.bus = args.bus;
   }
 
   destroy(): any {
@@ -99,22 +103,23 @@ export class StatsWriter extends StatsClient {
     jobName: string,
     start: number,
   ): string {
-    return `${this.hostManager.id}:${jobName}:${metric}:${start}`;
+    return `${this.host}:${jobName}:${metric}:${start}`;
   }
 
   private cacheHostUpdate(
     jobName: string,
     metric: StatsMetricType,
     start: number,
-  ): void {
+  ): HostRollupMeta {
     const key = this.getHostCacheKey(metric, jobName, start);
     let cacheData: HostRollupMeta = HostRollupCache.get(key);
     if (!cacheData) {
       cacheData = {
-        host: this.hostManager,
+        host: this.host,
         start,
         jobName,
         metric,
+        keys: new Set<string>()
       };
       HostRollupCache.set(key, cacheData);
 
@@ -127,6 +132,8 @@ export class StatsWriter extends StatsClient {
         this.rollupHost(cacheData).catch(this.onError);
       }, delay);
     }
+
+    return cacheData;
   }
 
   getRollupMeta(
@@ -162,7 +169,8 @@ export class StatsWriter extends StatsClient {
   private async getRollupValues(
     rollupMeta: RollupMeta[],
   ): Promise<StatisticalSnapshot[]> {
-    const pipeline = this.client.pipeline();
+    const client = await this.queue.client;
+    const pipeline = client.pipeline();
     // get destination data
     rollupMeta.forEach((meta) => {
       const { key, start } = meta;
@@ -214,16 +222,13 @@ export class StatsWriter extends StatsClient {
 
   protected async rollupHost(cacheData: HostRollupMeta): Promise<void> {
     if (!cacheData) return;
-    const { jobName, metric, start, host } = cacheData;
-    const pipeline = host.client.pipeline();
+    const { jobName, metric, start, keys } = cacheData;
+
+    const client = await this.queue.client;
+    const pipeline = client.pipeline();
 
     // get source data from all queues
-    host.queueManagers.forEach(({ statsClient }) => {
-      const srcKey = statsClient.getKey(
-        jobName,
-        metric,
-        StatsGranularity.Minute,
-      );
+    keys.forEach((srcKey: string) => {
       TimeSeries.multi.get(pipeline, srcKey, start);
     });
 
@@ -301,7 +306,8 @@ export class StatsWriter extends StatsClient {
 
     if (unit === StatsGranularity.Minute && !isHost) {
       this.rollup(jobName, metric, stats);
-      this.cacheHostUpdate(jobName, metric, stats.startTime);
+      const hostInfo = this.cacheHostUpdate(jobName, metric, stats.startTime);
+      hostInfo.keys.add(key);
     }
   }
 

@@ -1,12 +1,8 @@
-import { FieldConfig } from '../../utils';
+import { BaseMetric, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
-import {
-  OutlierDetectionMethod,
-  TimeseriesDataPointTC,
-} from '../../stats/types';
-import { BaseMetric } from '@alpen/core/metrics';
-import { OutlierMethod, TimeseriesDataPoint } from '@alpen/core/stats';
 import { MetricDataOutliersInput } from '../../../typings';
+import { OutlierDetectionMethod, TimeseriesDataPointTC, } from '../../stats/types';
+import { FieldConfig } from '../../utils';
 import { getMetricData } from './getData';
 
 export const MetricDataOutliersInputTC = schemaComposer.createInputTC({

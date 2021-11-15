@@ -127,7 +127,7 @@ export const JobOptionsTC = schemaComposer.createObjectTC({
     sizeLimit: {
       type: 'Int',
       description:
-        "Limits the size in bytes of the job's data payload (as a JSON serialized string).",
+        "Limits the size in bytes of the job\'s data payload (as a JSON serialized string).",
     },
   },
 });

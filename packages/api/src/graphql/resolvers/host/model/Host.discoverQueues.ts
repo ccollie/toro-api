@@ -1,10 +1,6 @@
-import {
-  ObjectTypeComposerFieldConfigDefinition,
-  schemaComposer,
-} from 'graphql-compose';
+import { DiscoveredQueue, HostManager } from '@alpen/core';
 import boom from '@hapi/boom';
-import { HostManager } from '@alpen/core/hosts';
-import { DiscoveredQueue } from '@alpen/core/queues';
+import { ObjectTypeComposerFieldConfigDefinition, schemaComposer } from 'graphql-compose';
 
 const DiscoverQueuesPayloadTC = schemaComposer.createObjectTC({
   name: 'DiscoverQueuesPayload',

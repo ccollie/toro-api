@@ -7,7 +7,7 @@ import {
   getJobMemoryAvg,
   getJobMemoryUsage,
   JobStatusEnum,
-} from '@alpen/core/queues';
+} from '@alpen/core';
 import { JobStatusEnumType } from '../../../scalars';
 
 export const JobMemoryAvgInputTC = schemaComposer.createInputTC({

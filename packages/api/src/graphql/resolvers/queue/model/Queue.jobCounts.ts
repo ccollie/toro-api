@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import { get } from 'lodash';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
-import { JobCountStates, JobStatusEnum } from '@alpen/core/queues';
+import { JobCountStates, JobStatusEnum } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export const JobCountsTC = schemaComposer.createObjectTC({

@@ -1,7 +1,6 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { isEqual } from 'lodash';
 import { ObjectSchema } from 'joi';
-import { BaseMetric } from '../baseMetric';
 import { AggregatorTypes, SerializedAggregator } from '../types';
 import { aggregatorTypeNameMap, getMetricTypeName } from './utils';
 import { getStaticProp } from '@alpen/shared';

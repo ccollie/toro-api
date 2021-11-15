@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAddInputTC, RuleTC } from '../../index';
-import { Rule } from '@alpen/core/rules';
+import { Rule } from '@alpen/core';
 import { RuleAddInput } from '../../../typings';
 import { convertCondition, translateSeverity } from './utils';
 

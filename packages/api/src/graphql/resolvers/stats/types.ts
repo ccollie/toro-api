@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { PeakSignalDirectionEnum, StatsMetricsTypeEnum } from '../../scalars';
 import { GraphQLEnumType } from 'graphql';
-import { OutlierMethod, StatsRateType } from '@alpen/core/stats';
+import { OutlierMethod, StatsRateType } from '@alpen/core';
 
 /* eslint max-len: 0 */
 

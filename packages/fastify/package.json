@@ -8,7 +8,9 @@
   "scripts": {
     "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop",
+    "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "types": "tsc --declaration --emitDeclarationOnly",
     "test": "jest"
   },
   "keywords": [
@@ -22,16 +24,17 @@
     "@alpen/api": "^0.0.2",
     "@alpen/core": "^0.0.2",
     "@graphql-ez/fastify": "^0.9.4",
-    "graphql": "16.0.0",
-    "graphql-ez": "^0.13.4"
+    "graphql": "16.1.0",
+    "graphql-ez": "^0.13.5"
   },
   "peerDependencies": {
     "fastify": "3.x"
   },
   "devDependencies": {
     "@types/node": "^14.17.5",
-    "bob-ts": "^1.2.1",
-    "esbuild": "^0.13.12",
-    "fastify": "^3.23.0"
+    "bob-ts": "^1.2.2",
+    "esbuild": "^0.14.0",
+    "fastify": "^3.24.0",
+    "tsc-alias": "^1.4.1"
   }
 }

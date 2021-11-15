@@ -27,7 +27,7 @@ import job from './resolvers/job';
 import rule from './resolvers/rule';
 import metric from './resolvers/metric';
 import { GraphQLSchema } from 'graphql';
-import { logger } from '@alpen/core/logger';
+import { logger } from '@alpen/core';
 
 // Scalars
 schemaComposer.add(ChangeAggregationEnum);

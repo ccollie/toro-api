@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { ConsecutiveFailuresMetric } from './consecutiveFailuresMetric';
 import { CompletedCountMetric } from './completedCountMetric';
 import { CompletedRateMetric } from './completedRateMetric';

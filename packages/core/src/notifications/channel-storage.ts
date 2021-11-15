@@ -1,7 +1,7 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { isEmpty, isFunction, isObject } from 'lodash';
 import { getUniqueId, systemClock } from '../lib';
-import { NotificationChannelProps } from './types';
+import { NotificationChannelProps } from '../types';
 import { Channel } from './channel';
 import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
 import { HostManager } from '../hosts';

@@ -1,5 +1,5 @@
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core/hosts';
+import { HostManager } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { performance } from 'perf_hooks';
 

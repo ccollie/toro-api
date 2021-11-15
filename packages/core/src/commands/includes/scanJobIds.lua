@@ -7,7 +7,6 @@
         count count
         callback callback function. Receives a job id (non prefixed)
 ]]
---- @include "toStr"
 --- @include "getRedisKeyType"
 --- @include "debug"
 
@@ -26,22 +25,14 @@ local ADMIN_KEYS = {
     ['repeat'] = 1,
 }
 
-local function getIdPart(key, prefix)
-    local sub = key:sub(#prefix + 1)
-    if sub:find(':') == nil and not ADMIN_KEYS[sub] then
-        return sub
-    end
-    return nil
-end
-
 local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
-    local getIdPart = getIdPart
     local rcall = redis.call
 
     count = tonumber(count or 25)
     local scanResult
     local match = keyPrefix .. '*'
     local fullScan = false
+    local prefixLen = #keyPrefix
 
     local itemCount = 0;
 
@@ -77,18 +68,15 @@ local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
         if (not idSeen[id]) then
             idSeen[id] = true
             n = n + 1
-            --- debug("About to callback. Id = ", id)
             return callback(id, n, itemCount)
         end
     end
 
-    --- debug('Here. Key = ', redisKey, ' keyType = ', keyType, ' fullscan = ', fullScan, ' scannedIds = ', scannedJobIds)
-
     if (fullScan) then
         -- does a keyspace as opposed to list scan. Filter out non-ids
         for _, k in ipairs(scannedJobIds) do
-            local id = getIdPart(k, keyPrefix)
-            if (id ~= nil) then
+            local id = k:sub(prefixLen + 1)
+            if id:find(':') == nil and not ADMIN_KEYS[id] then
                 if (exec(id) == false) then break end
             end
         end

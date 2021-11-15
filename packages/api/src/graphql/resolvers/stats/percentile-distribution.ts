@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
-import { getSnapshotPercentileDistribution } from '@alpen/core/stats';
+import { getSnapshotPercentileDistribution } from '@alpen/core';
 import { aggregateStats } from './utils';
 import {
   PercentileDistributionDefaultPercentiles,

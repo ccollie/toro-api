@@ -1,9 +1,9 @@
-import boom from '@hapi/boom';
+import { badData, notFound, badRequest } from '@hapi/boom';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { getUniqueId, nanoid } from '../lib';
 import { Job, JobJsonRaw, Queue } from 'bullmq';
-import { FilteredJobsResult, JobFilter, JobStatusEnum } from './types';
+import type { FilteredJobsResult, JobFilter, JobStatusEnum } from '../types/queues';
 import { Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
 import { getMultipleJobsById } from './queue';
@@ -12,19 +12,19 @@ import { parse as parseExpression } from '@alpen/shared';
 import { isEmpty, isObject, uniq } from 'lodash';
 import { getConfigNumeric } from '../lib/config-utils';
 import { safeParse } from '@alpen/shared';
-import { compileFilter, FilterMeta, getExpressionHash } from './expr-utils';
+import { compileExpression, ExpressionMeta, getExpressionHash } from '../lib/expr-utils';
 
-// map filter expression to rpn
+// cache to save expression parsing overhead
 const filterCache = new LRUCache({
   max: 40,
   maxAge: 60000,
 });
 
-function getCompiled(filter: string, hash?: string): FilterMeta {
+function getCompiled(filter: string, hash?: string): ExpressionMeta {
   hash = hash ?? getExpressionHash(filter);
-  let filterMeta = filterCache.get(hash) as FilterMeta;
+  let filterMeta = filterCache.get(hash) as ExpressionMeta;
   if (!filterMeta) {
-    filterMeta = compileFilter(filter);
+    filterMeta = compileExpression(filter);
     filterCache.set(hash, filterMeta);
   }
   return filterMeta;
@@ -48,10 +48,10 @@ export function validateFilterExpression(expr: string): void {
 
 function validateFilter(filter: JobFilter) {
   if (!filter.id) {
-    throw boom.badData('A filter requires an id');
+    throw badData('A filter requires an id');
   }
   if (!filter.name) {
-    throw boom.badData('Missing filter name');
+    throw badData('Missing filter name');
   }
   validateFilterExpression(filter.expression);
 }
@@ -173,7 +173,7 @@ export async function getJobsByFilterId(
 ): Promise<FilteredJobsResult> {
   const filter = await getJobFilter(queue, id);
   if (!filter)
-    throw boom.notFound(
+    throw notFound(
       `No job filter with id "${id}" found for queue "${queue.name}"`,
     );
 
@@ -236,7 +236,7 @@ export async function processSearch(
 
   if (!cursor) {
     if (isEmpty(filter)) {
-      throw boom.badRequest('A filter must be specified if no cursor is given');
+      throw badRequest('A filter must be specified if no cursor is given');
     }
     cursor = nanoid();
     meta = {
@@ -255,7 +255,7 @@ export async function processSearch(
     meta = safeParse(cursorStr) as SearchCursorMeta;
     if (!isObject(meta)) {
       // invalid or expired cursor
-      throw boom.badRequest(`Invalid or expired cursor "${cursor}"`);
+      throw badRequest(`Invalid or expired cursor "${cursor}"`);
     }
     firstRun = false;
   }
@@ -286,7 +286,7 @@ export async function processSearch(
       } = await Scripts.getJobsByFilter(
         queue,
         status,
-        compiled.expr,
+        compiled.compiled,
         compiled.globals,
         meta.cursor,
         requestCount,
@@ -330,7 +330,7 @@ export async function processSearch(
   }
 
   const items: Job[] = [];
-  // its possible for an id to be returned more than once
+  // it's possible for an id to be returned more than once
   jobs.forEach((job) => {
     if (!idSet.has(job.id)) {
       idSet.add(job.id);

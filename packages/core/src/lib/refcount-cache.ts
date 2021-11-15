@@ -59,12 +59,13 @@ export class RefCountCache<T> {
   }
 
   getRef(path: string): T {
-    const prev = this._stateCache.get(path) || this.create(path);
+    const prev = this._stateCache.get(path);
     if (prev) {
       prev.refs++;
       return prev.state;
     }
-    return null;
+    const created = this.create(path);
+    return created ? created.state : null;
   }
 
   addEntry(path: string, state: T): void {

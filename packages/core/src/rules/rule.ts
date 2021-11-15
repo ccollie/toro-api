@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { clone, isNil, isString } from 'lodash';
 import { parseTimestamp } from '@alpen/shared';
 import { systemClock } from '../lib';
@@ -7,43 +7,7 @@ import {
   ruleConditionSchema,
   ruleConfigSchema,
 } from './schemas';
-import { RuleCondition } from './rule-conditions';
-import { RuleState, Severity } from './types';
-import { RuleAlertOptions } from './rule-alert';
-
-/** configuration options for a {@link Rule} */
-export interface RuleConfigOptions {
-  /** the Rule id */
-  id?: string;
-  /** names of the rule */
-  name: string;
-  /** description of the {@link Rule} */
-  description?: string;
-  /** Rule creation timestamp */
-  createdAt?: number;
-  /** Rule modification timestamp */
-  updatedAt?: number;
-  /** id of monitored metric */
-  metricId: string;
-  /** the condition which should trigger an alert */
-  condition: RuleCondition;
-  /** true if the {@link Rule} is ACTIVE. */
-  isActive?: boolean;
-  /*** Optional text for message when an alert is raised */
-  message?: string;
-  /** optional data passed on to alerts */
-  payload?: Record<string, any>;
-  /** options for {@link Rule} alerts */
-  options?: RuleAlertOptions;
-  /** channels for alert notifications. */
-  channels?: string[];
-  severity?: Severity;
-  state?: RuleState;
-  lastTriggeredAt?: number;
-  totalFailures?: number;
-  /** Total (current) number of alerts */
-  alertCount?: number;
-}
+import { RuleAlertOptions, RuleCondition, RuleConfigOptions, RuleState, Severity } from '../types';
 
 // todo: tags, copy ctor
 
@@ -96,7 +60,7 @@ export class Rule {
       name,
       condition,
       metricId,
-      active,
+      isActive,
       payload,
       description,
       state,
@@ -140,7 +104,7 @@ export class Rule {
      */
     this.description = description;
 
-    this.isActive = active ?? true;
+    this.isActive = isActive ?? true;
     this.payload = payload;
     this.message = config.message;
     this._channels = config.channels || [];
@@ -222,20 +186,24 @@ export class Rule {
       ? parseTimestamp(this.updatedAt)
       : undefined;
 
+    const payload = { ...this.payload };
+    const channels = [...this.channels];
+    const condition = { ...this.condition };
+
     return {
       id: this.id,
       name: this.name,
-      description: this.description,
+      description: this.description ?? '',
       createdAt,
       updatedAt,
       options,
-      queueId: this.queueId,
+      condition,
+      payload,
+      channels,
+      queueId: this.queueId ?? '',
       metricId: this.metricId,
-      condition: clone(this.condition),
       isActive: this.isActive,
-      message: this.message,
-      payload: clone(this.payload),
-      channels: [...this.channels],
+      message: this.message ?? '',
       severity: this.severity,
       state: this.state,
       alertCount: this.alertCount,

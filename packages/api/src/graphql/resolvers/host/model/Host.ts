@@ -21,7 +21,7 @@ import {
   getHostRatesResolver,
 } from '../../stats';
 
-import { StatsRateType } from '@alpen/core/stats';
+import { StatsRateType } from '@alpen/core';
 
 const throughput = getHostRatesResolver(StatsRateType.Throughput);
 const errorRate = getHostRatesResolver(StatsRateType.Errors);

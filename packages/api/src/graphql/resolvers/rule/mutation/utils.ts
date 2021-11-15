@@ -15,7 +15,7 @@ import {
   RuleOperator,
   RuleType,
   Severity,
-} from '@alpen/core/rules';
+} from '@alpen/core';
 import boom from '@hapi/boom';
 
 export function convertCondition(input: RuleConditionInput): RuleCondition {

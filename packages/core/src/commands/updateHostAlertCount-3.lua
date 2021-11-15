@@ -17,18 +17,22 @@ local rcall = redis.call
 -- SORT doesnt work on HASHes as source, so we copy the keys (queues) to a scratch set
 -- Fortunately for us, the hash keys are also the key prefixes
 local queues = rcall('HKEYS', queuesIndexKey)
-rcall('SADD', scratchKey, unpack(queues))
-local fieldPattern = queuesIndexKey .. ':*->alertCount'
-local counts = rcall("SORT", scratchKey, "BY", "nosort", "GET", fieldPattern) or {}
-rcall('DEL', scratchKey)
 
 local total = 0
 
-for i = 1, #counts do
-    total = total + (counts[i] or 0)
-end
+if (type(queues) == 'table' and #queues > 0) then
+  rcall('SADD', scratchKey, unpack(queues))
 
-rcall("SET", destination, total)
+  local fieldPattern = queuesIndexKey .. ':*->alertCount'
+  local counts = rcall("SORT", scratchKey, "BY", "nosort", "GET", fieldPattern) or {}
+  rcall('DEL', scratchKey)
+
+  for i = 1, #counts do
+    total = total + (counts[i] or 0)
+  end
+
+  rcall("SET", destination, total)
+end
 
 return total
 

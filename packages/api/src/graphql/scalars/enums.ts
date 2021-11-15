@@ -1,15 +1,15 @@
-import { QueueFilterStatus } from '@alpen/core/hosts';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
-  ErrorLevel,
+  ErrorStatus,
   PeakSignalDirection,
+  QueueFilterStatus,
   RuleOperator,
   RuleState,
   RuleType,
   Severity,
-} from '@alpen/core/rules';
-import { StatsGranularity } from '@alpen/core/stats';
+  StatsGranularity,
+} from '@alpen/core';
 import { createEnumFromTS } from './types';
 
 export const ChangeAggregationEnum = createEnumFromTS(
@@ -22,7 +22,7 @@ export const ConditionChangeEnum = createEnumFromTS(
   'ConditionChangeType',
 );
 
-export const ErrorLevelEnum = createEnumFromTS(ErrorLevel, 'ErrorLevel');
+export const ErrorLevelEnum = createEnumFromTS(ErrorStatus, 'ErrorLevel');
 
 export const PeakSignalDirectionEnum = createEnumFromTS(
   PeakSignalDirection,

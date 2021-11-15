@@ -49,7 +49,7 @@ export type Timespan = {
   endTime?: number;
 };
 
-export type DateLike = Date | number;
+export declare type DateLike = Date | number;
 
 // https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md
 const DATE_FORMATS = [

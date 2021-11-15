@@ -1,8 +1,18 @@
-import boom from '@hapi/boom';
-import pMap from 'p-map';
-import ms from 'ms';
-import { Rule, RuleConfigOptions } from './rule';
+import { DateLike } from '@alpen/shared';
+import * as boom from '@hapi/boom';
 import { Queue } from 'bullmq';
+import ms from 'ms';
+import pMap from 'p-map';
+import { RuleAlertState, RuleScripts } from '../commands';
+import { Clock, IteratorOptions } from '../lib';
+import { logger } from '../logger';
+import { BaseMetric } from '../metrics';
+import { QueueListener, QueueManager } from '../queues';
+import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
+import { RuleAlert, RuleConfigOptions, RuleEventsEnum } from '../types';
+import { Rule } from './rule';
+import { RuleAlerter } from './rule-alerter';
+import { RuleEvaluator } from './rule-evaluator';
 import {
   RuleAddedEventData,
   RuleAlertFilter,
@@ -10,17 +20,6 @@ import {
   RuleEventData,
   RuleStorage,
 } from './rule-storage';
-import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
-import { BaseMetric } from '../metrics';
-import { QueueListener, QueueManager } from '../queues';
-import { Clock, IteratorOptions } from '../lib';
-import { RuleEvaluator } from './rule-evaluator';
-import { RuleAlerter } from './rule-alerter';
-import { RuleAlertState, RuleScripts } from '../commands';
-import { DateLike } from '@alpen/shared';
-import { logger } from '../logger';
-import { RuleAlert } from './rule-alert';
-import { RuleEventsEnum } from './types';
 
 type RuleLike = Rule | RuleConfigOptions | string;
 
@@ -158,9 +157,9 @@ export class RuleManager {
     const metas = this.metricRuleMap.get(metric.id);
     if (metas) {
       const hasLock = this.hasLock;
-      metas.forEach(
-        (meta) => void this.dispatchRule(metric, meta, ts, hasLock),
-      );
+      metas.forEach((meta) => {
+        this.dispatchRule(metric, meta, ts, hasLock);
+      });
     }
   }
 
@@ -458,7 +457,7 @@ export class RuleManager {
 
   private async onRuleAdded(event: RuleAddedEventData): Promise<void> {
     try {
-      const rule = await this.getRule(event.ruleId);
+      const rule = await this.getRule(event.id);
       if (rule) {
         this._registerRule(rule);
       }

@@ -1,8 +1,8 @@
-import boom from '@hapi/boom';
+import { badData } from '@hapi/boom';
 import { createDebug, validateUrl } from '../../lib';
 import { Channel } from '../channel';
 import { HttpClient } from '../../lib/http-client';
-import { NotificationChannelProps, NotificationContext } from '../types';
+import { NotificationChannelProps, NotificationContext } from '../../types';
 
 const debug = createDebug('notifications:webhook');
 
@@ -73,7 +73,7 @@ export class WebhookChannel extends Channel<WebhookChannelConfig> {
    * Defines if redirect responses should be followed automatically.
    */
   get followRedirect(): boolean {
-    return this.options.followRedirect;
+    return !!this.options?.followRedirect;
   }
 
   /***
@@ -81,7 +81,7 @@ export class WebhookChannel extends Channel<WebhookChannelConfig> {
    * This option is only meant to interact with non-compliant servers when you have no other choice.
    */
   get allowGetBody(): boolean {
-    return this.options.allowGetBody;
+    return !!this.options?.allowGetBody;
   }
 
   public get url(): string {
@@ -90,7 +90,7 @@ export class WebhookChannel extends Channel<WebhookChannelConfig> {
 
   public set url(value: string) {
     if (!value || !validateUrl(value)) {
-      throw boom.badData(`"${value}" is not a valid URI`);
+      throw badData(`"${value}" is not a valid URI`);
     }
     this.options.url = value;
   }

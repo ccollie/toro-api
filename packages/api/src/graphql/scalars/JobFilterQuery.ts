@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
 import { GraphQLScalarType, Kind, print } from 'graphql';
-import { validateFilterExpression } from '@alpen/core/queues';
+import { validateFilterExpression } from '@alpen/core';
 import { safeParse } from '@alpen/shared';
 import isObject from 'lodash/isObject';
 
@@ -64,7 +64,7 @@ export const GraphQLJobFilterQuery = new GraphQLScalarType({
   name: 'JobFilterQuery',
   description:
     // eslint-disable-next-line max-len
-    'This type represents a job filter query using a subset of the mongo query language (https://docs.mongodb.com/manual/reference/operator/query/)',
+    'This type represents a job filter query using a subset of Javascript (https://docs.mongodb.com/manual/reference/operator/query/)',
   serialize: ensureObject,
   parseValue: ensureObject,
   parseLiteral: (ast, variables) => {

@@ -6,22 +6,26 @@ import {
   roundUp,
   isNumber,
 } from '@alpen/shared';
-import { QueueListener, QueueManager, JobFinishedEventData } from '../queues';
+import { QueueListener, JobFinishedEventData } from '../queues/queue-listener';
 import { QueueStats } from './queue-stats';
 import { systemClock, Clock } from '../lib';
 import { isAfter, toDate } from 'date-fns';
-import { StatsWriter } from './stats-writer';
-import Emittery from 'emittery';
+import { StatsWriter, StatsWriterArgs } from './stats-writer';
 import { logger } from '../logger';
 import { TimeSeries } from '../commands';
 import { CONFIG, getSnapshotInterval } from './utils';
 import { StatsClient } from './stats-client';
+import Emittery from 'emittery';
 
 const FINISHED_EVENT = 'job.finished';
 
 export enum StatsListenerEvents {
   SNAPSHOT_STARTED = 'SNAPSHOT_STARTED',
   SNAPSHOT_ENDED = 'SNAPSHOT_ENDED',
+}
+
+export interface StatsListenerCtorArgs extends StatsWriterArgs {
+  jobTypes?: string[];
 }
 
 /**
@@ -32,28 +36,27 @@ export class StatsListener extends StatsWriter {
   private readonly listener: QueueListener;
   private readonly isValidJobName: (arg) => boolean;
   private readonly snapshotInterval: number;
-  private _unlisten: Emittery.UnsubscribeFn = null;
+  private _unlisten: Emittery.UnsubscribeFn | null = null;
   private _intervalTimer: any;
   private _lastTimestamp: number | null;
-  private _nextFlush: number | null;
+  private _nextFlush = 0;
   private _snapshotting: boolean;
-  private jobTypesMap: Map<string, QueueStats>;
-  private readonly _manager: QueueManager;
+  private jobStatsMap: Map<string, QueueStats>;
   public readonly queueStats: QueueStats;
 
   /**
    * Construct a {@link StatsListener}
-   * @param queueManager
-   * @param {string[]} jobTypes valid job types to process.
    * Store stats for all if null
+   * @param args
    */
-  constructor(queueManager: QueueManager, jobTypes?: string[]) {
-    super(queueManager);
-    this.listener = new QueueListener(queueManager.queue);
+  constructor(args: StatsListenerCtorArgs) {
+    super(args);
+    const { jobTypes } = args;
+    this.listener = new QueueListener(args.queue);
 
     this.snapshotInterval = roundInterval(getSnapshotInterval());
 
-    this.jobTypesMap = new Map();
+    this.jobStatsMap = new Map();
     this.queueStats = new QueueStats(this.listener.clock);
     this._snapshotting = false;
     this._intervalTimer = null;
@@ -64,13 +67,11 @@ export class StatsListener extends StatsWriter {
     } else {
       this.isValidJobName = () => true;
     }
-
-    this._manager = queueManager;
   }
 
   destroy(): void {
     this.queueStats.destroy();
-    for (const stat of this.jobTypesMap.values()) {
+    for (const stat of this.jobStatsMap.values()) {
       stat.destroy();
     }
     this.unlisten();
@@ -93,10 +94,10 @@ export class StatsListener extends StatsWriter {
   }
 
   getJobNameStats(name: string): QueueStats {
-    let jobNameStats = this.jobTypesMap.get(name);
+    let jobNameStats = this.jobStatsMap.get(name);
     if (!jobNameStats && this.isValidJobName(name)) {
       jobNameStats = new QueueStats(this.clock, name);
-      this.jobTypesMap.set(name, jobNameStats);
+      this.jobStatsMap.set(name, jobNameStats);
     }
 
     return jobNameStats;
@@ -104,7 +105,7 @@ export class StatsListener extends StatsWriter {
 
   clearStats(): void {
     this.queueStats.reset();
-    for (const [, stats] of this.jobTypesMap.entries()) {
+    for (const [, stats] of this.jobStatsMap.entries()) {
       stats.reset();
     }
   }
@@ -204,7 +205,7 @@ export class StatsListener extends StatsWriter {
     );
     this._emit(StatsListenerEvents.SNAPSHOT_STARTED);
     try {
-      this.jobTypesMap.forEach((status) => {
+      this.jobStatsMap.forEach((status) => {
         this.write(status, opts);
       });
 
@@ -298,7 +299,7 @@ export class StatsListener extends StatsWriter {
     const interval = this.snapshotInterval;
     end = end || systemClock.getTime();
 
-    const client = this.client;
+    const client = await this.queue.client;
     const absoluteEnd = roundDown(end, interval);
 
     const flush = async (type: StatsMetricType, end: number): Promise<void> => {
@@ -336,24 +337,29 @@ export class StatsListener extends StatsWriter {
     await processMetric('wait');
   }
 
-  sweep(): void {
+  async sweep(statsClient: StatsClient): Promise<void> {
     const types: StatsMetricType[] = ['latency', 'wait'];
-    const jobNames = Array.from(this.jobTypesMap.keys());
-    const client = new StatsClient(this._manager);
+    const jobNames = Array.from(this.jobStatsMap.keys());
+    const client = statsClient;
+
+    const redis = await this.queue.client;
+    const pipeline = redis.pipeline();
 
     CONFIG.units.map((unit) => {
       types.forEach((type) => {
-        client.cleanup(false, null, type, unit);
-        client.cleanup(true, null, type, unit);
+        client.cleanup(pipeline,false, null, type, unit);
+        client.cleanup(pipeline,true, null, type, unit);
       });
 
       jobNames.forEach((jobName) => {
         types.forEach((type) => {
-          client.cleanup(false, jobName, type, unit);
-          client.cleanup(true, jobName, type, unit);
+          client.cleanup(pipeline,false, jobName, type, unit);
+          client.cleanup(pipeline,true, jobName, type, unit);
         });
       });
     });
+
+    await pipeline.exec();
     // todo: also delete at the host level
   }
 }

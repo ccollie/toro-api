@@ -37,7 +37,7 @@ import {
   statsLatest as lastStatsSnapshot,
   getQueueRatesResolver,
 } from '../../stats';
-import { StatsRateType } from '@alpen/core/stats';
+import { StatsRateType } from '@alpen/core';
 
 const throughput = getQueueRatesResolver(StatsRateType.Throughput);
 const errorRate = getQueueRatesResolver(StatsRateType.Errors);

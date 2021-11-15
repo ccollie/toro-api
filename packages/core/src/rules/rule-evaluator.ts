@@ -3,7 +3,6 @@ import { Rule } from './rule';
 import { parseRuleCondition } from './schemas';
 import {
   ConditionEvaluator,
-  EvaluationResult,
   PeakConditionEvaluator,
   ThresholdConditionEvaluator,
 } from './condition-evaluator';
@@ -11,10 +10,11 @@ import { ChangeConditionEvaluator } from './change-condition-evaluator';
 import { logger } from '../logger';
 import {
   ChangeCondition,
+  EvaluationResult,
   PeakCondition,
   RuleType,
   ThresholdCondition,
-} from './rule-conditions';
+} from '../types';
 
 export class RuleEvaluator {
   protected evaluator: ConditionEvaluator;

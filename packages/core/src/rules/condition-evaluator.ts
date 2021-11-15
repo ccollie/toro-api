@@ -2,30 +2,15 @@ import { StreamingPeakDetector } from '../stats';
 import { getStaticProp, isNumber } from '@alpen/shared';
 import { BaseMetric } from '../metrics';
 import {
+  ErrorStatus,
+  EvaluationResult,
   PeakCondition,
   PeakSignalDirection,
+  RuleEvaluationState,
   RuleOperator,
   RuleType,
   ThresholdCondition,
-} from './rule-conditions';
-import { ErrorLevel } from './types';
-
-export interface EvaluationResult {
-  value: number;
-  triggered: boolean;
-  errorLevel: ErrorLevel;
-  state: RuleEvaluationState;
-}
-
-export interface RuleEvaluationState {
-  ruleType: RuleType;
-  errorLevel: ErrorLevel;
-  value: number;
-  comparator: RuleOperator;
-  errorThreshold: number;
-  warningThreshold?: number;
-  unit: string;
-}
+} from '../types';
 
 export function isRuleEvaluationState(
   arg: unknown,
@@ -88,11 +73,11 @@ export class ConditionEvaluator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected handleEval(value: number, ts?: number): ErrorLevel {
-    return ErrorLevel.NONE;
+  protected handleEval(value: number, ts?: number): ErrorStatus {
+    return ErrorStatus.NONE;
   }
 
-  protected getState(level: ErrorLevel, value: number): RuleEvaluationState {
+  protected getState(level: ErrorStatus, value: number): RuleEvaluationState {
     return {
       errorThreshold: 0,
       unit: this.unit,
@@ -105,7 +90,7 @@ export class ConditionEvaluator {
 
   evaluate(value: number, ts?: number): EvaluationResult {
     const notificationType = this.handleEval(value, ts);
-    const triggered = notificationType !== ErrorLevel.NONE;
+    const triggered = notificationType !== ErrorStatus.NONE;
     return {
       value,
       triggered,
@@ -123,24 +108,24 @@ export class ThresholdConditionEvaluator extends ConditionEvaluator {
     this.options = options;
   }
 
-  protected handleEval(value: number): ErrorLevel {
+  protected handleEval(value: number): ErrorStatus {
     const { operator, errorThreshold, warningThreshold } = this.options;
 
     if (compare(operator, value, errorThreshold)) {
-      return ErrorLevel.CRITICAL;
+      return ErrorStatus.ERROR;
     }
 
     if (
       isNumber(warningThreshold) &&
       compare(operator, value, warningThreshold)
     ) {
-      return ErrorLevel.WARNING;
+      return ErrorStatus.WARNING;
     }
 
-    return ErrorLevel.NONE;
+    return ErrorStatus.NONE;
   }
 
-  protected getState(level: ErrorLevel, value: number): RuleEvaluationState {
+  protected getState(level: ErrorStatus, value: number): RuleEvaluationState {
     const {
       errorThreshold,
       warningThreshold,
@@ -213,7 +198,7 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
   }
 
   protected getState(
-    level: ErrorLevel,
+    level: ErrorStatus,
     value: number,
   ): PeakRuleEvaluationState {
     const baseState = super.getState(level, value);
@@ -228,7 +213,7 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
     };
   }
 
-  protected handleEval(value: number, ts?: number): ErrorLevel {
+  protected handleEval(value: number, ts?: number): ErrorStatus {
     const errorSignal = this.detector.update(value, ts);
     // independent of whether an error is encountered, we have to
     // update the warning detector if it exists
@@ -237,14 +222,14 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
 
     if (this.signalValid(errorSignal)) {
       this.lastSignal = errorSignal;
-      return ErrorLevel.CRITICAL;
+      return ErrorStatus.ERROR;
     }
 
     if (this.signalValid(warningSignal)) {
       this.lastSignal = errorSignal;
-      return ErrorLevel.WARNING;
+      return ErrorStatus.WARNING;
     }
 
-    return ErrorLevel.NONE;
+    return ErrorStatus.NONE;
   }
 }
