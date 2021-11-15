@@ -4,39 +4,37 @@
 
 local function createMathFn(name)
     local fn = math[name]
-    return function(_, val)
-        local t = type(val)
-        if (t == 'number') then
-            return fn(val)
-        end
+    return function(val)
+        local fn = fn
+        local name = name
         if (val == nil or val == cjson.null) then
             return cjson.null
         end
-        --- todo: NaN
-        assert(false, 'Math.' .. name .. ': argument must resolve to a number. Got "' .. toStr(val) .. '"')
+        val = assert(tonumber(val), 'Math.' .. name .. ': argument must resolve to a number. Got "' .. toStr(val) .. '"')
+        return fn(val)
     end
 end
 
 local mathMethods = {
-    ['PI'] = math.pi,
-    ['abs'] = createMathFn('abs'),
-    ['acos'] = createMathFn('acos'),
-    ['atan'] = createMathFn('atan'),
-    ['ceil'] = createMathFn('ceil'),
-    ['cos'] = createMathFn('cos'),
-    ['floor'] = createMathFn('floor'),
-    ['pow'] = createMathFn('pow'),
-    ['sin'] = createMathFn('sin'),
-    ['sqrt'] = createMathFn('sqrt'),
-    ['tan'] = createMathFn('tan'),
-    ['log'] = createMathFn('log'),
-    ['log10'] = createMathFn('log10'),
-    ['round'] = function(_, val, places) return round(val, places) end,
-    ['sign'] = function(_, val) return sign(val) end,
-    ['trunc'] = function(_, val, places) return truncate(val, places) end
+    PI = math.pi,
+    abs = createMathFn('abs'),
+    acos = createMathFn('acos'),
+    atan = createMathFn('atan'),
+    ceil = createMathFn('ceil'),
+    cos = createMathFn('cos'),
+    floor = createMathFn('floor'),
+    pow = createMathFn('pow'),
+    sin = createMathFn('sin'),
+    sqrt = createMathFn('sqrt'),
+    tan = createMathFn('tan'),
+    log = createMathFn('log'),
+    log10 = createMathFn('log10'),
+    round = round,
+    sign = sign,
+    trunc = truncate
 }
 
-function mathMethods.extrema(name, items, comparator)
+local function __math_extrema(name, items, comparator)
     local t = type(items)
     if (t == "number") then
         -- take a short cut if expr is number literal
@@ -48,40 +46,46 @@ function mathMethods.extrema(name, items, comparator)
     assert(t == "table", name .. ' expects an array of numbers')
     local res = cjson.null
     for _, n in ipairs(items) do
-        if (type(n) == 'number') then
-            if (res == cjson.null) then
-                res = n
-            elseif (comparator(n, res)) then
-                res = n
-            end
+        local v = tonumber(n)
+        if (v == nil) then return cjson.null end
+        if (res == cjson.null or comparator(v, res)) then
+            res = n
         end
     end
     return res
 end
 
-function mathMethods.max(expr)
-    return mathMethods.extrema('max', expr, function(x, y) return x > y end)
+function mathMethods.max(...)
+    local items = { ... }
+    return __math_extrema('max', items, function(x, y) return x > y end)
 end
 
-function mathMethods.min(expr)
-    return mathMethods.extrema('min', expr, function(x, y) return x < y end)
+function mathMethods.min(...)
+    local items = { ... }
+    return __math_extrema('min', items, function(x, y) return x < y end)
 end
 
-function mathMethods.sum(name, args)
-    assert(type(args) == 'table', name .. ' expects an array')
-    local total = 0
+local function __sum(...)
+    local total, n = 0, 0
+    local args = { ... }
     for _, val in ipairs(args) do
-        if type(val) == 'number' then
-            total = total + val
+        val = tonumber(val)
+        if (val == nil) then
+            return cjson.null
         end
+        total = total + val
+        n = n + 1
     end
-    return total
+    return total, n
 end
 
-function mathMethods.avg(args)
-    local total = mathMethods.sum('avg', args)
-    if total == 0 then
-        return 0
-    end
-    return total / #args
+function mathMethods.sum(...)
+    local t = __sum(...)
+    return t
+end
+
+function mathMethods.avg(...)
+    local total, n = __sum(...)
+    if (total == cjson.null) then return total end
+    return n == 0 and 0 or (total / n)
 end

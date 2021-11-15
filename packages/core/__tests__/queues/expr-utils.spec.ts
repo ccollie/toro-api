@@ -1,5 +1,5 @@
 import { parse } from '@alpen/shared';
-import { optimizeMemberExpression } from '../../src/queues/expr-utils';
+import { optimizeMemberExpression } from '../../src/lib/expr-utils';
 
 describe('expr-utils', () => {
     it('optimizeMemberExpression', () => {

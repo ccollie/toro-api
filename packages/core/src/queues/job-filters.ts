@@ -12,19 +12,19 @@ import { parse as parseExpression } from '@alpen/shared';
 import { isEmpty, isObject, uniq } from 'lodash';
 import { getConfigNumeric } from '../lib/config-utils';
 import { safeParse } from '@alpen/shared';
-import { compileFilter, FilterMeta, getExpressionHash } from './expr-utils';
+import { compileExpression, ExpressionMeta, getExpressionHash } from '../lib/expr-utils';
 
-// map filter expression to rpn
+// cache to save expression parsing overhead
 const filterCache = new LRUCache({
   max: 40,
   maxAge: 60000,
 });
 
-function getCompiled(filter: string, hash?: string): FilterMeta {
+function getCompiled(filter: string, hash?: string): ExpressionMeta {
   hash = hash ?? getExpressionHash(filter);
-  let filterMeta = filterCache.get(hash) as FilterMeta;
+  let filterMeta = filterCache.get(hash) as ExpressionMeta;
   if (!filterMeta) {
-    filterMeta = compileFilter(filter);
+    filterMeta = compileExpression(filter);
     filterCache.set(hash, filterMeta);
   }
   return filterMeta;
@@ -286,7 +286,7 @@ export async function processSearch(
       } = await Scripts.getJobsByFilter(
         queue,
         status,
-        compiled.expr,
+        compiled.compiled,
         compiled.globals,
         meta.cursor,
         requestCount,

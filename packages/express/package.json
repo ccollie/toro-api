@@ -39,9 +39,9 @@
   "dependencies": {
     "@alpen/api": "^0.0.2",
     "@alpen/core": "^0.0.2",
-    "@graphql-ez/express": "^0.9.5",
-    "graphql": "16.0.0",
-    "graphql-ez": "^0.13.4"
+    "@graphql-ez/express": "^0.9.6",
+    "graphql": "16.0.1",
+    "graphql-ez": "^0.13.5"
   },
   "peerDependencies": {
     "esbuild": ">=0.13.12",
@@ -50,8 +50,8 @@
   "devDependencies": {
     "@types/express": "^4.17.11",
     "@types/node": "^16.11.4",
-    "bob-ts": "^1.2.1",
-    "bob-esbuild-cli": "^3.0.0",
+    "bob-ts": "^1.2.2",
+    "bob-esbuild-cli": "^3.0.1",
     "express": "^4.17.1"
   }
 }

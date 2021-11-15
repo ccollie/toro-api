@@ -1,14 +1,15 @@
---- @include "some.lua"
---- @include "inArray.lua"
---- @include "toDouble.lua"
---- @include "toBool.lua"
---- @include "isFalsy.lua"
---- @include "isTruthy.lua"
+--- @include "some"
+--- @include "inArray"
+--- @include "toDouble"
+--- @include "toBool"
+--- @include "isFalsy"
+--- @include "isTruthy"
 --- @include "isNil"
---- @include "toInt.lua"
---- @include "toNum.lua"
---- @include "getType.lua"
---- @include "debug.lua"
+--- @include "toInt"
+--- @include "toNum"
+--- @include "getType"
+--- @include "debug"
+--- @include "toStr"
 
 local operator = {}
 
@@ -83,6 +84,7 @@ end
 function operator.add(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
+    if (type(l) == 'string') then return l .. r end
     return l + r
 end
 
@@ -164,14 +166,7 @@ end
 -- @param b value
 function operator.lor(a,b)
     local l, r = normalizeNils(a, b)
-    return l or r
-end
-
---- make a table from the arguments **{}**
--- @param ... non-nil arguments
--- @return a table
-function operator.table (...)
-    return {...}
+    return isTruthy(l) or isTruthy(r)
 end
 
 --- match two strings **~**.
@@ -183,15 +178,15 @@ end
 -- @include "matches.lua"
 
 function operator.matches(a, pattern)
-    return matches(a, pattern)
+    return isTruthy( matches(a, pattern) )
 end
 
 function operator.noMatches(str, pattern)
-    return not matches(str, pattern)
+    return not operator.matches(str, pattern)
 end
 
 function operator.nullCoalesce(a, b)
-    return (a == nil or a == cjson.null) and b or cjson.null
+    return (a == nil or a == cjson.null) and b or a
 end
 
 function operator.lin(needle, haystack)
@@ -220,72 +215,24 @@ function operator.xor(a, b)
         return bitop.bxor(a, toInt(b))
     end
 end
----- Map from operator symbol to function.
--- Most of these map directly from operators;
-
---  * __'~'__   `match`
---
--- @table optable
--- @field operator
-operator.optable = {
-    ['+']=operator.add,
-    ['-']=operator.sub,
-    ['*']=operator.mul,
-    ['/']=operator.div,
-    ['%']=operator.mod,
-    ['^']=operator.pow,
-    ['<']=operator.lt,
-    ['<=']=operator.le,
-    ['>']=operator.gt,
-    ['>=']=operator.ge,
-    ['==']=operator.eq,
-    ['===']=operator.eq,
-    ['!=']=operator.neq,
-    ['!==']=operator.neq,
-    ['~=']=operator.neq,
-    ['and']=operator.land,
-    ['or']=operator.lor,
-    ['in']=operator.lin,
-    ["=~"] = operator.matches
-}
-
-local function handleAdd(a, b)
-    local atype = getType(a)
-    local btype = getType(b)
-    local l, r = normalizeNils(a, b)
-
-    if l == nil or r == nil then
-        return nil
-    end
-    if (atype == 'number' or atype == 'date') then
-        if (btype == 'number') then
-            return a + b
-        end
-    elseif (atype == 'string') then
-        return a .. toStr(b)
-    end
-    assert(false, 'invalid operand type for +')
-end
 
 operator.unops = {
-    ['!'] = function(value) return not toBool(value) end,
-    ['!!'] = function(value) return not isFalsy(value) end,
+    ['!'] = operator.lnot,
+    ['!!'] = isTruthy,
     ['-'] = function(value) return isNil(value) and cjson.null or (-1 * toDouble(value)) end,
     ['+'] = toNum,
     ['typeof'] = getType
 }
 
-
 operator.binops = {
     ['&&'] = operator.land,
-    ['||'] = function(a, b) return isTruthy(a) or isTruthy(b) end,
+    ['||'] = operator.lor,
     ['??'] = operator.nullCoalesce,
     ['^'] = operator.pow,
     ['=='] = operator.eq,
     ['==='] = operator.eq,
     ['!='] = operator.neq,
     ['!=='] = operator.neq,
-    ['<>'] = operator.neq,
     ['<'] = operator.lt,
     ['<='] = operator.le,
     ['>'] = operator.gt,

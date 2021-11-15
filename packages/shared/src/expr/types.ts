@@ -1,4 +1,4 @@
 
 export type KeywordValueFn = () => any;
 
-export type ValueKeyword = '$NOW';
+export type ValueKeyword = '$NOW' | 'PI';

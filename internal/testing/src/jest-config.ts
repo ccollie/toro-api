@@ -26,7 +26,7 @@ export function getConfig({ ...rest }: Config.InitialOptions = {}): Record<
     testPathIgnorePatterns: ['/node_modules/', '/dist/'],
     coveragePathIgnorePatterns: ['node_modules'],
     moduleNameMapper: pathsToModuleNameMapper(
-        readJSONSync(resolve(rootPath, 'tsconfig.json')).compilerOptions.paths,
+        readJSONSync(resolve(rootPath, 'tsconfig!.json')).compilerOptions.paths,
         {prefix},
     ),
     collectCoverage: true,

@@ -44,6 +44,6 @@
       "tslib" : ["node_modules/tslib/tslib.d.ts"]
     }
   },
-  "exclude": ["node_modules", "**/dist"],
-  "include": ["packages", "examples", "jest.config.js"],
+  "exclude": ["node_modules", "**/dist", "**/coverage", "**/.next"],
+  "include": ["packages", "examples", "internal", "jest.config.js"],
 }

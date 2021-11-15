@@ -7,7 +7,6 @@
         count count
         callback callback function. Receives a job id (non prefixed)
 ]]
---- @include "toStr"
 --- @include "getRedisKeyType"
 --- @include "debug"
 
@@ -77,7 +76,6 @@ local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
         if (not idSeen[id]) then
             idSeen[id] = true
             n = n + 1
-            --- debug("About to callback. Id = ", id)
             return callback(id, n, itemCount)
         end
     end

@@ -1,6 +1,7 @@
-local function toBool(value, ...)
+local function toBool(value)
     local bool = false
     if (value == nil or value == cjson.null) then return false end
+    if (value == true or value == false) then return value end
     local t = type(value)
     if (t == 'string') then
         if (value == 'true') then
@@ -10,12 +11,12 @@ local function toBool(value, ...)
             return false
         end
         return #value > 0
-    elseif t == 'boolean' then
-        bool = value
     elseif (t == 'number') then
         bool = value ~= 0
+    elseif (t == "table") then
+        return #value > 0
     elseif t == 'function' then
-        bool = bool(value(...))
+        return true
     end
     return bool
 end

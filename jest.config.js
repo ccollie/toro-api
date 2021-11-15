@@ -18,7 +18,7 @@ module.exports = {
   coveragePathIgnorePatterns: ['node_modules'],
   moduleFileExtensions: ['ts', 'mts', 'tsx', 'js', 'cjs', 'jsx', 'node'],
   moduleNameMapper: pathsToModuleNameMapper(
-    readJSONSync('./tsconfig.json').compilerOptions.paths,
+    readJSONSync('./tsconfig!.json').compilerOptions.paths,
     { prefix },
   ),
   testEnvironment: 'node',

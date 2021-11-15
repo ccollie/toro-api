@@ -77,7 +77,7 @@ function Job:new(key, id)
     local len = #jobHash
     local found = len > 0
     if (found) then
-        local hash = {}
+        local hash = { id = id }
         for i = 1, len, 2 do
             local k = jobHash[i]
             local v = jobHash[(i+1)]

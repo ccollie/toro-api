@@ -38,7 +38,7 @@
     "clean": "rm -rf ./dist",
     "compile": "bob-ts -i src -f interop --paths",
     "dev": "bob-ts-watch -i src",
-    "types": "tsc --declaration --emitDeclarationOnly",
+    "types": "tsc --emitDeclarationOnly --declaration",
     "typecheck": "tsc --noEmit",
     "test": "test",
     "prepack": "bob-esbuild build"
@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@types/node": "^16.11.4",
-    "bob-ts": "^1.2.1",
+    "bob-ts": "^1.2.2",
     "typescript": "^4.4.4"
   },
   "peerDependencies": {

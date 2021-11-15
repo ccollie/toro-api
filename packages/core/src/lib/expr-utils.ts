@@ -2,16 +2,18 @@ import { KeywordValueFn, parse, ValueKeyword } from '@alpen/shared';
 import jsep from 'jsep';
 import fnv from 'fnv-plus';
 
+const Globals = ['JSON', 'Date', 'Math', 'Object'];
 
-export type FilterMeta = {
-  expr: jsep.Expression;
-  filter: string;
+export type ExpressionMeta = {
+  compiled: jsep.Expression;
+  expr: string;
   hash: string;
   globals: Record<string, any> | undefined;
 };
 
 export const KeywordValues: Record<ValueKeyword, KeywordValueFn> = {
   $NOW: () => Date.now(),
+  PI: () => Math.PI,
 };
 
 type AnyExpression =
@@ -25,20 +27,28 @@ type AnyExpression =
   | jsep.ThisExpression
   | jsep.UnaryExpression;
 
+declare module 'jsep' {
+  interface MemberExpression {
+    path?: jsep.Expression[];
+    isBuiltIn?: boolean;
+  }
+}
+
 export function getExpressionHash(expr: string): string {
   return fnv.hash(expr).hex();
 }
 
-export function compileFilter(filter: string): FilterMeta {
-  const expr = parse(filter);
-  const hash = getExpressionHash(filter);
-  const _globs = collectIdentifiers(expr);
+export function compileExpression(expression: string): ExpressionMeta {
+  const compiled = parse(expression);
+  const hash = getExpressionHash(expression);
 
-  optimizeMemberExpression(expr);
+  const idSet = new Set<string>();
+  optimizeMemberExpression(compiled, idSet);
+  const _globs = Array.from(idSet);
 
   return {
-    expr,
-    filter,
+    compiled,
+    expr: expression,
     hash,
     get globals(): Record<string, any> | undefined {
       if (!_globs.length) return undefined;
@@ -52,90 +62,34 @@ export function compileFilter(filter: string): FilterMeta {
   };
 }
 
-function evalCollectIdentifiers(
-  _node: jsep.Expression,
-  result: Set<string>,
-) {
-  function evaluateArray(list) {
-    return list.map((v) => evalCollectIdentifiers(v, result));
-  }
-
-  function evaluateMember(node: jsep.MemberExpression) {
-    evalCollectIdentifiers(node.object, result);
-    if (node.computed) {
-      evalCollectIdentifiers(node.property, result);
-    } else {
-      result.add((node.property as jsep.Identifier).name);
-    }
-    return node;
-  }
-
-  const node = _node as AnyExpression;
-  switch (node.type) {
-    case 'ArrayExpression':
-      return evaluateArray(node.elements);
-
-    case 'BinaryExpression':
-      evalCollectIdentifiers(node.left, result);
-      evalCollectIdentifiers(node.right, result);
-      return;
-
-    case 'CallExpression':
-      if (node.callee.type === 'MemberExpression') {
-        evaluateMember(node.callee as jsep.MemberExpression);
-      } else {
-        evalCollectIdentifiers(node.callee, result);
-      }
-      return evaluateArray(node.arguments);
-
-    case 'ConditionalExpression':
-      evalCollectIdentifiers(node.test, result);
-      evalCollectIdentifiers(node.consequent, result);
-      evalCollectIdentifiers(node.alternate, result);
-      return '';
-
-      case 'Identifier':
-        result.add(node.name);
-        break;
-
-    case 'Literal':
-    case 'ThisExpression':
-      return node;
-
-    case 'MemberExpression':
-      return evaluateMember(node);
-
-    case 'UnaryExpression':
-      return evalCollectIdentifiers(node.argument, result);
-
-    default:
-      return undefined;
-  }
-}
-
-export function collectIdentifiers(node: jsep.Expression): string[] {
-  const uniq = new Set<string>();
-  evalCollectIdentifiers(node, uniq);
-  return Array.from(uniq).sort();
-}
-
 /**
  * Simplify member expression nodes in the AST to make lua execution more efficient
- * @param _node
+ * @param _node root of the AST
+ * @param identifiers
  */
 export function optimizeMemberExpression(
   _node: jsep.Expression,
+  identifiers?: Set<string>
 ): jsep.Expression {
+
+  identifiers = identifiers ?? new Set<string>();
+
   function evaluateArray(list) {
     return list.map((v) => optimizeMemberExpression(v));
   }
 
   function evaluateMember(node: jsep.MemberExpression) {
-    function getPathItems(prop: jsep.Expression): unknown[] {
+    let computed = node.computed;
+
+    function getPathItems(prop: jsep.Expression): jsep.Expression[] {
+      if (!node.computed) {
+        identifiers.add((node.property as jsep.Identifier).name);
+      }
       if (prop.type === 'Literal' || prop.type === 'Identifier') {
         return [prop];
       } else if (prop.type === 'MemberExpression') {
         const member = prop as jsep.MemberExpression;
+        computed = computed || member.computed;
         const obj = getPathItems(member.object);
         const propPart = getPathItems(member.property);
         return [...obj, ...propPart];
@@ -143,9 +97,10 @@ export function optimizeMemberExpression(
         prop.type === 'CallExpression' &&
         (prop as jsep.CallExpression).callee?.type === 'MemberExpression'
       ) {
-        const res = optimizeMemberExpression(
-          (prop as jsep.CallExpression).callee,
-        );
+        const callee = ((prop as jsep.CallExpression).callee as jsep.MemberExpression);
+        const res = optimizeMemberExpression(callee);
+
+        computed = computed || callee.computed;
         const method = {
           type: 'CallExpression',
           callee: res.object ?? res,
@@ -158,10 +113,19 @@ export function optimizeMemberExpression(
       }
     }
 
-    // ugly
-    // @ts-ignore
+    // ugly hack below. The following is only meant for the lua evaluator
     node.path = getPathItems(node);
-    delete node.computed;
+    if (node.path[0].type === 'Identifier') {
+      const id = (node.path[0] as jsep.Identifier).name;
+      if (Globals.includes(id)) node.isBuiltIn = true;
+    }
+
+    if (!computed) {
+      delete node.computed;
+    } else {
+      // add if not present
+      node.computed = computed;
+    }
     delete node.property;
     delete node.object;
 
@@ -195,6 +159,8 @@ export function optimizeMemberExpression(
       break;
 
     case 'Identifier':
+      identifiers.add(node.name);
+      break;
     case 'Literal':
     case 'ThisExpression':
       break;

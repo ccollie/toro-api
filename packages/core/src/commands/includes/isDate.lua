@@ -1,3 +1,3 @@
 local function isDate(val)
-    return type(val) == 'object' and val['__type'] == 'date'
+    return type(val) == 'table' and type(val['getYear']) == 'function'
 end
