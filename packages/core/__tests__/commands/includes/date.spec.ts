@@ -1,7 +1,5 @@
-import { compileExpression } from '../../../src/lib/expr-utils';
 import { clearDb, createClient } from '../../factories';
-import { Command } from '../../../src/commands';
-import { calcSha1, loadIncludeScript } from '../utils';
+import { Command, loadIncludeScript, compileExpression } from '../utils';
 
 
 function quote(source: string): string {
@@ -38,11 +36,9 @@ describe('date.lua', () => {
   function createCommand(name = 'exprEval', scriptText?: string): Command {
     const numberOfKeys = 1;
     scriptText = scriptText ?? createTestScript(script);
-    const sha = calcSha1(scriptText);
 
     return {
       name,
-      sha,
       options: { numberOfKeys, lua: scriptText },
     };
   }

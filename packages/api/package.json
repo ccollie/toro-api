@@ -70,7 +70,7 @@
     "graphql-ez": "^0.13.5",
     "graphql-fields-list": "^2.2.4",
     "graphql-redis-subscriptions": "^2.4.0",
-    "graphql-scalars": "^1.13.1",
+    "graphql-scalars": "^1.13.6",
     "graphql-subscriptions": "^1.2.1",
     "pino": "^6.13.2",
     "pino-pretty": "^5.1.3"

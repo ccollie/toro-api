@@ -45,5 +45,5 @@
     }
   },
   "exclude": ["node_modules", "**/dist", "**/coverage", "**/.next"],
-  "include": ["packages", "examples", "internal", "jest.config.js"],
+  "include": ["packages", "examples", "internal", "jest.config.js"]
 }

@@ -1,9 +1,12 @@
-import crypto from 'crypto';
 import path from 'path';
 import { RedisClient } from 'bullmq';
-import { loadCommand as _loadCommand, loadScript } from '../../src/commands';
+import { loadCommand as _loadCommand, loadScript, Command } from '../../src/commands';
 const SCRIPT_PATH = path.normalize(path.join(__dirname, '../../src/commands'));
 const INCLUDE_PATH = path.join(SCRIPT_PATH, 'includes');
+
+import { compileExpression } from '../../src/lib/expr-utils';
+
+export { compileExpression, Command };
 
 function ensureExt(filename: string, ext = 'lua'): string {
     const foundExt = path.extname(filename);
@@ -25,8 +28,4 @@ async function loadCommand(client: RedisClient, fullPath: string): Promise<Redis
 export async function loadIncludeScript(name: string): Promise<string> {
     const fullPath = getFullPath(INCLUDE_PATH, name);
     return loadScript(fullPath);
-}
-
-export function calcSha1(data: string): string {
-    return crypto.createHash('sha1').update(data).digest('hex');
 }

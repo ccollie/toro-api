@@ -33,24 +33,24 @@ local DateOps = {
 }
 
 local TypeProps = {
-    ["string"] = {
-        ['length'] = function(value) return #value end
+    string = {
+        length = function(value) return #value end
     },
-    ["array"] = {
-        ['length'] = function(value) return #value end
+    array = {
+        length = function(value) return #value end
     },
-    ["table"] = {
-        ['length'] = function(value) return #value end
+    table = {
+        length = function(value) return #value end
     }
 }
 
 local ObjectTypeMethods = {
-    ["string"] = stringMethods,
-    ["array"] = arrayMethods,
-    ["table"] = objectMethods,
-    ["object"] = objectMethods,
-    ["number"] = {
-        ["toString"] = toStr,
+    string = stringMethods,
+    array = arrayMethods,
+    table = objectMethods,
+    object = objectMethods,
+    number = {
+        toString = toStr,
     }
 }
 
@@ -89,17 +89,16 @@ local EXPR_GLOBALS = {
 
 function ExprEval.evaluateArray(list, context, res)
     res = res or {}
-    local i = #res + 1
+    local len = #res
     local eval = ExprEval.evaluate
-    for _, v in ipairs(list) do
-        res[i] = eval(v, context)
-        i = i + 1
+    -- assumes non-sparse arrays
+    for i, v in ipairs(list) do
+        res[len + i] = eval(v, context)
     end
     return res
 end
 
 function ExprEval.getProp(object, key)
-    if (type(key) == 'number') then key = key + 1 end
     local val = object[key]
 
     debug(' getProp: key = ' .. toStr(key), ', val = ', toStr(val))
@@ -118,7 +117,8 @@ function ExprEval.getProp(object, key)
             debug('HERE 3: possibly a prop = ')
             local obj = TypeProps[t]
             if (obj) then
-                val = obj[key] and obj[key](object)
+                local propFn = obj[key]
+                val = propFn and propFn(object)
             end
         end
     end
@@ -139,13 +139,14 @@ function ExprEval.evalMember(node, context)
         debug('Segment = ' .. toStr(segment))
         local t = segment.type
         if (t == 'Literal') then
-            object = getProp(object, segment.value)
+            key = segment.value
         elseif t == 'Identifier' then
-            object = getProp(object, segment.name)
+            key = segment.name
         else
-            object = eval(segment, context)
+            key = eval(segment, context)
         end
 
+        object = (type(key) == 'number') and object[key+1] or getProp(object, key)
         if (object == nil) then
             return {saveObj, object, key}
         end

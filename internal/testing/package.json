@@ -31,7 +31,8 @@
     "jest": "^27.3.1",
     "ts-jest": "^27.0.7",
     "bob-ts": "^1.2.2",
-    "esbuild": "^0.13.13",
+    "esbuild": "^0.13.14",
+    "fs-extra": "^10.0.0",
     "bob-esbuild-cli": "^3.0.0"
   },
   "dependencies": {

@@ -24,16 +24,18 @@ if (jobName == '') then
 end
 
 local counter = 0
+local rcall = redis.call
+
 for _, jobId in ipairs(ids) do
     local jobKey = prefix .. jobId
     local isValidName = true
 
     if (jobName ~= nil) then
-        local name = redis.call('hget', jobKey, 'name')
+        local name = rcall('hget', jobKey, 'name')
         isValidName = (name == jobName)
     end
     if (isValidName) then
-        byteCount = byteCount + redis.call('memory', 'usage', jobKey)
+        byteCount = byteCount + rcall('memory', 'usage', jobKey)
         counter = counter + 1
     end
 end

@@ -7,7 +7,7 @@ import {
 } from './types';
 import { StatsClient } from './stats-client';
 import { QueueStats } from './queue-stats';
-import { QueueManager } from '../queues';
+import type { QueueManager } from '../queues';
 import { TimeSeries } from '../commands';
 import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
 import { HostManager } from '../hosts';

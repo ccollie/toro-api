@@ -6,7 +6,7 @@ module.exports = {
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    // project: 'tsconfig!.json',
+    // project: 'tsconfig.json',
     ecmaVersion: 2020, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module',
     ecmaFeatures: {

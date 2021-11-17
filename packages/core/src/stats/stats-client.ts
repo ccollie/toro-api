@@ -24,6 +24,14 @@ export interface RangeOpts {
   count?: number;
 }
 
+interface StatsClientArgs {
+  host: string;
+  queueId: string;
+  queue: Queue;
+  writer: WriteCache;
+  client?: RedisClient;
+}
+
 /**
  * Base class for manipulating and querying collected queue stats in redis
  */

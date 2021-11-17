@@ -1,4 +1,4 @@
-import {compileExpression} from '../../src/lib/expr-utils';
+import { compileExpression } from './utils';
 import { clearDb, createClient, createQueue } from '../factories';
 import { Job, Queue } from 'bullmq';
 import { Command, loadCommand, Scripts } from '../../src/commands';
@@ -56,7 +56,7 @@ function quote(source: string): string {
   return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
 }
 
-let isPrimitive = (val) => {
+const isPrimitive = (val: unknown) => {
   if (val === null) {
     return true;
   }
@@ -94,7 +94,7 @@ describe('filterJobs', () => {
       return { name: 'default', data: item };
     });
     await queue.addBulk(bulkData);
-    const {compiled: compiled } = compileExpression(criteria);
+    const { compiled } = compileExpression(criteria);
     const { jobs } = await Scripts.getJobsByFilter(
       queue,
       'waiting',
@@ -134,7 +134,7 @@ describe('filterJobs', () => {
     const { compiled } = compileExpression(expression);
     const criteria = JSON.stringify(compiled);
     const data = context ? JSON.stringify(context) : '';
-    let val = await (client as any).exprEval(criteria, data);
+    const val = await (client as any).exprEval(criteria, data);
     if (val !== null && val !== undefined) {
       return JSON.parse(val);
     }
@@ -240,18 +240,6 @@ describe('filterJobs', () => {
 
     await queue.add('default', data);
     await check(filter, true);
-  }
-
-  function testMethod(name, cases) {
-    test.each(cases)(`${name}: %p`, async (value, args, expected) => {
-      await testMethodOnce(name, value, args, expected);
-    });
-  }
-
-  function testFunction(name, cases) {
-    test.each(cases)(`${name}: %p`, async (args, expected) => {
-      await testFunctionOnce(name, args, expected);
-    });
   }
 
   describe('Basic field access', () => {

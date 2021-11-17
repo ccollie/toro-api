@@ -25,22 +25,14 @@ local ADMIN_KEYS = {
     ['repeat'] = 1,
 }
 
-local function getIdPart(key, prefix)
-    local sub = key:sub(#prefix + 1)
-    if sub:find(':') == nil and not ADMIN_KEYS[sub] then
-        return sub
-    end
-    return nil
-end
-
 local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
-    local getIdPart = getIdPart
     local rcall = redis.call
 
     count = tonumber(count or 25)
     local scanResult
     local match = keyPrefix .. '*'
     local fullScan = false
+    local prefixLen = #keyPrefix
 
     local itemCount = 0;
 
@@ -81,6 +73,15 @@ local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
     end
 
     --- debug('Here. Key = ', redisKey, ' keyType = ', keyType, ' fullscan = ', fullScan, ' scannedIds = ', scannedJobIds)
+
+    local function getIdPart(key)
+        local prefixLen = prefixLen
+        local sub = key:sub(prefixLen + 1)
+        if sub:find(':') == nil and not ADMIN_KEYS[sub] then
+            return sub
+        end
+        return nil
+    end
 
     if (fullScan) then
         -- does a keyspace as opposed to list scan. Filter out non-ids

@@ -1,2 +1,2 @@
 export * from './ts-jest-hooks';
-export * from './jest-config';
+export * from 'internal/testing/src/jestConfig';

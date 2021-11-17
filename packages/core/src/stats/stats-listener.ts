@@ -6,7 +6,8 @@ import {
   roundUp,
   isNumber,
 } from '@alpen/shared';
-import { QueueListener, QueueManager, JobFinishedEventData } from '../queues';
+import { QueueListener, JobFinishedEventData } from '../queues';
+import type { QueueManager } from '../queues/queue-manager';
 import { QueueStats } from './queue-stats';
 import { systemClock, Clock } from '../lib';
 import { isAfter, toDate } from 'date-fns';

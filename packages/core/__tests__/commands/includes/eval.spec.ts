@@ -1,8 +1,6 @@
-import { compileExpression } from '../../../src/lib/expr-utils';
 import { clearDb, createClient } from '../../factories';
-import { Command } from '../../../src/commands';
 import ms from 'ms';
-import { calcSha1, loadIncludeScript } from '../utils';
+import { loadIncludeScript, compileExpression, Command } from '../utils';
 
 const Person = {
   _id: '100',
@@ -53,62 +51,50 @@ const Person = {
 };
 
 function quote(source: string): string {
-  return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
+  return "'" + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, "$1\\'") + "'";
 }
 
-function createTestScript(include: string, addGlobals = true): string {
-  const globals = addGlobals ? `
-      if (context and #context > 0) then
-        for k, v in pairs(context) do
-            -- don't overwrite existing globals
-            if (not EXPR_GLOBALS[k]) then
-                EXPR_GLOBALS[k] = v
-            end
-        end
-    end
-    context = EXPR_GLOBALS
-    ` : '';
-
+function createTestScript(include: string): string {
   return `
     ${include}
 
     local expression = cjson.decode(ARGV[1])
     local context = ARGV[2]
-    if (type(context) == 'string' and #context > 0) then
-      context = cjson.decode(ARGV[2])
-    else
-      context = {}  
+
+    if (type(context) == 'string') and #context > 0 then
+      context = cjson.decode(context)
+    else 
+      context = {}
     end
-        
-    return ExprEval.evaluate(criteria, context)
-  `
+    
+    return evalExpression(expression, context)
+  `;
 }
 
+let isPrimitive = (val) => {
+  if (val === null) {
+    return true;
+  }
+  return !(typeof val == 'object' || typeof val == 'function');
+};
 
 describe('eval.lua', () => {
   let client;
-  let script: string;
+  let command: Command;
 
   beforeAll(async () => {
-    script = await loadIncludeScript('eval.lua');
-  });
+    const script = await loadIncludeScript('eval.lua');
+    const lua = createTestScript(script);
 
-  function createCommand(name = 'exprEval', scriptText?: string): Command {
-    const numberOfKeys = 1;
-    scriptText = scriptText ?? createTestScript(script);
-    const sha = calcSha1(scriptText);
-
-    return {
-      name,
-      sha,
-      options: { numberOfKeys, lua: scriptText },
+    command = {
+      name: 'exprEval',
+      options: { numberOfKeys: 0, lua },
     };
-  }
+  });
 
   beforeEach(async () => {
     client = await createClient(null, false);
     await clearDb(client);
-    const command = createCommand();
     client.defineCommand(command.name, command.options);
   });
 
@@ -117,26 +103,62 @@ describe('eval.lua', () => {
     return client.quit();
   });
 
-  async function evalExpression(expression: string, context?: Record<string, unknown>): Promise<unknown> {
-    const { compiled: compiled } = compileExpression(expression);
+  async function evalExpression(
+    expression: string,
+    context?: Record<string, unknown>,
+  ): Promise<unknown> {
+    const { compiled } = compileExpression(expression);
     const criteria = JSON.stringify(compiled);
     const data = context ? JSON.stringify(context) : '';
-    return (client as any).exprEval(criteria, data)
+    const val = await (client as any).exprEval(criteria, data);
+    if (val !== null && val !== undefined) {
+      return JSON.parse(val);
+    }
+    return val;
   }
 
   async function checkExpression(
     expression: string,
-    context: Record<string, unknown> | null,
     expectedValue: any,
+    context: Record<string, unknown> | null = {},
     expectMatch = true,
   ) {
-    const criteria = `(${expression}) == ${expectedValue}`;
     const res = await evalExpression(expression, context);
-    if (expectMatch) {
-      expect(res).toBe(expectedValue);
-    } else {
-      expect(res).not.toBe(expectedValue);
+
+    if (expectedValue === null) {
+      expect(res).toBeNull();
+      return;
     }
+    if (isPrimitive(expectedValue)) {
+      if (expectMatch) {
+        expect(res).toBe(expectedValue);
+      } else {
+        expect(res).not.toBe(expectedValue);
+      }
+    } else {
+      if (Array.isArray(expectedValue)) {
+        if (expectMatch) {
+          expect(res).toStrictEqual(expectedValue);
+        } else {
+          expect(res).not.toStrictEqual(expectedValue);
+        }
+      } else {
+        if (expectMatch) {
+          expect(res).toMatchObject(expectedValue);
+        } else {
+          expect(res).not.toMatchObject(expectedValue);
+        }
+      }
+    }
+  }
+
+  async function checkNumberExpression(
+    expression: string,
+    expected: number,
+    context?: Record<string, any>,
+  ) {
+    const res = await evalExpression(expression, context);
+    expect(res).toBeCloseTo(expected, 12);
   }
 
   function testOperator(operator, cases) {
@@ -155,7 +177,7 @@ describe('eval.lua', () => {
       }
 
       const context = { data };
-      await checkExpression(filter, context, expected);
+      await checkExpression(filter, expected, context);
     });
   }
 
@@ -187,12 +209,12 @@ describe('eval.lua', () => {
     };
     const expression = `value.${formatFunction(name, args)}`;
 
-    await checkExpression(expression, data, expected);
+    await checkExpression(expression, expected, data);
   }
 
   async function testFunctionOnce(name, args, expected) {
     const expression = formatFunction(name, args);
-    await checkExpression(expression, null, expected);
+    await checkExpression(expression, expected, null);
   }
 
   function testMethod(name, cases) {
@@ -209,16 +231,14 @@ describe('eval.lua', () => {
 
   describe('Basic field access', () => {
     it('can do member access', async () => {
-      const context = { user: Person };
-      await checkExpression('user.id != null', context, 1);
+      await checkExpression('user._id != null', true, { user: Person });
     });
   });
 
   describe('Binary Operators', () => {
-
     async function check(expression: string): Promise<void> {
       const context = { user: Person };
-      return checkExpression(expression, context, 1);
+      return checkExpression(expression, true, context);
     }
 
     test('==', async () => {
@@ -266,39 +286,38 @@ describe('eval.lua', () => {
         await check('(user.missing_value ?? 100) == 100');
       });
 
-      describe('returns falsey non-null values', () => {
-        const cases = [
-          [0, 2, 0],
-          ['', 5, ''],
-        ];
-        testOperator('??', cases);
+      test('returns falsy non-null values', async () => {
+        await checkExpression('0 ?? 2', 0);
+        // await checkExpression('"" ?? 5', '');
       });
     });
-
   });
 
   describe('Unary operators', () => {
     const context = { user: Person };
     test('!', async () => {
-      await checkExpression('!user.isActive', context, 0);
+      await checkExpression('!user.isActive', false, context);
     });
 
     test('!!', async () => {
-      await checkExpression('!!user.languages.programming', context, 1);
-      await checkExpression('!!user.missing_value', context, 0);
+      await checkExpression('!!user.languages.programming', true, context);
+      await checkExpression('!!user.missing_value', false, context);
     });
   });
 
   describe('Logical Operators', function () {
     const context = { user: Person };
 
-    async function check(expression: string, returnsTrue = true): Promise<void> {
-      return checkExpression(expression, context, returnsTrue ? 1 : 0);
+    async function check(
+      expression: string,
+      returnsTrue = true,
+    ): Promise<void> {
+      return checkExpression(expression, returnsTrue, context);
     }
 
     describe('&&', () => {
       test('can use conjunction true && true', async () => {
-        await check('user.firstName == "Francis" && user.name == "default"');
+        await check('user.firstName == "Francis" && user.lastName == "Asante"');
       });
 
       test('true && false', async () => {
@@ -322,29 +341,20 @@ describe('eval.lua', () => {
 
     describe('||', () => {
       test('true OR true', async () => {
-        await check(
-          'user.firstName == "Francis" || user.lastName =~ "^%a.+e"',
-        );
+        await check('user.firstName == "Francis" || user.lastName =~ "^%a.+e"');
       });
 
       test('true || false', async () => {
-        await check(
-          'user.firstName == "Francis" || user.lastName == "Amoah"',
-        );
+        await check('user.firstName == "Francis" || user.lastName == "Amoah"');
       });
 
       test('false OR true', async () => {
-        await check(
-          'user.firstName == "Enoch" || user.lastName == "Asante"',
-        );
+        await check('user.firstName == "Enoch" || user.lastName == "Asante"');
       });
     });
 
     test('false OR false', async () => {
-      await check(
-        'user.firstName == "Enoch" || user.age != null',
-        false,
-      );
+      await check('user.firstName == "Enoch" || user.age != null', false);
     });
   });
 
@@ -364,42 +374,37 @@ describe('eval.lua', () => {
         },
       };
 
-      async function testAccessor(query, expected = true): Promise<void> {
-        const context = { data };
-        return checkExpression(query, context, expected);
-      }
+      const context = { data };
 
       // eslint-disable-next-line max-len
       test('deep matching on nested value', async () => {
-        await testAccessor('data.key0.key1[0][0].key2.a == "value2"');
+        await checkExpression('data.key0.key1[0][0].key2.a', 'value2', context);
       });
 
       test('should match with full array index selector to nested value', async () => {
-        await testAccessor('data.key0.key1[1].key2 == "value"');
+        await checkExpression('data.key0.key1[1].key2', 'value', context);
       });
 
       test('should match shallow nested value with array index selector', async () => {
-        await testAccessor('data.key0.key1[1].key2 == "value"');
+        await checkExpression('data.key0.key1[1].key2', 'value', context);
       });
     });
   });
 
-
   describe('Ternary Operator', () => {
-
     test('supports ternary operator', async () => {
-      const conditional = '(user.lowScore < user.highScore) ? 5 : 25';
-      await checkExpression(conditional, { user: Person }, 5);
+      const context = { score: 35, highScore: 20 };
+      const conditional = '(score > highScore) ? "champ" : "runner-up"';
+      await checkExpression(conditional, 'champ', context);
     });
 
     test('handles complex expressions', async () => {
-
       const data = { _id: 1, item: 'binder', qty: 100, price: 12 };
 
-      const expression = 'data.qty >= 100 ? (data.price / 2) : (data.price / 4)';
-      const expected = data.qty >= 100 ? (data.price / 2) : (data.price / 4);
-      await checkExpression(expression, { data }, expected);
-
+      const expression =
+        'data.qty >= 100 ? (data.price / 2) : (data.price / 4)';
+      const expected = data.qty >= 100 ? data.price / 2 : data.price / 4;
+      await checkExpression(expression, expected, { data });
     });
   });
 
@@ -451,15 +456,25 @@ describe('eval.lua', () => {
 
   describe('Strings', () => {
     test('length', async () => {
-      await checkExpression('user.title.length', { user: Person }, Person.title.length );
+      await checkExpression('user.title.length', Person.title.length, {
+        user: Person,
+      });
     });
 
     test('toLowerCase', async () => {
-      await testMethodOnce('toLowerCase', 'PE1KIeT$', 'pe1kiet$');
+      await checkExpression(
+        'user.firstName.toLowerCase()',
+        Person.firstName.toLowerCase(),
+        { user: Person },
+      );
     });
 
     test('toUpperCase', async () => {
-      await checkExpression('user.firstName.toUpperCase()', { user: Person }, Person.firstName.toUpperCase() );
+      await checkExpression(
+        'user.firstName.toUpperCase()',
+        Person.firstName.toUpperCase(),
+        { user: Person },
+      );
     });
 
     describe('startsWith', () => {
@@ -513,14 +528,14 @@ describe('eval.lua', () => {
 
     describe('substring', () => {
       const cases = [
-        ['hello', -1, ''],
-        ['hello', [1, -2], 'ello'],
+        ['hello', -1, 'o'],
+        ['hexagram', -4, 'gram'],
         ['abcde', [1, 2], 'bc'],
-        ['Hello World!', [6, 5], 'World'],
-        ['cafeteria', [0, 5], 'cafet'],
-        ['cafeteria', [5, 4], 'eria'],
-        ['cafeteria', [7, 3], 'ia'],
-        ['cafeteria', [3, 1], 'e'],
+        ['Hello World!', [6, 10], 'World'],
+        ['cafeteria', [0, 4], 'cafet'],
+        ['mandioca', [1, -4], 'andi'],
+        ['cafeteria', [3, 3], 'e'],
+        ['Hello World!', [-11, -8], 'ello'],
       ];
       testMethod('substring', cases);
     });
@@ -571,30 +586,81 @@ describe('eval.lua', () => {
     });
 
     describe('trim', () => {
-      const cases = [
-        ['  \n good  bye \t  ', 'good  bye'],
-        [' ggggoodbyeeeee', 'ge', ' ggggoodby'],
-        ['    ggggoodbyeeeee"', ' ge', 'oodby'],
-      ];
-      testMethod('trim', cases);
+      it('trims space chars by default', async () => {
+        const value = '  \n good  bye \t  ';
+        const context = { value };
+        await checkExpression('value.trim()', 'good  bye', context);
+      });
+
+      it('trims chars passed as parameter', async () => {
+        const value = ' ggggoodbyeeeee';
+        const context = { value };
+        await checkExpression('value.trim("ge")', ' ggggoodby', context);
+        await checkExpression('value.trim(" ge")', 'oodby', {
+          value: '    ggggoodbyeeeee'
+        });
+      });
     });
 
     describe('trimStart', () => {
-      const cases = [
-        ['  \n good  bye \t  ', 'good  bye \t  '],
-        [' ggggoodbyeeeee', 'ge', ' ggggoodbyeeeee'],
-        ['    ggggoodbyeeeee ', ' gd', 'oodbyeeeee '],
-      ];
-      testMethod('trimStart', cases);
+      it('trims space chars by default', async () => {
+        const value = '  \t\n good  bye \t  ';
+        const context = { value };
+        await checkExpression('value.trimStart()', 'good  bye \t  ', context);
+      });
+
+      it('trims chars passed as parameter', async () => {
+        await checkExpression('value.trimStart("ge")', ' ggggoodbyeeeee', {
+          value: ' ggggoodbyeeeee'
+        });
+        await checkExpression('value.trimStart(" gd")', 'oodbyeeeee ', {
+          value: '    ggggoodbyeeeee '
+        });
+      });
     });
 
     describe('trimEnd', () => {
-      const cases = [
-        ['  \n good  bye \t  ', '  \n good  bye'],
-        [' ggggoodbyeeeee', 'ge', ' ggggoodby'],
-        [' ggggoodbyeeeee    ', 'e ', ' ggggoodby'],
-      ];
-      testMethod('trimEnd', cases);
+      it('trims space chars by default', async () => {
+        const value = '  \n good  bye \n\t  ';
+        const context = { value };
+        await checkExpression('value.trimEnd()', '  \n good  bye', context);
+      });
+
+      it('trims chars passed as parameter', async () => {
+        await checkExpression('value.trimEnd("ge")', ' ggggoodby', {
+          value: ' ggggoodbyeeeee'
+        });
+        await checkExpression('value.trimEnd("e ")', ' ggggoodby', {
+          value: ' ggggoodbyeeeee    '
+        });
+      });
+    });
+
+    describe('slice', () => {
+      const text = 'The quick brown fox jumps over the lazy dog.';
+      const context = { text };
+
+      it('works with only a starting index', async () => {
+        await checkExpression(
+          'text.slice(31)',
+          'the lazy dog.',
+          context,
+        );
+      });
+
+      it('works with a start and end index', async () => {
+        await checkExpression(
+          'text.slice(4, 19)',
+          'quick brown fox',
+          context,
+        );
+      });
+
+      it('handles negative indices', async () => {
+        await checkExpression('text.slice(-4)', 'dog.', context);
+
+        await checkExpression('text.slice(-9, -5)', 'lazy', context);
+      });
     });
   });
 
@@ -606,7 +672,7 @@ describe('eval.lua', () => {
       const expected = date[method]();
       const context = { data: { date, expected } };
       const expression = `Date.parse(data.date).${method}()`;
-      await checkExpression(expression, context, expected);
+      await checkExpression(expression, expected, context);
     }
 
     async function validateDate(date = SampleDate): Promise<void> {
@@ -625,15 +691,15 @@ describe('eval.lua', () => {
       it('converts an RFC-3339 date string', async () => {
         const dateValue = SampleDate.getTime();
         const context = { data: { date: SAMPLE_DATE_STRING, dateValue } };
-        const condition = 'Date.parse(user.date) != null';
-        await checkExpression(condition, context, true);
+        const condition = 'Date.parse(data.date) != null';
+        await checkExpression(condition, true, context);
       });
 
       it('constructs a date from a UTC timestamp', async () => {
         const dateValue = SampleDate.getTime();
         const context = { data: { date: SAMPLE_DATE_STRING, dateValue } };
-        const condition = 'Date.parse(user.dateValue) != null';
-        await checkExpression(condition, context, true);
+        const condition = 'Date.parse(data.dateValue) != null';
+        await checkExpression(condition, true, context);
       });
     });
 
@@ -683,27 +749,27 @@ describe('eval.lua', () => {
       const context = { user: Person };
 
       test('"object"', async () => {
-        await checkExpression('typeof user', context, 'object');
+        await checkExpression('typeof user', 'object', context);
       });
 
       test('"number"', async () => {
-        await checkExpression('typeof user.jobs', context, 'number');
+        await checkExpression('typeof user.jobs', 'number', context);
       });
 
       test('"array"', async () => {
-        await checkExpression('typeof user.grades', context, 'array');
+        await checkExpression('typeof user.grades', 'array', context);
       });
 
       test('"boolean"', async () => {
-        await checkExpression('typeof user.isActive', context, 'boolean');
+        await checkExpression('typeof user.isActive', 'boolean', context);
       });
 
       test('"string"', async () => {
-        await checkExpression('typeof user.firstName', context, 'string');
+        await checkExpression('typeof user.firstName', 'string', context);
       });
 
       test('"null"', async () => {
-        await checkExpression('typeof user.retirement', context, 'null');
+        await checkExpression('typeof user.retirement', 'null', context);
       });
     });
 
@@ -746,11 +812,22 @@ describe('eval.lua', () => {
     describe('parseInt', () => {
       const cases = [
         [5, 5],
-        ['"100"', 100],
+        ['100', 100],
         [500, 500],
-        ['"-487"', -487],
+        ['-487', -487],
       ];
       testFunction('parseInt', cases);
+    });
+
+    describe('parseFloat', () => {
+      const cases = [
+        ['10.0', 10],
+        [25, 25],
+        ['4.99', 4.99],
+        ['-487', -487],
+        ['.72', 0.72],
+      ];
+      testFunction('parseFloat', cases);
     });
 
     describe('isNumber', () => {
@@ -764,22 +841,11 @@ describe('eval.lua', () => {
       testFunction('isNumber', cases);
     });
 
-    describe('parseInt', () => {
-      const cases = [
-        ['"10.0"', 10],
-        [25, 25],
-        ['"4.99"', 4.99],
-        ['"-487"', -487],
-        ['".72"', 0.72],
-      ];
-      testFunction('parseFloat', cases);
-    });
-
     test('isArray', async () => {
       const context = { user: Person };
-      await checkExpression('isArray(user.grades)', context, true);
-      await checkExpression('isArray(user.date)', context, false);
-      await checkExpression('isArray(user.firstName)', context, false);
+      await checkExpression('isArray(user.grades)', true, context);
+      await checkExpression('isArray(user.date)', false, context);
+      await checkExpression('isArray(user.firstName)', false, context);
     });
   });
 
@@ -787,52 +853,202 @@ describe('eval.lua', () => {
     const context = { user: Person };
 
     test('length', async () => {
-      await checkExpression('user.languages.programming.length', context, 7);
+      await checkExpression('user.languages.programming.length', 7, context);
     });
 
-    describe('max', () => {
-      const cases = [
-        [1, 1],
-        [[null], null],
-        [[1.5, 3], 3],
-        [[-1, null, '13', 4], 4],
-        [[0, 0.005], 0.005],
-        [[-67, 1], 1],
-        [[0, 1, 19, -45], 19],
-      ];
-      testFunction('Math.max', cases);
+    describe('push', () => {
+      it('handles single items', async () => {
+        const languages = [...Person.languages.programming, 'Rust'];
+
+        await checkExpression(
+          'user.languages.programming.push("Rust")',
+          languages,
+          context,
+        );
+      });
+
+      it('handles multiple args', async () => {
+        const languages = [
+          ...Person.languages.programming,
+          'Rust',
+          'Go',
+          'Solidity',
+        ];
+        await checkExpression(
+          'user.languages.programming.push("Rust", "Go", "Solidity")',
+          languages,
+          context,
+        );
+      });
+
+      it('handles nulls', async () => {
+        const languages = [...Person.languages.programming, null];
+        await checkExpression(
+          'user.languages.programming.push(null)',
+          languages,
+          context,
+        );
+      });
     });
 
-    describe('min', () => {
-      const cases = [
-        [4, 4],
-        [[null], null],
-        [[1.5, 3], 1.5],
-        [[-1, null, '-13', 4], -1],
-        [[0, 0.005], 0],
-        [[-20, 71], -20],
-        [[0, 1, 3, 19, -45], -45],
-      ];
-      testFunction('Math.min', cases);
+    describe('pop', () => {
+      it('removes an item from the end of an array', async () => {
+        const languages = [...Person.languages.programming];
+        const expected = languages.pop();
+        await checkExpression(
+          'user.languages.programming.pop()',
+          expected,
+          context,
+        );
+      });
+
+      it('returns null for an empty list', async () => {
+        const list = [];
+        await checkExpression('list.pop()', null, { list });
+      });
     });
 
-    test('includes', async () => {
-      await checkExpression('user.languages.programming.includes("Python")', context, true);
+    describe('includes',  () => {
+      it('finds items in the array', async () => {
+        await checkExpression(
+          'user.languages.programming.includes("Python")',
+          true,
+          context,
+        );
+      });
+
+      it('does NOT find non-existent items', async () => {
+        await checkExpression(
+          'user.languages.programming.includes("non-existent")',
+          false,
+          context,
+        );
+      });
     });
 
     test('includesAll', async () => {
-      await checkExpression('user.languages.spoken.includesAll(["french", "english"])', context, true);
+      await checkExpression(
+        'user.languages.spoken.includesAll(["french", "english"])',
+        true,
+        context,
+      );
     });
 
     test('reverse', async () => {
-      const expected = [...Person.languages.programming].reverse().map(quote);
+      const expected = [...Person.languages.programming].reverse();
       await checkExpression(
-        'user.languages.programming.reverse == [' +
-          expected.join(',') +
-          ']',
-          context,
-          true
+        'user.languages.programming.reverse()',
+        expected,
+        context,
       );
+    });
+
+    describe('max', () => {
+      test('finds the largest value in an array', async () => {
+        const max = Person.circles.school.reduce((res, item) => {
+          return item > res ? item : res;
+        }, '');
+
+        await checkExpression('user.circles.school.max()', max, context);
+      });
+
+      test('returns null for an empty list', async () => {
+        const context = { list: [] };
+        await checkExpression('list.max()', null, context);
+      });
+
+      test('returns null if any value is null', async () => {
+        const context = { list: [1, 5, 14, null, 65] };
+        await checkExpression('list.max()', null, context);
+      });
+    });
+
+    describe('min', () => {
+      it('returns the smallest item in the list', async () => {
+        const min = Person.circles.school.reduce((res, item) => {
+          return item < res ? item : res;
+        }, 'zzzzzzzzzzzzzzz');
+
+        await checkExpression('user.circles.school.min()', min, context);
+      });
+
+      it('returns null for an empty list', async () => {
+        const context = { list: [] };
+        await checkExpression('list.max()', null, context);
+      });
+
+      it('returns null if any value is null', async () => {
+        const context = { list: [1, 5, 14, null, 65] };
+        await checkExpression('list.min()', null, context);
+      });
+    });
+
+    describe('join', function () {
+      it('uses "," as a separator by default', async () => {
+        const expected = Person.circles.school.join(',');
+
+        await checkExpression('user.circles.school.join()', expected, context);
+      });
+
+      it('joins with a separator', async () => {
+        const expected = Person.circles.school.join('#');
+
+        await checkExpression(
+          'user.circles.school.join("#")',
+          expected,
+          context,
+        );
+      });
+    });
+
+    describe('slice', () => {
+      const animals = ['ant', 'bison', 'camel', 'duck', 'elephant'];
+      const context = { animals };
+
+      it('works with only a starting index', async () => {
+        await checkExpression(
+          'animals.slice(2)',
+          ['camel', 'duck', 'elephant'],
+          context,
+        );
+      });
+
+      it('works with a start and end index', async () => {
+        await checkExpression(
+          'animals.slice(2, 4)',
+          ['camel', 'duck'],
+          context,
+        );
+
+        await checkExpression(
+          'animals.slice(1, 5)',
+          ['bison', 'camel', 'duck', 'elephant'],
+          context,
+        );
+      });
+
+      it('handles negative indices', async () => {
+        await checkExpression(
+          'animals.slice(-2)',
+          ['duck', 'elephant'],
+          context,
+        );
+
+        await checkExpression(
+          'animals.slice(2, -1)',
+          ['camel', 'duck'],
+          context,
+        );
+      });
+    });
+
+    describe('matches', () => {
+      test('can match against array property', async () => {
+        const data = {
+          l1: { tags: ['tag1', 'tag2', 'xargs'] }
+        };
+        await checkExpression('l1.tags =~ "^tag*"', true, data);
+      });
     });
   });
 
@@ -841,18 +1057,24 @@ describe('eval.lua', () => {
       const cases = [
         [null, null],
         [-1, 1],
+        [0, 0],
         [1, 1],
       ];
       testFunction('Math.abs', cases);
     });
 
     describe('acos', () => {
-      const cases = [
-        [null, null],
-        [0.5, 1.0471975511965979],
-        [1, 0],
-      ];
-      testFunction('Math.acos', cases);
+      it('handles null', async () => {
+        await checkExpression('Math.acos(null)', null);
+      });
+
+      it('0.5', async () => {
+        await checkNumberExpression('Math.acos(0.5)', 1.0471975511965979);
+      });
+
+      it('1.0', async () => {
+        await checkExpression('Math.acos(1.0)', 0);
+      });
     });
 
     describe('ceil', () => {
@@ -874,12 +1096,17 @@ describe('eval.lua', () => {
     });
 
     describe('sqrt', () => {
-      const cases = [
-        [NaN, NaN],
-        [25, 5],
-        [30, 5.477225575051661],
-      ];
-      testFunction('Math.sqrt', cases);
+      it('null', async () => {
+        await checkExpression('Math.sqrt(null)', null);
+      });
+
+      it('25', async () => {
+        await checkExpression('Math.sqrt(25)', 5);
+      });
+
+      it('30', async () => {
+        await checkNumberExpression('Math.sqrt(30)', 5.477225575051661);
+      });
     });
 
     describe('round', () => {
@@ -938,6 +1165,47 @@ describe('eval.lua', () => {
       ];
       testFunction('Math.trunc', cases);
     });
+
+    describe('max', () => {
+      const cases = [
+        [1, 1],
+        [[null], null],
+        [[1.5, 3], 3],
+        [[-1, null, '13', 4], null],
+        [[0, 0.005], 0.005],
+        [[-67, 1], 1],
+        [[0, 1, 19, -45], 19],
+      ];
+      testFunction('Math.max', cases);
+    });
+
+    describe('min', () => {
+      const cases = [
+        [4, 4],
+        [[null], null],
+        [[1.5, 3], 1.5],
+        [[-1, null, '-13', 4], null],
+        [[0, 0.005], 0],
+        [[-20, 71], -20],
+        [[0, 1, 3, 19, -45], -45],
+      ];
+      testFunction('Math.min', cases);
+    });
+
+    describe('avg', () => {
+      const cases = [
+        [4, 4],
+        [[null], null],
+        [[1.5, 3], 2.25],
+        [[-1, null, '-13', 4], null],
+        [['200', 300,  '100', 400], 250],
+        [[0, 0.005], 0.0025],
+        [[-20, 71, 32, 21], 26],
+        [[0, 1, 3, 19, -45], -4.4],
+      ];
+      testFunction('Math.avg', cases);
+    });
+
   });
 
   describe('JSON', () => {
@@ -953,12 +1221,13 @@ describe('eval.lua', () => {
         };
         const asString = JSON.stringify(data);
         const context = { test: asString, expected: data };
-        await checkExpression('JSON.parse(test) == expected', context, 1);
+        const actual = await evalExpression('JSON.parse(test)', context);
+        expect(actual).toMatchObject(data);
       });
 
       it('returns null for an invalid string', async () => {
         const context = { test: 'invalid' };
-        await checkExpression('JSON.parse(test)', context, null);
+        await checkExpression('JSON.parse(test)', null, context);
       });
     });
 
@@ -972,14 +1241,17 @@ describe('eval.lua', () => {
           arr: ['this', 1, true, 'thing'],
           obj: { a: 1, b: 1 },
         };
-        const asString = JSON.stringify(data);
         const context = { test: data };
-        await checkExpression('JSON.parse(test)', context, asString);
+        const res = await evalExpression('JSON.stringify(test)', context);
+        const actual = JSON.parse(res as string);
+        expect(actual).toMatchObject(data);
       });
 
-      it('returns null for a non object', async () => {
-        const context = { test: 'invalid' };
-        await checkExpression('JSON.parse(test)', context, null);
+      it('converts non objects', async () => {
+        const context = { str: 'invalid', num: 1.025, bool: true };
+        await checkExpression('JSON.stringify(str)', '"invalid"', context);
+        await checkExpression('JSON.stringify(num)', '1.025', context);
+        await checkExpression('JSON.stringify(bool)', 'true', context);
       });
     });
   });
@@ -995,8 +1267,11 @@ describe('eval.lua', () => {
           arr: ['this', 1, true, 'thing'],
           obj: { a: 1, b: 1 },
         };
-        const context = { test: data, expected: Object.keys(data) };
-        await checkExpression('test.getOwnProperties() == expected', context, 1);
+        const context = { test: data };
+        const expected = Object.keys(data).sort();
+        const res = await evalExpression('test.getOwnProperties()', { context });
+        const p = (res as Array<string>).sort();
+        expect(p).toStrictEqual(expected);
       });
     });
 
@@ -1010,8 +1285,7 @@ describe('eval.lua', () => {
           arr: ['this', 1, true, 'thing'],
           obj: { a: 1, b: 1 },
         };
-        const context = { data };
-        await checkExpression('typeof user.value.toString()', data, 'string');
+        await checkExpression('typeof data.toString()', 'string', { data });
       });
     });
   });
@@ -1033,10 +1307,10 @@ describe('eval.lua', () => {
           { item: 'VWZ2', qty: 180, expected: -1 },
         ];
         // todo: test with other types (like strings)
-        await checkExpression('cmp(300, 250)', null, 1);
-        await checkExpression('cmp(200, 250)', null, -1);
-        await checkExpression('cmp(721, 721)', null, 0);
-        await checkExpression('cmp(180, 250)', null, -1);
+        await checkExpression('cmp(300, 250)', 1);
+        await checkExpression('cmp(200, 250)', -1);
+        await checkExpression('cmp(721, 721)', 0);
+        await checkExpression('cmp(180, 250)', -1);
       });
     });
 
@@ -1046,23 +1320,9 @@ describe('eval.lua', () => {
         [0, false],
         ['', true],
         ['v', false],
-        [0, 0],
+        [0, false],
       ];
       testFunction('isEmpty', cases);
-    });
-  });
-
-  describe('matches', () => {
-    test('can match against non-array property', async () => {
-      const data = { l1: [{ tags: 'tag1' }, { notags: 'yep' }] };
-      await checkExpression('l1.tags =~ ".*tag.*"', data, true);
-    });
-
-    test('can match against array property', async () => {
-      const data = {
-        l1: [{ tags: ['tag1', 'tag2'] }, { tags: ['tag66'] }],
-      };
-      await checkExpression('l1.tags =~ "^tag*"', data, true);
     });
   });
 });

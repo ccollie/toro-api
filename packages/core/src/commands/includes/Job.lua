@@ -5,8 +5,8 @@
 local JOB_JSON_FIELDS = {
     data = 1,
     opts = 1,
-    returnValue = 1,
-    stackTrace = 1
+    returnvalue = 1,
+    stacktrace = 1
 }
 
 local JOB_NUMERIC_FIELDS = {
@@ -80,8 +80,7 @@ function Job:new(key, id)
         local hash = { id = id }
         for i = 1, len, 2 do
             local k = jobHash[i]
-            local v = jobHash[(i+1)]
-            hash[k] = v
+            hash[k] = jobHash[i+1]
         end
         jobHash = hash
     end

@@ -89,8 +89,8 @@
     "@datadog/sketches-js": "^1.0.4",
     "@hapi/boom": "^9.1.4",
     "@stoplight/better-ajv-errors": "^0.2.0",
-    "ajv": "^8.6.3",
-    "bullmq": "^1.52.0",
+    "ajv": "^8.8.1",
+    "bullmq": "^1.54.0",
     "core-js": "^3.19.1",
     "cronstrue": "^1.122.0",
     "date-fns": "^2.25.0",
@@ -116,7 +116,7 @@
     "nconf": "^0.11.3",
     "node-error-formatter": "^1.0.4",
     "nodejs-snowflake": "^1.6.2",
-    "nodemailer": "^6.7.0",
+    "nodemailer": "^6.7.1",
     "p-all": "^3.0.0",
     "p-map": "4.0.0",
     "p-queue": "^6.6.2",
@@ -134,7 +134,7 @@
     "tslib": "^2.3.1"
   },
   "peerDependencies": {
-    "esbuild": ">=0.13.13",
+    "esbuild": ">=0.13.14",
     "typescript": ">=4.4.4"
   },
   "engines": {
