@@ -51,7 +51,7 @@ const Person = {
 };
 
 function quote(source: string): string {
-  return "'" + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, "$1\\'") + "'";
+  return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
 }
 
 function createTestScript(include: string): string {
@@ -71,7 +71,7 @@ function createTestScript(include: string): string {
   `;
 }
 
-let isPrimitive = (val) => {
+const isPrimitive = (val: unknown) => {
   if (val === null) {
     return true;
   }

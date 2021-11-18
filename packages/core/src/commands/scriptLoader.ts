@@ -55,7 +55,9 @@ function getReplacementToken(normalizedPath: string): string {
 function bannerize(fileName: string, baseDir: string, content: string): string {
   if (!content) return '';
   let name = fileName.substr(baseDir.length);
-  if (name[0] == path.sep) name = name.substr(1);
+  if (name[0] == path.sep) {
+    name = name.substr(1);
+  }
   const header = '---[ START ' + name + ' ]---';
   const footer = '---[ END ' + name + ' ]---';
   return `${header}\n${content}\n${footer}`;
@@ -75,6 +77,13 @@ function ensureExt(filename: string, ext = 'lua'): string {
   if (foundExt && foundExt !== '.') return filename;
   if (ext && ext[0] !== '.') ext = `.${ext}`;
   return `${filename}${ext}`;
+}
+
+function splitFilename(filePath: string): { name: string; numberOfKeys: number } {
+  const longName = path.basename(filePath, '.lua');
+  const name = longName.split('-')[0];
+  const numberOfKeys = parseInt(longName.split('-')[1]);
+  return { name, numberOfKeys }
 }
 
 /**
@@ -105,7 +114,7 @@ async function collectFilesInternal(
       path.resolve(path.dirname(file.path), ensureExt(reference)),
     );
 
-    const refPaths = glob.sync(pattern, GLOB_OPTS).map((x) => path.resolve(x));
+    const refPaths = glob.sync(pattern, GLOB_OPTS).map((x: string) => path.resolve(x));
 
     if (refPaths.length === 0) {
       const pos = findPos(file.content, match);
@@ -115,8 +124,9 @@ async function collectFilesInternal(
       );
     }
 
-    refPaths.forEach(async (path) => {
-      const hasDependent = file.includes.find((x) => x.path === path);
+    for (let i = 0; i < refPaths.length; i++) {
+      const path: string = refPaths[i];
+      const hasDependent = file.includes.find((x: ScriptInfo) => x.path === path);
       if (hasDependent) {
         const pos = findPos(file.content, match);
         throw boom.badRequest(
@@ -148,7 +158,7 @@ async function collectFilesInternal(
 
       file.includes.push(dependent);
       await collectFilesInternal(dependent, cache, stack);
-    });
+    }
   }
 
   file.content = content;
@@ -231,10 +241,7 @@ async function _loadCommand(
   filePath: string,
   cache?: Map<string, ScriptInfo>,
 ): Promise<Command> {
-  const longName = path.basename(filePath, '.lua');
-  const name = longName.split('-')[0];
-  const numberOfKeys = parseInt(longName.split('-')[1]);
-
+  const { name, numberOfKeys } = splitFilename(filePath);
   const content = await loadScript(filePath, cache);
 
   return {

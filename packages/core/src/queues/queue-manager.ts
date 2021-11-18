@@ -80,7 +80,12 @@ export class QueueManager {
     this.queueListener = this.createQueueListener();
     this.clock = this.queueListener.clock;
     this.bus = new EventBus(host.streamAggregator, getQueueBusKey(queue));
-    this.statsClient = new StatsClient(this);
+
+    this.statsClient = new StatsClient({
+      queueId: this.id,
+      queue,
+      host: host.name
+    });
     this.statsListener = this.createStatsListener();
     this.metricManager = new MetricManager(
       this.id,
@@ -203,7 +208,13 @@ export class QueueManager {
   }
 
   private createStatsListener(): StatsListener {
-    return new StatsListener(this);
+    return new StatsListener({
+      queue: this.queue,
+      queueId: this.id,
+      host: this.host,
+      writer: this.hostManager.writer,
+      bus: this.bus
+    });
   }
 
   getRule(id: string): Promise<Rule> {
@@ -455,7 +466,7 @@ export class QueueManager {
     if (this.hasLock) {
       this._workQueue
         .addAll([
-          () => this.statsListener.sweep(),
+          () => this.statsListener.sweep(this.statsClient),
           () => this.ruleManager.pruneAlerts(this.dataRetention),
           () => this.bus.cleanup(),
           () => this.metricManager.pruneData(this.dataRetention),
