@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import get from 'lodash/get';
+import { get } from 'lodash';
 import { Readable } from 'stream';
 import { JobStatusEnum } from './types';
 import { safeParse } from '@alpen/shared';

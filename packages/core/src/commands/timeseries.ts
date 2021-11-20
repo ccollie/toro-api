@@ -1,7 +1,7 @@
 import { Pipeline } from 'ioredis';
 import { DateLike, parseTimestamp, roundDown, roundUp } from '@alpen/shared';
 import toDate from 'date-fns/toDate';
-import isDate from 'lodash/isDate';
+import { isDate } from 'lodash';
 import { Timespan } from '../types';
 import { systemClock } from '../lib';
 import { logger } from '../logger';

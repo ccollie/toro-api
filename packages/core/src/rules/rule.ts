@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { clone, isNil, isString } from 'lodash';
 import { parseTimestamp } from '@alpen/shared';
 import { systemClock } from '../lib';

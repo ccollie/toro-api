@@ -1,8 +1,8 @@
 import createTestServer from 'create-test-server';
-import {nanoid} from 'nanoid';
-import {registerHelpers} from '../../../src/lib/hbs';
-import {WebhookChannel, WebhookChannelConfig} from '../../../src/notifications';
-import {createNotificationContext} from '../helpers';
+import { nanoid } from 'nanoid';
+import { registerHelpers } from '../../../src/lib/hbs';
+import { WebhookChannel, WebhookChannelConfig} from '../../../src/notifications';
+import { createNotificationContext } from '../helpers';
 
 describe('WebhookChannel', () => {
   const URL = 'http://localhost:4000/hooks/rule-alerts';

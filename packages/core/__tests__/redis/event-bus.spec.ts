@@ -2,7 +2,7 @@ import { EventBus } from '../common';
 import { RedisStreamAggregator } from '../common';
 import { randomString, delay } from '../utils';
 import pAll from 'p-all';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import {
   createClient,
   clearDb,

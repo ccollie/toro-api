@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badRequest, notFound } from '@hapi/boom';
 import { isEmpty, isNil, isNumber, isString } from 'lodash';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
@@ -107,7 +107,7 @@ export class MetricManager {
     if (!isNew) {
       const existing = await client.exists(key);
       if (existing) {
-        throw boom.badRequest(
+        throw badRequest(
           `A metric with id "${id}" exists in queue "${this.queue.name}"`,
         );
       }
@@ -160,12 +160,12 @@ export class MetricManager {
     const key = this.getMetricKey(id);
 
     if ((metric.name ?? '').trim().length === 0) {
-      throw boom.badRequest('A metric must have a name');
+      throw badRequest('A metric must have a name');
     }
     const foundByName = this.getMetricByName(metric.name);
 
     if (foundByName && foundByName.id !== metric.id) {
-      throw boom.badRequest('A metric must have a unique name');
+      throw badRequest('A metric must have a unique name');
     }
 
     const client = await this.getClient();
@@ -259,7 +259,7 @@ export class MetricManager {
     } else {
       // oops. remove the hash
       await client.del(key);
-      throw boom.notFound(`BaseMetric "${id}" not found`);
+      throw notFound(`BaseMetric "${id}" not found`);
     }
 
     return false;
@@ -505,7 +505,7 @@ function getMetricId(metric: BaseMetric | string): string {
     id = metric.id;
   }
   if (!id) {
-    throw boom.badRequest('Expected a metric or metric id');
+    throw badRequest('Expected a metric or metric id');
   }
   return id;
 }

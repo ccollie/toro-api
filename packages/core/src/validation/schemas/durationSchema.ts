@@ -1,5 +1,5 @@
 import ms from 'ms';
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 const durationValidator = (value, helpers) => {
   const num = parseFloat(value);

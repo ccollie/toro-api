@@ -9,8 +9,7 @@ import { StatsClient, StatsClientArgs } from './stats-client';
 import { QueueStats } from './queue-stats';
 import { TimeSeries } from '../commands';
 import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
-import random from 'lodash/random';
-import isNil from 'lodash/isNil';
+import { isNil, random } from 'lodash';
 import { systemClock } from '../lib';
 import { StatisticalSnapshot } from './timer';
 

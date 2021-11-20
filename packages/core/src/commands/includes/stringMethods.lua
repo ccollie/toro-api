@@ -14,14 +14,10 @@ function stringMethods.substr(s, start, count)
     end
     assert(isString(s), 'substr: expected string as first argument')
     local len = #s
-    if (start < 0) then
-        start = math.max(len + start, 0)
-    end
-    -- lua indexes start at 1
-    if (start >= 0) then
-        start = start + 1
-        if (start > len) then return '' end
-    end
+
+    start = absIndex(len, start, true)
+    if (start > len) then return '' end
+
     count = assert(tonumber(count or len), 'substr: count should be a number')
     if (count < 0) then
         return ''
@@ -87,9 +83,10 @@ end
 
 function stringMethods.includes(haystack, needle, start)
     if type(haystack) ~= 'string' or type(needle) ~= 'string' then return false end
-    local plen = #needle
-    start = (start or 0) + 1
-    if  (#haystack >= plen) and haystack:find(needle, start, true) then
+    local len = #needle
+    start = assert(start or 0, 'string.includes: start should be a number')
+    start = absIndex(len, start, true)
+    if (#haystack >= len) and haystack:find(needle, start, true) then
         return true
     else
         return false
@@ -98,9 +95,10 @@ end
 
 function stringMethods.startsWith(haystack, needle, start)
     if type(haystack) ~= 'string' or type(needle) ~= 'string' then return false end
-    local plen = #needle
-    start = (start or 0) + 1
-    return (#haystack >= plen) and (haystack:sub(start, plen) == needle)
+    local len = #needle
+    start = assert(start or 0, 'string.startsWith: start should be a number')
+    start = absIndex(len, start, true)
+    return (#haystack >= len) and (haystack:sub(start, len) == needle)
 end
 
 function stringMethods.endsWith(haystack, needle)
@@ -112,15 +110,8 @@ end
 function stringMethods.charAt(str, idx)
     -- assert(isArray(arr), 'First operand to $arrayElemAt must resolve to an array');
     idx = assert(tonumber(idx), 'string index must be an integer')
-    -- translate from 0 to 1 bases
-    if idx > 0 then
-        idx = idx + 1
-    end
-    local len = #str
-    if (idx < 0 and math.abs(idx) <= len) then
-        idx = idx + len
-        return str:sub(idx, idx)
-    elseif (idx >= 0 and idx < len) then
+    idx = absIndex(#str, idx, true)
+    if (idx < len) then
         return str:sub(idx, idx)
     end
     return nil
@@ -158,10 +149,7 @@ end
 function stringMethods.lastIndexOf(s,sub,first,last)
     assert(isString(sub), 'indexOf: expected a string as the second argument')
     first = assert(tonumber(first or 0), "indexOf: start index should be a number")
-    if (first < 0) then
-        first = math.max(0, first + #s - 1)
-    end
-    first = first + 1
+    first = absIndex(#s, first, true)
 
     local v = (_find_all(s,sub,first,last,true))
     return v and (v - 1) or -1
@@ -175,11 +163,7 @@ function stringMethods.indexOf(haystack, needle, start)
     assert(isString(needle), 'indexOf: expected a string as needle')
     start = assert(tonumber(start or 0), "indexOf: start index should be a number")
     --- convert from 0 to 1 based indices
-
-    if (start < 0) then
-        start = math.max(0, start + #haystack - 1)
-    end
-    start = start + 1
+    start = absIndex(#haystack, start, true)
 
     local index, _ = haystack:find(needle, start, true)
     if (index ~= nil) then

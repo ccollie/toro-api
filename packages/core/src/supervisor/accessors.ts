@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import { StatsClient, StatsListener } from '../stats';
 import { QueueManager, QueueListener } from '../queues';

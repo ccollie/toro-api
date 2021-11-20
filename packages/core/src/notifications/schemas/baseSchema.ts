@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 const IdPattern = /[a-zA-Z0-9_]+[\w.:-]*/;
 

@@ -1,4 +1,4 @@
-import random from 'lodash/random';
+import { random } from 'lodash';
 import { SlidingTimeWindowAggregator } from '../../../src/metrics';
 
 export function validateCounts(instance: SlidingTimeWindowAggregator): void {

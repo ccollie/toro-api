@@ -2,7 +2,7 @@
 'use strict';
 import { ChunkedAssociativeArray } from '../../common';
 import { getRandomIntArray } from '../../utils';
-import random from 'lodash/random';
+import { random } from 'lodash';
 
 describe('ChunkedAssociativeArray', function () {
   function populate(array: ChunkedAssociativeArray): void {

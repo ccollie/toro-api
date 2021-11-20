@@ -16,7 +16,7 @@ import { systemClock } from '../../src/lib';
 import { RedisMetric } from '../../src/metrics/redisMetrics';
 import { QueueBasedMetric, RateMetric } from '../../src';
 import { delay } from '../utils';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { getStaticProp } from '@alpen/shared';
 
 function createMetric(type: MetricConstructor): BaseMetric {
@@ -166,9 +166,9 @@ describe('General', () => {
 
         beforeEach(() => {
           metric = createMetric(type);
-          metric.id = nanoid.nanoid();
+          metric.id = nanoid();
           metric.isActive = true;
-          metric.description = 'Fabulous !!! ' + nanoid.nanoid();
+          metric.description = 'Fabulous !!! ' + nanoid();
           metric.aggregator = new MaxAggregator({
             duration: 40000,
             granularity: 4000,

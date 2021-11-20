@@ -32,7 +32,7 @@ import {
   WriteCache,
 } from '../redis';
 
-import { config, getValue } from '../config';
+import { env as environment, appInfo } from '../config';
 import { logger } from '../logger';
 import {
   fixupQueueConfig,
@@ -104,8 +104,6 @@ export class HostManager {
 
   get notificationContext(): NotificationContext {
     if (!this._notificationContext) {
-      const env = config.get('env');
-      const app = getValue('appInfo');
       const { id, name, uri } = this;
       this._notificationContext = {
         host: {
@@ -113,8 +111,8 @@ export class HostManager {
           name,
           uri,
         },
-        app,
-        env,
+        app: appInfo,
+        env: environment,
       };
     }
     return this._notificationContext;

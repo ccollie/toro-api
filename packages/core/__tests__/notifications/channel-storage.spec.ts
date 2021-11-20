@@ -14,7 +14,7 @@ import type {
   SlackChannelConfig,
   WebhookChannelConfig,
 } from '../../src/notifications';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import type { HostConfig } from '../../src/hosts';
 import { HostManager } from '../../src/hosts';
 import { clearDb, DEFAULT_CONNECTION_OPTIONS } from '../factories';

@@ -1,5 +1,5 @@
 import { LatencyMetric, SumAggregator, AggregatorTypes } from '../../../src/metrics';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import { validateCounts } from './helpers';
 
 describe('SumAggregator', () => {

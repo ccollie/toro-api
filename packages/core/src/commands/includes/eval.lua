@@ -24,11 +24,7 @@ ExprEval.__index = ExprEval
 
 --- todo: cache dates
 local DateOps = {
-    parse = function(...)
-        local v = { ... }
-        debug('Date.parse(' .. toStr(v) .. ')')
-        return date(...)
-    end,
+    parse = date,
     isLeapYear = date.isLeapYear
 }
 
@@ -147,8 +143,8 @@ function ExprEval.evalMember(node, context)
         end
 
         object = (type(key) == 'number') and object[key+1] or getProp(object, key)
-        if (object == nil) then
-            return {saveObj, object, key}
+        if (object == nil or object == cjson.null) then
+            break
         end
     end
     return {saveObj, object, key}

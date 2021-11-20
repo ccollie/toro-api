@@ -3,7 +3,7 @@ import {
   LatencyMetric,
   AggregatorTypes,
 } from '../../../src/metrics';
-import random from 'lodash/random';
+import { random } from 'lodash';
 
 describe('LatestAggregator', () => {
   describe('static properties', () => {

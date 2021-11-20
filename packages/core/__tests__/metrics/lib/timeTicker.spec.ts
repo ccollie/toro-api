@@ -1,5 +1,5 @@
 import { TimeTicker, ManualClock } from '@src/../../../../packages/core/src/lib';
-import random from 'lodash/random';
+import { random } from 'lodash';
 
 describe('TimeTicker', () => {
   it('should construct a valid instance', () => {

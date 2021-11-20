@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badRequest } from '@hapi/boom';
 import { BaseAggregator } from './aggregator';
 import { NullAggregator } from './nullAggregator';
 import { MinAggregator } from './minAggregator';
@@ -72,7 +72,7 @@ function findAggregator(
     ctor = aggregateMap[type];
   }
   if (!ctor) {
-    throw boom.badRequest(`Invalid aggregator type "${type}"`);
+    throw badRequest(`Invalid aggregator type "${type}"`);
   }
   return ctor;
 }

@@ -1,6 +1,6 @@
 import { BaseMetric, LatencyMetric } from '../../src/metrics';
 import { ManualClock } from '../../src/lib';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import { getRandomIntArray } from '../utils';
 import ms from 'ms';
 import { getAggregationFunction } from '../../src';

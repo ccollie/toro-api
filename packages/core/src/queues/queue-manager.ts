@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import {  badRequest, notFound } from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
 import { Job, Queue } from 'bullmq';
@@ -249,21 +249,21 @@ export class QueueManager {
    */
   async addRule(rule: RuleConfigOptions): Promise<Rule> {
     if (!rule) {
-      throw boom.badRequest('must pass a valid rule');
+      throw badRequest('must pass a valid rule');
     }
     if (rule.id) {
       const oldRule = await this.getRule(rule.id);
       if (oldRule) {
-        throw boom.badRequest(`An rule with id "${rule.id}" already exists`);
+        throw badRequest(`An rule with id "${rule.id}" already exists`);
       }
     }
     if (!rule.metricId) {
-      throw boom.badRequest('No metric id was specified');
+      throw badRequest('No metric id was specified');
     }
 
     const metric = this.findMetric(rule.metricId);
     if (!metric) {
-      throw boom.badRequest(
+      throw badRequest(
         `No metric with id "${rule.metricId}" was found in queue "${this.name}"`,
       );
     }
@@ -273,21 +273,21 @@ export class QueueManager {
 
   async updateRule(rule: Rule): Promise<Rule> {
     if (!rule) {
-      throw boom.badRequest('must pass a valid rule');
+      throw badRequest('must pass a valid rule');
     }
     const oldRule = await this.getRule(rule.id);
     if (!oldRule) {
-      throw boom.notFound(
+      throw notFound(
         `No rule with id "${rule.id}" found in queue "${this.name}"`,
       );
     }
     if (!rule.metricId) {
-      throw boom.badRequest('No metric id was specified');
+      throw badRequest('No metric id was specified');
     }
 
     const metric = this.findMetric(rule.metricId);
     if (!metric) {
-      throw boom.badRequest(
+      throw badRequest(
         `No metric with id "${rule.metricId}" was found in queue "${this.name}"`,
       );
     }

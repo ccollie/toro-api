@@ -1,6 +1,6 @@
-import Joi from 'joi';
+import * as joi from 'joi';
 import { DurationSchema } from '../validation';
 
-export default Joi.object().keys({
+export default joi.object().keys({
   duration: DurationSchema,
 });

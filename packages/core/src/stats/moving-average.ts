@@ -37,8 +37,8 @@ export function MovingAverage(timespan: number): IMovingAverage {
   let d = 0; // deviation
   let f = 0; // forecast
 
-  let previousTime;
-  let firstTime;
+  let previousTime: number;
+  let firstTime: number;
   let primed = false;
 
   function alpha(t: number, pt: number): number {

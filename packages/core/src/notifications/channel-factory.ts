@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badRequest, badImplementation } from '@hapi/boom';
 import { NotificationChannel, NotificationChannelPlugin } from './types';
 import { emailPlugin } from './email';
 import { webhookPlugin } from './webhook';
@@ -13,16 +13,16 @@ const plugins: NotificationChannelPlugin[] = [
 export function createChannel(spec: Record<string, any>): NotificationChannel {
   const { id, type } = spec;
   if (!id) {
-    throw boom.badImplementation('Missing for channel type');
+    throw badImplementation('Missing for channel type');
   }
   if (!type) {
-    throw boom.badRequest(`Missing channel type for id "${id}"`);
+    throw badRequest(`Missing channel type for id "${id}"`);
   }
 
   const plugin = plugins.find((x) => x.name === type);
 
   if (!plugin) {
-    throw boom.badRequest(`Invalid channel type "${type}" in config`);
+    throw badRequest(`Invalid channel type "${type}" in config`);
   }
 
   const { schema, createChannel: create } = plugin;

@@ -1,6 +1,6 @@
 import ms from 'ms';
 import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash';
 import { JobFinishedState, JobStatusEnum } from '../queues/types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';

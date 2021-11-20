@@ -14,7 +14,7 @@ import {
   P90Aggregator,
 } from '../../src/metrics';
 import ms from 'ms';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import { RedisClient } from 'bullmq';
 
 describe('MetricManager', () => {
@@ -146,7 +146,7 @@ describe('MetricManager', () => {
   }
 
   function createManager(): MetricManager {
-    const id = nanoid.nanoid();
+    const id = nanoid();
     return new MetricManager(id, queueListener, queueManager.bus);
   }
 

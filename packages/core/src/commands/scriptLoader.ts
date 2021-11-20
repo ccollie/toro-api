@@ -1,6 +1,6 @@
-import boom from '@hapi/boom';
+import { badRequest, notFound } from '@hapi/boom';
 import { RedisClient } from 'bullmq';
-import crypto from 'crypto';
+import { createHash } from 'crypto';
 import glob from 'glob';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -45,7 +45,7 @@ export interface ScriptInfo {
 }
 
 function calcSha1(data: string): string {
-  return crypto.createHash('sha1').update(data).digest('hex');
+  return createHash('sha1').update(data).digest('hex');
 }
 
 function getReplacementToken(normalizedPath: string): string {
@@ -99,7 +99,7 @@ async function collectFilesInternal(
   stack: string[],
 ): Promise<void> {
   if (stack.includes(file.path)) {
-    throw boom.badRequest(`circular reference: "${file.path}"`, { stack });
+    throw badRequest(`circular reference: "${file.path}"`, { stack });
   }
   stack.push(file.path);
 
@@ -118,7 +118,7 @@ async function collectFilesInternal(
 
     if (refPaths.length === 0) {
       const pos = findPos(file.content, match);
-      throw boom.notFound(
+      throw notFound(
         `not found: "${reference}", referenced in "${file.path}"`,
         { stack, file, ...pos },
       );
@@ -129,7 +129,7 @@ async function collectFilesInternal(
       const hasDependent = file.includes.find((x: ScriptInfo) => x.path === path);
       if (hasDependent) {
         const pos = findPos(file.content, match);
-        throw boom.badRequest(
+        throw badRequest(
           `file "${path}" already @included in "${reference}"`,
           { stack, file, ...pos },
         );
@@ -268,6 +268,7 @@ export async function loadCommand(filePath: string): Promise<Command> {
  *
  */
 export async function loadScripts(dir?: string): Promise<Command[]> {
+  dir = dir || __dirname;
   const files = await readdir(dir);
 
   const luaFiles = files.filter(
@@ -286,7 +287,7 @@ export async function loadScripts(dir?: string): Promise<Command[]> {
   const cache = new Map<string, ScriptInfo>();
 
   for (let i = 0; i < luaFiles.length; i++) {
-    const file = luaFiles[i];
+    const file = path.join(dir, luaFiles[i]);
     const command = await _loadCommand(file, cache);
     commands.push(command);
   }

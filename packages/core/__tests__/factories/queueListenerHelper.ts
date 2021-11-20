@@ -1,6 +1,4 @@
-import isNumber from 'lodash/isNumber';
-import random from 'lodash/random';
-import defaultsDeep from 'lodash/defaultsDeep';
+import { isNumber, random, defaultsDeep } from 'lodash';
 import { ManualClock } from '../../src/lib';
 import { Events } from '../../src/metrics';
 import { nanoid } from 'nanoid';

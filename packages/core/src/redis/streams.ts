@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badRequest } from '@hapi/boom';
 import { toKeyValueList, parseXinfoResponse, RedisStreamItem } from './utils';
 import { toDate } from 'date-fns';
 import { isDate } from 'lodash';
@@ -20,7 +20,7 @@ export function convertTsForStream(timestamp: number | string | Date): string {
     if (str.match(ID_REGEX)) {
       return str;
     }
-    throw boom.badRequest('Invalid stream timestamp "' + str + '"');
+    throw badRequest('Invalid stream timestamp "' + str + '"');
   } else if (type === 'number') {
     const ts = toDate(timestamp as number);
     return ts.getTime() + '';

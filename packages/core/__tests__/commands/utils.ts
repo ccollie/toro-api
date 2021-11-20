@@ -1,4 +1,4 @@
-import path from 'path';
+import * as path from 'path';
 import { RedisClient } from 'bullmq';
 import { loadCommand as _loadCommand, loadScript, Command } from '../../src/commands';
 const SCRIPT_PATH = path.normalize(path.join(__dirname, '../../src/commands'));

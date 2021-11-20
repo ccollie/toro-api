@@ -1,4 +1,4 @@
-import handlebars from 'handlebars';
+import { compile as hbCompile } from 'handlebars';
 import { get, set, isFunction } from 'lodash';
 
 const QuotedStringRE = /^"(?:[^"\\]|\\.)*"$/;
@@ -22,7 +22,7 @@ export function compile(
   const handlers: Array<[path: string, fn: MapperFn]> = [];
 
   function getHandlebarsMapper(template: string): MapperFn {
-    return handlebars.compile(template);
+    return hbCompile(template);
   }
 
   function getLiteralMapper(val: unknown): MapperFn {

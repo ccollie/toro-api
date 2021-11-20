@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 import { packageInfo } from '../../packageInfo';
 
 const smtpOptionsSchema = Joi.object({

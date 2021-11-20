@@ -8,8 +8,9 @@ import {
   RuleOperator,
   RuleState,
   RuleType,
+  Rule,
+  RuleManager
 } from '../../src/rules';
-import { Rule, RuleManager } from '../../src/rules/index';
 import {
   getUniqueId,
   HostManager,

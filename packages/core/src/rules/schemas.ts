@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 import { DurationSchema } from '../validation';
 import { RuleState, Severity } from './types';
 import {

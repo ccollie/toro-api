@@ -9,7 +9,7 @@
 --[[ CONSTANTS ]]--
 local HOURPERDAY  = 24
 local MINPERHOUR  = 60
-local MINPERDAY    = 1440  -- 24*60
+local MINPERDAY   = 1440  -- 24*60
 local SECPERMIN   = 60
 local SECPERHOUR  = 3600  -- 60*60
 local SECPERDAY   = 86400 -- 24*60*60
@@ -76,14 +76,23 @@ local function setTicks(t)
     TICKSPERHOUR= SECPERHOUR*TICKSPERSEC
     TICKSPERMIN = SECPERMIN*TICKSPERSEC
 end
+
+-- todo have cache clearing mechanism
+local __dfy_cache = {};
+
 -- is year y leap year?
 local function isLeapYear(y) -- y must be int!
     return (mod(y, 4) == 0 and (mod(y, 100) ~= 0 or mod(y, 400) == 0))
 end
 -- day since year 0
 local function dayfromyear(y) -- y must be int!
-    local floor = math.floor
-    return 365*y + floor(y/4) - floor(y/100) + floor(y/400)
+    local res = __dfy_cache[y]
+    if (res == nil) then
+        local floor = math.floor
+        res = 365*y + floor(y/4) - floor(y/100) + floor(y/400)
+        __dfy_cache[y] = res
+    end
+    return res
 end
 -- day number from date, month is zero base
 local function makedaynum(y, m, d)
@@ -103,19 +112,6 @@ local function breakdaynum(g)
     local mi = floor((100*d + 52)/3060)
     return (floor((mi + 2)/12) + y), mod(mi + 2,12), (d - floor((mi*306 + 5)/10) + 1)
 end
---[[ for floats or int32 Lua Number data type
-local function breakdaynum2(g)
-  local g, n = g + 306;
-  local n400 = floor(g/DI400Y);n = mod(g,DI400Y);
-  local n100 = floor(n/DI100Y);n = mod(n,DI100Y);
-  local n004 = floor(n/DI4Y);   n = mod(n,DI4Y);
-  local n001 = floor(n/365);   n = mod(n,365);
-  local y = (n400*400) + (n100*100) + (n004*4) + n001  - ((n001 == 4 or n100 == 4) and 1 or 0)
-  local d = g - dayfromyear(y)
-  local mi = floor((100*d + 52)/3060)
-  return (floor((mi + 2)/12) + y), mod(mi + 2,12), (d - floor((mi*306 + 5)/10) + 1)
-end
-]]
 -- day fraction from time
 local function makedayfrc(h,r,s,t)
     return ((h*60 + r)*60 + s)*TICKSPERSEC + t
@@ -202,35 +198,8 @@ local function date_new(dn, df)
     return setmetatable({daynum=dn, dayfrc=df, _cache={}}, dobj)
 end
 
---#if not NO_LOCAL_TIME_SUPPORT then
 -- magic year table
-local date_epoch, yt;
-local function getequivyear(y)
-    assert(not yt)
-    yt = {}
-    local de = date_epoch:copy()
-    local dw, dy
-    for _ = 0, 3000 do
-        de:setYear(de:getYear() + 1, 1, 1)
-        dy = de:getYear()
-        dw = de:getWeekDay() * (isLeapYear(dy) and  -1 or 1)
-        if not yt[dw] then yt[dw] = dy end  --print(de)
-        if yt[1] and yt[2] and yt[3] and yt[4] and yt[5] and yt[6] and yt[7] and yt[-1] and yt[-2] and yt[-3] and yt[-4] and yt[-5] and yt[-6] and yt[-7] then
-            getequivyear = function(y)  return yt[ (weekday(makedaynum(y, 0, 1)) + 1) * (isLeapYear(y) and  -1 or 1) ]  end
-            return getequivyear(y)
-        end
-    end
-end
--- TimeValue from date and time
-local function totv(y,m,d,h,r,s)
-    return makedaynum(y, m, d) * SECPERDAY  + ((h*60 + r)*60 + s)
-end
--- TimeValue from TimeTable
-local function tmtotv(tm)
-    return tm and totv(tm.year, tm.month - 1, tm.day, tm.hour, tm.min, tm.sec)
-end
-
---#end -- not NO_LOCAL_TIME_SUPPORT
+local date_epoch;
 
 --#if not DATE_OBJECT_AFX then
 -- the date parser

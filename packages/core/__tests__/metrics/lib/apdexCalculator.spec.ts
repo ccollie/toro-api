@@ -1,4 +1,4 @@
-import random from 'lodash/random';
+import { random } from 'lodash';
 import unirand from 'unirand';
 import { ApdexCalculator } from '../../../src/stats';
 

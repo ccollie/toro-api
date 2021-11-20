@@ -8,7 +8,7 @@ import {
 import { clearDb, createQueue, createWorker } from '../factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import { randomString } from '../utils';
 
 describe('CurrentFailedCountMetric', () => {

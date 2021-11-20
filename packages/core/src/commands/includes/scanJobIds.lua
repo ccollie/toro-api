@@ -72,22 +72,11 @@ local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
         end
     end
 
-    --- debug('Here. Key = ', redisKey, ' keyType = ', keyType, ' fullscan = ', fullScan, ' scannedIds = ', scannedJobIds)
-
-    local function getIdPart(key)
-        local prefixLen = prefixLen
-        local sub = key:sub(prefixLen + 1)
-        if sub:find(':') == nil and not ADMIN_KEYS[sub] then
-            return sub
-        end
-        return nil
-    end
-
     if (fullScan) then
         -- does a keyspace as opposed to list scan. Filter out non-ids
         for _, k in ipairs(scannedJobIds) do
-            local id = getIdPart(k, keyPrefix)
-            if (id ~= nil) then
+            local id = k:sub(prefixLen + 1)
+            if id:find(':') == nil and not ADMIN_KEYS[id] then
                 if (exec(id) == false) then break end
             end
         end

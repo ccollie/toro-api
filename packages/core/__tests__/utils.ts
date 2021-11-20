@@ -1,10 +1,9 @@
-import crypto from 'crypto';
+import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
-
-import random from 'lodash/random';
+import { random } from 'lodash';
 
 export function randomString(length = 10): string {
-  return crypto.randomBytes(10).toString('hex');
+  return randomBytes(10).toString('hex');
 }
 
 export function randomId(len = 8): string {

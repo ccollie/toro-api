@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import { isEmpty, isFunction, isNumber, isObject, isString } from 'lodash';
 import { parseBool, parseTimestamp } from '@alpen/shared';
 import {

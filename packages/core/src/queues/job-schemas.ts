@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import fnv from 'fnv-plus';
 import { isEmpty } from 'lodash';
 import { JobsOptions, Queue } from 'bullmq';

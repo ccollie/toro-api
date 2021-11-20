@@ -7,7 +7,7 @@ import {
   P995Aggregator,
   QuantileAggregator,
 } from '../../../src';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import { DDSketch } from 'sketches-js';
 import { validateCounts } from './helpers';
 

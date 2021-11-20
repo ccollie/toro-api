@@ -1,7 +1,7 @@
 import IORedis, { Pipeline, RedisOptions, parseUrl } from 'ioredis';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate, isNumber, hashObject } from '@alpen/shared';
-import { loadScripts } from '../commands/utils';
+import { load } from '../commands/scriptLoader';
 import { RedisClient } from 'bullmq';
 import { logger } from '../logger';
 
@@ -45,7 +45,7 @@ export function createClient(redisOpts?: ConnectionOptions): RedisClient {
     client = new IORedis(redisOpts);
   }
 
-  loadScripts(client).catch((err) => logger.warn(err));
+  load(client).catch((err) => logger.warn(err));
   return client;
 }
 

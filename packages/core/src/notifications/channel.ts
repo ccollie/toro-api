@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badImplementation, badData, notImplemented } from '@hapi/boom';
 import { systemClock } from '../lib';
 import {
   ChannelConfig,
@@ -20,7 +20,7 @@ export class Channel<TConfig extends ChannelConfig = ChannelConfig>
     const { id } = options || {};
     if (!id) {
       const type = this.options?.type;
-      throw boom.badImplementation(`Missing id for channel type "${type}"`);
+      throw badImplementation(`Missing id for channel type "${type}"`);
     }
     this.options = options;
     this.createdAt = systemClock.getTime();
@@ -41,7 +41,7 @@ export class Channel<TConfig extends ChannelConfig = ChannelConfig>
 
   set name(value: string) {
     if (!value) {
-      throw boom.badData('Channel names cannot be empty');
+      throw badData('Channel names cannot be empty');
     }
     this.options.name = value;
   }
@@ -58,7 +58,7 @@ export class Channel<TConfig extends ChannelConfig = ChannelConfig>
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, ...rest } = options;
     if (rest.hasOwnProperty('name') && !rest.name) {
-      throw boom.badData('Channel names cannot be empty');
+      throw badData('Channel names cannot be empty');
     }
     Object.assign(this.options, rest);
   }
@@ -71,7 +71,7 @@ export class Channel<TConfig extends ChannelConfig = ChannelConfig>
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     eventName?: string,
   ): Promise<void> {
-    throw boom.notImplemented('dispatch');
+    throw notImplemented('dispatch');
   }
 
   async error(

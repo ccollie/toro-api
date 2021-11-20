@@ -1,7 +1,7 @@
 --- @include "toStr.lua"
 
 local objectMethods = {
-    ['toString'] = toStr
+    toString = toStr
 }
 
 function objectMethods.keys(obj)

@@ -307,7 +307,7 @@ describe('RuleStorage', () => {
       });
     });
 
-    describe('.getAlert', async () => {
+    describe('.getAlert', () => {
       it('gets an alert by id', async () => {
         const rule = await addRule();
         const alert = createAlert(rule);

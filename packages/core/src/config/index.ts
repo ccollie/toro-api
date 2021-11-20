@@ -1,55 +1,59 @@
-import dotenv from 'dotenv';
-import nconf from 'nconf';
-import path from 'path';
-import fs from 'fs';
+import * as dotenv from 'dotenv';
+import { get as lget, set as lset, isString, isObject } from 'lodash';
 import { packageInfo } from '../packageInfo';
-import { isString, isObject } from 'lodash';
 import { AppInfo } from '../types';
-//const debug = require('debug')('toro:config');
-
-// Find project root from current working directory.
-function getProjectRoot(): string {
-  let currentDir = process.cwd();
-  while (!fs.existsSync(currentDir + '/package.json') && currentDir) {
-    currentDir = path.dirname(currentDir);
-  }
-  if (!currentDir) {
-    throw new Error('no project root is found.');
-  }
-  return currentDir;
-}
 
 dotenv.config();
 
-nconf.argv({
-  parseValues: true,
-});
-
-nconf.env({
-  separator: '__',
-  parseValues: true,
-  lowerCase: true,
-});
-
 const DEFAULT_KEY_PREFIX = 'alpen';
+const env = global.process.env.NODE_ENV || 'development';
 
-const baseConfigPath = global.process.env.CONFIG_PATH || getProjectRoot();
-const environment = global.process.env.NODE_ENV || 'development';
+const isTest = env === 'test';
+const isDevelopment = env === 'development';
 
-const isTest = process.env.NODE_ENV === 'test';
-const isDevelopment = process.env.NODE_ENV === 'development';
+const SEPARATOR = '__';
 
-nconf.file(
-  'default-env',
-  path.join(baseConfigPath, 'env', `config.${environment}.json`),
-);
-nconf.file('defaults', path.join(baseConfigPath, 'defaults.json'));
+function getPath(key: string): string[] {
+  return !key ? [] : key.toUpperCase().split(SEPARATOR);
+}
+
+let loaded = false;
+const store: Record<string, any> = {};
+
+
+function parseValues(value: string): unknown {
+  let val = value;
+  try {
+    val = JSON.parse(value);
+  } catch (ignore) {
+    // Check for any other well-known strings that should be "parsed"
+    if (value === 'undefined'){
+      val = void 0;
+    }
+  }
+
+  return val;
+}
+
+function loadEnv(): Record<string, any> {
+  if (!loaded) {
+    Object.keys(process.env).forEach((key) => {
+      const paths = getPath(key);
+      const value = parseValues(process.env[key]);
+      lset(store, paths, value);
+    })
+    loaded = true;
+  }
+  return store;
+}
+
+function get(key: string): any {
+  if (!loaded) loadEnv();
+  if (key === null) return null;
+  return lget(store, key);
+}
 
 function processTemplate(tpl: any): any {
-  function get(name: string): any {
-    const convertedName = name.split('.').join(':');
-    return nconf.get(convertedName);
-  }
 
   function replacer(required = false) {
     return function (match, varName: string): any {
@@ -88,16 +92,15 @@ function processTemplate(tpl: any): any {
   return tpl;
 }
 
-export function getValue(key: string, defaultValue?: any): any {
-  const val = nconf.get(key);
+function getValue(key: string, defaultValue?: any): any {
+  const val = get(key);
   return val ? processTemplate(val) : defaultValue;
 }
 
 function getAppInfo(): AppInfo {
-  const server = nconf.get('server');
-  const env = nconf.get('env');
-  const title = nconf.get('title') || 'alpen';
-  const brand = nconf.get('brand') || 'GuanimaTech';
+  const server = get('server');
+  const title = get('title') || 'alpen';
+  const brand = get('brand') || 'GuanimaTech';
   const url = !server
     ? 'localhost'
     : server.host + (server.port ? `:${server.port}` : '');
@@ -111,20 +114,17 @@ function getAppInfo(): AppInfo {
   };
 }
 
-/**
- * values we have to set manually
- */
-nconf.set('env', environment);
-nconf.set('keyPrefix', global.process.env.KEY_PREFIX || DEFAULT_KEY_PREFIX);
+const keyPrefix = global.process.env.KEY_PREFIX || DEFAULT_KEY_PREFIX;
+const appInfo = getAppInfo();
 
-nconf.set('isDevelopment', isDevelopment);
-nconf.set('isTest', isTest);
-nconf.set('isProduction', !isDevelopment && !isTest);
-// todo: timezone
-nconf.set('packageInfo', packageInfo);
-nconf.set('appInfo', getAppInfo());
+export {
+  get,
+  getValue,
+  appInfo,
+  env,
+  isDevelopment,
+  isTest,
+  keyPrefix,
+  packageInfo
+};
 
-// To output this, use DEBUG=pamplona:*,pamplona-config
-// debug(nconf.get());
-
-export const config = nconf;

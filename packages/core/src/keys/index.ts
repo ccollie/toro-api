@@ -1,9 +1,9 @@
-import { config } from '../config/index';
+import { getValue as getConfig } from '../config/index';
 import { firstChar } from '@alpen/shared';
 import { Queue } from 'bullmq';
 import { StatsGranularity, StatsMetricType } from '../stats/types';
 
-const statsPrefix = config.get('statsPrefix') || 'toro';
+const statsPrefix = getConfig('statsPrefix', 'alpen');
 
 export function getHostKey(host: string, ...tags: string[]): string {
   return (

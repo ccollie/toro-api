@@ -1,5 +1,5 @@
 import { Queue, QueueOptions } from 'bullmq';
-import { TEST_DB, TEST_QUEUE_PREFIX } from './client';
+import { DEFAULT_CONNECTION_OPTIONS, TEST_QUEUE_PREFIX } from './client';
 import { nanoid } from 'nanoid';
 
 export function createQueue(
@@ -8,7 +8,9 @@ export function createQueue(
 ): Queue {
   name = name || 'queue-' + nanoid(6);
   const options: QueueOptions = {
-    connection: { db: TEST_DB, lazyConnect: false },
+    connection: {
+      ...DEFAULT_CONNECTION_OPTIONS
+    },
     prefix: TEST_QUEUE_PREFIX,
     ...(opts || {}),
   };

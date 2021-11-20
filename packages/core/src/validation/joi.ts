@@ -1,5 +1,5 @@
 import { camelCase } from 'lodash';
-import Joi from 'joi';
+import * as Joi from 'joi';
 import { parseDate } from '@alpen/shared';
 
 const dateTimeValidator = (value, helpers) => {

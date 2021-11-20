@@ -1,5 +1,5 @@
 import {Job, Queue} from 'bullmq';
-import random from 'lodash/random';
+import { random } from 'lodash';
 import {
   CurrentWaitingCountMetric,
   MetricCategory,

@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badData } from '@hapi/boom';
 import { createDebug, validateUrl } from '../../lib';
 import { Channel } from '../channel';
 import { HttpClient } from '../../lib/http-client';
@@ -90,7 +90,7 @@ export class WebhookChannel extends Channel<WebhookChannelConfig> {
 
   public set url(value: string) {
     if (!value || !validateUrl(value)) {
-      throw boom.badData(`"${value}" is not a valid URI`);
+      throw badData(`"${value}" is not a valid URI`);
     }
     this.options.url = value;
   }

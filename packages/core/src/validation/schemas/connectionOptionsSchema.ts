@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 export const ConnectionOptionsSchema = Joi.object().keys({
   port: Joi.number().positive().greater(1000).optional().default(6379),

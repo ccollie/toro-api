@@ -41,7 +41,7 @@ export class StatsListener extends StatsWriter {
   private _lastTimestamp: number | null;
   private _nextFlush: number | null;
   private _snapshotting: boolean;
-  private jobTypesMap: Map<string, QueueStats>;
+  private jobStatsMap: Map<string, QueueStats>;
   public readonly queueStats: QueueStats;
 
   /**
@@ -56,7 +56,7 @@ export class StatsListener extends StatsWriter {
 
     this.snapshotInterval = roundInterval(getSnapshotInterval());
 
-    this.jobTypesMap = new Map();
+    this.jobStatsMap = new Map();
     this.queueStats = new QueueStats(this.listener.clock);
     this._snapshotting = false;
     this._intervalTimer = null;
@@ -71,7 +71,7 @@ export class StatsListener extends StatsWriter {
 
   destroy(): void {
     this.queueStats.destroy();
-    for (const stat of this.jobTypesMap.values()) {
+    for (const stat of this.jobStatsMap.values()) {
       stat.destroy();
     }
     this.unlisten();
@@ -94,10 +94,10 @@ export class StatsListener extends StatsWriter {
   }
 
   getJobNameStats(name: string): QueueStats {
-    let jobNameStats = this.jobTypesMap.get(name);
+    let jobNameStats = this.jobStatsMap.get(name);
     if (!jobNameStats && this.isValidJobName(name)) {
       jobNameStats = new QueueStats(this.clock, name);
-      this.jobTypesMap.set(name, jobNameStats);
+      this.jobStatsMap.set(name, jobNameStats);
     }
 
     return jobNameStats;
@@ -105,7 +105,7 @@ export class StatsListener extends StatsWriter {
 
   clearStats(): void {
     this.queueStats.reset();
-    for (const [, stats] of this.jobTypesMap.entries()) {
+    for (const [, stats] of this.jobStatsMap.entries()) {
       stats.reset();
     }
   }
@@ -205,7 +205,7 @@ export class StatsListener extends StatsWriter {
     );
     this._emit(StatsListenerEvents.SNAPSHOT_STARTED);
     try {
-      this.jobTypesMap.forEach((status) => {
+      this.jobStatsMap.forEach((status) => {
         this.write(status, opts);
       });
 
@@ -339,7 +339,7 @@ export class StatsListener extends StatsWriter {
 
   async sweep(statsClient: StatsClient): Promise<void> {
     const types: StatsMetricType[] = ['latency', 'wait'];
-    const jobNames = Array.from(this.jobTypesMap.keys());
+    const jobNames = Array.from(this.jobStatsMap.keys());
     const client = statsClient;
 
     const redis = await this.queue.client;

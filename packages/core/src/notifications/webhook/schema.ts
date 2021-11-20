@@ -1,5 +1,5 @@
 import baseSchema from '../schemas/baseSchema';
-import Joi from 'joi';
+import * as Joi from 'joi';
 import { DurationSchema } from '../../validation/schemas';
 
 export default baseSchema.append({

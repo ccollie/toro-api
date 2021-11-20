@@ -1,13 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2019",
-    "module": "esnext",
-    "lib": [
-      "es2020",
-      "esnext",
-      "dom",
-      "es6"
-    ],
+    "lib": ["esnext", "dom"],
+    "module": "commonjs",
+    "target": "es2020",
     "declaration": true,
     "diagnostics": true,
     "strict": false,
@@ -40,8 +35,7 @@
       "@alpen/shared": ["packages/shared/src/index.ts"],
       "@alpen/*": ["packages/*/src/index.ts"],
       "alpen-testing/*": ["internal/testing/src/*"],
-      "alpen-testing": ["internal/testing/src/index.ts"],
-      "tslib" : ["node_modules/tslib/tslib.d.ts"]
+      "alpen-testing": ["internal/testing/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "**/dist", "**/coverage", "**/.next"],

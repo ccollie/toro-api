@@ -12,8 +12,7 @@ import {
   JobStatusEnum,
 } from '../../src/queues';
 import { getJobFiltersKey } from '../../src/keys';
-import sortBy from 'lodash/sortBy';
-import sampleSize from 'lodash/sampleSize';
+import { sampleSize, sortBy } from 'lodash';
 
 describe('Job Filters', function () {
   let queue, queueName, client;

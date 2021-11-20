@@ -1,14 +1,14 @@
 import pSettle from 'p-settle';
 import pMap from 'p-map';
 import ms from 'ms';
-import boom from '@hapi/boom';
 import prexit from 'prexit';
+import { badRequest, notFound } from '@hapi/boom';
 import { isNil, isString } from 'lodash';
 import { Queue } from 'bullmq';
 import { QueueManager, QueueListener } from '../queues';
 import { HostManager, HostConfig, getHosts } from '../hosts';
 import { logger } from '../logger';
-import { config } from '../config';
+import { appInfo } from '../config';
 import { AppInfo } from '../types';
 import { registerHelpers } from '../lib/hbs';
 import { parseDuration } from '@alpen/shared';
@@ -63,7 +63,7 @@ export class Supervisor {
   }
 
   static getAppInfo(): AppInfo {
-    return config.get('appInfo');
+    return appInfo;
   }
 
   /**
@@ -92,7 +92,7 @@ export class Supervisor {
     await this.waitUntilReady();
     let manager = this.getHost(config.name);
     if (manager) {
-      throw boom.badRequest(`Host "${config.name}" already registered`);
+      throw badRequest(`Host "${config.name}" already registered`);
     }
     manager = new HostManager(config);
     hosts.set(config.name, manager);
@@ -193,7 +193,7 @@ export class Supervisor {
     if (isString(queueOrId)) {
       queue = this.getQueueById(queueOrId);
       if (!queue) {
-        throw boom.notFound(`Queue with id#"${queueOrId}" not found`);
+        throw notFound(`Queue with id#"${queueOrId}" not found`);
       }
     } else {
       queue = queueOrId as Queue;
@@ -204,7 +204,7 @@ export class Supervisor {
     const queueExists = await client.exists(metaKey);
 
     if (!queueExists) {
-      throw boom.notFound(`Queue "${queue.name}" not found in db`);
+      throw notFound(`Queue "${queue.name}" not found in db`);
     }
   }
 
@@ -242,7 +242,7 @@ export class Supervisor {
       } else if (queue) {
         fragment = `name "${queue.name}"`;
       }
-      throw boom.notFound(`no queue found with ${fragment}`);
+      throw notFound(`no queue found with ${fragment}`);
     }
     queue = manager.queue as Queue;
 
@@ -270,7 +270,7 @@ export class Supervisor {
       }
 
       if (msgParts.length > 1) {
-        throw boom.badRequest(msgParts.join(''));
+        throw badRequest(msgParts.join(''));
       }
     }
 

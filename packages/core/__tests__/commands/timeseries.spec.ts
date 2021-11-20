@@ -1,8 +1,6 @@
 import { clearDb, createClient } from '../factories';
 import { parseMessageResponse } from '../../src/redis';
-import sample from 'lodash/sample';
-import random from 'lodash/random';
-import isEmpty from 'lodash/isEmpty';
+import { sample, random, isEmpty } from 'lodash';
 import { nanoid } from 'nanoid';
 import pAll from 'p-all';
 import { getUniqueId } from '../../src/ids';

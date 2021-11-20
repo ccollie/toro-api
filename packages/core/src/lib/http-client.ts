@@ -1,10 +1,11 @@
 import got, { Got } from 'got';
-import boom from '@hapi/boom';
+import { badRequest } from '@hapi/boom';
 import { createDebug, validateUrl } from './index';
 import { packageInfo } from '../packageInfo';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash';
 import { compile, MapperDelegate } from './object-mapper';
 import { logger } from '../logger';
+import { URLSearchParams } from 'url';
 
 const debug = createDebug('http-client');
 
@@ -96,7 +97,7 @@ export class HttpClient {
   constructor(options: HttpClientConfig) {
     this.opts = { ...ConfigDefaults, ...options };
     if (!validateUrl(options.url)) {
-      throw boom.badRequest('Url invalid or missing');
+      throw badRequest('Url invalid or missing');
     }
     this.client = createHttpRequester(options);
     if (options.resultMap) {
@@ -111,7 +112,7 @@ export class HttpClient {
   public update(config: Partial<HttpClientConfig>): void {
     const options = Object.assign({}, this.opts, config);
     if (!validateUrl(options.url)) {
-      throw boom.badRequest('Url invalid or missing');
+      throw badRequest('Url invalid or missing');
     }
     this.opts = options;
     this.client = createHttpRequester(this.opts);

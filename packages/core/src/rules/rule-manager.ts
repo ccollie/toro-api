@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import * as boom from '@hapi/boom';
 import pMap from 'p-map';
 import ms from 'ms';
 import { Rule, RuleConfigOptions } from './rule';

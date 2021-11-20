@@ -1,16 +1,7 @@
-import { Rule, RuleStorage } from '../../src';
-import { delay } from '../utils';
-import { clearDb, createQueueManager, createRule } from '../factories';
-import {
-  ErrorLevel,
-  RuleAlert,
-  RuleConfigOptions,
-  RuleEventsEnum,
-  RuleState,
-} from '../../src/rules';
-import { QueueManager } from '../../src';
-import { getUniqueId, ManualClock } from '../../src/lib';
-import { getRuleStateKey } from '../../src/keys';
+import { Queue } from 'bullmq';
+import { random } from 'lodash';
+import { nanoid } from 'nanoid';
+import { QueueManager, Rule, RuleStorage } from '../../src';
 import {
   AlertData,
   CheckAlertResult,
@@ -19,9 +10,11 @@ import {
   RuleAlertState,
   RuleScripts,
 } from '../../src/commands';
-import { Queue } from 'bullmq';
-import { random } from 'lodash';
-import { nanoid } from 'nanoid';
+import { getRuleStateKey } from '../../src/keys';
+import { getUniqueId, ManualClock } from '../../src/lib';
+import { ErrorLevel, RuleAlert, RuleConfigOptions, RuleEventsEnum, RuleState, } from '../../src/rules';
+import { clearDb, createQueueManager, createRule } from '../factories';
+import { delay } from '../utils';
 
 describe('RuleScripts', () => {
   let queueManager: QueueManager;
@@ -61,7 +54,7 @@ describe('RuleScripts', () => {
   }
 
   function createAlertData(): AlertData {
-    const alertData: AlertData = {
+    return {
       errorLevel: ErrorLevel.CRITICAL,
       id: getUniqueId(),
       message: nanoid(15),
@@ -71,7 +64,6 @@ describe('RuleScripts', () => {
         str: nanoid(),
       },
     };
-    return alertData;
   }
 
   async function postResult(
@@ -79,13 +71,12 @@ describe('RuleScripts', () => {
     level: ErrorLevel,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
-    const result = await RuleScripts.checkAlert(
+    return RuleScripts.checkAlert(
       queue,
       rule,
       level,
       timestamp ?? clock.getTime(),
     );
-    return result;
   }
 
   async function postFailure(

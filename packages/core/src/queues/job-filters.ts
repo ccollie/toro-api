@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badData, notFound, badRequest } from '@hapi/boom';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { getUniqueId, nanoid } from '../lib';
@@ -48,10 +48,10 @@ export function validateFilterExpression(expr: string): void {
 
 function validateFilter(filter: JobFilter) {
   if (!filter.id) {
-    throw boom.badData('A filter requires an id');
+    throw badData('A filter requires an id');
   }
   if (!filter.name) {
-    throw boom.badData('Missing filter name');
+    throw badData('Missing filter name');
   }
   validateFilterExpression(filter.expression);
 }
@@ -173,7 +173,7 @@ export async function getJobsByFilterId(
 ): Promise<FilteredJobsResult> {
   const filter = await getJobFilter(queue, id);
   if (!filter)
-    throw boom.notFound(
+    throw notFound(
       `No job filter with id "${id}" found for queue "${queue.name}"`,
     );
 
@@ -236,7 +236,7 @@ export async function processSearch(
 
   if (!cursor) {
     if (isEmpty(filter)) {
-      throw boom.badRequest('A filter must be specified if no cursor is given');
+      throw badRequest('A filter must be specified if no cursor is given');
     }
     cursor = nanoid();
     meta = {
@@ -255,7 +255,7 @@ export async function processSearch(
     meta = safeParse(cursorStr) as SearchCursorMeta;
     if (!isObject(meta)) {
       // invalid or expired cursor
-      throw boom.badRequest(`Invalid or expired cursor "${cursor}"`);
+      throw badRequest(`Invalid or expired cursor "${cursor}"`);
     }
     firstRun = false;
   }

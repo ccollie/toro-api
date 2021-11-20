@@ -24,15 +24,17 @@ export const aggregatorTypeNameMap: Record<
 };
 
 // the following is to avoid circular references to basemetric.ts
-const MetricStaticProps = ['key', 'description', 'schema', 'unit', 'category'];
-const PropKeys = ['value', 'update', 'aggregator'];
-
-function isMetric(value: unknown): boolean {
-  return (
-    typeof value === 'object' &&
-    MetricStaticProps.every((prop) => !!getStaticProp(value, prop)) &&
-    PropKeys.every((prop) => prop in (value as any))
-  );
+function isMetric(obj: unknown): boolean {
+  if (typeof obj === 'object') {
+    let proto;
+    while (proto = Object.getPrototypeOf(obj)) {
+      if (proto.constructor.name === 'BaseMetric') {
+        return true;
+      }
+      obj = proto;
+    }
+  }
+  return false;
 }
 
 export function getMetricTypeName(metric: unknown): string {

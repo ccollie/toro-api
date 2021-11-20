@@ -1,6 +1,6 @@
 import { ConnectionOptions } from '../../src/redis';
 import { RedisClient } from 'bullmq';
-import { loadScripts } from '../../src/commands/utils';
+import { load } from '../../src/commands/scriptLoader';
 import IORedis from 'ioredis';
 
 export const TEST_DB = 13;
@@ -9,6 +9,8 @@ export const TEST_QUEUE_PREFIX = 'test';
 export const DEFAULT_CONNECTION_OPTIONS: ConnectionOptions = {
   db: TEST_DB,
   lazyConnect: false,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
 };
 
 export async function createClient(
@@ -25,7 +27,7 @@ export async function createClient(
   } else {
     client = new IORedis(options);
   }
-  if (withScripts) await loadScripts(client);
+  if (withScripts) await load(client);
   return client;
 }
 

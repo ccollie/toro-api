@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import {  notFound } from '@hapi/boom';
 import {
   AccurateInterval,
   Clock,
@@ -14,7 +14,7 @@ import {
 } from '../commands';
 import { Queue } from 'bullmq';
 import { Rule } from './rule';
-import handlebars from 'handlebars';
+import { TemplateDelegate, compile } from 'handlebars';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
 import { QueueManager } from '../queues';
 import { NotificationContext, NotificationManager } from '../notifications';
@@ -66,7 +66,7 @@ export class RuleAlerter {
   private _resetTimer: AccurateInterval;
   private readonly clock: Clock;
   private readonly _baseContext: Record<string, any>;
-  private _template: handlebars.TemplateDelegate;
+  private _template: TemplateDelegate;
 
   public readonly rule: Rule;
   public readonly notifications: NotificationManager; // public for testing
@@ -212,7 +212,7 @@ export class RuleAlerter {
     );
     if (response.status === 'not_found') {
       const id = this.rule.id;
-      throw boom.notFound(`Rule #${id} not found!`);
+      throw notFound(`Rule #${id} not found!`);
     }
     this.updateLocalState(response, result);
 
@@ -349,9 +349,9 @@ export class RuleAlerter {
     }
   }
 
-  get messageTemplate(): handlebars.TemplateDelegate {
+  get messageTemplate(): TemplateDelegate {
     if (!this._template && this.rule.message) {
-      this._template = handlebars.compile(this.rule.message);
+      this._template = compile(this.rule.message);
     }
     return this._template;
   }

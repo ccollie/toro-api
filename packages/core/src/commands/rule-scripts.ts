@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { getUniqueId, systemClock } from '../lib';
+import { getUniqueId } from '../lib';
 import {
   getAlertsKey,
   getHostAlertCountKey,
@@ -9,6 +9,7 @@ import {
   getRuleKey,
   getRuleStateKey,
 } from '../keys';
+import { systemClock } from '../lib/clock';
 import { has } from 'lodash';
 import { Rule } from '../rules/rule';
 import { RuleAlert } from '../rules/rule-alert';

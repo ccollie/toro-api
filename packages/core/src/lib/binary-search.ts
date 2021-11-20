@@ -1,4 +1,4 @@
-import boom from '@hapi/boom';
+import { badRequest } from '@hapi/boom';
 
 /**
  * Perform a binary search of a range of a array for a key. The range
@@ -24,11 +24,11 @@ export function binarySearch<T = any>(
   if (arguments.length < 4) hi = haystack.length - 1;
 
   if (low > hi) {
-    throw boom.badRequest('The start index is higher than the end index.');
+    throw badRequest('The start index is higher than the end index.');
   }
 
   if (low < 0 || hi > haystack.length) {
-    throw boom.badRequest('Index is out of bounds.');
+    throw badRequest('Index is out of bounds.');
   }
 
   let mid = 0;
