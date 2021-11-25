@@ -1,4 +1,5 @@
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
+import { ensureScriptsLoaded } from '../commands/utils';
 import { getUniqueId } from '../lib';
 import {
   getAlertsKey,
@@ -73,6 +74,12 @@ function getRuleId(rule: Rule | string): string {
   return rule.id;
 }
 
+async function getClient(queue: Queue): Promise<RedisClient> {
+  // horrible. fix this a the source
+  const client = await ensureScriptsLoaded(await queue.client);
+  return client;
+}
+
 export class RuleScripts {
   private static getRuleActionArgs(
     queue: Queue,
@@ -117,7 +124,8 @@ export class RuleScripts {
       timestamp,
     );
 
-    const client = await queue.client;
+    const client = await getClient(queue);
+    // horrible. fix this a the source
     return (client as any).rules(...args);
   }
 
@@ -255,7 +263,7 @@ export class RuleScripts {
     data: AlertData,
     timestamp?: number,
   ): Promise<RuleAlert> {
-    const client = await queue.client;
+    const client = await getClient(queue);
     const pipeline = client.pipeline();
 
     RuleScripts.pipelineRuleAction(
@@ -328,13 +336,13 @@ export class RuleScripts {
 
   static async updateQueueAlertCount(queue: Queue): Promise<number> {
     const args = RuleScripts.getUpdateQueueAlertCountArgs(queue);
-    const client = await queue.client;
+    const client = await getClient(queue);
     return (client as any).updateQueueAlertCount(...args);
   }
 
   static async getQueueAlertCount(queue: Queue): Promise<number> {
     const countsKey = getQueueAlertCountKey(queue);
-    const client = await queue.client;
+    const client = await getClient(queue);
     const count = await client.get(countsKey);
     return parseInt(count ?? '0', 10);
   }

@@ -31,10 +31,9 @@ describe('MetricManager', () => {
       prefix: 'bull',
     };
 
-    hostManager = createHostManager({
+    hostManager = await createHostManager({
       queues: [queueConfig],
     });
-    await hostManager.waitUntilReady();
 
     queueManager = hostManager.getQueueManager(queueName);
     queueListener = queueManager.queueListener;
@@ -95,14 +94,14 @@ describe('MetricManager', () => {
       expect(data).toBeDefined();
       expect(data.id).toBe(metric.id);
       expect(data.isActive).toBe('false');
-      expect(data.type).toBe('latency');
+      expect(data.type).toBe(MetricTypes.Latency);
       expect(data.createdAt).toBe(metric.createdAt.toString());
       expect(data.updatedAt).toBe(metric.updatedAt.toString());
 
       expect(sut.metrics.length).toBe(1);
     });
 
-    it('emits an "added" event', async (done) => {
+    it('emits an "added" event', async () => {
       const json: SerializedMetric = {
         aggregator: {
           type: AggregatorTypes.Identity,
@@ -118,14 +117,17 @@ describe('MetricManager', () => {
       let eventData: Record<string, any> = null;
       queueManager.bus.on(MetricsEventsEnum.METRIC_ADDED, (data) => {
         eventData = data;
-        done();
       });
       const sut = new MetricManager(
         'some_queue_id',
         queueListener,
         queueManager.bus,
       );
-      const metric = await sut.createMetric(json);
+
+      await sut.createMetric(json);
+      await delay(200);
+
+      expect(eventData).toMatchObject(json);
     });
   });
 
@@ -172,17 +174,20 @@ describe('MetricManager', () => {
         expect(sut.metrics.length).toBe(1);
       });
 
-      it('emits an "added" event', async (done) => {
+      it('emits an "added" event', async () => {
         const metric = createMetric();
 
         let eventData: Record<string, any> = null;
         queueManager.bus.on(MetricsEventsEnum.METRIC_ADDED, (data) => {
           eventData = data;
-          done();
         });
 
         const sut = createManager();
         await sut.saveMetric(metric);
+
+        await delay(150);
+        expect(eventData).not.toBeNull();
+
       });
     });
 

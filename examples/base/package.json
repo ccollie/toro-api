@@ -1,0 +1,39 @@
+{
+  "name": "@alpen/demo-base",
+  "version": "0.0.2",
+  "description": "Base demo code for Alpen",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "yarn run clean && yarn run compile",
+    "clean": "rm -rf ./dist",
+    "compile": "bob-ts -i src -f interop --paths",
+    "check": "tsc --noEmit",
+    "dev": "yarn run dev:mjs",
+    "dev:cjs": "bob-ts-watch -f cjs -c \"node dist/index.js\"",
+    "dev:mjs": "bob-ts-watch -c \"node dist/index.mjs\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bullmq",
+    "graphql",
+    "api",
+    "example"
+  ],
+  "author": "clayton collie",
+  "license": "ISC",
+  "dependencies": {
+    "bullmq": "^1.54.4",
+    "unirand": "^2.12.2",
+    "date-fns": "^2.26.0",
+    "@alpen/core": "link:../packages/core"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.10",
+    "bob-ts": "^1.1.2"
+  },
+  "peerDependencies": {
+    "esbuild": "*"
+  }
+}

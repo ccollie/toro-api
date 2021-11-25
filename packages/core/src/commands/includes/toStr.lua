@@ -15,7 +15,7 @@ local function toStr(value, ...)
         local isArr = true
         for k, v in pairs(value) do
             if (isArr) then
-                if (type(k) ~= 'number' or v == nil or v == cjson.null) then
+                if (type(k) ~= 'number' or v == nil) then
                     isArr = false
                 end
             end

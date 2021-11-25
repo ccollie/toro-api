@@ -59,7 +59,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
   }
 
   static get description(): string {
-    return 'Active jobs';
+    return 'Active Jobs';
   }
 }
 

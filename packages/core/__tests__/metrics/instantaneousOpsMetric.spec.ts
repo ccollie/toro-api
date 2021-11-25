@@ -48,7 +48,7 @@ describe('InstantaneousOpsMetric', () => {
         sampleInterval: 50,
       };
       const sut = new InstantaneousOpsMetric(options);
-      const helper = MetricTestHelper.forMetric(sut);
+      const helper = await MetricTestHelper.forMetric(sut);
       const client = await helper.client;
       const info = await getRedisInfo(client);
 

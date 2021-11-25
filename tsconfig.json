@@ -33,9 +33,12 @@
       "@alpen/koa": ["packages/koa/src/index.ts"],
       "@alpen/shared/*": ["packages/shared/src/*"],
       "@alpen/shared": ["packages/shared/src/index.ts"],
-      "@alpen/*": ["packages/*/src/index.ts"],
+      "@alpen/*": ["packages/*/src/index.ts", "node_modules/@alpen/*"],
+      "@alpen/demo-base": ["examples/base/src/index.ts"],
+      "@alpen/demo-base/*": ["examples/base/src/*/index.ts"],
       "alpen-testing/*": ["internal/testing/src/*"],
-      "alpen-testing": ["internal/testing/src/index.ts"]
+      "alpen-testing": ["internal/testing/src/index.ts"],
+      "~/*": ["packages/*/src"]
     }
   },
   "exclude": ["node_modules", "**/dist", "**/coverage", "**/.next"],

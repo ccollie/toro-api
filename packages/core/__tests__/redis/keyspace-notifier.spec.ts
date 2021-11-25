@@ -63,7 +63,7 @@ describe('KeyspaceNotifier', () => {
       expect(messages.length).toBe(1);
       messages = [];
       await client.pexpire('foo', 1);
-      await delay(5);
+      await delay(100);
       expect(messages.length).toBe(1);
       const msg = messages[0];
       expect(msg.key).toBe('foo');

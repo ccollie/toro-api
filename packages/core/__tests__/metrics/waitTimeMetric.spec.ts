@@ -75,7 +75,7 @@ describe('WaitTimeMetric', () => {
     test('properly updates simple values', async () => {
       const data = [13, 18, 43];
       const subject = new WaitTimeMetric(defaultOptions);
-      testHelper = MetricTestHelper.forMetric(subject);
+      testHelper = await MetricTestHelper.forMetric(subject);
       await pMap(data, (wait) => {
         return testHelper.emitFinishedEvent(true, {
           ts: Date.now(),
@@ -89,7 +89,7 @@ describe('WaitTimeMetric', () => {
   describe('Triggering', () => {
     test('updates when a job is finished', async () => {
       const subject = new WaitTimeMetric(defaultOptions);
-      testHelper = MetricTestHelper.forMetric(subject);
+      testHelper = await MetricTestHelper.forMetric(subject);
       await testHelper.emitFinishedEvent(true, {
         ts: Date.now(),
         wait: 100,

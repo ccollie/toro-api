@@ -3,7 +3,7 @@ import { resolve, sep } from 'path';
 
 export const config: import('bob-esbuild').BobConfig = {
     tsc: {
-        dirs: ['packages/*/*', 'internal/*', 'yoga/*'],
+        dirs: ['packages/*/*', 'internal/*', 'examples/*'],
     },
     verbose: false,
 };

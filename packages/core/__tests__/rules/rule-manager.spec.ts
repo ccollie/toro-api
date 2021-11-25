@@ -13,7 +13,7 @@ import {
 } from '../../src/rules';
 import {
   getUniqueId,
-  HostManager,
+  HostManager, nanoid,
   NotificationManager,
   QueueManager,
 } from '../common';
@@ -58,16 +58,15 @@ describe('RuleManager', () => {
   let notifications: NotificationManager;
 
   beforeEach(async function () {
-    const queueName = 'test-' + randomString(5);
+    const queueName = 'test-' + nanoid();
     const queueConfig: QueueConfig = {
       name: queueName,
-      prefix: 'bull',
+      prefix: 'test',
     };
 
-    hostManager = createHostManager({
+    hostManager = await createHostManager({
       queues: [queueConfig],
     });
-    await hostManager.waitUntilReady();
 
     notifications = hostManager.notifications;
     queueManager = hostManager.getQueueManager(queueName);
@@ -106,6 +105,11 @@ describe('RuleManager', () => {
       const savedRule = await ruleManager.addRule(opts);
       const expected = rule.toJSON();
       const actual = savedRule.toJSON();
+      // queueId is added during store, so we ignore it in comparison
+      actual.queueId = expected.queueId;
+      // use the updatedAt from stored value
+      actual.updatedAt = expected.updatedAt;
+
       expect(expected).toMatchObject(actual);
       expect(savedRule.id).not.toBeUndefined();
     });
@@ -131,13 +135,13 @@ describe('RuleManager', () => {
     it(`should emit a "${RuleEventsEnum.RULE_ADDED}" event`, async () => {
       let eventData = null;
 
-      hostManager.bus.on(RuleEventsEnum.RULE_ADDED, (evt) => {
+      queueManager.bus.on(RuleEventsEnum.RULE_ADDED, (evt) => {
         eventData = evt;
       });
 
       const rule = await addRule();
-      await delay(50);
-      expect(eventData).not.toBeUndefined();
+      await delay(200);
+      expect(eventData).not.toBeNull();
       expect(eventData.ruleId).toEqual(rule.id);
     });
   });
@@ -158,7 +162,7 @@ describe('RuleManager', () => {
     it('should emit a "rule.deleted" event', async () => {
       let eventData = null;
 
-      hostManager.bus.on(RuleEventsEnum.RULE_DELETED, (evt) => {
+      queueManager.bus.on(RuleEventsEnum.RULE_DELETED, (evt) => {
         eventData = evt;
       });
       const rule = await addRule();
@@ -199,7 +203,7 @@ describe('RuleManager', () => {
       expect(actual.id).toBe(rule.id);
       expect(actual.name).toBe(rule.name);
       expect(actual.createdAt).toBe(rule.createdAt);
-      expect(actual.updatedAt).toBe(rule.updatedAt);
+      expect(actual.updatedAt).toBeGreaterThan(rule.updatedAt);
       // expect(actual.options).toStrictEqual(rule.options);
       expect(actual.metricId).toBe(rule.metricId);
       expect(actual.condition).toStrictEqual(rule.condition);
@@ -214,7 +218,7 @@ describe('RuleManager', () => {
     async function createRules(count = 5): Promise<void> {
       for (let i = 0; i < count; i++) {
         const opts = {
-          id: 'rule-' + i,
+          id: getUniqueId(),
           description: `description-${i}`,
         };
         await addRule(opts);
@@ -260,7 +264,7 @@ describe('RuleManager', () => {
 
       const stored = await ruleManager.addAlert(rule, alert);
       const fromRedis = await getLastAlert(rule);
-      expect(stored).toStrictEqual(fromRedis);
+      expect(fromRedis).toStrictEqual(stored);
     });
   });
 

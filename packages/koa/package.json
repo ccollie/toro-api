@@ -47,8 +47,9 @@
     "@types/koa__router": "^8.0.8",
     "@types/node": ">=16.11.1",
     "bob-ts": "^1.2.2",
-    "esbuild": "^0.13.14",
+    "esbuild": "^0.14.0",
     "bob-esbuild-cli": "^3.0.1",
+    "tsc-alias": "^1.4.1",
     "typescript": "^4.5.2"
   }
 }

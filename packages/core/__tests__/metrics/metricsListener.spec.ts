@@ -6,9 +6,9 @@ import {
   JobRateMetric,
   LatencyMetric,
   MetricsListener,
-} from '../../src/metrics/index';
+} from '../../src/metrics';
 import { QueueListener } from '../../src/queues/index';
-import { QueueListenerHelper, createQueueListener } from '../factories';
+import { QueueListenerHelper, createQueueListener, createQueue } from '../factories';
 import { delay } from '../utils';
 
 describe('MetricsListener', () => {
@@ -16,8 +16,9 @@ describe('MetricsListener', () => {
   let queueListener: QueueListener;
   let helper: QueueListenerHelper;
 
-  beforeEach(() => {
-    queueListener = createQueueListener();
+  beforeEach(async () => {
+    const queue = await createQueue();
+    queueListener = createQueueListener(queue);
     helper = new QueueListenerHelper(queueListener);
     sut = new MetricsListener(queueListener);
   });

@@ -61,6 +61,11 @@ describe('RuleStorage', () => {
       const savedRule = await storage.createRule(opts);
       const expected = rule.toJSON();
       const actual = savedRule.toJSON();
+      // updatedAt is set on save, so ignore it in comparison
+      expected.updatedAt = actual.updatedAt;
+      // defer to the timestamp set by the storage
+      expected.createdAt = actual.createdAt;
+
       expect(expected).toMatchObject(actual);
       expect(savedRule.id).not.toBeUndefined();
     });
@@ -75,8 +80,9 @@ describe('RuleStorage', () => {
     it('adds the rule id to the rule index', async () => {
       const rule = await addRule();
       const score = await client.zscore(storage.rulesIndexKey, rule.id);
-      expect(score).toBeDefined();
-      expect(score).toBe('' + rule.createdAt);
+      expect(score).not.toBeNull();
+      const expected = parseFloat(score);
+      expect(expected).toBeCloseTo(rule.createdAt, 13);
     });
 
     it('emits a "rule.added" event', async () => {
@@ -132,7 +138,7 @@ describe('RuleStorage', () => {
 
   describe('.getRule', () => {
     it('gets a rule by id', async () => {
-      const id = randomString(5);
+      const id = getUniqueId();
       const savedRule = await addRule({ id });
 
       const rule = await storage.getRule(id);
@@ -140,6 +146,7 @@ describe('RuleStorage', () => {
 
       const original = savedRule.toJSON();
       const retrieved = rule.toJSON();
+      original.updatedAt = retrieved.updatedAt;
 
       expect(original).toStrictEqual(retrieved);
     });
@@ -151,13 +158,15 @@ describe('RuleStorage', () => {
       rule.isActive = !rule.isActive;
       rule.channels = ['slack'];
       rule.payload = { number: 1, string: randomString(), bool: false };
-      const saveProps = rule.toJSON();
+      const expected = rule.toJSON();
 
       await storage.saveRule(rule);
       const updated = await storage.getRule(rule.id);
-      const newProps = updated.toJSON();
+      const actual = updated.toJSON();
+      // ignore updatedAt
+      expected.updatedAt = actual.updatedAt;
 
-      expect(newProps).toStrictEqual(saveProps);
+      expect(actual).toStrictEqual(expected);
     });
 
     // TODO: check that event is raised
@@ -264,7 +273,7 @@ describe('RuleStorage', () => {
         const rule = await addRule();
         const alert = createAlert(rule);
 
-        const storedAlert = await storage.addAlert(rule, alert);
+        await storage.addAlert(rule, alert);
         alert.resetAt = Date.now() + 1000;
 
         const newAlert = createAlert(rule, {
@@ -338,7 +347,7 @@ describe('RuleStorage', () => {
         return sortList(alerts);
       }
 
-      it('fetches all rule alerts if not parameters are specified', async () => {
+      it('fetches all alerts if no parameters are specified', async () => {
         const rule = await addRule();
         const savedRules = await addAlerts(rule);
         let retrieved = await storage.getRuleAlerts(rule);
@@ -348,7 +357,7 @@ describe('RuleStorage', () => {
       });
     });
 
-    describe('.markAlertAsRead', async () => {
+    describe('.markAlertAsRead', () => {
       it('throws if an alert is not found', async () => {
         const rule = await addRule();
         const alert = createAlert(rule);
@@ -359,7 +368,9 @@ describe('RuleStorage', () => {
         await expect(
           storage.markAlertAsRead(rule, '12345', true),
         ).rejects.toEqual({
-          error: 'Unable to locate alert id#"12345"',
+          payload: {
+            error: 'Unable to locate alert id#"12345"',
+          }
         });
       });
 

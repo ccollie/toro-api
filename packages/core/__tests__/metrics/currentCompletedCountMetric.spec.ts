@@ -72,7 +72,7 @@ describe('CurrentCompletedCountMetric', () => {
 
     it('should get the correct number of completed jobs', async () => {
       const sut = new CurrentCompletedCountMetric({ sampleInterval: 1000 });
-      const helper = MetricTestHelper.forMetric(sut, queue);
+      const helper = await MetricTestHelper.forMetric(sut, queue);
       const listener = helper.metricsListener;
 
       // eslint-disable-next-line @typescript-eslint/no-empty-function

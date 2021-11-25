@@ -1,6 +1,6 @@
 import { groupBy, sample } from 'lodash';
 import { createClient } from '../factories';
-import { deleteAllQueueData, discoverQueues } from '../../src/queues/index';
+import { deleteAllQueueData, discoverQueues } from '../../src/queues';
 import { Queue } from 'bullmq';
 import pMap from 'p-map';
 
@@ -8,9 +8,9 @@ describe('utils', () => {
   describe('discoverQueues', () => {
     let queues: any[], client;
 
-    beforeEach(function () {
+    beforeEach(async () => {
       queues = [];
-      client = createClient();
+      client = await createClient();
     });
 
     afterEach(async function () {

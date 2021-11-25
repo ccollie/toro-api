@@ -68,7 +68,8 @@ describe('CurrentWaitingCountMetric', () => {
         sampleInterval: 1000,
       };
       const sut = new CurrentWaitingCountMetric(options);
-      const helper = MetricTestHelper.forMetric(sut, queue);
+      const helper = await MetricTestHelper.forMetric(sut, queue);
+
       const listener = helper.metricsListener;
 
       try {

@@ -1,6 +1,6 @@
 import { isNil, isString } from 'lodash';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
-import { RefCountCache, withCancel, withFilter } from '@alpen/core/lib';
+import { RefCountCache, withCancel, withFilter } from '@alpen/core';
 import { isPromise } from '@alpen/shared';
 import { EZContext } from 'graphql-ez';
 

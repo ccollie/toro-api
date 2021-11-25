@@ -12,8 +12,8 @@ import {
 } from '../../src/commands';
 import { getRuleStateKey } from '../../src/keys';
 import { getUniqueId, ManualClock } from '../../src/lib';
-import { ErrorLevel, RuleAlert, RuleConfigOptions, RuleEventsEnum, RuleState, } from '../../src/rules';
-import { clearDb, createQueueManager, createRule } from '../factories';
+import { ErrorLevel, RuleAlert, RuleConfigOptions, RuleEventsEnum, RuleState } from '../../src/rules';
+import { clearDb, createQueue, createQueueManager, createRule } from '../factories';
 import { delay } from '../utils';
 
 describe('RuleScripts', () => {
@@ -23,8 +23,8 @@ describe('RuleScripts', () => {
   let clock: ManualClock;
 
   beforeEach(async () => {
-    queueManager = createQueueManager();
-    queue = queueManager.queue;
+    queue = await createQueue();
+    queueManager = await createQueueManager(queue);
     storage = new RuleStorage(queueManager.host, queue, queueManager.bus);
     clock = new ManualClock();
   });

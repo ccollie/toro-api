@@ -7,6 +7,7 @@ function createNotifier(hostId: string): KeyspaceNotifier {
   const host = getHostConfig(hostId);
   return new KeyspaceNotifier(host.connection);
 }
+
 function disposeNotifier(hostId: string, notifier: KeyspaceNotifier): void {
   notifier.destroy().catch((err) => {
     logger.warn(err);

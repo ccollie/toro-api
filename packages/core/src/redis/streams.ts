@@ -30,7 +30,7 @@ export function convertTsForStream(timestamp: number | string | Date): string {
   }
 }
 
-export function add(
+export function streamAdd(
   multi: IORedis.Pipeline,
   key: string,
   timestamp,
@@ -40,7 +40,7 @@ export function add(
   return multi.xadd(key, convertTsForStream(timestamp), ...args);
 }
 
-export function bulkAdd(
+export function bulkStreamAdd(
   multi: IORedis.Pipeline,
   key: string,
   ...args: any[]
@@ -58,7 +58,7 @@ export function bulkAdd(
   }
 }
 
-export function getDeserializer(key: string) {
+export function getStreamDeserializer(key: string) {
   const fn = deserializerCache.get(key);
   if (!fn) {
     for (const [regex, cb] of deserializerMap) {
@@ -71,7 +71,7 @@ export function getDeserializer(key: string) {
   return fn;
 }
 
-export async function getInfo(
+export async function getStreamInfo(
   client: RedisClient,
   stream: string,
 ): Promise<RedisStreamItem> {

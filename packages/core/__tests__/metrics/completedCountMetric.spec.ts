@@ -74,7 +74,7 @@ describe('CompletedCountMetric', () => {
   describe('Updates', () => {
     test('can update count on success', async () => {
       const subject = new CompletedCountMetric(defaultOptions);
-      testHelper = MetricTestHelper.forMetric(subject);
+      testHelper = await MetricTestHelper.forMetric(subject);
       const count = random(2, 10);
       for (let i = 0; i < count; i++) {
         await testHelper.emitCompletedEvent();

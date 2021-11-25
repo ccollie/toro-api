@@ -7,7 +7,7 @@ describe('QueueManager', () => {
   let hostManager: HostManager;
 
   beforeEach(async () => {
-    hostManager = createHostManager();
+    hostManager = await createHostManager();
     await hostManager.waitUntilReady();
   });
 
@@ -18,7 +18,7 @@ describe('QueueManager', () => {
 
   describe('constructor', () => {
     it('constructs an instance', async () => {
-      const queue = createQueue(null, {
+      const queue = await createQueue(null, {
         connection: hostManager.client,
       });
       const config: QueueConfig = {
@@ -53,7 +53,7 @@ describe('QueueManager', () => {
       };
       const expected = `localhost/q/${config.id}`;
 
-      const queue = createQueue(null, {
+      const queue = await createQueue(null, {
         connection: hostManager.client,
       });
       const sut = new QueueManager(hostManager, queue, config);

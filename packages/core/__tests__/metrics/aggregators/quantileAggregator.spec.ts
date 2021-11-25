@@ -8,7 +8,7 @@ import {
   QuantileAggregator,
 } from '../../../src';
 import { random } from 'lodash';
-import { DDSketch } from 'sketches-js';
+import { DDSketch } from '@datadog/sketches-js';
 import { validateCounts } from './helpers';
 
 describe('Quantile Aggregators', () => {
@@ -404,7 +404,7 @@ describe('Quantile Aggregators', () => {
 });
 
 function validateNoTick(instance: QuantileAggregator): void {
-  const sketch = new DDSketch({ alpha: instance.alpha });
+  const sketch = new DDSketch({ relativeAccuracy: instance.alpha });
 
   for (let i = 0; i < 100; i++) {
     const value = random(1, 1000);
@@ -441,7 +441,7 @@ function validateUpdateOnTick(instance: QuantileAggregator): void {
   let timeStamp = 1000;
   let lastTick = instance.lastTick;
 
-  const sketch = new DDSketch({ alpha: instance.alpha });
+  const sketch = new DDSketch({ relativeAccuracy: instance.alpha });
   for (let i = 0; i < sliceCount; i++) {
     const num = random(-100, 2500);
     const value = instance.update(num, timeStamp);
@@ -473,7 +473,7 @@ function checkUpdate(
 ) {
   sketch.accept(value);
   const actual = instance.update(value);
-  const expected = sketch.quantile(instance.quantile);
+  const expected = sketch.getValueAtQuantile(instance.quantile);
   expect(actual).toBe(expected);
 }
 
@@ -482,7 +482,7 @@ function calculateQuantile(
   quantile: number,
   alpha: number,
 ): number {
-  const sketch = new DDSketch({ alpha });
-  values.forEach((x) => void sketch.add(x));
-  return sketch.quantile(quantile);
+  const sketch = new DDSketch({ relativeAccuracy: alpha });
+  values.forEach((x) => void sketch.accept(x));
+  return sketch.getValueAtQuantile(quantile);
 }

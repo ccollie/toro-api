@@ -8,19 +8,19 @@ describe('FailedCountMetric', () => {
   const defaultOptions: QueueMetricOptions = {};
   let testHelper: MetricTestHelper;
 
+  beforeEach(async () => {
+    testHelper = new MetricTestHelper();
+    await testHelper.waitUntilReady();
+  });
+
   afterEach(async () => {
     if (testHelper) {
       await testHelper.destroy();
     }
   });
 
-  function ensureHelper(): MetricTestHelper {
-    testHelper = testHelper || new MetricTestHelper();
-    return testHelper;
-  }
-
   function registerMetric(metric: BaseMetric) {
-    ensureHelper().registerMetric(metric);
+    testHelper.registerMetric(metric);
   }
 
   function complete() {

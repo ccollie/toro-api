@@ -40,7 +40,6 @@ function transformTemplate(data: Record<string, any>): string {
     filePath: EmailTemplatePath,
     keepComments: !isProd,
     minify: isProd,
-    beautify: !isProd,
     preprocessors: [
       (xml) => {
         const handler = getTemplateFn(xml);

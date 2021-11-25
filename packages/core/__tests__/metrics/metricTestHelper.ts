@@ -3,7 +3,7 @@ import { UnsubscribeFn } from 'emittery';
 import { Clock } from '../../src/lib';
 import { BaseMetric, MetricsListener, MetricTypes } from '../../src/metrics';
 import { QueueListener } from '../../src/queues';
-import { createQueueListener, QueueListenerHelper } from '../factories';
+import { createQueue, createQueueListener, QueueListenerHelper } from '../factories';
 
 const BASE_UNIT = 'base_unit';
 const BASE_DESCRIPTION = 'base_description';
@@ -13,20 +13,31 @@ function getBaseKey(): MetricTypes {
 }
 
 export class MetricTestHelper {
-  readonly queueListener: QueueListener;
-  private readonly queueListenerHelper: QueueListenerHelper;
-  readonly metricsListener: MetricsListener;
+  queueListener: QueueListener;
+  metricsListener: MetricsListener;
+  private _queue: Queue;
+  private queueListenerHelper: QueueListenerHelper;
+  private isReady: Promise<Queue>;
   private readonly _disposeQueue: boolean;
 
   constructor(queue?: Queue) {
-    this.queueListener = createQueueListener(queue);
-    this.queueListenerHelper = new QueueListenerHelper(this.queueListener);
-    this.metricsListener = new MetricsListener(this.queueListener);
     this._disposeQueue = !queue;
+    this.isReady = queue ? Promise.resolve(queue) : createQueue();
+    this.isReady.then(queue => {
+      this._queue = queue;
+      this.queueListener = createQueueListener(queue);
+      this.queueListenerHelper = new QueueListenerHelper(this.queueListener);
+      this.metricsListener = new MetricsListener(this.queueListener);
+    });
   }
 
-  static forMetric(metric: BaseMetric, queue?: Queue): MetricTestHelper {
+  waitUntilReady(): Promise<any> {
+    return this.isReady;
+  }
+
+  static async forMetric(metric: BaseMetric, queue?: Queue): Promise<MetricTestHelper> {
     const helper = new MetricTestHelper(queue);
+    await helper.waitUntilReady();
     helper.registerMetric(metric);
     return helper;
   }
@@ -60,15 +71,19 @@ export class MetricTestHelper {
 
   async destroy(): Promise<void> {
     const queue = this.queue;
-    await this.queueListener.destroy();
-    this.metricsListener.destroy();
-    if (this._disposeQueue) {
+    if (this.queueListener) {
+      await this.queueListener.destroy();
+    }
+    if (this.metricsListener) {
+      this.metricsListener.destroy();
+    }
+    if (queue && this._disposeQueue) {
       await queue.close();
     }
   }
 
   get queue(): Queue {
-    return this.queueListener.queue;
+    return this._queue;
   }
 
   get clock(): Clock {
@@ -76,7 +91,7 @@ export class MetricTestHelper {
   }
 
   get client(): Promise<RedisClient> {
-    return this.queue.client;
+    return this.isReady.then(q => q.client);
   }
 
   registerMetric(metric: BaseMetric): void {
@@ -92,14 +107,17 @@ export class MetricTestHelper {
   }
 
   async emitJobEvent(event: string, data?: Record<string, any>): Promise<void> {
+    await this.waitUntilReady();
     return this.queueListenerHelper.postJobEvent(event, data);
   }
 
   async emitCompletedEvent(data?: Record<string, any>): Promise<void> {
+    await this.waitUntilReady();
     return this.queueListenerHelper.postCompletedEvent(data);
   }
 
   async emitFailedEvent(data?: Record<string, any>): Promise<void> {
+    await this.waitUntilReady();
     return this.queueListenerHelper.postFailedEvent(data);
   }
 
@@ -107,6 +125,7 @@ export class MetricTestHelper {
     success: boolean,
     data?: Record<string, any>,
   ): Promise<void> {
+    await this.waitUntilReady();
     return this.queueListenerHelper.postFinishedEvent(success, data);
   }
 

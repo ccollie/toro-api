@@ -35,7 +35,7 @@ describe('RedisMetric', () => {
         sampleInterval: interval,
       };
       const sut = new RedisMetric(options, 'total_system_memory');
-      const helper = MetricTestHelper.forMetric(sut, queue);
+      const helper = await MetricTestHelper.forMetric(sut, queue);
       const info = await getRedisInfo(client);
 
       try {

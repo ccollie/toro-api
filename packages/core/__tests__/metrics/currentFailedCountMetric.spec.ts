@@ -60,11 +60,11 @@ describe('CurrentFailedCountMetric', () => {
     }
 
     it('should get the correct number of failed jobs', async () => {
-      const queue = createQueue();
+      const queue = await createQueue();
       const client = await queue.client;
 
       const sut = new CurrentFailedCountMetric({ sampleInterval: 1000 });
-      const helper = MetricTestHelper.forMetric(sut, queue);
+      const helper = await MetricTestHelper.forMetric(sut, queue);
 
       const worker = createWorker(
         queue.name,

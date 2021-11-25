@@ -7,7 +7,7 @@ import {
   SlidingWindowOptions,
 } from '../types';
 import { round } from 'lodash';
-import { DDSketch } from 'sketches-js';
+import { DDSketch } from '@datadog/sketches-js';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
 import { ordinal } from '@alpen/shared';
 import { getMetricTypeName } from './utils';
@@ -29,7 +29,7 @@ export interface QuantileAggregatorOptions {
 }
 
 function makeEstimator(options?: QuantileAggregatorOptions): DDSketch {
-  return new DDSketch({ alpha: options.alpha });
+  return new DDSketch({ relativeAccuracy: options.alpha });
 }
 
 const QuantileAggregatorSchema = baseSchema.keys({

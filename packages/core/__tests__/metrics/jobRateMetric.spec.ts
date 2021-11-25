@@ -76,7 +76,7 @@ describe('JobRateMetric', () => {
     test('properly updates simple values', async () => {
       const data = getRandomNumberArray(5);
       const subject = new JobRateMetric(defaultOptions);
-      helper = MetricTestHelper.forMetric(subject);
+      helper = await MetricTestHelper.forMetric(subject);
       await pMap(data, (latency) => {
         return helper.emitFinishedEvent(true, {
           ts: Date.now(),
@@ -90,7 +90,7 @@ describe('JobRateMetric', () => {
   describe('Triggering', () => {
     test('triggers an "update" event when a job is finished', async () => {
       const subject = new JobRateMetric(defaultOptions);
-      helper = MetricTestHelper.forMetric(subject);
+      helper = await MetricTestHelper.forMetric(subject);
       let eventTriggered = false;
       subject.onUpdate(() => (eventTriggered = true));
       await helper.emitFinishedEvent(true, {
@@ -105,11 +105,11 @@ describe('JobRateMetric', () => {
     let metric: JobRateMetric;
     let helper: MetricTestHelper;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       metric = new JobRateMetric({
         timePeriod: 5000,
       });
-      helper = MetricTestHelper.forMetric(metric);
+      helper = await MetricTestHelper.forMetric(metric);
     });
 
     afterEach(async () => {

@@ -30,7 +30,7 @@ describe('CurrentActiveCountMetric', () => {
     });
 
     it('exposes a "type" property', () => {
-      expect(CurrentActiveCountMetric.type).toBe(MetricValueType.Count);
+      expect(CurrentActiveCountMetric.type).toBe(MetricValueType.Gauge);
     });
   });
 
@@ -67,7 +67,7 @@ describe('CurrentActiveCountMetric', () => {
         sampleInterval: interval,
       };
       const sut = new CurrentActiveCountMetric(options);
-      const helper = MetricTestHelper.forMetric(sut, queue);
+      const helper = await MetricTestHelper.forMetric(sut, queue);
 
       let jobCount: number;
       let processor;

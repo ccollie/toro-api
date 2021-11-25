@@ -9,7 +9,7 @@ import { QueueManager, QueueListener } from '../queues';
 import { HostManager, HostConfig, getHosts } from '../hosts';
 import { logger } from '../logger';
 import { appInfo } from '../config';
-import { AppInfo } from '../types';
+import type { AppInfo } from '../types';
 import { registerHelpers } from '../lib/hbs';
 import { parseDuration } from '@alpen/shared';
 

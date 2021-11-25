@@ -7,7 +7,7 @@ function quote(source: string): string {
 }
 
 
-describe('date.lua', () => {
+describe.skip('date.lua', () => {
   let client;
   let script: string;
 

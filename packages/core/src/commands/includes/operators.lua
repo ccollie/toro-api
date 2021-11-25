@@ -34,53 +34,35 @@ function operator.eq(a,b)
     return l == r
 end
 
---- returns true if arguments are not equal **~=**
--- @param a value
--- @param b value
 function operator.neq(a,b)
     local l, r = normalizeNils(a, b)
     return l ~= r
 end
 
---- returns true if a is less than b **<**
--- @param a value
--- @param b value
 function operator.lt(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l < r
 end
 
---- returns true if a is less or equal to b **<=**
--- @param a value
--- @param b value
 function operator.le(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l <= r
 end
 
---- returns true if a is greater than b **>**
--- @param a value
--- @param b value
 function operator.gt(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l > r
 end
 
---- returns true if a is greater or equal to b **>=**
--- @param a value
--- @param b value
 function operator.ge(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l >= r
 end
 
---- add two values **+**
--- @param a value
--- @param b value
 function operator.add(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
@@ -88,45 +70,30 @@ function operator.add(a,b)
     return l + r
 end
 
---- subtract b from a **-**
--- @param a value
--- @param b value
 function operator.sub(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l - r
 end
 
---- multiply two values __*__
--- @param a value
--- @param b value
 function operator.mul(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l * r
 end
 
---- divide first value by second **/**
--- @param a value
--- @param b value
 function operator.div(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return a/b
 end
 
---- raise first to the power of second **^**
--- @param a value
--- @param b value
 function operator.pow(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
     return l ^ r
 end
 
---- modulo; remainder of a divided by b **%**
--- @param a value
--- @param b value
 function operator.mod(a,b)
     local l, r = normalizeNils(a, b)
     if (l == nil or r == nil) then return cjson.null end
@@ -143,6 +110,7 @@ end
 --- return the negative of a value **-**
 -- @param a value
 function operator.unm(a)
+    a = tonumber(a)
     if (isNil(a)) then return cjson.null end
     return -a
 end
@@ -153,24 +121,16 @@ function operator.lnot(a)
     return not isTruthy(a)
 end
 
---- true if both values evaluate as true **and**
--- @param a value
--- @param b value
 function operator.land(a,b)
     local l, r = normalizeNils(a, b)
     return l and r
 end
 
---- true if either value evaluate as true **or**
--- @param a value
--- @param b value
 function operator.lor(a,b)
     local l, r = normalizeNils(a, b)
     return isTruthy(l) or isTruthy(r)
 end
 
---- match two strings **~**.
--- uses @{string.find}
 function operator.match (a,b)
     return string.find(a,b)~=nil
 end

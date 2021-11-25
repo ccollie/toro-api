@@ -13,7 +13,7 @@ export async function createRuleManager(
   };
 
   if (!host) {
-    host = createHostManager({
+    host = await createHostManager({
       queues: [queueConfig],
     });
   }

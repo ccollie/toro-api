@@ -2,11 +2,11 @@ import {
   Channel,
   ChannelEvents,
   ChannelStorage,
+  EventBus,
   MailChannel,
   SlackChannel,
   WebhookChannel,
 } from '../../src';
-import { EventBus } from '../../src';
 import { delay, randomId } from '../utils';
 import type {
   ChannelConfig,
@@ -15,9 +15,8 @@ import type {
   WebhookChannelConfig,
 } from '../../src/notifications';
 import { random } from 'lodash';
-import type { HostConfig } from '../../src/hosts';
-import { HostManager } from '../../src/hosts';
-import { clearDb, DEFAULT_CONNECTION_OPTIONS } from '../factories';
+import { HostManager, HostConfig } from '../../src/hosts';
+import { clearDb, createHostManager, DEFAULT_CONNECTION_OPTIONS } from '../factories';
 import { RedisClient } from 'bullmq';
 import pSettle from 'p-settle';
 
@@ -42,8 +41,7 @@ describe('ChannelStorage', () => {
 
   beforeEach(async function () {
     const config = createHostConfig();
-    hostManager = new HostManager(config);
-    await hostManager.waitUntilReady();
+    hostManager = await createHostManager(config);
     bus = hostManager.bus;
     client = hostManager.client;
     await bus.waitUntilReady();

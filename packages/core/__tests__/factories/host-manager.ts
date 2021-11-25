@@ -15,9 +15,11 @@ function createConfig(defaults?: Partial<HostConfig>): HostConfig {
   };
 }
 
-export function createHostManager(config?: Partial<HostConfig>): HostManager {
+export async function createHostManager(config?: Partial<HostConfig>): Promise<HostManager> {
   process.env.HOST_URI_TEMPLATE =
     '{{server.host}}:{{server.port}}/hosts/{{host.id}}';
   const hostConfig = createConfig(config);
-  return new HostManager(hostConfig);
+  const host = new HostManager(hostConfig);
+  await host.waitUntilReady();
+  return host;
 }

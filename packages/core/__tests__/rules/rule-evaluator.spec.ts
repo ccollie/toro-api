@@ -19,7 +19,7 @@ import {
 } from '../../src/metrics';
 import { QueueListener } from '../../src/queues';
 import {
-  clearDb,
+  clearDb, createQueue,
   createQueueListener,
   createRule,
   QueueListenerHelper,
@@ -39,7 +39,8 @@ describe('RuleEvaluator', () => {
   let metric: BaseMetric;
 
   beforeEach(async () => {
-    queueListener = await createQueueListener();
+    const queue = await createQueue();
+    queueListener = await createQueueListener(queue);
     listenerHelper = new QueueListenerHelper(queueListener);
     metricsListener = new MetricsListener(queueListener);
   });

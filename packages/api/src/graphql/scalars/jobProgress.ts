@@ -1,6 +1,6 @@
 import { GraphQLScalarType, Kind } from 'graphql';
 import { isObject, isString } from 'lodash';
-import { isNumber, safeParse } from '@alpen/shared';
+import { safeParse } from '@alpen/shared';
 
 export const JobProgress = new GraphQLScalarType({
   name: 'JobProgress',
@@ -8,8 +8,8 @@ export const JobProgress = new GraphQLScalarType({
     'Job process. Either a number (percentage) or user specified data',
   parseValue(value) {
     // from client
-    if (isNumber(value)) {
-      return parseInt(value);
+    if (typeof value == 'number') {
+      return value;
     }
     if (isString(value)) {
       return safeParse(value);
@@ -18,8 +18,9 @@ export const JobProgress = new GraphQLScalarType({
   },
   serialize(value): any {
     // value sent to the client
-    if (isNumber(value)) {
-      return parseInt(value, 10);
+    if (typeof value === 'string') {
+      const val = parseInt(value, 10);
+      if (!Number.isNaN(val)) return val;
     }
     if (isObject(value)) {
       return JSON.stringify(value);

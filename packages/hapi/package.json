@@ -43,6 +43,7 @@
     "@types/hapi__hapi": "^20.0.7",
     "@types/node": "^14.17.5",
     "bob-ts": "^1.2.2",
-    "esbuild": "^0.13.13"
+    "esbuild": "^0.14.0",
+    "tsc-alias": "^1.4.1"
   }
 }

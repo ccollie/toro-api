@@ -1,17 +1,17 @@
-import { badRequest, notFound } from '@hapi/boom';
 import { RedisClient } from 'bullmq';
 import { createHash } from 'crypto';
-import glob from 'glob';
+import { glob, hasMagic } from 'glob';
 import * as path from 'path';
 import * as fs from 'fs';
 import { promisify } from 'util';
+import CallSite = NodeJS.CallSite;
 
 const readFile = promisify(fs.readFile);
 const readdir = promisify(fs.readdir);
 
-const GLOB_OPTS = { dot: true, silent: false, sync: true };
+const GLOB_OPTS = { dot: true, silent: false };
 const RE_INCLUDE = /^[-]{2,3}[ \t]*@include[ \t]+(["'])(.+?)\1[; \t\n]*$/m;
-const RE_EMPTY_LINE = /^\s+$/gm;
+const RE_EMPTY_LINE = /^\s*[\r\n]/gm;
 
 export interface Command {
   name: string;
@@ -25,6 +25,12 @@ export interface Command {
  * Script metadata
  */
 export interface ScriptInfo {
+  /**
+   * Name of the script
+   */
+  name: string;
+
+  numberOfKeys?: number;
   /**
    * The path to the script. For includes, this is the normalized path,
    * whereas it may not be normalized for the top-level parent
@@ -44,6 +50,142 @@ export interface ScriptInfo {
   includes: ScriptInfo[];
 }
 
+export class ScriptLoaderError extends Error {
+  public path: string;
+  public includes: string[];
+  public line: number;
+  public position: number;
+
+  constructor(
+    message: string,
+    path: string,
+    stack: string[] = [],
+    line?: number,
+    position = 0,
+  ) {
+    super(message);
+    // Ensure the name of this error is the same as the class name
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
+    this.includes = stack;
+    this.line = line ?? 0;
+    this.position = position;
+  }
+}
+
+const pathMapper = new Map<string, string>();
+let rootPath: string;
+
+// Determine the project root
+// https://stackoverflow.com/a/18721515
+export function getPkgJsonDir(): string {
+  for (const modPath of module.paths) {
+    try {
+      const prospectivePkgJsonDir = path.dirname(modPath);
+      fs.accessSync(modPath, fs.constants.F_OK);
+      return prospectivePkgJsonDir;
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+  }
+}
+
+// https://stackoverflow.com/a/66842927
+// some dark magic here :-)
+function _getCallerFile() {
+  const originalFunc = Error.prepareStackTrace;
+
+  let callerFile;
+  try {
+    const err = new Error();
+    Error.prepareStackTrace = function(err, stack) {
+      return stack;
+    };
+
+    const sites = <CallSite[]>(<unknown>err.stack);
+    const currentFile = sites.shift().getFileName();
+
+    while (err.stack.length) {
+      callerFile = sites.shift().getFileName();
+
+      if (currentFile !== callerFile) {
+        break;
+      }
+    }
+    // eslint-disable-next-line no-empty
+  } catch (e) {
+  } finally {
+    Error.prepareStackTrace = originalFunc;
+  }
+
+  return callerFile;
+}
+
+function initMapping() {
+  if (!rootPath) {
+    rootPath = getPkgJsonDir();
+    pathMapper.set('~', rootPath);
+    pathMapper.set('rootDir', rootPath);
+    pathMapper.set('alpen', __dirname);
+  }
+}
+
+const possiblyMapped = (path: string) => path && ['~', '<'].includes(path[0]);
+const isGlob = (path: string) => hasMagic(path, GLOB_OPTS);
+
+/**
+ * Add a script path mapping. Allows includes of the form "<includes>/utils.lua" where `includes` is a user
+ * defined path
+ * @param name - the name of the mapping. Note: do not include angle brackets
+ * @param mappedPath - if a relative path is passed, it's relative to the *caller* of this function.
+ * Mapped paths are also accepted, e.g. "~/server/scripts/lua" or "<base>/includes"
+ */
+export function addScriptPathMapping(name: string, mappedPath: string): void {
+  initMapping();
+  let resolved: string;
+
+  if (possiblyMapped(mappedPath)) {
+    resolved = resolvePath(mappedPath);
+  } else {
+    const caller = _getCallerFile();
+    const callerPath = path.dirname(caller);
+    resolved = path.normalize(path.resolve(callerPath, mappedPath));
+  }
+
+  if (resolved[resolved.length - 1] === path.sep) {
+    resolved = resolved.substr(0, resolved.length - 1);
+  }
+
+  pathMapper.set(name, resolved);
+}
+
+/**
+ * Resolve the script path considering path mappings
+ * @param scriptName - the name of the script
+ * @param stack - the include stack, for nicer errors
+ */
+export function resolvePath(scriptName: string, stack: string[] = []): string {
+  const first = scriptName[0];
+  if (first === '~') {
+    scriptName = path.join(rootPath, scriptName.substr(2));
+  } else if (first === '<') {
+    const p = scriptName.indexOf('>');
+    if (p > 0) {
+      const name = scriptName.substring(1, p);
+      const mappedPath = pathMapper.get(name);
+      if (!mappedPath) {
+        throw new ScriptLoaderError(
+          `No path mapping found for "${name}"`,
+          scriptName,
+          stack,
+        );
+      }
+      scriptName = path.join(mappedPath, scriptName.substring(p + 1));
+    }
+  }
+
+  return path.normalize(scriptName);
+}
+
 function calcSha1(data: string): string {
   return createHash('sha1').update(data).digest('hex');
 }
@@ -53,13 +195,15 @@ function getReplacementToken(normalizedPath: string): string {
 }
 
 function bannerize(fileName: string, baseDir: string, content: string): string {
-  if (!content) return '';
+  if (!content) {
+    return '';
+  }
   let name = fileName.substr(baseDir.length);
   if (name[0] == path.sep) {
     name = name.substr(1);
   }
-  const header = '---[ START ' + name + ' ]---';
-  const footer = '---[ END ' + name + ' ]---';
+  const header = '---[START ' + name + ' ]---';
+  const footer = '---[END   ' + name + ' ]---';
   return `${header}\n${content}\n${footer}`;
 }
 
@@ -74,24 +218,39 @@ function findPos(content: string, match: string) {
 
 function ensureExt(filename: string, ext = 'lua'): string {
   const foundExt = path.extname(filename);
-  if (foundExt && foundExt !== '.') return filename;
-  if (ext && ext[0] !== '.') ext = `.${ext}`;
+  if (foundExt && foundExt !== '.') {
+    return filename;
+  }
+  if (ext && ext[0] !== '.') {
+    ext = `.${ext}`;
+  }
   return `${filename}${ext}`;
 }
 
-function splitFilename(filePath: string): { name: string; numberOfKeys: number } {
+function splitFilename(filePath: string): {
+  name: string;
+  numberOfKeys?: number;
+} {
   const longName = path.basename(filePath, '.lua');
-  const name = longName.split('-')[0];
-  const numberOfKeys = parseInt(longName.split('-')[1]);
-  return { name, numberOfKeys }
+  const [name, num] = longName.split('-');
+  const numberOfKeys = num && parseInt(num, 10);
+  return { name, numberOfKeys };
+}
+
+async function handleGlob(pattern: string): Promise<string[]> {
+  return new Promise<string[]>((resolve, reject) => {
+    glob(pattern, GLOB_OPTS, (err, files) => {
+      return err ? reject(err) : resolve(files);
+    });
+  });
 }
 
 /**
  * Recursively collect all scripts included in a file
- * @param file  the parent file
- * @param cache a cache for file metadata to increase efficiency. Since a file can be included
+ * @param file - the parent file
+ * @param cache - a cache for file metadata to increase efficiency. Since a file can be included
  * multiple times, we make sure to load it only once.
- * @param stack internal stack to prevent circular references
+ * @param stack - internal stack to prevent circular references
  */
 async function collectFilesInternal(
   file: ScriptInfo,
@@ -99,66 +258,100 @@ async function collectFilesInternal(
   stack: string[],
 ): Promise<void> {
   if (stack.includes(file.path)) {
-    throw badRequest(`circular reference: "${file.path}"`, { stack });
+    throw new ScriptLoaderError(
+      `circular reference: "${file.path}"`,
+      file.path,
+      stack,
+    );
   }
   stack.push(file.path);
 
-  let res;
+  function raiseError(msg: string, match: string): void {
+    const pos = findPos(file.content, match);
+    throw new ScriptLoaderError(msg, file.path, stack, pos.line, pos.column);
+  }
 
+  let res;
   let content = file.content;
 
   while ((res = RE_INCLUDE.exec(content)) !== null) {
     const [match, , reference] = res;
 
-    const pattern = path.normalize(
-      path.resolve(path.dirname(file.path), ensureExt(reference)),
-    );
+    const pattern = possiblyMapped(reference)
+      ? resolvePath(ensureExt(reference), stack)
+      : path.resolve(path.dirname(file.path), ensureExt(reference));
 
-    const refPaths = glob.sync(pattern, GLOB_OPTS).map((x: string) => path.resolve(x));
+    let refPaths: string[];
 
-    if (refPaths.length === 0) {
-      const pos = findPos(file.content, match);
-      throw notFound(
-        `not found: "${reference}", referenced in "${file.path}"`,
-        { stack, file, ...pos },
-      );
+    if (isGlob(pattern)) {
+      const globbed = await handleGlob(pattern);
+      refPaths = globbed.map((x: string) => path.resolve(x));
+    } else {
+      refPaths = [pattern];
     }
 
+    refPaths = refPaths.filter((file: string) => path.extname(file) === '.lua');
+
+    if (refPaths.length === 0) {
+      raiseError(`include not found: "${reference}"`, match);
+    }
+
+    const tokens: string[] = [];
+
     for (let i = 0; i < refPaths.length; i++) {
-      const path: string = refPaths[i];
-      const hasDependent = file.includes.find((x: ScriptInfo) => x.path === path);
+      const path = refPaths[i];
+
+      const hasDependent = file.includes.find(
+        (x: ScriptInfo) => x.path === path,
+      );
+
       if (hasDependent) {
-        const pos = findPos(file.content, match);
-        throw badRequest(
-          `file "${path}" already @included in "${reference}"`,
-          { stack, file, ...pos },
+        raiseError(
+          `file "${reference}" already included in "${file.path}"`,
+          match,
         );
       }
+
       let dependent = cache.get(path);
       let token: string;
 
       if (!dependent) {
-        const buf = await readFile(path, { flag: 'r' });
-        let childContent = buf.toString();
-        childContent = childContent.replace(RE_EMPTY_LINE, '');
+        const { name, numberOfKeys } = splitFilename(path);
+        let childContent: string;
+        try {
+          const buf = await readFile(path, { flag: 'r' });
+          childContent = buf.toString();
+          childContent = childContent.replace(RE_EMPTY_LINE, '');
+        } catch (err) {
+          if ((err as any).code === 'ENOENT') {
+            raiseError(`include not found: "${reference}"`, match);
+          } else {
+            throw err;
+          }
+        }
         // this represents a normalized version of the path to make replacement easy
         token = getReplacementToken(path);
         dependent = {
+          name,
+          numberOfKeys,
           path,
           content: childContent,
           token,
           includes: [],
         };
-        cache.set(token, dependent);
+        cache.set(path, dependent);
       } else {
         token = dependent.token;
       }
 
-      content = content.replace(match, token);
+      tokens.push(token);
 
       file.includes.push(dependent);
       await collectFilesInternal(dependent, cache, stack);
     }
+
+    const substitution = tokens.join('\n');
+    content = content.replace(match, substitution);
   }
 
   file.content = content;
@@ -168,6 +361,7 @@ async function collectFilesInternal(
 }
 
 async function collectFiles(file: ScriptInfo, cache: Map<string, ScriptInfo>) {
+  initMapping();
   return collectFilesInternal(file, cache, []);
 }
 
@@ -184,7 +378,7 @@ function mergeInternal(
 ): string {
   cache = cache || new Set<string>();
   let content = file.content;
-  file.includes.forEach((dependent) => {
+  file.includes.forEach((dependent: ScriptInfo) => {
     const emitted = cache.has(dependent.path);
     const fragment = mergeInternal(dependent, baseDir, cache);
     const replacement =
@@ -216,10 +410,13 @@ export async function processScript(
   cache?: Map<string, ScriptInfo>,
 ): Promise<string> {
   cache = cache ?? new Map<string, ScriptInfo>();
+  const { name, numberOfKeys } = splitFilename(filename);
   const fileInfo: ScriptInfo = {
     path: filename,
     token: '',
     content,
+    name,
+    numberOfKeys,
     includes: [],
   };
 
@@ -232,6 +429,7 @@ export async function loadScript(
   filename: string,
   cache?: Map<string, ScriptInfo>,
 ): Promise<string> {
+  filename = path.normalize(filename);
   const buf = await readFile(filename);
   const content = buf.toString();
   return processScript(filename, content, cache);
@@ -267,7 +465,10 @@ export async function loadCommand(filePath: string): Promise<Command> {
  * moveToFinish-3.lua
  *
  */
-export async function loadScripts(dir?: string): Promise<Command[]> {
+export async function loadScripts(
+  dir?: string,
+  cache?: Map<string, ScriptInfo>,
+): Promise<Command[]> {
   dir = dir || __dirname;
   const files = await readdir(dir);
 
@@ -284,7 +485,7 @@ export async function loadScripts(dir?: string): Promise<Command[]> {
   }
 
   const commands: Command[] = [];
-  const cache = new Map<string, ScriptInfo>();
+  cache = cache ?? new Map<string, ScriptInfo>();
 
   for (let i = 0; i < luaFiles.length; i++) {
     const file = path.join(dir, luaFiles[i]);
@@ -297,18 +498,17 @@ export async function loadScripts(dir?: string): Promise<Command[]> {
 
 const clientPaths = new WeakMap<RedisClient, Set<string>>();
 
-export const load = async function(client: RedisClient, pathname?: string) {
-  pathname = pathname ?? __dirname;
-
-  let paths: Set<string> = clientPaths.get(client);
-  if (!paths) {
-    paths = new Set<string>();
-    clientPaths.set(client, paths);
-  }
+export const load = async function(
+  client: RedisClient,
+  pathname: string,
+  cache?: Map<string, ScriptInfo>,
+): Promise<RedisClient> {
+  const paths = clientPaths.get(client) ?? new Set<string>();
   if (!paths.has(pathname)) {
     paths.add(pathname);
+    clientPaths.set(client, paths);
 
-    const scripts = await loadScripts(pathname);
+    const scripts = await loadScripts(pathname, cache);
     scripts.forEach((command: Command) => {
       // Only define the command if not already defined
       if (!(client as any)[command.name]) {
@@ -316,4 +516,6 @@ export const load = async function(client: RedisClient, pathname?: string) {
       }
     });
   }
+
+  return client;
 };

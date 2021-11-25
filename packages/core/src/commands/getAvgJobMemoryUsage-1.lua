@@ -12,7 +12,9 @@ local prefix = ARGV[1]
 local jobName = ARGV[2] or nil
 local limit = assert(tonumber(ARGV[3] or 200), 'Invalid value for limit')
 
-local ids = redis.call('zrevrange', key, 0, limit)
+local rcall = redis.call
+
+local ids = rcall('zrevrange', key, 0, limit)
 local byteCount = 0
 
 if (#ids == 0) then
@@ -24,7 +26,6 @@ if (jobName == '') then
 end
 
 local counter = 0
-local rcall = redis.call
 
 for _, jobId in ipairs(ids) do
     local jobKey = prefix .. jobId

@@ -1,6 +1,6 @@
 import { ConnectionOptions } from '../../src/redis';
 import { RedisClient } from 'bullmq';
-import { load } from '../../src/commands/scriptLoader';
+import { ensureScriptsLoaded } from '../../src/commands/utils';
 import IORedis from 'ioredis';
 
 export const TEST_DB = 13;
@@ -27,12 +27,12 @@ export async function createClient(
   } else {
     client = new IORedis(options);
   }
-  if (withScripts) await load(client);
+  if (withScripts) await ensureScriptsLoaded(client);
   return client;
 }
 
 export async function clearDb(client?: RedisClient): Promise<void> {
-  const flushClient = client || (await createClient());
+  const flushClient = client || (await createClient(null, false));
   await flushClient.flushdb();
   if (!client) {
     flushClient.disconnect();

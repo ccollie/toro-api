@@ -96,7 +96,7 @@ export class Rule {
       name,
       condition,
       metricId,
-      active,
+      isActive,
       payload,
       description,
       state,
@@ -140,7 +140,7 @@ export class Rule {
      */
     this.description = description;
 
-    this.isActive = active ?? true;
+    this.isActive = isActive ?? true;
     this.payload = payload;
     this.message = config.message;
     this._channels = config.channels || [];
@@ -222,20 +222,24 @@ export class Rule {
       ? parseTimestamp(this.updatedAt)
       : undefined;
 
+    const payload = { ...this.payload };
+    const channels = [ ...this.channels ];
+    const condition = { ...this.condition };
+
     return {
       id: this.id,
       name: this.name,
-      description: this.description,
+      description: this.description ?? '',
       createdAt,
       updatedAt,
       options,
-      queueId: this.queueId,
+      condition,
+      payload,
+      channels,
+      queueId: this.queueId ?? '',
       metricId: this.metricId,
-      condition: clone(this.condition),
       isActive: this.isActive,
-      message: this.message,
-      payload: clone(this.payload),
-      channels: [...this.channels],
+      message: this.message ?? '',
       severity: this.severity,
       state: this.state,
       alertCount: this.alertCount,

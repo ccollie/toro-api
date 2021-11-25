@@ -88,7 +88,7 @@ describe('ConsecutiveFailuresMetric', () => {
     test('updates simple values', async () => {
       const data = [true, false, false, false];
       const subject = new ConsecutiveFailuresMetric(defaultOptions);
-      testHelper = MetricTestHelper.forMetric(subject);
+      testHelper = await MetricTestHelper.forMetric(subject);
       await updateValues(data);
       expect(subject.value).toBe(3);
     });
@@ -96,7 +96,7 @@ describe('ConsecutiveFailuresMetric', () => {
     test('resets after a successful job', async () => {
       const data = [true, false, false, true, true];
       const subject = new ConsecutiveFailuresMetric(defaultOptions);
-      testHelper = MetricTestHelper.forMetric(subject);
+      testHelper = await MetricTestHelper.forMetric(subject);
       await updateValues(data);
       expect(subject.value).toBe(0);
     });

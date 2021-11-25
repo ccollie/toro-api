@@ -45,10 +45,9 @@ describe('Rule Message Interpolation', () => {
       prefix: 'bull',
     };
 
-    hostManager = createHostManager({
+    hostManager = await createHostManager({
       queues: [queueConfig],
     });
-    await hostManager.waitUntilReady();
 
     queueManager = hostManager.getQueueManager(queueConfig.name);
     ruleManager = new RuleManager(queueManager);

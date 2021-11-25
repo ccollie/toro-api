@@ -1,6 +1,5 @@
 import { NullableEnvelopPlugin } from 'graphql-ez';
-import { BaseLogger } from 'pino';
-import { Plugin } from '@envelop/core';
+import { Logger, LevelWithSilent } from '@alpen/core/logger';
 import { Kind, OperationDefinitionNode } from 'graphql';
 import { nanoid } from '@alpen/core/ids';
 
@@ -17,6 +16,31 @@ import { nanoid } from '@alpen/core/ids';
  * @param userAgent - Include the browser (or client's) user agent.
  */
 export type GraphQLLoggerOptions = {
+  /**
+   * Sets log level for GraphQL logging.
+   * This level setting can be different than the one used in api side logging.
+   * Defaults to the same level as the logger unless set here.
+   *
+   * Available log levels:
+   *
+   * - 'fatal'
+   * - 'error'
+   * - 'warn'
+   * - 'info'
+   * - 'debug'
+   * - 'trace'
+   * - 'silent'
+   *
+   * The logging level is a __minimum__ level. For instance if `logger.level` is `'info'` then all `'fatal'`, `'error'`, `'warn'`,
+   * and `'info'` logs will be enabled.
+   *
+   * You can pass `'silent'` to disable logging.
+   *
+   * @default level of the logger set in LoggerConfig
+   *
+   */
+  level?: LevelWithSilent | string;
+
   /**
    * @description Include response data sent to client.
    */
@@ -75,7 +99,7 @@ export type GraphQLLoggerOptions = {
  * @param options the GraphQLLoggerOptions such as tracing, operationName, etc
  */
 export type LoggerConfig = {
-  logger: BaseLogger;
+  logger: Logger;
   options?: GraphQLLoggerOptions;
 };
 
@@ -97,10 +121,13 @@ export const useLogger = (
   loggerConfig: LoggerConfig,
 ): NullableEnvelopPlugin => {
   const logger = loggerConfig.logger;
+  const level = loggerConfig.options?.level || logger.level || 'warn';
 
   const childLogger = logger.child({
     name: 'graphql-server',
   });
+
+  childLogger.level = level;
 
   const includeData = loggerConfig?.options?.data;
   const includeOperationName = loggerConfig?.options?.operationName;

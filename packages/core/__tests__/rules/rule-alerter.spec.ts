@@ -16,7 +16,7 @@ import { clearDb, createQueueManager, createRule } from '../factories';
 import { QueueManager } from '../../src/queues';
 import { ManualClock, nanoid } from '../../src/lib';
 
-describe('RuleEAlerter', () => {
+describe('RuleAlerter', () => {
   let queueManager: QueueManager;
   let storage: RuleStorage;
   let clock: ManualClock;
@@ -27,7 +27,7 @@ describe('RuleEAlerter', () => {
 
   beforeEach(async () => {
     hostName = 'host-' + nanoid();
-    queueManager = createQueueManager();
+    queueManager = await createQueueManager();
     storage = new RuleStorage(hostName, queueManager.queue, queueManager.bus);
     clock = new ManualClock();
     successResult = createSuccessResult();

@@ -5,22 +5,25 @@ import { QueueManager } from '../../src/queues';
 import { Queue } from 'bullmq';
 import { createHostManager } from './host-manager';
 
-export function createQueueManager(
+export async function createQueueManager(
   queue?: Queue,
   host?: HostManager,
-): QueueManager {
-  host = host ?? createHostManager();
-  queue =
-    queue ??
-    createQueue(null, {
-      connection: host.client,
-    });
+): Promise<QueueManager> {
+  if (!queue) {
+    const opts = host?.client ? { connection: host.client } : {};
+    queue =
+      await createQueue(null, opts);
+  }
 
   const config: QueueConfig = {
     id: nanoid(),
     name: queue.name,
-    prefix: queue.opts.prefix,
+    prefix: queue.opts?.prefix ?? 'bull',
   };
+
+  host = host ?? await createHostManager({
+    queues: [config]
+  });
 
   process.env.QUEUE_URI_TEMPLATE =
     '{{server.host}}:{{server.port}}/queues/{{queue.id}}';

@@ -28,6 +28,7 @@ describe('LockManager', () => {
           key: LOCK_KEY,
           ttl: DEFAULT_TTL,
         });
+        await delay(200);
         const exists = await client.exists(lock.key);
         expect(!!exists).toBe(true);
       });
@@ -85,7 +86,7 @@ describe('LockManager: Competing clients', () => {
   const DEFAULT_TTL = 250;
 
   async function setup() {
-    client = createClient();
+    client = await createClient();
     await clearDb(client);
     client2 = await createClient();
     first = new LockManager(client, {

@@ -1,9 +1,10 @@
 import IORedis, { Pipeline, RedisOptions, parseUrl } from 'ioredis';
 import { isObject, chunk, isNil, isString } from 'lodash';
-import { isValidDate, isNumber, hashObject } from '@alpen/shared';
+import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
 import { load } from '../commands/scriptLoader';
 import { RedisClient } from 'bullmq';
 import { logger } from '../logger';
+import * as path from 'path';
 
 export type ConnectionOptions = string | RedisOptions;
 
@@ -45,33 +46,15 @@ export function createClient(redisOpts?: ConnectionOptions): RedisClient {
     client = new IORedis(redisOpts);
   }
 
-  load(client).catch((err) => logger.warn(err));
+  loadBaseScripts(client).catch((e) => logger.error(e));
   return client;
 }
 
-/**
- * Waits for a redis client to be ready.
- * @param {RedisClient} client redis client
- */
-export async function waitUntilReady(client: RedisClient): Promise<void> {
-  return new Promise(function (resolve, reject) {
-    if (client.status === 'ready') {
-      resolve();
-    } else {
-      async function handleReady() {
-        client.removeListener('error', handleError);
-        resolve();
-      }
-
-      function handleError(err: Error) {
-        client.removeListener('ready', handleReady);
-        reject(err);
-      }
-
-      client.once('ready', handleReady);
-      client.once('error', handleError);
-    }
-  });
+export async function loadBaseScripts(
+  client: RedisClient,
+): Promise<RedisClient> {
+  const dir = path.join(__dirname, '../commands');
+  return load(client, dir).catch((err) => logger.warn(err));
 }
 
 export async function disconnect(client: RedisClient): Promise<void> {
@@ -359,4 +342,27 @@ export async function getRedisInfo(client: RedisClient): Promise<RedisMetrics> {
 
     return acc;
   }, {} as Record<MetricName, any>);
+}
+
+// parse result of redis client list command
+export function parseClientList(
+  list: string,
+  handler: (key: string, value: any) => boolean | void,
+): void {
+  const lines = list.split('\n');
+  let done = false;
+  for (let i = 0; i < lines.length && !done; i++) {
+    const line = lines[i];
+    const keyValues = line.split(' ');
+    keyValues.forEach(function (keyValue) {
+      const index = keyValue.indexOf('=');
+      const key = keyValue.substring(0, index);
+      const v = keyValue.substring(index + 1);
+      const val = safeParse(v);
+      if (handler(key, val) === false) {
+        done = true;
+        return;
+      }
+    });
+  }
 }

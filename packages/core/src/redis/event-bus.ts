@@ -40,15 +40,13 @@ export class EventBus {
    * Construct a {@link EventBus}
    * @param {RedisStreamAggregator} aggregator stream aggregator
    * @param {String} key
-   * @param {String} [lastEventId="$"] the start for the stream cursor
    */
   constructor(
     aggregator: RedisStreamAggregator,
-    key: string,
-    lastEventId = '$',
+    key: string
   ) {
     this.aggregator = aggregator;
-    this._lastEventId = lastEventId;
+    this._lastEventId = '$';
     this._key = key;
     this._onBusMessage = this._onBusMessage.bind(this);
     this._emitter = new Emittery();
@@ -96,7 +94,6 @@ export class EventBus {
     if (!this.isSubscribed) {
       this._subscriptionInfo = await this.aggregator.subscribe(
         this.key,
-        this.lastId,
         this._onBusMessage,
       );
     }

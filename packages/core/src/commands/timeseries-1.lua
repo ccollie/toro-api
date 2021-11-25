@@ -19,36 +19,15 @@
 --- @include "includes/isArray"
 --- @include "includes/toStr"
 --- @include "includes/incrementTimestamp"
+--- @include "includes/isDigitsOnly"
 
 --- UTILS ------
-
---- does s only contain digits?
--- @string s a string
-function isdigit(s)
-  return string.find(s,'^%d+$') == 1
-end
-
 
 local SEPARATOR = '|'
 
 local function shallow_merge(dest, src)
   for k, v in pairs(src) do dest[k] = v end
   return dest
-end
-
-local function tableMerge(t1, t2)
-  for k,v in pairs(t2) do
-    if type(v) == "table" then
-      if type(t1[k] or false) == "table" then
-        tableMerge(t1[k] or {}, t2[k] or {})
-      else
-        t1[k] = v
-      end
-    else
-      t1[k] = v
-    end
-  end
-  return t1
 end
 
 local function split(source, sep)
@@ -104,7 +83,7 @@ local function isValidTimestamp(val)
   local num = tonumber(val)
   if (num ~= nil) then return true end
   val = tostring(val)
-  return isdigit(val) or isSpecialTimestamp(val)
+  return isDigitsOnly(val) or isSpecialTimestamp(val)
 end
 
 --- PARAMETER PARSING --------
@@ -342,6 +321,7 @@ end
 -- Count the number of elements between *min* and *max*
 function Timeseries.count(key, min, max, ...)
   local params = parseRangeParams(key,{}, min, max, ...)
+  debug('params ', params)
   return redis.call('zlexcount', key, params.min, params.max)
 end
 

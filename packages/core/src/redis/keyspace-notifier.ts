@@ -1,8 +1,8 @@
 'use strict';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import { ConnectionOptions, createClient, waitUntilReady } from './utils';
+import { ConnectionOptions, createClient } from './utils';
 import { createDebug } from '../lib';
-import { RedisClient } from 'bullmq';
+import { RedisClient, RedisConnection } from 'bullmq';
 
 const debug = createDebug('keyspace notifications');
 
@@ -94,7 +94,7 @@ export class KeyspaceNotifier {
       });
     });
 
-    await waitUntilReady(client);
+    await RedisConnection.waitUntilReady(client);
     return client;
   }
 

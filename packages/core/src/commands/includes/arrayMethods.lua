@@ -33,8 +33,9 @@ end
 function arrayMethods.unshift(arr, ...)
     local values = { ... }
     local len = #values
+    local last = len + 1
     for i=1, len do
-        local v = values[len + 1 - i]
+        local v = values[last - i]
         table.insert(arr, 1, v == null and cjson.null or v);
     end
     return arr
@@ -42,9 +43,9 @@ end
 
 function arrayMethods.reverse(arr)
     local reversed = {}
-    local itemCount = #arr
+    local last = #arr + 1
     for k, v in ipairs(arr) do
-        reversed[itemCount + 1 - k] = v
+        reversed[last - k] = v
     end
     return reversed
 end
@@ -81,7 +82,7 @@ end
 function arrayMethods.elementAt(arr, idx)
     idx = assert(tonumber(idx), 'number expected for array index')
     idx = absIndex(#arr, idx, true)
-    return nil
+    return arr[idx]
 end
 
 function arrayMethods.indexOf(haystack, needle, start)

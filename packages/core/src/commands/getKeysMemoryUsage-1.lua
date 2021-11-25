@@ -52,7 +52,7 @@ while (count < limit and iterations < MAX_ITERATIONS) do
             iterations = iterations + 1
             local jobKey = prefix .. jobId
             isValidName = true
-            if (jobName ~= nil) then
+            if (isFiltered) then
                 local name = rcall('hget', jobKey, 'name')
                 isValidName = (name == jobName)
             end

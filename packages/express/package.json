@@ -44,7 +44,7 @@
     "graphql-ez": "^0.13.5"
   },
   "peerDependencies": {
-    "esbuild": ">=0.13.12",
+    "esbuild": ">=0.14.0",
     "express": "4.x"
   },
   "devDependencies": {
@@ -52,6 +52,7 @@
     "@types/node": "^16.11.4",
     "bob-ts": "^1.2.2",
     "bob-esbuild-cli": "^3.0.1",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "tsc-alias": "^1.4.1"
   }
 }

@@ -19,7 +19,7 @@ import {
   TimeSeries,
 } from '../commands';
 import { getAlertTitle } from './rule-alerter';
-import { RuleEventsEnum, RuleState, Severity } from './types';
+import { ErrorLevel, RuleEventsEnum, RuleState, Severity } from './types';
 import { RuleAlert } from './rule-alert';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
@@ -116,8 +116,15 @@ export class RuleStorage {
     return getRuleKey(this.queue, getRuleId(rule));
   }
 
+  private _scriptLoaded = false;
+
   private getClient(): Promise<RedisClient> {
-    return this.queue.client;
+    const client = this.queue.client;
+    if (!this._scriptLoaded) {
+      this._scriptLoaded = true;
+
+    }
+    return client;
   }
 
   /*
@@ -163,7 +170,7 @@ export class RuleStorage {
     data.updatedAt = systemClock.getTime();
     const pipeline = client.pipeline();
     pipeline.hmset(key, data);
-    pipeline.zadd(this.rulesIndexKey, rule.id, id);
+    pipeline.zadd(this.rulesIndexKey, data.createdAt, rule.id);
 
     rule.updatedAt = data.updatedAt;
 
@@ -379,11 +386,12 @@ export class RuleStorage {
     const ruleId = getRuleId(rule);
     const alert = serializeAlert(data);
     alert.ruleId = ruleId;
+    let id = data.id;
 
     let severity: Severity = data.severity;
 
-    if (!data.id) {
-      alert.id = getUniqueId(); // set id to start
+    if (!id) {
+      id = alert.id = getUniqueId(); // set id to start
       if (typeof rule !== 'string') {
         severity = rule.severity;
       } else {
@@ -393,11 +401,12 @@ export class RuleStorage {
       alert.severity = data.severity = severity;
     }
 
-    const title = getAlertTitle(alert.state);
+    const title = !isEmpty(data.state) ? getAlertTitle(data.state)
+      : (data.errorLevel === ErrorLevel.CRITICAL ? 'Error' : 'Warning');
 
     const alertData: AlertData = {
+      id,
       errorLevel: data.errorLevel,
-      id: getUniqueId(),
       value: data.value,
       state: data.state,
       title,
@@ -522,6 +531,7 @@ export class RuleStorage {
       return deserializeAlert(value);
     });
   }
+
   async getRuleAlertCount(rule: Rule | string): Promise<number> {
     const client = await this.getClient();
     const key = this.getAlertsKey(rule);
@@ -709,10 +719,12 @@ function serializeRule(rule): Record<string, any> {
   if (isObject(data.options)) {
     data.options = JSON.stringify(data.options);
   }
+  // Make serialization and deserialization more consistent
+  data.message = data.message ?? '';
+  data.description = data.description ?? '';
+  data.queueId = data.queueId ?? ''; // todo: queueId should not be undefined
 
-  if (isObject(data.payload)) {
-    data.payload = JSON.stringify(data.payload);
-  }
+  data.payload = data.payload ? JSON.stringify(data.payload) : '{}';
 
   if (isObject(data.metric)) {
     data.metric = JSON.stringify(data.metric);

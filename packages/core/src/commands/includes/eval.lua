@@ -218,12 +218,14 @@ function ExprEval.BinaryExpression(node, context)
     local eval = ExprEval.evaluate
     local left = eval(node.left, context)
     local op = node.operator
+    local right = node.right
+
     if (op == '||') then
-        return isTruthy(left) or isTruthy(eval(node.right, context))
+        return isTruthy(left) or isTruthy(eval(right, context))
     elseif (op == '&&') then
-        return isTruthy(left) and isTruthy(eval(node.right, context))
+        return isTruthy(left) and isTruthy(eval(right, context))
     end
-    return operator.binops[op](left, eval(node.right, context));
+    return operator.binops[op](left, eval(right, context));
 end
 
 function ExprEval.ArrayExpression(node, context)

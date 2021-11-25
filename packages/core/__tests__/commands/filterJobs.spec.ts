@@ -78,7 +78,7 @@ describe('filterJobs', () => {
     client = await createClient(null, false);
     await clearDb(client);
     client.defineCommand(command.name, command.options);
-    queue = createQueue();
+    queue = await createQueue();
   });
 
   afterEach(async () => {

@@ -114,7 +114,8 @@ export function createHistogram(packed = true): Histogram {
     numberOfSignificantValueDigits: 2,
     bitBucketSize: packed ? 'packed' : 32,
     autoResize: true,
-    useWebAssembly: true,
+    // useWebAssembly: true,
+    useWebAssembly: false,
   });
 }
 

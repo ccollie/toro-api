@@ -5,7 +5,7 @@ import { JobFinishedState, JobStatusEnum } from '../queues/types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
 import { getConfigDuration } from '../lib/config-utils';
-import { loadScripts } from './utils';
+import { ensureScriptsLoaded } from './utils';
 
 const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
   'JOB_NAMES_CACHE_TIMOUT',
@@ -215,7 +215,7 @@ export class Scripts {
   ): Promise<ScriptFilteredJobsResult> {
     let client = await queue.client;
     if (!(client as any).jobFilter) {
-        await loadScripts(client);
+        await ensureScriptsLoaded(client);
     }
     type = type === 'waiting' ? 'wait' : type; // alias
     const key = type ? queue.toKey(type) : '';

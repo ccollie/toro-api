@@ -74,7 +74,7 @@ describe('LatencyMetric', () => {
     test('properly updates', async () => {
       const data = [13, 18, 43];
       const subject = new LatencyMetric(defaultOptions);
-      testHelper = MetricTestHelper.forMetric(subject);
+      testHelper = await MetricTestHelper.forMetric(subject);
       await pMap(data, (latency) => {
         return testHelper.emitCompletedEvent({
           ts: Date.now(),

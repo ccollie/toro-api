@@ -40,7 +40,7 @@ describe('RedisStreamsAggregator', function () {
 
   describe('.addListener()', function () {
     it('allows subscriptions to redis streams', async function () {
-      await instance.subscribe('testId', '$', testSubFunction);
+      await instance.subscribe('testId', testSubFunction);
       expect(Object.keys(instance.subscriptions).length).toBe(1);
       expect(instance.subscriptions.testId).toStrictEqual([1, '$']);
     });
@@ -56,7 +56,7 @@ describe('RedisStreamsAggregator', function () {
         instance.unsubscribe('keepReading', keepReadingMsg);
         done();
       }
-      instance.subscribe('keepReading', '$', keepReadingMsg).then(() => {
+      instance.subscribe('keepReading', keepReadingMsg).then(() => {
         setTimeout(() => {
           instance.add('keepReading', testObj);
         }, Math.floor(blockingInterval * 1.5));
@@ -131,8 +131,8 @@ describe('RedisStreamsAggregator', function () {
       }
 
       Promise.all([
-        instance.subscribe('testId3', '$', testFunc3),
-        instance.subscribe('testId4', '$', testFunc4),
+        instance.subscribe('testId3', testFunc3),
+        instance.subscribe('testId4', testFunc4),
       ]).then((numSubscriptions) => {
         Promise.all([
           instance.add('testId3', { testId3: 1 }),

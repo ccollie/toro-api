@@ -9,7 +9,7 @@ import {
   disconnect,
   ConnectionOptions,
 } from './utils';
-import { getDeserializer } from './streams';
+import { getStreamDeserializer } from './streams';
 import { createDebug } from '../lib';
 import { RedisClient } from 'bullmq';
 import { logger } from '../logger';
@@ -34,7 +34,7 @@ function createDeserializer(
   key: string,
   defaultFn: AggregatorDeserializeFunc = parseObjectResponse,
 ): AggregatorDeserializeFunc {
-  const deserializer = getDeserializer(key);
+  const deserializer = getStreamDeserializer(key);
   if (deserializer) {
     return (msg): any => {
       if (msg) {
@@ -129,9 +129,9 @@ export class RedisStreamAggregator {
       ) {
         this.handles.read.client('id').then((id) => {
           this.readId = id;
-          this.events.emit('ready', true).catch((err) => {
-            logger.warn(err);
-          });
+          return this.events.emit('ready', true);
+        }).catch((err) => {
+          logger.warn(err);
         });
       }
     };
@@ -214,8 +214,8 @@ export class RedisStreamAggregator {
    */
   async subscribe(
     id: string,
-    offset: string,
     handler: EventHandler,
+    offset: string = '$',
   ): Promise<SubscriberInfo> {
     debug('Pre-Subscribe %O', { subscriptions: this.subscriptions, id });
 
@@ -241,10 +241,10 @@ export class RedisStreamAggregator {
 
   /***
    * Unsubscribe from a redis stream
-   * @param {String} id the stream id
+   * @param {String | String[]} id the stream id
    * @param onEvent {EventHandler} a previously registered handler for the stream
    */
-  unsubscribe(id: string, onEvent: EventHandler): void {
+  unsubscribe(id: string | string[], onEvent: EventHandler): void {
     this.events.off(id, onEvent);
   }
 

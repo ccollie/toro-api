@@ -1,26 +1,24 @@
-import {
-  EnvelopError,
-  FormatErrorHandler,
-  Plugin,
-  useErrorHandler,
-  useMaskedErrors,
-} from '@envelop/core';
+import { initLoaders } from '@alpen/core';
+import { HostConfig } from '@alpen/core/hosts';
+import { loaders } from '@alpen/core/loaders';
+import { logger } from '@alpen/core';
+import { accessors, Supervisor } from '@alpen/core/supervisor';
+import { useApolloServerErrors } from '@envelop/apollo-server-errors';
+import { EnvelopError, FormatErrorHandler, Plugin, useErrorHandler, useMaskedErrors, } from '@envelop/core';
 import { DepthLimitConfig, useDepthLimit } from '@envelop/depth-limit';
 import type { AllowedOperations } from '@envelop/filter-operation-type';
 import { useFilterAllowedOperations } from '@envelop/filter-operation-type';
-import { useApolloServerErrors } from '@envelop/apollo-server-errors';
-import { GraphQLError } from 'graphql';
-import pMap from 'p-map';
+import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
+import type { PersistedQueryStore } from '@graphql-ez/plugin-automatic-persisted-queries';
+import {
+  AutomaticPersistedQueryOptions,
+  createLRUStore,
+  ezAutomaticPersistedQueries,
+} from '@graphql-ez/plugin-automatic-persisted-queries';
+import boom from '@hapi/boom';
 
 import { ApolloError } from 'apollo-server-errors';
-import { getSchema, publish, pubsub } from '../graphql';
-import { Supervisor } from '@alpen/core/supervisor';
-import { loaders } from '@alpen/core/loaders';
-import { initLoaders } from '@alpen/core';
-import { logger } from '@alpen/core/logger';
-import { LoggerConfig, useLogger } from './plugins/logger';
-import { HostConfig } from '@alpen/core/hosts';
-import { accessors } from '@alpen/core/supervisor';
+import { GraphQLError, OperationTypeNode } from 'graphql';
 import {
   AppOptions,
   BuildAppOptions,
@@ -30,15 +28,10 @@ import {
   InferContext,
   NullableEnvelopPlugin,
 } from 'graphql-ez';
-import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
-import {
-  AutomaticPersistedQueryOptions,
-  createLRUStore,
-  ezAutomaticPersistedQueries,
-} from '@graphql-ez/plugin-automatic-persisted-queries';
-import type { PersistedQueryStore } from '@graphql-ez/plugin-automatic-persisted-queries';
 import ms from 'ms';
-import boom from '@hapi/boom';
+import pMap from 'p-map';
+import { getSchema, publish, pubsub } from '../graphql';
+import { LoggerConfig, useLogger } from './plugins/logger';
 
 const isDevEnv = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
@@ -236,6 +229,8 @@ export function createAppOptions(
     }),
   };
 
+  const DefaultAllowedOperations = [OperationTypeNode.MUTATION, OperationTypeNode.QUERY];
+
   // Important: Plugins are executed in order of their usage, and inject functionality serially,
   // so the order here matters
   const plugins: NullableEnvelopPlugin[] = [
@@ -246,7 +241,7 @@ export function createAppOptions(
       ignore: (depthLimitOptions && depthLimitOptions.ignore) || [],
     }),
     // Only allow execution of specific operation types
-    useFilterAllowedOperations(opts.allowedOperations || ['mutation', 'query']),
+    useFilterAllowedOperations(opts.allowedOperations || DefaultAllowedOperations),
     // Apollo Server compatible errors.
     // Important: *must* be listed before useMaskedErrors
     useApolloServerErrors(),

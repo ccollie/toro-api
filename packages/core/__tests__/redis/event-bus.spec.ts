@@ -90,13 +90,12 @@ describe('EventBus', () => {
   });
 
   describe('remote', () => {
-    it('receives events from server', async (done) => {
+    it('receives events from server', async () => {
       const otherBus = new EventBus(aggregator, key);
 
       let eventData = null;
       otherBus.on('event.raised', (evt) => {
         eventData = evt;
-        done();
       });
 
       const ruleId = randomString();
@@ -105,6 +104,10 @@ describe('EventBus', () => {
         number: 1,
         ruleId,
       });
+
+      await delay(200);
+      expect(eventData).not.toBeUndefined();
+
     });
   });
 });

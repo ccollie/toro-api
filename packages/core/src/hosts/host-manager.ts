@@ -12,6 +12,7 @@ import pSettle from 'p-settle';
 import pAll from 'p-all';
 import pMap from 'p-map';
 import { sortBy, uniqBy } from 'lodash';
+import { ensureScriptsLoaded } from '../commands';
 import { JobCounts, JobStatusEnum } from '../queues/types';
 import { QueueManager } from '../queues/queue-manager';
 import {
@@ -202,6 +203,8 @@ export class HostManager {
     let manager = this.queueManagerMap.get(key);
     if (!manager) {
       const queue = new Queue(config.name, opts);
+      await ensureScriptsLoaded(await queue.client);
+
       manager = new QueueManager(this, queue, config);
       this.queueManagers.push(manager);
       this.queueManagerMap.set(key, manager);
@@ -445,6 +448,7 @@ export class HostManager {
   }
 
   private async init(): Promise<void> {
+    await ensureScriptsLoaded(this.defaultRedisClient);
     // createChannel queues
     const config = this.config;
     const queueConfigs: QueueConfig[] = [];
