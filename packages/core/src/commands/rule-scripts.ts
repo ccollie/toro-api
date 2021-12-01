@@ -125,7 +125,7 @@ export class RuleScripts {
     );
 
     const client = await getClient(queue);
-    // horrible. fix this a the source
+    // horrible. fix this at the source
     return (client as any).rules(...args);
   }
 
@@ -160,12 +160,12 @@ export class RuleScripts {
       '',
       timestamp,
     );
-    return val === '1';
+    return (val === 1 || val === '1');
   }
 
   static async stopRule(queue: Queue, rule: Rule | string): Promise<boolean> {
     const val = await RuleScripts.execRuleAction(queue, rule, 'stop');
-    return val === '1';
+    return val === '1' || val === 1;
   }
 
   static async checkAlert(

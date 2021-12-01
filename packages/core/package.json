@@ -42,12 +42,13 @@
     }
   },
   "typescript": {
-    "definition": "./dist/index.d.ts"
+    "definition": "dist/index.d.ts"
   },
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
     "build": "yarn run clean && yarn run compile && yarn run types && yarn run copyAssets",
-    "compile": "bob-ts -i src -f interop --paths '../../tsconfig.json'",
+    "compile": "bob-ts -i src -f interop --paths '../../tsconfig.json' && tsc-alias -p tsconfig.json",
+    "compile1": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.json",
     "dev": "bob-ts-watch -i src -f interop --paths",
     "copy:lua": "copyfiles -f ./src/commands/*.lua ./dist/commands",
     "copy:lua:includes": "copyfiles -f ./src/commands/includes/*.lua ./dist/commands/includes",
@@ -60,8 +61,9 @@
     "clean": "rm -rf ./dist",
     "typecheck": "tsc --noEmit",
     "types": "tsc --declaration --emitDeclarationOnly",
-    "prepack": "bob-esbuild build --paths",
-    "prettier": "prettier --config package.json src/**/*.ts"
+    "prepack": "bob-esbuild build && tsc-alias -p tsconfig.json",
+    "prettier": "prettier --config package.json src/**/*.ts",
+    "prettier:fix": "prettier --write src/"
   },
   "devDependencies": {
     "@babel/runtime": "^7.16.3",

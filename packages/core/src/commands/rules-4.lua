@@ -42,6 +42,7 @@ local ruleStateKey = KEYS[2]
 local alertsKey = KEYS[3]
 local busKey = KEYS[4]
 
+local ruleId = ARGV[1]
 local now = tonumber(ARGV[2] or 0)
 local action = assert(ARGV[3], 'missing "action" argument')
 local parameter = ARGV[4]
@@ -116,7 +117,7 @@ local function loadRule()
     if isLoaded == false then
         loadState()
         local values = rcall('HMGET', ruleKey, unpack(HASH_FIELDS))
-        local len = #values
+        local len = assert(#values > 0, 'Could not load rule #' .. ruleId)
         rule = {}
         for i = 1, len do
             rule[HASH_FIELDS[i]] = values[i]
@@ -135,7 +136,8 @@ local function loadRule()
         end
         rule.isActive = isTruthy(rule.isActive)
         isLoaded = true
-        --- debug(rule)
+        debug(rule)
+        --- todo: error if not found
     end
 end
 
@@ -221,6 +223,7 @@ end
 
 local function emitEvent(event, ...)
     local args = { ... }
+    --- debug('event ', event, ' rule Id= "' .. toStr(rule.id) .. '" ', 'args=' .. cjson.encode(args))
     rcall("XADD", busKey, "*", "event", event, "ruleId", rule.id, "ts", now, unpack(args))
     --- todo: trim
 end

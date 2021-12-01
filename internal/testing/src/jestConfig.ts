@@ -17,7 +17,7 @@ export function getConfig({ ...rest }: Config.InitialOptions = {}): Record<
     testMatch: [process.cwd().replace(/\\/g, '/') + '/__tests__/**/*.spec.ts'],
     testEnvironment: 'node',
     transform: {
-      "^.+\\.[tj]s$": "ts-jest",
+      '^.+\\.[tj]s$': 'ts-jest',
       '\\.[jt]sx?$': 'ts-jest'
     },
     globals: {

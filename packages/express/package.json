@@ -29,9 +29,9 @@
     }
   },
   "scripts": {
-    "build": "yarn run clean && yarn run compile",
+    "build": "yarn run clean && yarn run compile && yarn run emitTypes",
     "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop && yarn run emitTypes",
+    "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "emitTypes": "tsc --declaration",
     "prepack": "bob-esbuild build"

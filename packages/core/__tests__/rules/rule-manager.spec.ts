@@ -21,7 +21,6 @@ import { delay, randomString } from '../utils';
 import {
   clearDb,
   createHostManager,
-  createRule,
   createRuleOptions,
   QueueListenerHelper,
 } from '../factories';
@@ -203,7 +202,6 @@ describe('RuleManager', () => {
       expect(actual.id).toBe(rule.id);
       expect(actual.name).toBe(rule.name);
       expect(actual.createdAt).toBe(rule.createdAt);
-      expect(actual.updatedAt).toBeGreaterThan(rule.updatedAt);
       // expect(actual.options).toStrictEqual(rule.options);
       expect(actual.metricId).toBe(rule.metricId);
       expect(actual.condition).toStrictEqual(rule.condition);
@@ -259,7 +257,7 @@ describe('RuleManager', () => {
 
   describe('.addAlert', () => {
     it('stores an alert to redis', async () => {
-      const rule = createRule();
+      const rule = await addRule({ isActive: true });
       const alert = createAlert(rule);
 
       const stored = await ruleManager.addAlert(rule, alert);
@@ -270,7 +268,7 @@ describe('RuleManager', () => {
 
   describe('.deleteAlert', () => {
     it('deletes an alert from redis', async () => {
-      const rule = createRule();
+      const rule = await addRule();
       const alert = createAlert(rule);
 
       const spy = jest.spyOn(ruleManager.storage, 'deleteAlert');
@@ -444,7 +442,7 @@ describe('RuleManager', () => {
 
     it('emits an event bus event on states change', async () => {
       const channels = ['email', 'slack'];
-      const rule = await addRule({ condition, channels });
+      await addRule({ condition, channels });
 
       let stateData;
 
@@ -453,6 +451,7 @@ describe('RuleManager', () => {
       });
 
       await postJob(TriggerData);
+
       expect(stateData.state).toBe(RuleState.ERROR);
 
       await postJob({ latency: 10 });

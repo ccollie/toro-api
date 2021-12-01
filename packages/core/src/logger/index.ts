@@ -9,11 +9,10 @@ import * as prettyPrint from 'pino-pretty';
  * @see https://github.com/pinojs/pino/blob/master/pino.d.ts
  */
 export type Logger = P.Logger;
-export type BaseLogger = P.BaseLogger;
 export type DestinationStream = P.DestinationStream;
 export type LevelWithSilent = P.LevelWithSilent;
 export type LoggerOptions = P.LoggerOptions;
-export type PrettyOptions = P.PrettyOptions;
+export type PrettyOptions = prettyPrint.PrettyOptions;
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';
 
 type LogDefinition = {
@@ -68,7 +67,8 @@ export const prettifier = prettyPrint;
 /*
  * List of keys to redact from log
  *
- * As an array, the redact option specifies paths that should have their values redacted from any log output.
+ * As an array, the redact option specifies paths that should have their values
+ * redacted from any log output.
  *
  */
 export const redactionsList: string[] = [
@@ -118,8 +118,8 @@ export const redactionsList: string[] = [
  * - 'debug'
  * - 'trace'
  *
- * The logging level is a __minimum__ level. For instance if `logger.level` is `'info'` then all `'fatal'`, `'error'`, `'warn'`,
- * and `'info'` logs will be enabled.
+ * The logging level is a __minimum__ level. For instance if `logger.level` is `'info'`
+ * then all `'fatal'`, `'error'`, `'warn'`, and `'info'` logs will be enabled.
  *
  * You can pass `'silent'` to disable logging.
  *
@@ -176,13 +176,16 @@ export const defaultPrettyPrintOptions: PrettyOptions = {
  *   Or set via LOG_LEVEL environment variable
  * - Redact the host and other keys via a set redactionList
  *
- * Each path must be a string using a syntax which corresponds to JavaScript dot and bracket notation.
+ * Each path must be a string using a syntax which corresponds to JavaScript dot and
+ * bracket notation.
  *
  * If an object is supplied, three options can be specified:
  *
  *      paths (String[]): Required. An array of paths
- *      censor (String): Optional. A value to overwrite key which are to be redacted. Default: '[Redacted]'
- *      remove (Boolean): Optional. Instead of censoring the value, remove both the key and the value. Default: false
+ *      censor (String): Optional. A value to overwrite key which are to be redacted.
+ *      Default: '[Redacted]'
+ *      remove (Boolean): Optional. Instead of censoring the value, remove both the key
+ *      and the value. Default: false
  *
  * Pretty Printing Defaults defined in defaultPrettyPrintOptions
  *
@@ -275,6 +278,7 @@ export const createLogger = ({
   if (isFile) {
     if (isProduction) {
       console.warn(
+        // eslint-disable-next-line max-len
         'Please make certain that file system access is available when logging to a file in a production environment.',
       );
     }

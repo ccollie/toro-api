@@ -13,6 +13,6 @@ local function debug(msg, ...)
         for i = 1, #args do
             str = str .. toStr(args[i])
         end
-        redis.call('rpush', 'debug', toStr(msg), str)
+        redis.call('rpush', 'alpen-debug', toStr(msg), str)
     end
 end

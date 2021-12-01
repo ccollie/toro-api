@@ -2,7 +2,6 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "sourceMap": true,
-    "composite": true,
     "rootDir": "./src",
     "outDir": "./dist"
   },
@@ -15,6 +14,6 @@
     ]
   },
   "references": [
-    { "path": "../../packages/express" }, { "path": "../base" }
+    { "path": "../../packages/express/tsconfig.build.json" }, { "path": "../base" }
   ]
 }

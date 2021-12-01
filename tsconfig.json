@@ -23,10 +23,10 @@
     "rootDir": ".",
     "baseUrl": "./",
     "paths": {
-      "@alpen/api": ["packages/api/src"],
       "@alpen/api/*": ["packages/api/src/*"],
-      "@alpen/core": ["packages/core/src/index.ts"],
+      "@alpen/api": ["packages/api/src"],
       "@alpen/core/*": ["packages/core/src/*/index.ts"],
+      "@alpen/core": ["packages/core/src/index.ts"],
       "@alpen/express": ["packages/express/src/index.ts"],
       "@alpen/fastify": ["packages/fastify/src/index.ts"],
       "@alpen/hapi": ["packages/hapi/src/index.ts"],

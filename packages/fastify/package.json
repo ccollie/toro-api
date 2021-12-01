@@ -6,9 +6,9 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "yarn run clean && yarn run compile && yarn run types",
+    "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop",
+    "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "types": "tsc --declaration --emitDeclarationOnly",
     "test": "jest"

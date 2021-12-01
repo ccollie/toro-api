@@ -12,8 +12,19 @@ import {
 } from '../../src/commands';
 import { getRuleStateKey } from '../../src/keys';
 import { getUniqueId, ManualClock } from '../../src/lib';
-import { ErrorLevel, RuleAlert, RuleConfigOptions, RuleEventsEnum, RuleState } from '../../src/rules';
-import { clearDb, createQueue, createQueueManager, createRule } from '../factories';
+import {
+  ErrorLevel,
+  RuleAlert,
+  RuleConfigOptions,
+  RuleEventsEnum,
+  RuleState,
+} from '../../src/rules';
+import {
+  clearDb,
+  createQueue,
+  createQueueManager,
+  createRule,
+} from '../factories';
 import { delay } from '../utils';
 
 describe('RuleScripts', () => {
@@ -116,7 +127,7 @@ describe('RuleScripts', () => {
 
   describe('startRule', () => {
     it('can start a Rule', async () => {
-      const rule = await createRule();
+      const rule = await addRule({ isActive: true });
       const started = await RuleScripts.startRule(queue, rule);
       expect(started).toBe(true);
     });
