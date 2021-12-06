@@ -1,5 +1,6 @@
 import type { Config } from '@jest/types';
 import { readJSONSync } from 'fs-extra';
+import * as path from 'path';
 import { relative, resolve } from 'path';
 import { pathsToModuleNameMapper } from 'ts-jest/utils';
 
@@ -12,9 +13,9 @@ export function getConfig({ ...rest }: Config.InitialOptions = {}): Record<
   unknown
 > {
   const prefix = `<rootDir>/${relative(process.cwd(), rootPath)}`;
-
+  const cwd = path.normalize(process.cwd().replace(/\\/g, '/'));
   return {
-    testMatch: [process.cwd().replace(/\\/g, '/') + '/__tests__/**/*.spec.ts'],
+    testMatch: [cwd + '/__tests__/**/*.spec.ts'],
     testEnvironment: 'node',
     transform: {
       '^.+\\.[tj]s$': 'ts-jest',

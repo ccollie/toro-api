@@ -16,4 +16,5 @@ export * from './time-ticker';
 export * from './object-mapper';
 export * from './refcount-cache';
 export * from './expr-utils';
+export * from './utils';
 export { request };

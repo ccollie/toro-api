@@ -117,7 +117,8 @@ local function loadRule()
     if isLoaded == false then
         loadState()
         local values = rcall('HMGET', ruleKey, unpack(HASH_FIELDS))
-        local len = assert(#values > 0, 'Could not load rule #' .. ruleId)
+        local len = #values
+        assert(len > 0, 'Could not load rule #' .. ruleId)
         rule = {}
         for i = 1, len do
             rule[HASH_FIELDS[i]] = values[i]
@@ -211,12 +212,16 @@ local function getLastFailure()
 end
 
 local function startWarmup()
-    setState('warmupStart', now)
+    local warmupWindow = getNumberOption('warmupWindow', 0)
+    if (warmupWindow > 0) then
+        setState('warmupStart', now)
+    end
 end
 
 --- Returns whether we're currently in the warmup phase
 local function isWarmingUp()
     local warmupWindow = getNumberOption('warmupWindow', 0)
+    if (warmupWindow == 0) then return false end
     local warmupStart = getNumberState('warmupStart', 0)
     return now < (warmupStart + warmupWindow)
 end
@@ -233,13 +238,8 @@ local function updateRuleState(state)
         -- set state and raise event
         rule.state = state
         local args = {'state', state}
-
-        if (state == RULE_STATE_NORMAL) then
-            arrayHashAppend(args, 'lastResolvedAt', now)
-        else
-            arrayHashAppend(args, 'lastTriggeredAt', now)
-        end
-
+        args[#args+1] = (state == RULE_STATE_NORMAL) and 'lastResolvedAt' or 'lastTriggeredAt'
+        args[#args+1] = now
         rcall('hset', ruleKey, unpack(args))
 
         emitEvent(STATE_CHANGED, unpack(args))
@@ -495,15 +495,16 @@ end
 --- TODO: when we are in a triggered state, increment the count on the currently open alert
 --- as well as on the rule
 local function handleFailure(errorType)
-    local totalFailures = getNumberState('totalFailures', 0)
+    local totalFailures = getNumberState('totalFailures', 0) + 1
+    local failures = getFailures() + 1
     setState(
         'errorType', errorType,
         'lastFailure', now,
-        'failures', getFailures() + 1,
+        'failures', failures,
         'successes', 0,
-        'totalFailures', totalFailures + 1
+        'totalFailures', totalFailures
     )
-    -- rcall('hset', ruleKey, 'failures', totalFailures + 1)
+    -- rcall('hset', ruleKey, 'failures', totalFailures)
 end
 
 local function handleSuccess()

@@ -1,17 +1,17 @@
-import pSettle from 'p-settle';
-import pMap from 'p-map';
-import ms from 'ms';
-import prexit from 'prexit';
-import { badRequest, notFound } from '@hapi/boom';
-import { isNil, isString } from 'lodash';
-import { Queue } from 'bullmq';
-import { QueueManager, QueueListener } from '../queues';
-import { HostManager, HostConfig, getHosts } from '../hosts';
-import { logger } from '../logger';
-import { appInfo } from '../config';
-import type { AppInfo } from '../types';
-import { registerHelpers } from '../lib/hbs';
 import { parseDuration } from '@alpen/shared';
+import { badRequest, notFound } from '@hapi/boom';
+import { Queue } from 'bullmq';
+import { isNil, isString } from 'lodash';
+import ms from 'ms';
+import pMap from 'p-map';
+import pSettle from 'p-settle';
+import prexit from 'prexit';
+import { appInfo } from '../config';
+import { getHosts, HostConfig, HostManager } from '../hosts';
+import { registerHelpers } from '../lib/hbs';
+import { logger } from '../logger';
+import { QueueListener, QueueManager } from '../queues';
+import type { AppInfo } from '../types';
 
 let _isInit = false;
 
@@ -39,6 +39,7 @@ export class Supervisor {
     string,
     HostManager
   >();
+  private queueIdMap = new WeakMap<Queue, string>();
 
   private initialized: Promise<void> = null;
 
@@ -159,6 +160,30 @@ export class Supervisor {
   getQueueById(id: string): Queue {
     const manager = this.getQueueManager(id);
     return manager && manager.queue;
+  }
+
+  getQueueId(queue: Queue): string {
+    const queueIdMap = this.queueIdMap;
+    let id = queueIdMap.get(queue);
+    if (!id) {
+      const hosts = this.hosts;
+      for (let i = 0; i < hosts.length; i++) {
+        const managers = hosts[i].queueManagers;
+        for (let j = 0; j < managers.length; j++) {
+          const manager = managers[j];
+          if (queue === manager.queue) {
+            id = manager.id;
+            queueIdMap.set(queue, id);
+            return id;
+          }
+          // do useful work
+          if (!queueIdMap.get(manager.queue)) {
+            queueIdMap.set(manager.queue, manager.id);
+          }
+        }
+      }
+    }
+    return id;
   }
 
   getQueueHostManager(queueOrId: Queue | string): HostManager {

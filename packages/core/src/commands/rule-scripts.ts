@@ -123,9 +123,8 @@ export class RuleScripts {
       parameter,
       timestamp,
     );
-
-    const client = await getClient(queue);
     // horrible. fix this at the source
+    const client = await getClient(queue);
     return (client as any).rules(...args);
   }
 

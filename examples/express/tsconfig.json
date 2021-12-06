@@ -1,12 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "sourceMap": true,
     "rootDir": "./src",
     "outDir": "./dist"
   },
-  "include": [
-    "./src/index.ts"],
+  "include": ["./src/**/*.ts"],
   "exclude": ["**/node_modules", "**/dist"],
   "paths": {
     "@alpen/express": [
@@ -14,6 +12,9 @@
     ]
   },
   "references": [
-    { "path": "../../packages/express/tsconfig.build.json" }, { "path": "../base" }
+    { "path": "../../packages/core" },
+    { "path": "../../packages/api" },
+    { "path": "../../packages/express/tsconfig.build.json" },
+    { "path": "../base" }
   ]
 }

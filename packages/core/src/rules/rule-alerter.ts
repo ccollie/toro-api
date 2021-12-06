@@ -1,4 +1,14 @@
-import {  notFound } from '@hapi/boom';
+import { notFound } from '@hapi/boom';
+import { Queue } from 'bullmq';
+import { compile, TemplateDelegate } from 'handlebars';
+import { round } from 'lodash';
+import ms from 'ms';
+import {
+  AlertData,
+  CheckAlertResult,
+  CircuitState,
+  RuleScripts,
+} from '../commands';
 import {
   AccurateInterval,
   Clock,
@@ -6,37 +16,27 @@ import {
   getUniqueId,
 } from '../lib';
 import { logger } from '../logger';
-import {
-  AlertData,
-  CheckAlertResult,
-  CircuitState,
-  RuleScripts,
-} from '../commands';
-import { Queue } from 'bullmq';
-import { Rule } from './rule';
-import { TemplateDelegate, compile } from 'handlebars';
-import { createRuleTemplateHelpers } from './rule-template-helpers';
-import { QueueManager } from '../queues';
 import { NotificationContext, NotificationManager } from '../notifications';
-import ms from 'ms';
-import { round } from 'lodash';
-import { ErrorLevel, RuleEventsEnum, RuleState } from './types';
+import { QueueManager } from '../queues';
+import {
+  ChangeRuleEvaluationState,
+  isChangeRuleEvaluationState,
+} from './change-condition-evaluator';
+import {
+  EvaluationResult,
+  isPeakRuleEvaluationState,
+  RuleEvaluationState,
+} from './condition-evaluator';
+import { Rule } from './rule';
+import { RuleAlert } from './rule-alert';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
   RuleOperator,
   RuleType,
 } from './rule-conditions';
-import {
-  EvaluationResult,
-  isPeakRuleEvaluationState,
-  RuleEvaluationState,
-} from './condition-evaluator';
-import { RuleAlert } from './rule-alert';
-import {
-  ChangeRuleEvaluationState,
-  isChangeRuleEvaluationState,
-} from './change-condition-evaluator';
+import { createRuleTemplateHelpers } from './rule-template-helpers';
+import { ErrorLevel, RuleEventsEnum, RuleState } from './types';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;

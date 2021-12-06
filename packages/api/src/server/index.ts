@@ -4,7 +4,13 @@ import { loaders } from '@alpen/core/loaders';
 import { logger } from '@alpen/core';
 import { accessors, Supervisor } from '@alpen/core/supervisor';
 import { useApolloServerErrors } from '@envelop/apollo-server-errors';
-import { EnvelopError, FormatErrorHandler, Plugin, useErrorHandler, useMaskedErrors, } from '@envelop/core';
+import {
+  EnvelopError,
+  FormatErrorHandler,
+  Plugin,
+  useErrorHandler,
+  useMaskedErrors,
+} from '@envelop/core';
 import { DepthLimitConfig, useDepthLimit } from '@envelop/depth-limit';
 import type { AllowedOperations } from '@envelop/filter-operation-type';
 import { useFilterAllowedOperations } from '@envelop/filter-operation-type';
@@ -229,7 +235,10 @@ export function createAppOptions(
     }),
   };
 
-  const DefaultAllowedOperations = [OperationTypeNode.MUTATION, OperationTypeNode.QUERY];
+  const DefaultAllowedOperations = [
+    OperationTypeNode.MUTATION,
+    OperationTypeNode.QUERY,
+  ];
 
   // Important: Plugins are executed in order of their usage, and inject functionality serially,
   // so the order here matters
@@ -241,7 +250,9 @@ export function createAppOptions(
       ignore: (depthLimitOptions && depthLimitOptions.ignore) || [],
     }),
     // Only allow execution of specific operation types
-    useFilterAllowedOperations(opts.allowedOperations || DefaultAllowedOperations),
+    useFilterAllowedOperations(
+      opts.allowedOperations || DefaultAllowedOperations,
+    ),
     // Apollo Server compatible errors.
     // Important: *must* be listed before useMaskedErrors
     useApolloServerErrors(),
@@ -260,7 +271,7 @@ export function createAppOptions(
   }
 
   const prepare = async () => {
-    const supervisor = await Supervisor.getInstance();
+    const supervisor = Supervisor.getInstance();
     initLoaders();
 
     const initHosts =
@@ -313,7 +324,7 @@ export type AdapterOptions = GraphQLHandlerOptions & {
   playgroundOptions?: PlaygroundOptions;
 };
 
-export abstract class ServerAdapter<
+export class ServerAdapter<
   TApp,
   TOptions extends AppOptions,
   TBuildOptions extends BuildAppOptions,

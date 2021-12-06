@@ -1,6 +1,7 @@
 import Express from 'express';
 import { ExpressServerAdapter } from '@alpen/express';
-import { Producer, Consumer } from '@alpen/demo-base';
+import { Consumer } from './consumer';
+import { Producer } from './producer';
 
 const port = 3000;
 const baseUrl = '/';

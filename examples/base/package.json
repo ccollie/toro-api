@@ -9,6 +9,7 @@
     "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
     "compile": "bob-ts -i src -f interop --paths",
+    "compile1": "tsc && tsc-alias",
     "check": "tsc --noEmit",
     "dev": "yarn run dev:mjs",
     "dev:cjs": "bob-ts-watch -f cjs -c \"node dist/index.js\"",
@@ -31,7 +32,8 @@
   },
   "devDependencies": {
     "@types/node": "^16.11.10",
-    "bob-ts": "^1.1.2"
+    "bob-ts": "^1.1.2",
+    "tsc-alias": "^1.4.2"
   },
   "peerDependencies": {
     "esbuild": "*"

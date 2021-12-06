@@ -24,7 +24,7 @@
     "baseUrl": "./",
     "paths": {
       "@alpen/api/*": ["packages/api/src/*"],
-      "@alpen/api": ["packages/api/src"],
+      "@alpen/api": ["packages/api/src/index.ts"],
       "@alpen/core/*": ["packages/core/src/*/index.ts"],
       "@alpen/core": ["packages/core/src/index.ts"],
       "@alpen/express": ["packages/express/src/index.ts"],

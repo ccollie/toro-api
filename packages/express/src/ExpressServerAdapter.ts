@@ -1,4 +1,4 @@
-import { ServerAdapter } from '@alpen/api';
+import { ServerAdapter } from '@alpen/api/server';
 import {
   CreateApp,
   ExpressAppOptions,

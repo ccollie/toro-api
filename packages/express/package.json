@@ -29,7 +29,7 @@
     }
   },
   "scripts": {
-    "build": "yarn run clean && yarn run compile && yarn run emitTypes",
+    "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
     "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
