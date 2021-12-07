@@ -13,6 +13,10 @@ local function debug(msg, ...)
         for i = 1, #args do
             str = str .. toStr(args[i])
         end
-        redis.call('rpush', 'alpen-debug', toStr(msg), str)
+        local _args = { toStr(msg) }
+        if (#str > 0) then
+            table.insert(_args, str)
+        end
+        redis.call('rpush', 'alpen:debug', unpack(_args))
     end
 end

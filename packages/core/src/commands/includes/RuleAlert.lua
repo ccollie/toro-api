@@ -18,7 +18,7 @@ local RuleAlert = {
     end
 }
 
-RuleAlert.__metatable = RuleAlert
+RuleAlert.__index = RuleAlert
 
 local function alert__encodeValue(ts, data)
     if (type(data) == 'table') then
@@ -35,7 +35,7 @@ local function alert__decodeValue(raw_value)
     return timestamp, value
 end
 
-function alert__fetch(alertsKey, id)
+local function alert__fetch(alertsKey, id)
     if (id == nil) or (#id == 0) then
         return nil
     end
@@ -89,16 +89,17 @@ function RuleAlert.create(key, id, data)
     alert.id = id
     alert.key = key
     alert.isRead = isTruthy(alert.isRead)
-    alert.normalize()
+    alert:normalize()
 
-    return alert.save()
+    return alert:save()
 end
 
 function RuleAlert:save()
     local copy = {}
     for k, v in pairs(self) do
-        if (k == 'key') then continue end
-        copy[k] = v
+        if (k ~= 'key') then
+            copy[k] = v
+        end
     end
 
     local val = alert__encodeValue(self.id, copy)
@@ -109,8 +110,9 @@ end
 function RuleAlert:update(hash)
     RuleAlert.deleteById(self.key, self.id)
     for k, v in pairs(hash) do
-        if (k == 'key') then continue end
-        self[k] = v
+        if (k ~= 'key') then
+            self[k] = v
+        end
     end
     return self:save()
 end
@@ -120,9 +122,24 @@ function RuleAlert:delete()
 end
 
 function RuleAlert:normalize()
-    self.isRead = isTruthy(alert.isRead)
+    self.isRead = isTruthy(self.isRead)
     self.ruleId = self.ruleId or ''
     self.resetAt = tonumber(self.resetAt) or 0
     self.raisedAt = tonumber(self.raisedAt) or 0
     self.failures = tonumber(self.failures) or 0
+end
+
+function RuleAlert:getData()
+    return {
+        id = self.id,
+        ruleId = self.ruleId or '',
+        status = self.status,
+        title = self.title or '',
+        message = self.message or '',
+        isRead = self.isRead,
+        isNotified = self.isNotified,
+        raisedAt = self.raisedAt,
+        resetAt = self.resetAt,
+        failures = self.failures
+    }
 end

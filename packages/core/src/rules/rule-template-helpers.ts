@@ -1,10 +1,10 @@
-import { ErrorLevel, RuleEventsEnum } from './types';
+import { ErrorStatus, RuleEventsEnum } from './types';
 
 export function createRuleTemplateHelpers(
   event: RuleEventsEnum,
   data: Record<string, any>,
 ): Record<string, any> {
-  const level = (data['errorLevel'] ?? ErrorLevel.NONE) as ErrorLevel;
+  const level = (data['errorLevel'] ?? ErrorStatus.NONE) as ErrorStatus;
 
   const isAlert = (options) => {
     if (event === RuleEventsEnum.ALERT_TRIGGERED) {
@@ -23,7 +23,7 @@ export function createRuleTemplateHelpers(
   };
 
   const isWarning = (options) => {
-    if (level === ErrorLevel.WARNING) {
+    if (level === ErrorStatus.WARNING) {
       return options.fn(this);
     } else {
       return options.inverse(this);

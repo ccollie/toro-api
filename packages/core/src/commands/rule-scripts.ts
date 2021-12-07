@@ -1,4 +1,5 @@
 import { Queue, RedisClient } from 'bullmq';
+import { TimeSeries } from './timeseries';
 import { ensureScriptsLoaded } from '../commands/utils';
 import { getUniqueId } from '../lib';
 import {
@@ -11,15 +12,16 @@ import {
   getRuleStateKey,
 } from '../keys';
 import { systemClock } from '../lib/clock';
-import { has } from 'lodash';
+import { has, isObject } from 'lodash';
 import { Rule } from '../rules/rule';
 import { RuleAlert } from '../rules/rule-alert';
-import { ErrorLevel, RuleState } from '../rules/types';
+import { ErrorStatus } from '../rules/types';
 import { parseObjectResponse } from '../redis';
 import { Pipeline } from 'ioredis';
 import { HostManager } from '../hosts';
 import { logger } from '../logger';
-import { parseBool, safeParseInt } from '@alpen/shared';
+import { parseBool, parseTimestamp, safeParseInt } from '@alpen/shared';
+import { encode as pack } from '../lib/msgpack';
 
 export enum CircuitState {
   CLOSED = 'CLOSED',
@@ -27,20 +29,25 @@ export enum CircuitState {
   HALF_OPEN = 'HALF_OPEN',
 }
 
+export type RuleRunState = 'inactive' | 'active' | 'warmup';
+
 export interface CheckAlertResult {
-  status: 'inactive' | 'warmup' | 'not_found' | 'ok';
+  status: RuleRunState;
   notify: boolean;
   state: CircuitState;
+  triggered: boolean;
+  errorStatus: ErrorStatus;
   endDelay?: number;
   alertId?: string;
   alertCount?: number;
   failures?: number;
+  changed: boolean;
 }
 
 export interface AlertData {
   id: string;
   value: number;
-  errorLevel: ErrorLevel;
+  errorStatus: ErrorStatus;
   title?: string;
   message?: string;
   state: Record<string, any>;
@@ -48,8 +55,9 @@ export interface AlertData {
 
 export interface RuleAlertState {
   isActive: boolean;
-  state: CircuitState;
-  ruleState: RuleState;
+  isStarted: boolean;
+  errorStatus: ErrorStatus;
+  circuitState: CircuitState;
   failures: number;
   totalFailures: number;
   successes: number;
@@ -80,19 +88,21 @@ async function getClient(queue: Queue): Promise<RedisClient> {
   return client;
 }
 
+type ParameterType = string | number | Record<string, any> | Buffer;
+
 export class RuleScripts {
   private static getRuleActionArgs(
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | number | Record<string, any>,
+    parameter?: ParameterType,
     timestamp?: number,
-  ): Array<string | number> {
+  ): Array<string | number | Buffer> {
     timestamp = timestamp || systemClock.getTime();
 
     if (parameter === undefined) {
       parameter = '';
-    } else if (typeof parameter !== 'string') {
+    } else if (typeof parameter !== 'string' && !Buffer.isBuffer(parameter)) {
       parameter = JSON.stringify(parameter);
     }
 
@@ -113,7 +123,7 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | number | Record<string, any>,
+    parameter?: ParameterType,
     timestamp?: number,
   ): Promise<any> {
     const args = this.getRuleActionArgs(
@@ -125,7 +135,7 @@ export class RuleScripts {
     );
     // horrible. fix this at the source
     const client = await getClient(queue);
-    return (client as any).rules(...args);
+    return (client as any).rules2(...args);
   }
 
   static pipelineRuleAction(
@@ -133,7 +143,7 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     action: string,
-    parameter?: string | number | Record<string, any>,
+    parameter?: ParameterType,
     timestamp?: number,
   ): Pipeline {
     const args = this.getRuleActionArgs(
@@ -143,7 +153,7 @@ export class RuleScripts {
       parameter,
       timestamp,
     );
-    (pipeline as any).rules(...args);
+    (pipeline as any).rules2(...args);
     return pipeline;
   }
 
@@ -151,33 +161,31 @@ export class RuleScripts {
     queue: Queue,
     rule: Rule | string,
     timestamp?: number,
-  ): Promise<boolean> {
-    const val = await RuleScripts.execRuleAction(
+  ): Promise<RuleRunState> {
+    return RuleScripts.execRuleAction(
       queue,
       rule,
       'start',
       '',
       timestamp,
     );
-    return (val === 1 || val === '1');
   }
 
-  static async stopRule(queue: Queue, rule: Rule | string): Promise<boolean> {
-    const val = await RuleScripts.execRuleAction(queue, rule, 'stop');
-    return val === '1' || val === 1;
+  static async stopRule(queue: Queue, rule: Rule | string): Promise<RuleRunState> {
+    return RuleScripts.execRuleAction(queue, rule, 'stop');
   }
 
   static async checkAlert(
     queue: Queue,
     rule: Rule | string,
-    evalResult: ErrorLevel,
+    alertData: AlertData,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
     const response = await RuleScripts.execRuleAction(
       queue,
       rule,
       'check',
-      evalResult,
+      pack(alertData),
       timestamp,
     );
 
@@ -185,28 +193,34 @@ export class RuleScripts {
 
     return {
       status: res['status'],
+      errorStatus: res['errorStatus'] || ErrorStatus.NONE,
       alertCount: res['alerts'] ?? 0,
       failures: res['failures'] ?? 0,
       endDelay: res['endDelay'] ?? 0,
+      alertId: res['alertId'] ?? '',
       state: (res['state'] ?? CircuitState.CLOSED) as CircuitState,
+      triggered: ((res['state'] ?? CircuitState.CLOSED) as CircuitState) === CircuitState.OPEN,
       notify: parseBool(res['notify'], false),
+      changed: parseBool(res['changed'], false),
     };
   }
 
   static async signalSuccess(
     queue: Queue,
     rule: Rule | string,
+    alertData: AlertData,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
-    return RuleScripts.checkAlert(queue, rule, ErrorLevel.NONE, timestamp);
+    return RuleScripts.checkAlert(queue, rule, alertData, timestamp);
   }
 
   static async signalError(
     queue: Queue,
     rule: Rule | string,
+    alertData: AlertData,
     timestamp?: number,
   ): Promise<CheckAlertResult> {
-    return RuleScripts.checkAlert(queue, rule, ErrorLevel.CRITICAL, timestamp);
+    return RuleScripts.checkAlert(queue, rule, alertData, timestamp);
   }
 
   static async getState(
@@ -227,6 +241,7 @@ export class RuleScripts {
     const result: RuleAlertState = res as RuleAlertState;
     result.isRead = parseBool(res['isRead'], true);
     result.isActive = parseBool(res['isActive'], true);
+    result.isStarted = parseBool(res['isStarted'], false);
     result.notifyPending = has(res, 'notifyPending')
       ? parseBool(res.notifyPending)
       : undefined;
@@ -373,6 +388,21 @@ export class RuleScripts {
     };
   }
 
+  /**
+   * Get an alert by {@link Rule} and id
+   * @param {Rule|string} rule
+   * @param {string} id alert id
+   * @return {Promise<RuleAlert>}
+   */
+  static async getAlert(queue: Queue, rule: Rule | string, id: string): Promise<RuleAlert> {
+    const ruleId = getRuleId(rule);
+    const key = getAlertsKey(queue, ruleId);
+    const client = await getClient(queue);
+    const data = await TimeSeries.get(client, key, id);
+    if (data) data['ruleId'] = ruleId;
+    return deserializeAlert(data);
+  }
+
   static async markAlertAsRead(
     queue: Queue,
     rule: Rule | string,
@@ -391,5 +421,40 @@ export class RuleScripts {
       notified: parseBool(res['notified']),
       alertCount: res['alertCount'],
     };
+  }
+}
+
+export function deserializeAlert(data: any): RuleAlert {
+  if (typeof data === 'string') {
+    data = JSON.parse(data);
+  }
+  if (!isObject(data)) return null;
+
+  const alertData: Record<string, any> = { ...data };
+  alertData.raisedAt = parseTimestamp(data['raisedAt']);
+  alertData.resetAt = parseTimestamp(data['resetAt']);
+  alertData.state = deserializeObject(data['state']);
+  alertData.payload = deserializeObject(data['payload']);
+  alertData.failures = data['failures'] || 0;
+  alertData.isRead = parseBool(data['isRead'], false);
+
+  return alertData as RuleAlert;
+}
+
+function deserializeObject(val: any): any {
+  const type = typeof val;
+  const empty = Object.create(null);
+
+  if (type === 'object') return val;
+
+  if (['undefined', 'null'].includes(type)) {
+    return empty;
+  }
+
+  try {
+    return type === 'string' ? JSON.parse(val) : empty;
+  } catch {
+    // console.log
+    return empty;
   }
 }

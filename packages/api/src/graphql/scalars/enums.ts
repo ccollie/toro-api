@@ -2,7 +2,7 @@ import { QueueFilterStatus } from '@alpen/core/hosts';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
-  ErrorLevel,
+  ErrorStatus,
   PeakSignalDirection,
   RuleOperator,
   RuleState,
@@ -22,7 +22,7 @@ export const ConditionChangeEnum = createEnumFromTS(
   'ConditionChangeType',
 );
 
-export const ErrorLevelEnum = createEnumFromTS(ErrorLevel, 'ErrorLevel');
+export const ErrorLevelEnum = createEnumFromTS(ErrorStatus, 'ErrorLevel');
 
 export const PeakSignalDirectionEnum = createEnumFromTS(
   PeakSignalDirection,

@@ -1,7 +1,7 @@
 'use strict';
 import { getQueueUri, linkify } from '../../lib';
 import { NotificationContext } from '../types';
-import { ErrorLevel } from '../../rules';
+import { ErrorStatus } from '../../rules';
 
 export function getHostUrl(host: Record<string, any>): string {
   const { uri, name = 'host' } = host || {};
@@ -52,7 +52,7 @@ function getAlertTitle(
   data: Record<string, any>,
 ): string {
   const queue = data['queue'];
-  const errorLevel = data['errorLevel'] ?? ErrorLevel.CRITICAL;
+  const errorLevel = data['errorLevel'] ?? ErrorStatus.ERROR;
   const link = getQueueUri(queue);
   return `Alert Raised on Queue: ${link}`;
 }

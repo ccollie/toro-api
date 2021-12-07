@@ -36,7 +36,7 @@ import {
   RuleType,
 } from './rule-conditions';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
-import { ErrorLevel, RuleEventsEnum, RuleState } from './types';
+import { ErrorStatus, RuleEventsEnum, RuleState } from './types';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
@@ -44,7 +44,7 @@ function isCircuitTripped(state: CircuitState): boolean {
 
 function getRuleState(result: EvaluationResult): RuleState {
   if (!result.triggered) return RuleState.NORMAL;
-  return result.errorLevel === ErrorLevel.WARNING
+  return result.errorLevel === ErrorStatus.WARNING
     ? RuleState.WARNING
     : RuleState.ERROR;
 }
@@ -188,9 +188,11 @@ export class RuleAlerter {
     if (response.state === CircuitState.CLOSED) {
       this._lastFailedAt = 0;
     }
-
     if (result.triggered && response.status === 'ok') {
       this.rule.totalFailures++;
+    }
+    if (!this._alertId) {
+      this._alert = null;
     }
   }
 
@@ -204,10 +206,12 @@ export class RuleAlerter {
     const wasTriggered = this.isTriggered;
 
     const now = this.clock.getTime();
+    const alertData = this.createAlertData(result);
+
     const response = await RuleScripts.checkAlert(
       this.queue,
       this.rule,
-      result.errorLevel,
+      alertData,
       now,
     );
     if (response.status === 'not_found') {
@@ -218,8 +222,11 @@ export class RuleAlerter {
 
     // check to see if we need to write the alert
     if (response.status === 'ok' && !wasTriggered && this.isTriggered) {
-      this._alert = await this.writeAlert(result);
-      this._alertId = this._alert ? this._alert.id : '';
+      if (this._alertId) {
+        this._alert = await RuleScripts.getAlert(this.queue, this.rule, this._alertId);
+      } else {
+        this._alert = null;
+      }
     } else if (!response.alertId) {
       this._alert = null;
     }
@@ -283,7 +290,7 @@ export class RuleAlerter {
     const alert: AlertData = {
       id: getUniqueId(),
       value: result.value,
-      errorLevel: result.errorLevel,
+      errorStatus: result.errorLevel,
       state: { ...result.state },
     };
 
@@ -485,7 +492,7 @@ export function describeResult(state: RuleEvaluationState): string {
 }
 
 function getThreshold(state: RuleEvaluationState): number {
-  return state.errorLevel === ErrorLevel.WARNING
+  return state.errorLevel === ErrorStatus.WARNING
     ? state.warningThreshold
     : state.errorThreshold;
 }

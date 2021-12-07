@@ -1,4 +1,4 @@
-import { ErrorLevel, Severity } from './types';
+import { ErrorStatus, Severity } from './types';
 import { RuleEvaluationState } from './condition-evaluator';
 
 /**
@@ -71,7 +71,7 @@ export interface RuleAlert {
   message?: string;
   /** states which triggered alert */
   readonly state?: RuleEvaluationState;
-  readonly errorLevel: ErrorLevel;
+  readonly errorLevel: ErrorStatus;
   severity: Severity;
   isRead: boolean;
 }

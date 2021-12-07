@@ -1,6 +1,6 @@
 import { LatencyMetric } from '../../metrics';
 import {
-  ErrorLevel,
+  ErrorStatus,
   PeakCondition,
   PeakSignalDirection,
   RuleOperator,
@@ -51,7 +51,7 @@ describe('Condition Evaluation', () => {
         expect(result.state).toMatchObject({
           value: 5,
           ruleType: RuleType.THRESHOLD,
-          errorLevel: ErrorLevel.CRITICAL,
+          errorLevel: ErrorStatus.ERROR,
           unit: 'ms',
         });
       });
@@ -67,7 +67,7 @@ describe('Condition Evaluation', () => {
         expect(result.state).toMatchObject({
           value: 12,
           ruleType: RuleType.THRESHOLD,
-          errorLevel: ErrorLevel.WARNING,
+          errorLevel: ErrorStatus.WARNING,
           unit: 'ms',
         });
       });
@@ -184,14 +184,14 @@ describe('Condition Evaluation', () => {
             expect(result.state).toMatchObject({
               value,
               ruleType: RuleType.PEAK,
-              errorLevel: ErrorLevel.CRITICAL,
+              errorLevel: ErrorStatus.ERROR,
               unit: 'ms',
             });
           } else {
             expect(result.state).toMatchObject({
               value,
               ruleType: RuleType.PEAK,
-              errorLevel: ErrorLevel.NONE,
+              errorLevel: ErrorStatus.NONE,
               unit: 'ms',
             });
           }
@@ -208,7 +208,7 @@ describe('Condition Evaluation', () => {
         expect(result.state).toMatchObject({
           value: 12,
           ruleType: RuleType.PEAK,
-          errorLevel: ErrorLevel.WARNING,
+          errorLevel: ErrorStatus.WARNING,
           unit: 'ms',
         });
       });

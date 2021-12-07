@@ -5,7 +5,7 @@ import { delay } from '../../lib';
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueManager } from '../../queues';
 import {
-  ErrorLevel,
+  ErrorStatus,
   RuleAlert,
   RuleCondition,
   RuleConfigOptions,
@@ -29,13 +29,13 @@ function createAlert(rule, data = {}): RuleAlert {
     id: getUniqueId(),
     value: 201,
     status: 'open',
-    errorLevel: ErrorLevel.CRITICAL,
+    errorLevel: ErrorStatus.ERROR,
     ruleId: rule.id,
     raisedAt: Date.now(),
     state: {
       ruleType: RuleType.THRESHOLD,
       errorThreshold: 100,
-      errorLevel: ErrorLevel.CRITICAL,
+      errorLevel: ErrorStatus.ERROR,
       value: 110,
       comparator: RuleOperator.GT,
       unit: 'jobs/sec',
@@ -330,7 +330,7 @@ describe('RuleManager', () => {
         expect(alert.status).toBe('open');
         expect(alert.severity).toBe(rule.severity);
         expect(alert.value).toBe(ERROR_TRIGGER_VALUE);
-        expect(alert.errorLevel).toBe(ErrorLevel.CRITICAL);
+        expect(alert.errorLevel).toBe(ErrorStatus.ERROR);
       });
 
       it('stores an alert to redis when a warning is triggered', async () => {
@@ -342,7 +342,7 @@ describe('RuleManager', () => {
         expect(alert.status).toBe('open');
         expect(alert.severity).toBe(rule.severity);
         expect(alert.value).toBe(WARNING_TRIGGER_VALUE);
-        expect(alert.errorLevel).toBe(ErrorLevel.WARNING);
+        expect(alert.errorLevel).toBe(ErrorStatus.WARNING);
       });
 
       it('updates alert in redis when a rule is reset', async () => {

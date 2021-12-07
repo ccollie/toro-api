@@ -12,10 +12,10 @@ export enum Severity {
   CRITICAL = 'CRITICAL',
 }
 
-export enum ErrorLevel {
+export enum ErrorStatus {
   NONE = 'NONE',
   WARNING = 'WARNING',
-  CRITICAL = 'CRITICAL',
+  ERROR = 'ERROR',
 }
 
 export type RuleMetric = {

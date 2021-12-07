@@ -19,7 +19,7 @@ import {
   TimeSeries,
 } from '../commands';
 import { getAlertTitle } from './rule-alerter';
-import { ErrorLevel, RuleEventsEnum, RuleState, Severity } from './types';
+import { ErrorStatus, RuleEventsEnum, RuleState, Severity } from './types';
 import { RuleAlert } from './rule-alert';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
@@ -402,11 +402,11 @@ export class RuleStorage {
     }
 
     const title = !isEmpty(data.state) ? getAlertTitle(data.state)
-      : (data.errorLevel === ErrorLevel.CRITICAL ? 'Error' : 'Warning');
+      : (data.errorLevel === ErrorStatus.ERROR ? 'Error' : 'Warning');
 
     const alertData: AlertData = {
       id,
-      errorLevel: data.errorLevel,
+      errorStatus: data.errorLevel,
       value: data.value,
       state: data.state,
       title,
@@ -423,12 +423,7 @@ export class RuleStorage {
    * @return {Promise<RuleAlert>}
    */
   async getAlert(rule: Rule | string, id: string): Promise<RuleAlert> {
-    const ruleId = getRuleId(rule);
-    const key = this.getAlertsKey(rule);
-    const client = await this.getClient();
-    const data = await TimeSeries.get(client, key, id);
-    if (data) data['ruleId'] = ruleId;
-    return deserializeAlert(data);
+    return RuleScripts.getAlert(this.queue, rule, id);
   }
 
   async markAlertAsRead(

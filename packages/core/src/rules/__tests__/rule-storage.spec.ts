@@ -4,7 +4,7 @@ import pAll from 'p-all';
 import pSettle from 'p-settle';
 import { getUniqueId } from '../../ids';
 import {
-  ErrorLevel,
+  ErrorStatus,
   Rule,
   RuleAlert,
   RuleConfigOptions,
@@ -216,13 +216,13 @@ describe('RuleStorage', () => {
         id: getUniqueId(),
         ruleId: rule.id,
         status: 'open',
-        errorLevel: ErrorLevel.CRITICAL,
+        errorLevel: ErrorStatus.ERROR,
         value: 100,
         raisedAt: Date.now(),
         state: {
           ruleType: RuleType.THRESHOLD,
           errorThreshold: 100,
-          errorLevel: ErrorLevel.CRITICAL,
+          errorLevel: ErrorStatus.ERROR,
           value: 110,
           comparator: RuleOperator.GT,
           unit: 'jobs/sec',
@@ -281,7 +281,7 @@ describe('RuleStorage', () => {
         alert.resetAt = Date.now() + 1000;
 
         const newAlert = createAlert(rule, {
-          errorLevel: ErrorLevel.NONE,
+          errorLevel: ErrorStatus.NONE,
         });
         const updatedAlert = await storage.addAlert(rule, newAlert);
 

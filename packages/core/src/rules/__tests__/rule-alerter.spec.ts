@@ -1,6 +1,6 @@
 import { random } from 'lodash';
 import {
-  ErrorLevel,
+  ErrorStatus,
   EvaluationResult,
   Rule,
   RuleAlert,
@@ -35,8 +35,8 @@ describe('RuleAlerter', () => {
     storage = new RuleStorage(hostName, queueManager.queue, queueManager.bus);
     clock = new ManualClock();
     successResult = createSuccessResult();
-    errorResult = createFailResult(ErrorLevel.CRITICAL);
-    warningResult = createFailResult(ErrorLevel.WARNING);
+    errorResult = createFailResult(ErrorStatus.ERROR);
+    warningResult = createFailResult(ErrorStatus.WARNING);
   });
 
   afterEach(async () => {
@@ -60,11 +60,11 @@ describe('RuleAlerter', () => {
     opts: Partial<EvaluationResult> = {},
   ): EvaluationResult {
     const triggered = opts.triggered ?? getRandomBool();
-    let level = ErrorLevel.NONE;
+    let level = ErrorStatus.NONE;
     if (opts.errorLevel === undefined) {
       level = !triggered
-        ? ErrorLevel.NONE
-        : [ErrorLevel.WARNING, ErrorLevel.CRITICAL][random(0, 1)];
+        ? ErrorStatus.NONE
+        : [ErrorStatus.WARNING, ErrorStatus.ERROR][random(0, 1)];
     }
     const value = random(10, 1000);
     return {
@@ -87,7 +87,7 @@ describe('RuleAlerter', () => {
     return createResult({ triggered: true });
   }
 
-  function createFailResult(level?: ErrorLevel.WARNING | ErrorLevel.CRITICAL) {
+  function createFailResult(level?: ErrorStatus.WARNING | ErrorStatus.ERROR) {
     return createResult({ triggered: false, errorLevel: level });
   }
 
@@ -104,7 +104,7 @@ describe('RuleAlerter', () => {
 
   async function trigger(
     sut: RuleAlerter,
-    level?: ErrorLevel.WARNING | ErrorLevel.CRITICAL,
+    level?: ErrorStatus.WARNING | ErrorStatus.ERROR,
     wait = true,
   ): Promise<void> {
     return postResult(sut, createFailResult(level), wait);
@@ -147,7 +147,7 @@ describe('RuleAlerter', () => {
         message: '{{rule.id}} is fantastic',
       });
 
-      const result = createFailResult(ErrorLevel.WARNING);
+      const result = createFailResult(ErrorStatus.WARNING);
       await sut.handleResult(result);
 
       await delay(40);
@@ -185,7 +185,7 @@ describe('RuleAlerter', () => {
     it('triggers a states change on a warning', async () => {
       const sut = await createAlerter({ isActive: true });
 
-      await trigger(sut, ErrorLevel.WARNING);
+      await trigger(sut, ErrorStatus.WARNING);
       expect(sut.state).toBe(RuleState.WARNING);
     });
 

@@ -14,7 +14,7 @@ import {
   ChangeTypeEnum,
   RuleType,
 } from './rule-conditions';
-import { ErrorLevel } from './types';
+import { ErrorStatus } from './types';
 
 export interface ChangeRuleEvaluationState
   extends ThresholdRuleEvaluationState {
@@ -98,7 +98,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     this.usePercentage = options.changeType === ChangeTypeEnum.CHANGE;
   }
 
-  protected getState(level: ErrorLevel, value: number): RuleEvaluationState {
+  protected getState(level: ErrorStatus, value: number): RuleEvaluationState {
     const baseState = super.getState(level, value);
     return {
       ...baseState,
@@ -112,7 +112,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     } as ChangeRuleEvaluationState;
   }
 
-  protected handleEval(value: number): ErrorLevel {
+  protected handleEval(value: number): ErrorStatus {
     const change = this.update(value);
     return super.handleEval(change);
   }

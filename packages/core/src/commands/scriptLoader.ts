@@ -198,13 +198,7 @@ function bannerize(fileName: string, baseDir: string, content: string): string {
   if (!content) {
     return '';
   }
-  let name = fileName.substr(baseDir.length);
-  if (name[0] == path.sep) {
-    name = name.substr(1);
-  }
-  const header = '---[START ' + name + ' ]---';
-  const footer = '---[END   ' + name + ' ]---';
-  return `${header}\n${content}\n${footer}`;
+  return content;
 }
 
 function findPos(content: string, match: string) {

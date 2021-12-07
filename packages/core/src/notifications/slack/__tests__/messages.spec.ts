@@ -4,7 +4,7 @@ import { random } from 'lodash';
 import ms from 'ms';
 import { nanoid } from 'nanoid';
 import {
-  ErrorLevel,
+  ErrorStatus,
   RuleAlert,
   RuleEventsEnum,
   RuleOperator,
@@ -35,12 +35,12 @@ describe('messages', () => {
         status: 'open',
         value: 0,
         id: nanoid(),
-        errorLevel: ErrorLevel.WARNING,
+        errorLevel: ErrorStatus.WARNING,
         failures: random(1, 5), // violations
         state: {
           ruleType: RuleType.THRESHOLD,
           errorThreshold: 100,
-          errorLevel: ErrorLevel.CRITICAL,
+          errorLevel: ErrorStatus.ERROR,
           value: 110,
           comparator: RuleOperator.GT,
           unit: 'jobs/sec',

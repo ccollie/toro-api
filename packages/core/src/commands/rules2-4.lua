@@ -9,7 +9,7 @@
         ARGV[1]   rule id
         ARGV[2]   current timestamp
         ARGV[3]   action
-        ARGV[4]   action parameter
+        ARGV[4]   payload
 ]]
 
 --- @include "includes/Rule"
@@ -48,8 +48,7 @@ local function loadRule()
         if (rule == nil) then
             error('rule not found: ' .. toStr(ruleKey))
         end
-        rule.loadState()
-        debug(rule)
+        rule:loadState()
         --- todo: error if not found
     end
     return rule
@@ -59,31 +58,8 @@ local function emitEvent(event, ...)
     local args = { ... }
     --- debug('event ', event, ' rule Id= "' .. toStr(rule.id) .. '" ', 'args=' .. cjson.encode(args))
     rcall("XADD", busKey, "*", "event", event, "ruleId", rule.id, "ts", now, unpack(args))
-    rcall("XTRIM", busKey, "MAXLEN", "~", 25)
+    rcall("XTRIM", busKey, "MAXLEN", "~", 10)
     --- todo: trim
-end
-
-local function updateRuleState(state, alertId)
-    local alertCount = rcall('zcard', alertsKey)
-    if (rule.state ~= state) then
-        -- set state and raise event
-        rule.state = state
-        local args = {'state', state, 'alertCount', alertCount}
-        local key  = (state == RULE_STATE_NORMAL) and 'lastResolvedAt' or 'lastTriggeredAt'
-        args[#args + 1] = key
-        args[#args + 1] = now
-        rule:update({
-            [key] = now,
-            state = state
-        })
-
-        emitEvent(STATE_CHANGED, unpack(args))
-    else
-        rule:update({
-            alertsCount = alertCount
-        })
-    end
-    rule:setState({ alertId = alertId })
 end
 
 local function getAlert(id)
@@ -93,7 +69,6 @@ end
 local function createAlert(data)
     local id = data.id
 
-    local newState
     local alert = {
         id = id,
         ruleId = rule.id,
@@ -103,15 +78,10 @@ local function createAlert(data)
         state = data.state,
         title = data.title or '',
         message = data.message or '',
-        failures = rule.failures,
+        failures = data.failures,
         value = data.value,
         raisedAt = now
     }
-    if (data.errorLevel == ERROR_LEVEL_WARNING) then
-        newState = RULE_STATE_WARNING
-    elseif data.errorLevel == ERROR_LEVEL_CRITICAL then
-        newState = RULE_STATE_ERROR
-    end
 
     local alertObj = RuleAlert.create(alertsKey, id, alert)
     local serialized = cjson.encode({
@@ -119,11 +89,16 @@ local function createAlert(data)
         errorLevel = alert.errorLevel,
     })
 
+    debug('createAlert: ' .. toStr(alert))
+
     --- Raise event
     emitEvent(ALERT_TRIGGERED_EVENT, 'id', id, 'data', serialized)
 
-    updateRuleState(newState, id)
-
+    local alertCount = rcall('zcard', alertsKey)
+    rule:update({
+        alertCount = alertCount
+    })
+    rule:setState({ alertId = id })
     return alertObj
 end
 
@@ -135,7 +110,6 @@ local function updateAlert(id, data)
     end
     local id = data.id
 
-    local newState
     local update = {
         id = id,
         status = 'open',
@@ -143,18 +117,11 @@ local function updateAlert(id, data)
         state = data.state,
         title = data.title or '',
         message = data.message or '',
-        failures = rule.failures,
+        failures = data.failures,
         value = data.value,
     }
-    if (data.errorLevel == ERROR_LEVEL_WARNING) then
-        newState = RULE_STATE_WARNING
-    elseif data.errorLevel == ERROR_LEVEL_CRITICAL then
-        newState = RULE_STATE_ERROR
-    end
 
     alert:update(update)
-
-    updateRuleState(newState, id)
 end
 
 local function resetCurrentAlert(now)
@@ -162,7 +129,7 @@ local function resetCurrentAlert(now)
     if (alertId ~= nil) then
         local alert = RuleAlert.get(alertsKey, alertId)
         if (alert ~= nil) then
-            alert.update({
+            alert:update({
                 status = 'closed',
                 resolvedAt = now
             })
@@ -175,38 +142,36 @@ local function resetCurrentAlert(now)
 end
 
 
-local function handleResult(parameter)
-    local status = 'ok'
-    local data = cmsgpack.unpack(parameter)
+local function handleResult(now, data)
+    local errorStatus = data.errorStatus or ERROR_STATUS_ERROR
+    local saveState = rule.state
 
-    local errorLevel = data.errorLevel
+    local result = rule:handleResult(now, errorStatus)
 
-    local errorState
-
-    if (errorLevel == ERROR_LEVEL_NONE) then
-        errorState = RULE_STATE_NORMAL
-    else
-        errorState = (errorLevel == ERROR_LEVEL_WARNING) and RULE_STATE_WARNING or RULE_STATE_ERROR
-    end
-
-    local result = rule.handleResult(now, errorState)
-    if (result.status == 'ok') then
+    if (result.status == RUN_STATE_ACTIVE) then
       if (result.changed) then
-        if errorState ~= RULE_STATE_NORMAL then
-            local alertId = rule.alertId
+        if result.state == CIRCUIT_OPEN then
+            local alertId = result.alertId
+            data.failures = result.failures
             if (not alertId) then
                 createAlert(data)
-                rule.alertId = data.id
+                result.alertId = data.id
             else
                 updateAlert(alertId, data)
             end
         else
             resetCurrentAlert(now)
         end
+
+        local eventArgs = { 'event', STATE_CHANGED, 'id', rule.id, 'ts', now, 'oldState', saveState, 'newState', rule.state }
+        if (result.alertId) then
+            table.insert(eventArgs, 'alertId')
+            table.insert(eventArgs, result.alertId)
+        end
+        rcall("XADD", busKey, '*', 'event', STATE_CHANGED, unpack(eventArgs))
       end
     end
 
-    --- debug('about to return. Result23 = ', result)
     return hashToArray(result)
 end
 
@@ -248,8 +213,7 @@ local function checkState(now)
     if (rule == nil) then
         return {'status', 'not_found'}
     end
-    rule:checkStateChange(now)
-
+    rule:recalcState(now)
     local res = hashToArray(rule.ruleState)
     res[#res + 1] = 'isActive'
     res[#res + 1] = rule.isActive
@@ -267,8 +231,9 @@ end
 --- todo: deleteAlert
 loadRule()
 if (action == 'check') then
+    local evalData = cmsgpack.unpack(parameter)
     rule:start(now)
-    return handleResult(parameter)
+    return handleResult(now, evalData)
 elseif (action == 'start') then
     return rule:start(now)
 elseif (action == 'stop') then
@@ -276,9 +241,12 @@ elseif (action == 'stop') then
 elseif (action == 'clear') then
     return clearState(now) and 1 or 0
 elseif (action == 'alert') then
-    return writeAlert(parameter)
+    local alertData = cmsgpack.unpack(parameter)
+    local alert = createAlert(alertData)
+    local data = alert:getData()
+    return cjson.encode(data)
 elseif (action == 'state') then
-    return checkState()
+    return checkState(now)
 elseif (action == 'mark-notify') then
     return markNotification(now, parameter)
 end
