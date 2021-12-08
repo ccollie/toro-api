@@ -1,11 +1,8 @@
-import { Queue, QueueEvents, RedisClient } from 'bullmq';
-import ms from 'ms';
-import LRUCache from 'lru-cache';
-import Emittery from 'emittery';
-import { logger } from '../logger';
 import { isFinishedStatus, parseTimestamp } from '@alpen/shared';
-import { parseStreamId, timestampFromStreamId } from '../redis';
-import { AppJob, JobStatusEnum } from './types';
+import { Queue, QueueEvents, QueueEventsListener, RedisClient } from 'bullmq';
+import Emittery from 'emittery';
+import LRUCache from 'lru-cache';
+import ms from 'ms';
 import {
   Clock,
   createAsyncIterator,
@@ -13,10 +10,15 @@ import {
   ManualClock,
   systemClock,
 } from '../lib';
+import { logger } from '../logger';
 import { Events } from '../metrics/constants';
+import { parseStreamId, timestampFromStreamId } from '../redis';
+import { AppJob, JobStatusEnum } from './types';
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');
+
+type QueueEventName = keyof QueueEventsListener;
 
 const DEFAULT_FIELDS_TO_FETCH = [
   'timestamp',
@@ -40,11 +42,6 @@ export interface JobFinishedEventData extends JobEventData {
   success: boolean;
 }
 
-export type JobEventHandler = (
-  event?: JobEventData,
-  data?: Record<string, any>,
-) => void | Promise<void>;
-
 function shouldProxyEvent(eventName: string | symbol): boolean {
   return typeof eventName === 'string' && !eventName.startsWith('job.');
 }
@@ -60,7 +57,6 @@ export class QueueListener extends Emittery {
   private lastTimestamp = 0;
   private queueEvents: QueueEvents;
   private _listening: boolean;
-  private readonly _handlerMap = {};
   private readonly keysToFetch: string[];
   private _client: RedisClient = null;
   private readonly _clock: ManualClock;
@@ -76,40 +72,16 @@ export class QueueListener extends Emittery {
       maxAge: CACHE_TIMEOUT,
     });
 
-    this._handlerMap = {
-      [JobStatusEnum.ACTIVE]: this.makeHandler(
-        JobStatusEnum.ACTIVE,
-        QueueListener.handleActive,
-      ),
-      [JobStatusEnum.WAITING]: this.makeHandler(
-        JobStatusEnum.WAITING,
-        QueueListener.handleWaiting,
-      ),
-      [JobStatusEnum.COMPLETED]: this.makeHandler(
-        JobStatusEnum.COMPLETED,
-        this.handleCompleted,
-      ),
-      [JobStatusEnum.FAILED]: this.makeHandler(
-        JobStatusEnum.FAILED,
-        this.handleFailed,
-      ),
-      [JobStatusEnum.DELAYED]: this.makeHandler(
-        JobStatusEnum.DELAYED,
-        QueueListener.handleDelayed,
-      ),
-      [JobStatusEnum.STALLED]: this.makeHandler(
-        JobStatusEnum.STALLED,
-        QueueListener.handleStalled,
-      ),
-      progress: this.makeHandler('progress', QueueListener.handleProgress),
-      removed: this.makeHandler('removed', this.handleRemoved),
-    };
 
     // proxy events from contained QueueEvents
     this.on(Emittery.listenerAdded, ({ eventName }) => {
       // console.log(eventName);
       if (shouldProxyEvent(eventName)) {
-        this.addProxyHandler(String(eventName));
+        let name = String(eventName);
+        if (name.startsWith('job.')) {
+          name = name.substring(4);
+          this.addProxyHandler(name);
+        }
       }
     });
 
@@ -150,7 +122,11 @@ export class QueueListener extends Emittery {
         this.emit(eventName, { id }).catch((err) => this.onError(err));
       });
     } else {
-      this.queueEvents.on(eventName, (args, id) => {
+      let name = eventName;
+      if (eventName.startsWith('job.')) {
+        name = eventName.substring(4);
+      }
+      this.queueEvents.on(name as QueueEventName, (args, id) => {
         this.emit(eventName, { args, id }).catch((err) => this.onError(err));
       });
     }
@@ -165,98 +141,88 @@ export class QueueListener extends Emittery {
     }
   }
 
-  private makeHandler(eventName: string, fn: JobEventHandler) {
+  private preprocessJobEvent(
+    eventName: QueueEventName,
+    args: any,
+    ts: string,
+  ): JobEventData {
+    const timestamp = timestampFromStreamId(ts);
     const isFinished = isFinishedStatus(eventName);
 
-    fn = fn.bind(this);
-    const cache = this.cache;
-    const _state =
-      eventName === 'progress'
-        ? JobStatusEnum.ACTIVE
-        : (eventName as JobStatusEnum);
+    this._clock.set(timestamp);
+    const _state = eventName === 'progress' ? 'active' : eventName;
+    const jobId = args.jobId;
+    let job = this.cache.get(jobId, !isFinished);
+    if (!job) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { data, jobId, prev, ...rest } = args;
+      job = rest;
+      job.id = jobId;
+      this.cache.set(jobId, job);
+    }
 
-    return async (evt: Record<string, any>, ts: string): Promise<void> => {
-      const { jobId } = evt;
-      const timestamp = timestampFromStreamId(ts);
+    job.state = _state;
+    job.prevState = args.prev;
 
-      this._clock.set(timestamp);
+    this.lastStreamId = ts;
+    this.lastTimestamp = timestamp.getTime();
+    this.currentJob = job;
 
-      let job = cache.get(jobId, !isFinished);
-      if (!job) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { data, jobId, ...rest } = evt;
-        job = rest;
-        job.id = jobId;
-        cache.set(jobId, job);
-      }
-
-      job.state = _state;
-      job.prevState = evt.prev;
-
-      this.lastStreamId = ts;
-      this.lastTimestamp = timestamp.getTime();
-
-      const evtData: JobEventData = {
-        ts: this.lastTimestamp,
-        job,
-        event: evt.event,
-      };
-
-      try {
-        await fn(evtData, evt);
-
-        this.currentJob = job;
-
-        if (!isFinished) {
-          // todo: use pQueue for these
-          await Promise.all([
-            this.emit(`job.${eventName}`, evtData),
-            this.emit(`job.${jobId}`, evtData),
-          ]);
-        }
-
-        if (isFinished) {
-          // cache.del(jobId);
-        }
-      } catch (err) {
-        console.log(err);
-        logger.error(`Error in handler for event: "${eventName}"`, {
-          err,
-          jobId,
-        });
-      }
+    return {
+      ts: this.lastTimestamp,
+      prevState: args.prev,
+      job,
+      event: eventName,
     };
   }
 
-  /**
-   * @private
-   */
-  private handleRemoved(data: JobEventData): void {
-    const { job } = data;
-    this.cache.del(job.id);
+  private emitJobEvents(data: JobEventData, isFinished = false) {
+    if (!isFinished) {
+      // todo: use pQueue for these
+      Promise.all([
+        this.emit(`job.${data.event}`, data),
+        this.emit(`job.${data.job.id}`, data),
+      ]).catch((err) => this.onError(err));
+    }
   }
 
-  private static handleActive(data: JobEventData, { prev }): void {
+  private activeListener(
+    args: { jobId: string; prev?: string },
+    id: string,
+  ): void {
+    const data = this.preprocessJobEvent('active', args, id);
     const { job, ts } = data;
-    if (!job.timestamp && !prev) {
+    data.prevState = args.prev;
+    if (!job.timestamp && !args.prev) {
       job.timestamp = ts;
     }
     job.processedOn = ts;
+    this.emitJobEvents(data);
   }
 
-  private handleCompleted(data: JobEventData, { returnvalue }): any {
+  protected completedListener(
+    args: { jobId: string; returnvalue: string; prev?: string },
+    id: string,
+  ): void {
+    const data = this.preprocessJobEvent('completed', args, id);
     const { job } = data;
-    job.returnvalue = returnvalue;
-    return this.markFinished(data, JobStatusEnum.COMPLETED);
+    data.prevState = args.prev;
+    job.returnvalue = args.returnvalue;
+    this.markFinished(data, JobStatusEnum.COMPLETED);
   }
 
-  private handleFailed(data: JobEventData, { failedReason }): any {
+  protected failedListener(
+    args: { jobId: string; failedReason: string; prev?: string },
+    id: string,
+  ): void {
+    const data = this.preprocessJobEvent('failed', args, id);
     const { job } = data;
-    job.failedReason = failedReason;
-    return this.markFinished(data, JobStatusEnum.FAILED);
+    job.failedReason = args.failedReason;
+    this.markFinished(data, JobStatusEnum.FAILED);
   }
 
-  private static handleWaiting(data: JobEventData): void {
+  protected waitingListener(args: { jobId: string }, id: string): void {
+    const data = this.preprocessJobEvent('waiting', args, id);
     const { job, ts } = data;
     if (!data.prevState) {
       // we're new
@@ -270,53 +236,75 @@ export class QueueListener extends Emittery {
     if (data.prevState === 'delayed') {
       job.delay = 0;
     }
+
+    this.emitJobEvents(data);
   }
 
-  private static handleDelayed(event: JobEventData, { delay }): void {
-    const { job } = event;
-    if (!event.prevState && !job.timestamp) {
+  protected delayedListener(args: { jobId: string; delay: number }, id: string): void {
+    const data = this.preprocessJobEvent('delayed', args, id);
+    const { job } = data;
+    if (!data.prevState && !job.timestamp) {
       // we're new
-      job.timestamp = event.ts;
+      job.timestamp = data.ts;
     }
-    job.delay = parseInt(delay);
+    job.delay = args.delay;
+    this.emitJobEvents(data);
   }
 
-  private static handleStalled(event: JobEventData): void {
-    event.job.isStalled = true;
+  protected removedListener(args: { jobId: string }, id: string): void {
+    const timestamp = timestampFromStreamId(id);
+    this._clock.set(timestamp);
+    this.lastStreamId = id;
+    this.lastTimestamp = timestamp.getTime();
+    this.cache.del(args.jobId);
   }
 
-  private static handleProgress(jobData: JobEventData, { data }): void {
-    const { job } = jobData;
-    const num = parseInt(data);
-    job.progress = isNaN(num) ? data : num;
+  protected stalledListener(args: { jobId: string }, id: string): void {
+    const data = this.preprocessJobEvent('stalled', args, id);
+    const { job } = data;
+    job.isStalled = true;
+    this.emitJobEvents(data);
   }
 
-  async markFinished(
+  protected progressListener(args: { jobId: string; data: number | object }, id: string): void {
+    const data = this.preprocessJobEvent('progress', args, id);
+    const { job } = data;
+    job.progress = args.data;
+    this.emitJobEvents(data);
+  }
+
+  markFinished(
     data: JobEventData,
     status: JobStatusEnum.COMPLETED | JobStatusEnum.FAILED,
-  ): Promise<void> {
+  ): void {
     const { job, ts } = data;
     const failed = status === JobStatusEnum.FAILED;
     job.state = status;
     job.finishedOn = ts;
 
-    const { latency, wait } = await this.getDurations(data);
+    this.getDurations(data).then(({ latency, wait }) => {
+      const evtData: JobFinishedEventData = {
+        job,
+        ts,
+        latency,
+        wait,
+        success: !failed,
+        event: status,
+      };
 
-    const evtData: JobFinishedEventData = {
-      job,
-      ts,
-      latency,
-      wait,
-      success: !failed,
-      event: status,
-    };
+      const finishedEvtData = { ...evtData, event: 'finished' };
 
-    const finishedEvtData = { ...evtData, event: 'finished' };
+      return Promise.all([
+        this.emit(failed ? Events.FAILED : Events.COMPLETED, evtData),
+        this.emit(FINISHED_EVENT, finishedEvtData),
+      ]);
+    }).catch(err => {
+      logger.error(`Error in handler for event: "${status}"`, {
+        err,
+        jobId: job.id,
+      });
+    });
 
-    await Promise.all([
-      this.emit(failed ? Events.FAILED : Events.COMPLETED, evtData),
-      this.emit(FINISHED_EVENT, finishedEvtData),
-    ]);
   }
 
   private static needsMeta(data: JobEventData): boolean {
@@ -338,7 +326,7 @@ export class QueueListener extends Emittery {
     }
     const finishedOn = job.finishedOn || systemClock.getTime();
     const latency = finishedOn && finishedOn - job.processedOn;
-    // TODO: figure out why latency is sometimes negative here
+
     const wait = job.timestamp && job.processedOn - job.timestamp;
     return {
       latency,
@@ -435,14 +423,20 @@ export class QueueListener extends Emittery {
       this.lastTimestamp = parseTimestamp(ts);
     }
 
-    this.queueEvents = new QueueEvents(this.queue.name, {
+    const qe = this.queueEvents = new QueueEvents(this.queue.name, {
       lastEventId: eventId,
-      connection: client.duplicate(),
+      autorun: true,
+      connection: client,
     });
 
-    Object.keys(this._handlerMap).forEach((event) => {
-      this.queueEvents.on(event, this._handlerMap[event]);
-    });
+    qe.on('active', this.activeListener.bind(this));
+    qe.on('completed', this.completedListener.bind(this));
+    qe.on('failed', this.failedListener.bind(this));
+    qe.on('delayed', this.delayedListener.bind(this));
+    qe.on('stalled', this.stalledListener.bind(this));
+    qe.on('waiting', this.waitingListener.bind(this));
+    qe.on('removed', this.removedListener.bind(this));
+    qe.on('progress', this.progressListener.bind(this));
 
     await this.queueEvents.waitUntilReady();
     this._listening = true;

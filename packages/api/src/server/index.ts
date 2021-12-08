@@ -332,7 +332,6 @@ export class ServerAdapter<
   protected _hosts: HostConfig[] = [];
   protected options: TOptions;
   protected gqlBasePath = '/graphql';
-  protected _app: TApp;
   protected readonly config: AdapterOptions;
 
   constructor(config: AdapterOptions) {

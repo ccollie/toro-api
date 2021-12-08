@@ -1,6 +1,8 @@
 // ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
 // although this refers to v3, most of it applies to bullmq
-import { Job, JobsOptions, Queue } from 'bullmq';
+import { Job, JobsOptions, Queue, QueueEventsListener } from 'bullmq';
+
+type QueueEventName = keyof QueueEventsListener;
 
 export interface JobIdSpec {
   queue: Queue | string;

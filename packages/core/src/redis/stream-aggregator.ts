@@ -10,7 +10,7 @@ import {
   ConnectionOptions,
 } from './utils';
 import { getStreamDeserializer } from './streams';
-import { createDebug } from '../lib';
+import { createDebug, delay } from '../lib';
 import { RedisClient } from 'bullmq';
 import { logger } from '../logger';
 
@@ -288,6 +288,8 @@ export class RedisStreamAggregator {
       // emit any message events, which is what one would expect. Errors and close
       // events are forwarded to the user via the events emitter
       if (err.message !== 'Connection is closed.') throw err;
+
+      await delay(2000);
     }
     this.readStreamActive = false;
     if (messages) {
