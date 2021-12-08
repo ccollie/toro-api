@@ -12,9 +12,10 @@ export function createRuleOptions(
 ): RuleConfigOptions {
   return {
     options: defaultRuleAlertOptions,
-    name: 'rule-test-' + nanoid(),
+    name: 'rule-' + nanoid(),
     id: getUniqueId(),
     metricId: getUniqueId(),
+    isActive: true,
     condition: {
       type: RuleType.THRESHOLD,
       errorThreshold: 20,

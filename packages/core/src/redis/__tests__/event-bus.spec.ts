@@ -1,4 +1,5 @@
-import { getUniqueId } from 'packages/core/src/ids';
+import { toKeyValueList } from '../../redis';
+import { getUniqueId } from '../../ids';
 import { EventBus } from '../event-bus';
 import { RedisStreamAggregator } from '../stream-aggregator';
 import pAll from 'p-all';
@@ -75,6 +76,36 @@ describe('EventBus', () => {
     });
   });
 
+  describe('getListenerCount', () => {
+    it('returns the number of listeners', async () => {
+      // eslint-disable-next-line camelcase
+      const unsub_a = bus.on('a', () => {
+        // do nothing
+      });
+      expect(bus.getListenerCount('a')).toBe(1);
+      expect(bus.getListenerCount()).toBe(1);
+
+      // eslint-disable-next-line camelcase
+      const unsub_b = bus.on('b', () => {
+        // do nothing
+      });
+      expect(bus.getListenerCount('b')).toBe(1);
+
+      expect(bus.getListenerCount(['a', 'b'])).toBe(2);
+      expect(bus.getListenerCount()).toBe(2);
+
+      unsub_a();
+      expect(bus.getListenerCount('a')).toBe(0);
+      expect(bus.getListenerCount(['a', 'b'])).toBe(1);
+      expect(bus.getListenerCount()).toBe(1);
+
+      unsub_b();
+      expect(bus.getListenerCount('b')).toBe(0);
+      expect(bus.getListenerCount(['a', 'b'])).toBe(0);
+      expect(bus.getListenerCount()).toBe(0);
+    });
+  });
+
   describe('.cleanup', () => {
     it('trims stream to an approximate length', async () => {
       const calls = [];
@@ -109,7 +140,27 @@ describe('EventBus', () => {
 
       await delay(200);
       expect(eventData).not.toBeUndefined();
+    });
 
+    it('receives events originating from redis', async () => {
+      const data = {
+        string: 'string',
+        number: 1,
+        ruleId: getUniqueId(),
+      };
+
+      let received = false;
+      bus.on('event.raised', (evt) => {
+        received = true;
+        expect(evt).toEqual(data);
+      });
+      await delay(200);
+
+      let id = await client.xadd(bus.key, '*', '_evt', 'primer', toKeyValueList(data));
+      id = await client.xadd(bus.key, '*', '_evt', 'event.raised', toKeyValueList(data));
+
+      await delay(1500);
+      expect(received).toBe(true);
     });
   });
 });

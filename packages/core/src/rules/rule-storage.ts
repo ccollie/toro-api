@@ -40,9 +40,10 @@ export interface RuleEventData {
   ruleId: string;
 }
 
-export interface RuleAddedEventData extends RuleEventData {
-  data: Record<string, any>;
-}
+export type RuleAddedEventData = {
+  id: string;
+  [key: string]: any;
+};
 
 export interface RuleUpdatedEventData extends RuleEventData {
   data: Record<string, any>;
@@ -174,12 +175,10 @@ export class RuleStorage {
 
     rule.updatedAt = data.updatedAt;
 
+    const eventData = rule.toJSON();
     await Promise.all([
       pipeline.exec().then(checkMultiErrors),
-      this.bus.emit(event, {
-        ruleId: id,
-        data: rule.toJSON(),
-      }),
+      this.bus.emit(event, eventData)
     ]);
 
     return rule;

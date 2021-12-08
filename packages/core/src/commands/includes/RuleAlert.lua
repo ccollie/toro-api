@@ -1,6 +1,8 @@
 --- @include "debug.lua"
 --- @include "incrementTimestamp"
 --- @include "isTruthy"
+--- @include "safeJsonDecode"
+--- @include "isDigitsOnly"
 
 local RULE_ALERT_SEPARATOR = '|'
 
@@ -27,7 +29,7 @@ local function alert__encodeValue(ts, data)
     return tostring(ts) .. RULE_ALERT_SEPARATOR .. data
 end
 
-local function alert__decodeValue(raw_value)
+local function alert__decodeValue(source, sep)
     local start, ending = string.find(source, sep or RULE_ALERT_SEPARATOR, 1, true)
     local timestamp = source:sub(1, start - 1)
     local value = source:sub(ending + 1)
@@ -37,6 +39,9 @@ end
 
 local function alert__fetch(alertsKey, id)
     if (id == nil) or (#id == 0) then
+        return nil
+    end
+    if (not isDigitsOnly(id)) then
         return nil
     end
     local min = '[' .. tostring(id) .. RULE_ALERT_SEPARATOR
@@ -77,7 +82,7 @@ function RuleAlert.deleteById(key, id)
     local current = alert__fetch(key, id)
     -- remove old value
     if (current ~= nil) then
-        local res = redis.call("zrem", self.key, current.raw_value)
+        local res = redis.call("zrem", key, current.raw_value)
         return res > 0
     end
     return false
@@ -115,6 +120,17 @@ function RuleAlert:update(hash)
         end
     end
     return self:save()
+end
+
+function RuleAlert:reset(now)
+   if (self.status == 'open') then
+      self:update({
+        status = 'closed',
+        resetAt = now
+      })
+      return true
+   end
+   return false
 end
 
 function RuleAlert:delete()

@@ -458,7 +458,7 @@ export class RuleManager {
 
   private async onRuleAdded(event: RuleAddedEventData): Promise<void> {
     try {
-      const rule = await this.getRule(event.ruleId);
+      const rule = await this.getRule(event.id);
       if (rule) {
         this._registerRule(rule);
       }

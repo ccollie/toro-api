@@ -66,7 +66,7 @@ const defaultOptions: RedisStreamAggregatorOptions = {
   deserialize: parseObjectResponse,
   // Amount of time to wait on XREAD - ideally we call client UNBLOCK on-demand,
   // so this tuneable shouldn't really matter much
-  blockingInterval: 10000,
+  blockingInterval: 1000,
   redisOptions: { showFriendlyErrorStack: true },
 };
 
@@ -215,7 +215,7 @@ export class RedisStreamAggregator {
   async subscribe(
     id: string,
     handler: EventHandler,
-    offset: string = '$',
+    offset = '$',
   ): Promise<SubscriberInfo> {
     debug('Pre-Subscribe %O', { subscriptions: this.subscriptions, id });
 
@@ -335,13 +335,13 @@ export class RedisStreamAggregator {
 
       const calls = [];
       if (!writeConnecting) {
-        calls.push(this.handles.write.connect());
+        calls.push(() => this.handles.write.connect());
       }
       if (!readConnecting) {
-        calls.push(this.handles.read.connect());
+        calls.push(() => this.handles.read.connect());
       }
       if (calls.length) {
-        await Promise.all(calls);
+        await pAll(calls);
       }
       // TODO: Bind errors and reject the connect promise
       this.events.on('ready', () => resolve());

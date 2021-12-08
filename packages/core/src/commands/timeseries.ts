@@ -4,7 +4,6 @@ import toDate from 'date-fns/toDate';
 import { isDate } from 'lodash';
 import { Timespan } from '../types';
 import { systemClock } from '../lib';
-import { logger } from '../logger';
 import { deserializePipeline } from '../redis';
 import { RedisClient } from 'bullmq';
 
@@ -45,7 +44,7 @@ function prepBulkItems(data: TimeseriesBulkItem[]): any[] {
   return _data;
 }
 
-export function parseGapsReply(response): Timespan[] {
+function parseGapsReply(response): Timespan[] {
   const result = [];
 
   if (Array.isArray(response)) {
@@ -131,30 +130,6 @@ export interface TimeseriesValue<T = any> {
   value: T;
 }
 
-export function parseTimeseriesRangeResults<T = any>(
-  reply: Array<[Error | null, [ts: string, data: any]]>,
-): TimeseriesValue<T>[] {
-  const result = new Array<TimeseriesValue<T>>();
-  reply.forEach(([err, [timestamp, data]]) => {
-    if (err) {
-      logger.error(err);
-      return;
-    }
-    try {
-      const value = JSON.parse(data) as T;
-      if (value !== undefined) {
-        result.push({
-          timestamp,
-          value,
-        });
-      }
-    } catch (e) {
-      logger.log(e);
-    }
-  });
-  return result;
-}
-
 async function getRange<T = any>(
   client: RedisClient,
   cmd: string,
@@ -187,7 +162,7 @@ async function getRangeByIndex<T = any>(
   end: number,
   asc = true,
 ): Promise<TimeseriesValue<T>[]> {
-  let reply: string[] = [];
+  let reply: string[];
   if (asc) {
     reply = await client.zrange(key, start, end);
   } else {
@@ -400,7 +375,7 @@ export class TimeSeries {
   /**
    * Find time gaps > a given interval in stats storage. Used in stats aggregation
    * to determine where "catch up" is needed in the case that the server was down
-   * for a interval (hence aggregation was not done)
+   * for an interval (hence aggregation was not done)
    * @param client
    * @param key sorted set key
    * @param start start timestamp

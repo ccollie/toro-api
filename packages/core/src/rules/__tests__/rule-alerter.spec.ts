@@ -135,7 +135,7 @@ describe('RuleAlerter', () => {
   });
 
   describe('Alerts', () => {
-    it('raise an alert on trigger', async () => {
+    it('raises an alert on trigger', async () => {
       const payload = {
         num: random(0, 99),
         str: nanoid(),
@@ -161,7 +161,7 @@ describe('RuleAlerter', () => {
       expect(alert.value).toBe(result.value);
     });
 
-    it('raise an event on reset', async () => {
+    it('raises an event on reset', async () => {
       const sut = await createAlerter({
         isActive: true,
       });

@@ -34,10 +34,19 @@ export type RuleRunState = 'inactive' | 'active' | 'warmup';
 export interface CheckAlertResult {
   status: RuleRunState;
   notify: boolean;
+  /**
+   * If the rule has a notificationInterval (i.e. minimum time between alerts) and
+   * we attempt to notify more frequently, notify is set to false and this is set
+   * to the earliest time we should next attempt to notify.
+   */
+  earliestNotification?: number;
   state: CircuitState;
   triggered: boolean;
   errorStatus: ErrorStatus;
-  endDelay?: number;
+  /**
+   * If we're warming up, this is the end of the warmup period.
+   */
+  warmupEnd?: number;
   alertId?: string;
   alertCount?: number;
   failures?: number;
@@ -112,7 +121,6 @@ export class RuleScripts {
       getRuleStateKey(queue, id),
       getAlertsKey(queue, id),
       getQueueBusKey(queue),
-      id,
       timestamp,
       action,
       parameter,
@@ -191,18 +199,24 @@ export class RuleScripts {
 
     const res = parseObjectResponse(response);
 
-    return {
+    const result:CheckAlertResult = {
       status: res['status'],
       errorStatus: res['errorStatus'] || ErrorStatus.NONE,
       alertCount: res['alerts'] ?? 0,
       failures: res['failures'] ?? 0,
-      endDelay: res['endDelay'] ?? 0,
       alertId: res['alertId'] ?? '',
       state: (res['state'] ?? CircuitState.CLOSED) as CircuitState,
       triggered: ((res['state'] ?? CircuitState.CLOSED) as CircuitState) === CircuitState.OPEN,
       notify: parseBool(res['notify'], false),
       changed: parseBool(res['changed'], false),
     };
+    if (res['earliestNotification']) {
+      result.earliestNotification = parseInt(res['earliestNotification'], 10);
+    }
+    if (res['warmupEnd']) {
+      result.warmupEnd = parseInt(res['warmupEnd'], 10);
+    }
+    return result;
   }
 
   static async signalSuccess(
@@ -268,6 +282,22 @@ export class RuleScripts {
       timestamp,
     );
     return parseInt(val);
+  }
+
+  static async resetAlert(
+    queue: Queue,
+    rule: Rule | string,
+    alertId: string,
+    timestamp?: number,
+  ): Promise<boolean> {
+    const val = await RuleScripts.execRuleAction(
+      queue,
+      rule,
+      'reset-alert',
+      alertId,
+      timestamp,
+    );
+    return parseBool(val);
   }
 
   static async writeAlert(

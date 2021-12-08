@@ -169,7 +169,7 @@ local function parseRangeParams(key, valid_options, min, max, ...)
   local arg = { ... }
   local i = 1
 
-  --- ts_debug('args = ' .. table.tostring(arg))
+  --- debug('args = ' .. table.tostring(arg))
   --- [LIMIT count]
   while i < #arg do
     local option_name = assert(arg[i], 'range: no option specified')
@@ -361,8 +361,8 @@ function Timeseries.gaps(key, startScore, endScore, interval, max)
   local lastSetIndex = -10
   local range = redis.call('zrangebylex', key, params.min, params.max)
 
-  -- ts_debug(tostring(key) .. '[' .. tostring(params.min) .. ',' .. tostring(params.max) ..']')
-  -- ts_debug('count [' .. tostring(#range) .. ']')
+  -- debug(tostring(key) .. '[' .. tostring(params.min) .. ',' .. tostring(params.max) ..']')
+  -- debug('count [' .. tostring(#range) .. ']')
 
   local count, diff = 0, 0
   local score, prev = 0, 0
@@ -485,7 +485,7 @@ end
 
 -- Remove a range between *min* and *max*
 function Timeseries.remrange(key, min, max, ...)
-  local params = parseRangeParams(key,{ LIMIT = 1 }, min, max, ...)
+  local params = parseRangeParams(key, { LIMIT = 1 }, min, max, ...)
   if (params.limit == nil) then
     return redis.call('zremrangebylex', key, params.min, params.max)
   end
@@ -505,10 +505,10 @@ function Timeseries.truncate(key, retention)
   retention = assert(tonumber(retention), 'retention value must be a number (ms)')
   local last = getLastScore(key)
   if (last ~= nil) then
-    -- ts_debug("last score " .. tostring(last))
+    -- debug("last score " .. tostring(last))
     local max = last - retention - 1
     if (max > 0) then
-      -- ts_debug("max " .. tostring(max))
+      -- debug("max " .. tostring(max))
       return Timeseries.remrange(key, '-', max)
     end
   end
@@ -630,7 +630,7 @@ if (command == nil) then
   error('Timeseries: unknown command ' .. command_name)
 end
 
--- ts_debug('running ' .. command_name .. '(' .. KEYS[1] .. ',' .. table.tostring(ARGV) .. ')')
+-- debug('running ' .. command_name .. '(' .. KEYS[1] .. ',' .. table.tostring(ARGV) .. ')')
 
 if (command_name == 'copy') or (command_name == 'COPY') then
   return command(KEYS[1], KEYS[2], unpack(ARGV))

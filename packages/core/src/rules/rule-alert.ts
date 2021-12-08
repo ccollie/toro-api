@@ -43,6 +43,8 @@ export interface RuleAlertOptions {
   recoveryWindow?: number;
 }
 
+export type RuleAlertStatus = 'open' | 'close';
+
 /**
  * An alert raised as the result of a Rule violation
  * @typedef {Object} RuleAlert
@@ -56,7 +58,7 @@ export interface RuleAlert {
   readonly id: string;
   readonly ruleId: string;
   /** the alert state (triggered or reset) */
-  readonly status: 'open' | 'close';
+  readonly status: RuleAlertStatus;
   /** timestamp of when this alert was raised */
   readonly raisedAt: number;
   /** timestamp of when an alert was reset */

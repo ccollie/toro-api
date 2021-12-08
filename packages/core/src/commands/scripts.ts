@@ -213,7 +213,7 @@ export class Scripts {
     cursor: number,
     count = 10,
   ): Promise<ScriptFilteredJobsResult> {
-    let client = await queue.client;
+    const client = await queue.client;
     if (!(client as any).jobFilter) {
         await ensureScriptsLoaded(client);
     }

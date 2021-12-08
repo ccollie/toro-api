@@ -4,7 +4,8 @@ import { Pipeline } from 'ioredis';
 import { IteratorOptions, createAsyncIterator, nanoid } from '../lib';
 import { RedisClient } from 'bullmq';
 import { safeParse } from '@alpen/shared';
-import { toKeyValueList } from './utils';
+import { parseObjectResponse, toKeyValueList } from './utils';
+import { isEmpty } from 'lodash';
 
 const SENDER_ID_KEY = '__sid';
 const EVENT_KEY = '__evt';
@@ -128,6 +129,10 @@ export class EventBus {
     this._emitter.off(event, handler);
   }
 
+  getListenerCount(eventNames?: string | string[]): number {
+    return this._emitter.listenerCount(eventNames);
+  }
+
   async emit(event: string, data = {}): Promise<void> {
     const eventData = this._formatData(data);
     await baseEmit(this.client, this._key, event, eventData);
@@ -149,7 +154,29 @@ export class EventBus {
    * Returns the number of events remaining in the stream
    */
   getLength(): Promise<number> {
-    return this.aggregator.readClient.xlen(this._key);
+    return this.client.xlen(this._key);
+  }
+
+  /**
+   * Utility method to get the last item in the stream
+   */
+  async getLastEvent(): Promise<{
+    event: string;
+    data: Record<string, any>;
+  }> {
+    const res = await this.client.xrevrange(this._key, '+', '-', 'COUNT', 1);
+    const event = res?.[0];
+    if (event) {
+      const eventData = parseObjectResponse(event?.[1]);
+      const [name, data] = parseEventData(eventData);
+      if (name) {
+        return {
+          event: name,
+          data,
+        };
+      }
+    }
+    return null;
   }
 
   cleanup(maxLen = 1000): Promise<number> {
@@ -181,17 +208,33 @@ export class EventBus {
     if (!subscription) return;
     this._lastEventId = subscription.cursor;
     if (data) {
-      const [, other] = data;
-      const { __sid, __evt, ...rest } = other;
+      const [id, other] = data;
+      this._lastEventId = id;
       // if __sid is set, it means it was already emitted locally
       // make sure we weren't the ones doing it
-      if (__sid !== this._senderId) {
-        const event = __evt ?? other[EVENT_KEY];
+      if (other && other.__sid !== this._senderId) {
+        const [event, data] = parseEventData(other);
         if (event) {
-          const data = safeParse(rest.data);
           return this._localEmit(event, data);
         }
       }
     }
   }
+}
+
+function parseEventData(data: any): [string, Record<string, any>] {
+  const { __sid, __evt, ...rest } = data;
+  const event = __evt ?? (rest ?? {})[EVENT_KEY];
+  if (event) {
+    if (rest.data) {
+      const { data: eventData, ...other } = rest;
+      const data = safeParse(eventData);
+      if (isEmpty(other)) {
+        return [event, data];
+      }
+      rest.data = data;
+    }
+    return rest;
+  }
+  return [event, rest];
 }

@@ -18,6 +18,7 @@
 --- @include "includes/debug"
 --- @include "includes/isTruthy"
 --- @include "includes/hashToArray"
+--- @include "includes/destructureJobKey"
 
 local ALERT_TRIGGERED_EVENT = 'alert.triggered'
 local ALERT_RESET_EVENT = 'alert.reset'
@@ -32,13 +33,11 @@ local ruleStateKey = KEYS[2]
 local alertsKey = KEYS[3]
 local busKey = KEYS[4]
 
-local ruleId = ARGV[1]
-local now = tonumber(ARGV[2] or 0)
-local action = assert(ARGV[3], 'missing "action" argument')
-local parameter = ARGV[4]
+local now = tonumber(ARGV[1] or 0)
+local action = assert(ARGV[2], 'missing "action" argument')
+local parameter = ARGV[3]
 
 local rule
-local result = {}
 
 local rcall = redis.call
 
@@ -46,7 +45,8 @@ local function loadRule()
     if not rule then
         rule = Rule.get(ruleKey, ruleStateKey)
         if (rule == nil) then
-            error('rule not found: ' .. toStr(ruleKey))
+            local id = getJobIdFromKey(ruleKey)
+            error('rule not found: ' .. toStr(id or ruleKey))
         end
         rule:loadState()
         --- todo: error if not found
@@ -54,11 +54,16 @@ local function loadRule()
     return rule
 end
 
+local trimmed = false
+
 local function emitEvent(event, ...)
     local args = { ... }
+    if (not trimmed) then
+        trimmed = true
+        rcall("XTRIM", busKey, "MAXLEN", "~", 10)
+    end
     --- debug('event ', event, ' rule Id= "' .. toStr(rule.id) .. '" ', 'args=' .. cjson.encode(args))
-    rcall("XADD", busKey, "*", "event", event, "ruleId", rule.id, "ts", now, unpack(args))
-    rcall("XTRIM", busKey, "MAXLEN", "~", 10)
+    rcall("XADD", busKey, "*", "_evt", event, "ruleId", rule.id, "ts", now, unpack(args))
     --- todo: trim
 end
 
@@ -84,15 +89,10 @@ local function createAlert(data)
     }
 
     local alertObj = RuleAlert.create(alertsKey, id, alert)
-    local serialized = cjson.encode({
-        value = alert.value,
-        errorLevel = alert.errorLevel,
-    })
-
-    debug('createAlert: ' .. toStr(alert))
 
     --- Raise event
-    emitEvent(ALERT_TRIGGERED_EVENT, 'id', id, 'data', serialized)
+    local args = { id = id, errorLevel = alert.errorLevel }
+    emitEvent(ALERT_TRIGGERED_EVENT, unpack(args))
 
     local alertCount = rcall('zcard', alertsKey)
     rule:update({
@@ -124,20 +124,25 @@ local function updateAlert(id, data)
     alert:update(update)
 end
 
+local function resetAlert(now, id)
+    local alert = RuleAlert.get(alertsKey, id)
+    if (alert == nil) then
+        error('alert not found: ' .. toStr(id))
+    end
+    -- todo: check alert state ???? Also set state on rule itself
+    if (alert:reset(now)) then
+        emitEvent(ALERT_RESET_EVENT, 'id', id)
+        return true
+    end
+    return false
+end
+
 local function resetCurrentAlert(now)
     local alertId = rule.ruleState.alertId
     if (alertId ~= nil) then
-        local alert = RuleAlert.get(alertsKey, alertId)
-        if (alert ~= nil) then
-            alert:update({
-                status = 'closed',
-                resolvedAt = now
-            })
-            --- Raise event
-            emitEvent(ALERT_RESET_EVENT, 'id', alertId)
-            return true
-        end
-    end
+        local ok, result = pcall(resetAlert, now, alertId)
+        return ok and result or false
+     end
     return false
 end
 
@@ -163,12 +168,13 @@ local function handleResult(now, data)
             resetCurrentAlert(now)
         end
 
-        local eventArgs = { 'event', STATE_CHANGED, 'id', rule.id, 'ts', now, 'oldState', saveState, 'newState', rule.state }
+        local eventArgs = { 'oldState', saveState, 'newState', rule.state }
         if (result.alertId) then
             table.insert(eventArgs, 'alertId')
             table.insert(eventArgs, result.alertId)
         end
-        rcall("XADD", busKey, '*', 'event', STATE_CHANGED, unpack(eventArgs))
+        debug('here. calling STATE_CHANGED')
+        emitEvent(STATE_CHANGED, unpack(eventArgs))
       end
     end
 
@@ -182,31 +188,8 @@ local function markNotification(now, alertId)
 
         end
     end
-    local result = {}
-
-    local alertCount = rule.alertCount or 0
-    local shouldNotify = isTruthy(rule.ruleState.notifyPending)
-
-    if shouldNotify then
-        alertCount = alertCount + 1
-        rule:setState({
-            lastNotify = now,
-            alertCount = alertCount,
-            notifyPending = 0
-        })
-        local maxAlertsPerEvent = tonumber(rule.options.maxAlertsPerEvent) or 0
-        if (maxAlertsPerEvent > 0) then
-            result.remaining = math.min(0, maxAlertsPerEvent - alertCount)
-        end
-        local interval = tonumber(rule.options.notifyInterval) or 0
-        if (interval > 0) then
-            result.nextEarliest = now + interval
-        end
-    end
-    result.notified = doNotify
-    result.alertCount = alertCount
-
-    return result
+    local result = rule:notify(now)
+    return hashToArray(result)
 end
 
 local function checkState(now)
@@ -229,24 +212,27 @@ local function clearState(now)
 end
 
 --- todo: deleteAlert
+--- todo: make this into a dispatch table
 loadRule()
 if (action == 'check') then
     local evalData = cmsgpack.unpack(parameter)
     rule:start(now)
     return handleResult(now, evalData)
+elseif (action == 'state') then
+    return checkState(now)
 elseif (action == 'start') then
     return rule:start(now)
 elseif (action == 'stop') then
     return rule:stop(now)
 elseif (action == 'clear') then
     return clearState(now) and 1 or 0
+elseif (action == 'reset-alert') then
+    return resetAlert(now, parameter) and 1 or 0
 elseif (action == 'alert') then
     local alertData = cmsgpack.unpack(parameter)
     local alert = createAlert(alertData)
     local data = alert:getData()
     return cjson.encode(data)
-elseif (action == 'state') then
-    return checkState(now)
 elseif (action == 'mark-notify') then
     return markNotification(now, parameter)
 end
