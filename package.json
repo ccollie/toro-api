@@ -61,7 +61,7 @@
     "printWidth": 80
   },
   "resolutions": {
-    "graphql": "16.0.1",
+    "graphql": "16.1.0",
     "esbuild": ">=0.14.1",
     "tsc-alias": "^1.4.2",
     "typescript": ">=4.5.2",

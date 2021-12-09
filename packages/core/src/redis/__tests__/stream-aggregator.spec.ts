@@ -1,52 +1,72 @@
 import { isObject } from 'lodash';
+import { delay } from '../../lib';
+import { clearDb, TEST_DB } from '../../__tests__/factories';
 import { RedisStreamAggregator } from '../stream-aggregator';
-const redisUri = global.process.env.REDIS_URI || 'localhost:6379';
+
 const blockingInterval = 100;
 
-let instance;
-describe('RedisStreamsAggregator', function () {
+// errors with timeouuts: https://github.com/facebook/jest/issues/11500
+// https://github.com/facebook/jest/issues/11543
+jest.setTimeout(5000);
+
+describe('RedisStreamsAggregator', () => {
+  let instance: RedisStreamAggregator;
+
+  beforeEach(async () => {
+    instance = new RedisStreamAggregator({
+      connection: {
+        db: TEST_DB
+      },
+      blockingInterval,
+    });
+
+    await instance.waitUntilReady();
+  }, 5000);  // https://github.com/facebook/jest/issues/11500
+
+  afterEach(async() => {
+    const client = instance.writeClient;
+    await clearDb(client);
+    await instance.destroy();
+  }, 5000);
+
   function isMessagesWellFormed(messages): void {
     expect(Array.isArray(messages)).toBe(true);
-    expect(Array.isArray(messages[0])).toBe(true);
-    expect(isObject(messages[0][1])).toBe(true);
+    expect(typeof messages[0]).toBe('string');
+    expect(isObject(messages[1])).toBe(true);
   }
 
   describe('constructor', () => {
-    it('creates and connects', function (done) {
-      jest.setTimeout(15000);
 
-      instance = new RedisStreamAggregator({
-        connectionOptions: redisUri,
+    it('creates and connects',  async () => {
+      jest.setTimeout(5000);
+
+      const instance = new RedisStreamAggregator({
         blockingInterval,
       });
-      instance.events.on('ready', async () => {
-        expect(instance.subscriptions).toBeDefined();
-        expect(instance.handles.read).toBeDefined();
-        expect(instance.handles.write).toBeDefined();
-        await instance.handles.write.del(
-          'testId',
-          'testId2',
-          'testId3',
-          'testId4',
-        );
-        done();
-      });
-    });
+      await instance.waitUntilReady();
+
+      expect(instance.subscriptionCount).toBe(0);
+      expect(instance.readClient).toBeDefined();
+      expect(instance.writeClient).toBeDefined();
+    }, 5000);
+
   });
 
   const testSubFunction = (messages) => {
     console.log(messages);
   };
 
-  describe('.addListener()', function () {
-    it('allows subscriptions to redis streams', async function () {
-      await instance.subscribe('testId', testSubFunction);
-      expect(Object.keys(instance.subscriptions).length).toBe(1);
-      expect(instance.subscriptions.testId).toStrictEqual([1, '$']);
-    });
+  describe('.subscribe()', () => {
 
-    it('continues reading after a BLOCK timeout with no messages', function (done) {
-      jest.setTimeout(blockingInterval * 2);
+    it('allows subscriptions to redis streams', async () => {
+      await instance.subscribe('testId', testSubFunction);
+      const subscription = instance.getSubscription('testId');
+      expect(instance.subscriptionCount).toBe(1);
+      expect(subscription.cursor).toBe('$');
+    }, 25000);
+
+    it('continues reading after a BLOCK timeout with no messages', async () => {
+      let wasCalled = false;
 
       const testObj = { whatwhat: 'keepReading' };
       async function keepReadingMsg(messages) {
@@ -54,92 +74,77 @@ describe('RedisStreamsAggregator', function () {
         expect(messages[0][1]).toStrictEqual(testObj);
         await instance.unblock();
         instance.unsubscribe('keepReading', keepReadingMsg);
-        done();
+        wasCalled = true;
       }
-      instance.subscribe('keepReading', keepReadingMsg).then(() => {
-        setTimeout(() => {
-          instance.add('keepReading', testObj);
-        }, Math.floor(blockingInterval * 1.5));
-      });
-    });
+
+      await instance.subscribe('keepReading', keepReadingMsg);
+      await delay(Math.floor(blockingInterval * 1.5));
+      instance.add('keepReading', testObj);
+      await delay(50);
+      expect(wasCalled).toBe(true);
+
+    }, 5000);
   });
 
   describe('.unsubscribe()', function () {
-    it('Removes subscriptions from redis streams', async function () {
+    it('Removes subscriptions from redis streams', async () => {
       await instance.unsubscribe('testId', testSubFunction);
-      expect(Object.keys(instance.subscriptions).length).toBe(0);
-      expect(instance.subscriptions.testId).not.toBeUndefined();
-    });
+      expect(instance.subscriptionCount).toBe(0);
+      const subscription = instance.getSubscription('testId');
+      expect(subscription).toBeUndefined();
+    }, 5000);
   });
 
   describe('.add()', function () {
-    it('adds events and gets them via subscriptions', function (done) {
-      let doneTwice = 0;
-      function finish(): void {
-        if (++doneTwice === 2) done();
-      }
+    it('adds events and gets them via subscriptions', async () => {
+      let called = 0;
+
       const testObj = { foo: 'bar' };
-      let callOnce = false;
-      const testSubFunction2 = async (messages) => {
+
+      let receivedObj: Record<string, any> = null;
+      let receivedId: string = null;
+
+      const listener = async (messages) => {
         isMessagesWellFormed(messages);
-        expect(typeof messages[0][0]).toBe('string');
-        expect(messages[0][1]).toStrictEqual(testObj);
-        expect(instance.subscriptions.testId2[1]).not.toBe('0');
-        instance.unsubscribe('testId2', testSubFunction2);
-        if (callOnce) return;
-        callOnce = true;
-        finish();
+        receivedId = messages[0];
+        receivedObj = messages[1];
+        ++called;
       };
 
-      instance.subscribe('testId2', '0', testSubFunction2).then(() => {
-        instance.add('testId2', testObj).then((newOffset) => {
-          expect(typeof newOffset).toBe('string'); // 1540154781259-0
-          finish();
-        });
-      });
-    });
+      await instance.subscribe('testId2', listener, '0');
+      const newOffset = await instance.add('testId2', testObj);
+      await delay(150);
 
-    it('can listen to many streams', function (done) {
-      jest.setTimeout(5000);
+      expect(called).toBe(1);
+      expect(typeof newOffset).toBe('string'); // 1540154781259-0
+      expect(receivedObj).toEqual(testObj);
 
-      let messages3;
-      let messages4;
+      const subscription = instance.getSubscription('testId2');
+      expect(subscription.cursor).not.toBe('0');
+    }, 5000);
 
-      async function doTest() {
-        isMessagesWellFormed(messages3);
-        isMessagesWellFormed(messages4);
-        let twoResponses = 0;
-        await instance.subscribe('testId4', '$', (msgs) => {
-          if (++twoResponses === 2) done();
-        });
+    it('can listen to many streams', async () => {
+      let total = 0;
 
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        instance.unsubscribe('testId3', testFunc3);
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        instance.unsubscribe('testId4', testFunc4);
-        await instance.add('testId4', { final: 'foobar' });
+      function listener1(msg: [string, any]): void {
+        total = total + parseInt(msg[1].count);
       }
 
-      function testFunc3(msgs): void {
-        messages3 = msgs;
-        if (messages3 && messages4) doTest();
+      function listener2(msg: [string, any]): void {
+        total = total + parseInt(msg[1].count);
       }
 
-      function testFunc4(msgs): void {
-        messages4 = msgs;
-        if (messages3 && messages4) doTest();
-      }
+      await instance.subscribe('stream1', listener1);
+      await instance.subscribe('stream2', listener2);
 
-      Promise.all([
-        instance.subscribe('testId3', testFunc3),
-        instance.subscribe('testId4', testFunc4),
-      ]).then((numSubscriptions) => {
-        Promise.all([
-          instance.add('testId3', { testId3: 1 }),
-          instance.add('testId4', { testId4: 50 }),
-        ]).then((messages) => {});
-      });
-    });
+      await instance.add('stream1', { count: 1 });
+      await instance.add('stream2', { count: 50 });
+
+      await delay(1000);
+      expect(total).toBe(51);
+
+    }, 5000);
+
   });
 
   describe('.disconnect()', function () {
@@ -147,9 +152,9 @@ describe('RedisStreamsAggregator', function () {
     // This is because its important we do not wait for a blocking call to recover before
     // disconnect. (disconnect should unblock, and this tests that)
     jest.setTimeout(blockingInterval / 2);
-    it('disconnects from redis', async function () {
+    it('disconnects from redis', async () => {
       await instance.disconnect();
-      expect(instance.readId).toBe(false);
+      expect(instance.readId).toBe(null);
     });
   });
 });

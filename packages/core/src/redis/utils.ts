@@ -1,4 +1,5 @@
-import IORedis, { Pipeline, RedisOptions, parseUrl } from 'ioredis';
+import IORedis, { Pipeline, RedisOptions } from 'ioredis';
+import { parseURL } from 'ioredis/built/utils';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
 import { load } from '../commands/scriptLoader';
@@ -54,7 +55,7 @@ export async function loadBaseScripts(
   client: RedisClient,
 ): Promise<RedisClient> {
   const dir = path.join(__dirname, '../commands');
-  return load(client, dir).catch((err) => logger.warn(err));
+  return load(client, dir);
 }
 
 export async function disconnect(client: RedisClient): Promise<void> {
@@ -176,14 +177,14 @@ export function normalizePrefixGlob(prefixGlob: string): string {
 }
 
 export function parseRedisURI(urlString: string): Record<string, any> {
-  return parseUrl(urlString);
+  return parseURL(urlString);
 }
 
 export function getClientHash(redis: RedisClient | string): string {
   let options: Record<string, any>;
 
   if (typeof redis === 'string') {
-    options = parseUrl(redis);
+    options = parseURL(redis);
   } else {
     options = redis.options;
   }

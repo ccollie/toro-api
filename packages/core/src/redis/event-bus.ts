@@ -65,7 +65,9 @@ export class EventBus {
   }
 
   waitUntilReady(): Promise<void> {
-    return this.aggregator.connect();
+    return this.aggregator.waitUntilReady().then(() => {
+      return this.subscribeIfNeeded();
+    });
   }
 
   get client(): RedisClient {
@@ -129,7 +131,7 @@ export class EventBus {
     this._emitter.off(event, handler);
   }
 
-  getListenerCount(eventNames?: string | string[]): number {
+  getListenerCount(eventNames: string | string[]): number {
     return this._emitter.listenerCount(eventNames);
   }
 
@@ -223,6 +225,7 @@ export class EventBus {
 }
 
 function parseEventData(data: any): [string, Record<string, any>] {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { __sid, __evt, ...rest } = data;
   const event = __evt ?? (rest ?? {})[EVENT_KEY];
   if (event) {
@@ -234,7 +237,6 @@ function parseEventData(data: any): [string, Record<string, any>] {
       }
       rest.data = data;
     }
-    return rest;
   }
   return [event, rest];
 }

@@ -14,7 +14,7 @@ export const DEFAULT_CONNECTION_OPTIONS: ConnectionOptions = {
 };
 
 export async function createClient(
-  options?: ConnectionOptions,
+  options?: ConnectionOptions | string,
   withScripts = true,
 ): Promise<RedisClient> {
   options = options || DEFAULT_CONNECTION_OPTIONS;

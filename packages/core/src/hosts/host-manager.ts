@@ -85,7 +85,7 @@ export class HostManager {
     this.defaultRedisClient = client;
 
     this.streamAggregator = new RedisStreamAggregator({
-      connectionOptions: this.connectionOpts,
+      connection: this.connectionOpts,
     });
 
     this.bus = new EventBus(this.streamAggregator, getHostBusKey(this.name));

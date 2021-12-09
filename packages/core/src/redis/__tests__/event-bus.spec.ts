@@ -9,7 +9,7 @@ import { delay } from '../../lib';
 import {
   createClient,
   clearDb,
-  DEFAULT_CONNECTION_OPTIONS,
+  TEST_DB,
 } from '../../__tests__/factories';
 
 describe('EventBus', () => {
@@ -22,10 +22,16 @@ describe('EventBus', () => {
   beforeEach(async function () {
     key = 'bus-' + getUniqueId();
     client = await createClient();
-    const opts = { connectionOptions: DEFAULT_CONNECTION_OPTIONS };
-    aggregator = new RedisStreamAggregator(opts);
+    aggregator = new RedisStreamAggregator({
+      connection: {
+        db: TEST_DB,
+        lazyConnect: false,
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+      }
+    });
     bus = new EventBus(aggregator, key);
-    await aggregator.connect();
+    await bus.waitUntilReady();
   });
 
   afterEach(async function () {
@@ -83,7 +89,6 @@ describe('EventBus', () => {
         // do nothing
       });
       expect(bus.getListenerCount('a')).toBe(1);
-      expect(bus.getListenerCount()).toBe(1);
 
       // eslint-disable-next-line camelcase
       const unsub_b = bus.on('b', () => {
@@ -92,17 +97,14 @@ describe('EventBus', () => {
       expect(bus.getListenerCount('b')).toBe(1);
 
       expect(bus.getListenerCount(['a', 'b'])).toBe(2);
-      expect(bus.getListenerCount()).toBe(2);
 
       unsub_a();
       expect(bus.getListenerCount('a')).toBe(0);
       expect(bus.getListenerCount(['a', 'b'])).toBe(1);
-      expect(bus.getListenerCount()).toBe(1);
 
       unsub_b();
       expect(bus.getListenerCount('b')).toBe(0);
       expect(bus.getListenerCount(['a', 'b'])).toBe(0);
-      expect(bus.getListenerCount()).toBe(0);
     });
   });
 
@@ -145,7 +147,6 @@ describe('EventBus', () => {
     it('receives events originating from redis', async () => {
       const data = {
         string: 'string',
-        number: 1,
         ruleId: getUniqueId(),
       };
 
@@ -154,12 +155,11 @@ describe('EventBus', () => {
         received = true;
         expect(evt).toEqual(data);
       });
-      await delay(200);
+      await delay(500);
 
-      let id = await client.xadd(bus.key, '*', '_evt', 'primer', toKeyValueList(data));
-      id = await client.xadd(bus.key, '*', '_evt', 'event.raised', toKeyValueList(data));
+      await client.xadd(bus.key, '*', '__evt', 'event.raised', toKeyValueList(data));
 
-      await delay(1500);
+      await delay(500);
       expect(received).toBe(true);
     });
   });

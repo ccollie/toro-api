@@ -8,7 +8,7 @@ export function createRedisStreamAggregator(
   options?: Partial<RedisStreamAggregatorOptions>,
 ): RedisStreamAggregator {
   return new RedisStreamAggregator({
-    connectionOptions: DEFAULT_CONNECTION_OPTIONS,
+    connection: DEFAULT_CONNECTION_OPTIONS,
     ...(options || {}),
   });
 }
