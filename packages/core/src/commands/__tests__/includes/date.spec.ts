@@ -1,11 +1,9 @@
 import { clearDb, createClient } from '../../../__tests__/factories';
 import { Command, loadIncludeScript, compileExpression } from '../utils';
 
-
 function quote(source: string): string {
-  return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
+  return "'" + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, "$1\\'") + "'";
 }
-
 
 describe.skip('date.lua', () => {
   let client;
@@ -15,7 +13,7 @@ describe.skip('date.lua', () => {
     script = await loadIncludeScript('eval.lua');
   });
 
-  function createTestScript(include: string, extra: string= ''): string {
+  function createTestScript(include: string, extra: string = ''): string {
     return `
     ${include}
 
@@ -30,7 +28,7 @@ describe.skip('date.lua', () => {
     end
         
     return ExprEval.evaluate(criteria, context)
-  `
+  `;
   }
 
   function createCommand(name = 'exprEval', scriptText?: string): Command {
@@ -44,7 +42,7 @@ describe.skip('date.lua', () => {
   }
 
   beforeEach(async () => {
-    client = await createClient(null, false);
+    client = await createClient();
     await clearDb(client);
     const command = createCommand();
     client.defineCommand(command.name, command.options);
@@ -55,11 +53,14 @@ describe.skip('date.lua', () => {
     return client.quit();
   });
 
-  async function evalExpression(expression: string, context?: Record<string, unknown>): Promise<unknown> {
+  async function evalExpression(
+    expression: string,
+    context?: Record<string, unknown>,
+  ): Promise<unknown> {
     const { compiled: compiled } = compileExpression(expression);
     const criteria = JSON.stringify(compiled);
     const data = context ? JSON.stringify(context) : '';
-    return (client as any).exprEval(criteria, data)
+    return (client as any).exprEval(criteria, data);
   }
 
   async function checkExpression(
@@ -224,5 +225,4 @@ describe.skip('date.lua', () => {
       await checkDateMethod('getTime');
     });
   });
-
 });

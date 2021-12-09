@@ -1,4 +1,5 @@
-import { systemClock } from '@alpen/core/lib';
+
+import { systemClock } from '@alpen/core';
 import { AppJob, JobEventData, JobStatusEnum } from '@alpen/core/queues';
 import { EZContext } from 'graphql-ez';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';

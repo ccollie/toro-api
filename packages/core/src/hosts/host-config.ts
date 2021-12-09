@@ -1,4 +1,4 @@
-import { ConnectionOptions } from '../redis';
+import { ConnectionOptions } from 'bullmq';
 import { getValue } from '../config';
 import * as Joi from 'joi';
 import { isString } from 'lodash';

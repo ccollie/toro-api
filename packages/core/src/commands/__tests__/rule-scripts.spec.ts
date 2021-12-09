@@ -5,6 +5,7 @@ import {
   createQueue,
   createQueueManager,
   createRule,
+  clearDb
 } from '../../__tests__/factories';
 import {
   AlertData,
@@ -41,9 +42,10 @@ describe('RuleScripts', () => {
   });
 
   afterEach(async () => {
+    const client = await queue.client;
+    await clearDb(client);
     await queueManager.destroy();
     storage.destroy();
-    //  await clearDb();
   });
 
   async function addRule(opts?: Partial<RuleConfigOptions>): Promise<Rule> {
@@ -271,6 +273,7 @@ describe('RuleScripts', () => {
       jest.setTimeout(20000);
 
       const bus = queueManager.bus;
+      await bus.waitUntilReady();
       bus.on(RuleEventsEnum.STATE_CHANGED, (eventData) => {
         done();
       });
@@ -348,8 +351,28 @@ describe('RuleScripts', () => {
       result = await postSuccess(rule);
     });
 
-    it('should emit success event', async (done) => {
+    it('should emit event on transition to normal', async (done) => {
       const rule = await addRule({ isActive: true });
+      const bus = queueManager.bus;
+      await bus.waitUntilReady();
+
+      let eventData: any;
+
+      bus.on(RuleEventsEnum.STATE_CHANGED, (evtData) => {
+        eventData = evtData;
+      });
+
+      await postFailure(rule);
+      try {
+        await postSuccess(rule);
+      } catch (err) {
+        expect(err).toBeUndefined();
+      }
+
+      await delay(1200);
+
+      expect(eventData).toBeDefined();
+
     });
   });
 

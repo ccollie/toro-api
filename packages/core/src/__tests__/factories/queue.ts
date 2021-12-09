@@ -1,6 +1,6 @@
 import { ensureScriptsLoaded } from '../../commands';
 import { Queue, QueueOptions } from 'bullmq';
-import { DEFAULT_CONNECTION_OPTIONS, TEST_QUEUE_PREFIX } from './client';
+import { DEFAULT_CONNECTION_OPTIONS, TEST_QUEUE_PREFIX, TEST_DB } from './client';
 import { nanoid } from 'nanoid';
 
 export async function createQueue(
@@ -10,6 +10,7 @@ export async function createQueue(
   name = name || 'queue-' + nanoid(4);
   const options: QueueOptions = {
     connection: {
+      db: TEST_DB,
       ...DEFAULT_CONNECTION_OPTIONS
     },
     prefix: TEST_QUEUE_PREFIX,

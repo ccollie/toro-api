@@ -22,7 +22,10 @@ describe('KeyspaceNotifier', () => {
 
   beforeEach(async () => {
     await clearDb();
-    sut = new KeyspaceNotifier(DEFAULT_CONNECTION_OPTIONS);
+    sut = new KeyspaceNotifier({
+      ...DEFAULT_CONNECTION_OPTIONS,
+      db: TEST_DB,
+    });
     client = await createClient();
     messages = [];
   });
@@ -62,7 +65,7 @@ describe('KeyspaceNotifier', () => {
       await delay(WAIT_DELAY);
       expect(messages.length).toBe(1);
       messages = [];
-      await client.pexpire('foo', 1);
+      await client.psetex('foo', 10, 98765);
       await delay(100);
       expect(messages.length).toBe(1);
       const msg = messages[0];

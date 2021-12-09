@@ -2,7 +2,6 @@ import { Queue, RedisClient } from 'bullmq';
 import { random, sortBy } from 'lodash';
 import pAll from 'p-all';
 import pSettle from 'p-settle';
-import { getUniqueId } from '../../ids';
 import {
   ErrorStatus,
   Rule,
@@ -17,10 +16,10 @@ import {
   clearDb,
   createClient,
   createRuleOptions,
-  DEFAULT_CONNECTION_OPTIONS,
   randomId,
   randomString,
 } from '../../__tests__/factories';
+import { getUniqueId } from '../../ids';
 import { getQueueBusKey } from '../../keys';
 import { delay } from '../../lib';
 import { EventBus, RedisStreamAggregator } from '../../redis';
@@ -40,8 +39,9 @@ describe('RuleStorage', () => {
     hostName = `host-${randomId(4)}`;
     client = await createClient();
     queue = new Queue(queueName, { connection: client });
-    const opts = { connectionOptions: DEFAULT_CONNECTION_OPTIONS };
-    aggregator = new RedisStreamAggregator(opts);
+    aggregator = new RedisStreamAggregator({
+      connection: client.duplicate(),
+    });
     bus = new EventBus(aggregator, getQueueBusKey(queue));
     storage = new RuleStorage(hostName, queue, bus);
     await bus.waitUntilReady();

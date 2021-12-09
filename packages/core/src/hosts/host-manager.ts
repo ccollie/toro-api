@@ -1,5 +1,6 @@
 import boom from '@hapi/boom';
 import {
+  ConnectionOptions,
   FlowJob,
   FlowProducer,
   JobNode,
@@ -23,7 +24,6 @@ import {
 import { JobValidationResult, validateJobData } from '../queues/job-schemas';
 import {
   checkMultiErrors,
-  ConnectionOptions,
   createClient,
   EventBus,
   getRedisInfo,
@@ -85,7 +85,7 @@ export class HostManager {
     this.defaultRedisClient = client;
 
     this.streamAggregator = new RedisStreamAggregator({
-      connection: this.connectionOpts,
+      connection: this.createClient(),
     });
 
     this.bus = new EventBus(this.streamAggregator, getHostBusKey(this.name));
@@ -403,7 +403,7 @@ export class HostManager {
     this.queueManagers.forEach((handler) => handler.sweep());
   }
 
-  private createClient(redisOpts?: ConnectionOptions): RedisClient {
+  private createClient(redisOpts?: ConnectionOptions | string): RedisClient {
     if (this.defaultRedisClient && !redisOpts) {
       return this.defaultRedisClient.duplicate();
     }

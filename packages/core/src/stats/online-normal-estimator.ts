@@ -242,7 +242,7 @@ export class OnlineNormalEstimator {
       count: this.count,
       meanSq: this._meanSq,
       mean: this.mean
-    }
+    };
   }
 
   /**

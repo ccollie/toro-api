@@ -1,8 +1,7 @@
-import { HostManager } from '../../hosts';
+import { HostManager, QueueConfig } from '../../hosts';
 import { RuleManager } from '../../rules';
-import { randomString } from './utils';
-import { QueueConfig } from '../../hosts';
 import { createHostManager } from './host-manager';
+import { randomString } from './utils';
 
 export async function createRuleManager(
   host?: HostManager,

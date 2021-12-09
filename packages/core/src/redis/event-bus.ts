@@ -104,8 +104,7 @@ export class EventBus {
 
   private unsubscribeIfNeeded(): void {
     if (this._emitter.listenerCount() === 0) {
-      this.aggregator.unsubscribe(this.key, this._onBusMessage);
-      this._subscriptionInfo = null;
+      this.unsubscribe();
     }
   }
 
@@ -115,6 +114,7 @@ export class EventBus {
   private unsubscribe(): void {
     if (this.isSubscribed) {
       this.aggregator.unsubscribe(this._key, this._onBusMessage);
+      this._subscriptionInfo = null;
     }
   }
 

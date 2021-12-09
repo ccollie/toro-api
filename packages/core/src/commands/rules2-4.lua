@@ -63,7 +63,7 @@ local function emitEvent(event, ...)
         rcall("XTRIM", busKey, "MAXLEN", "~", 10)
     end
     --- debug('event ', event, ' rule Id= "' .. toStr(rule.id) .. '" ', 'args=' .. cjson.encode(args))
-    rcall("XADD", busKey, "*", "_evt", event, "ruleId", rule.id, "ts", now, unpack(args))
+    rcall("XADD", busKey, "*", "__evt", event, "ruleId", rule.id, "ts", now, unpack(args))
     --- todo: trim
 end
 

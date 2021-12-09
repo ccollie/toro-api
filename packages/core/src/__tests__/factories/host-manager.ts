@@ -1,12 +1,15 @@
 import { HostConfig, HostManager } from '../../hosts';
-import { DEFAULT_CONNECTION_OPTIONS } from './client';
+import { DEFAULT_CONNECTION_OPTIONS, TEST_DB } from './client';
 import { getUniqueId } from '../../ids';
 
 function createConfig(defaults?: Partial<HostConfig>): HostConfig {
   return {
     allowDynamicQueues: false,
     autoDiscoverQueues: false,
-    connection: DEFAULT_CONNECTION_OPTIONS,
+    connection: {
+      ...DEFAULT_CONNECTION_OPTIONS,
+      db: TEST_DB,
+    },
     queues: [],
     channels: [],
     id: getUniqueId(),

@@ -1,13 +1,12 @@
-import IORedis, { Pipeline, RedisOptions } from 'ioredis';
+import IORedis, { Pipeline } from 'ioredis';
 import { parseURL } from 'ioredis/built/utils';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
 import { load } from '../commands/scriptLoader';
-import { RedisClient } from 'bullmq';
+import { RedisClient, ConnectionOptions, isRedisInstance } from 'bullmq';
 import { logger } from '../logger';
 import * as path from 'path';
 
-export type ConnectionOptions = string | RedisOptions;
 
 export type RedisMetrics = {
   /* eslint-disable */
@@ -37,14 +36,14 @@ export interface RedisStreamItem {
   data: any;
 }
 
-export function createClient(redisOpts?: ConnectionOptions): RedisClient {
+export function createClient(redisOpts?: ConnectionOptions | string): RedisClient {
   let client;
   if (isNil(redisOpts)) {
     client = new IORedis(); // supported in 4.19.0
   } else if (isString(redisOpts)) {
     client = new IORedis(redisOpts as string);
-  } else {
-    client = new IORedis(redisOpts);
+  } else if (isRedisInstance(redisOpts)) {
+    client = (redisOpts as RedisClient).duplicate();
   }
 
   loadBaseScripts(client).catch((e) => logger.error(e));

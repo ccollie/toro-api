@@ -75,7 +75,7 @@ describe('filterJobs', () => {
   });
 
   beforeEach(async () => {
-    client = await createClient(null, false);
+    client = await createClient();
     await clearDb(client);
     client.defineCommand(command.name, command.options);
     queue = await createQueue();

@@ -41,13 +41,6 @@ function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
 }
 
-function getRuleState(result: EvaluationResult): RuleState {
-  if (!result.triggered) return RuleState.NORMAL;
-  return result.errorLevel === ErrorStatus.WARNING
-    ? RuleState.WARNING
-    : RuleState.ERROR;
-}
-
 /**
  * A class responsible for generating alerts based on the evaluation of a metric value
  */
@@ -161,9 +154,19 @@ export class RuleAlerter {
     this._warmupEnd =
       response.status === 'warmup' ? response.warmupEnd ?? 0 : 0;
 
-    this._ruleState = getRuleState(result);
+    if (response.status === 'inactive') {
+      this.rule.state = RuleState.MUTED;
+    } else {
+      if (response.state === CircuitState.OPEN || response.state === CircuitState.HALF_OPEN) {
+        const status = response.errorStatus || result.errorLevel;
+        this.rule.state = (status === ErrorStatus.ERROR) ? RuleState.ERROR : RuleState.WARNING;
+      } else {
+        this.rule.state = RuleState.NORMAL;
+      }
+    }
 
-    this.rule.state = this._ruleState;
+    this._ruleState = this.rule.state;
+
     if (result.triggered && response.status === 'active') {
       this.rule.totalFailures++;
     }

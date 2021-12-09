@@ -44,14 +44,14 @@ export function MovingAverage(timespan: number): IMovingAverage {
   function alpha(t: number, pt: number): number {
     let localTimespan = timespan;
 
-    if (!primed) {
-      if (!firstTime) {
-        firstTime = t;
-      }
-
-      localTimespan = Math.max(1, Math.min(t - firstTime, timespan));
-      primed = localTimespan === timespan;
-    }
+    // if (!primed) {
+    //   if (!firstTime) {
+    //     firstTime = t;
+    //   }
+    //
+    //   localTimespan = Math.max(1, Math.min(t - firstTime, timespan));
+    //   primed = localTimespan === timespan;
+    // }
 
     return 1 - Math.exp(-(t - pt) / localTimespan);
   }

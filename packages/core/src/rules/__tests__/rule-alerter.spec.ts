@@ -40,8 +40,9 @@ describe('RuleAlerter', () => {
   });
 
   afterEach(async () => {
+    const client = await queueManager.queue.client;
+    await clearDb(client);
     await queueManager.destroy();
-    await clearDb();
   });
 
   async function getLastAlert(rule: Rule): Promise<RuleAlert> {
@@ -84,11 +85,11 @@ describe('RuleAlerter', () => {
   }
 
   function createSuccessResult() {
-    return createResult({ triggered: true });
+    return createResult({ triggered: false });
   }
 
   function createFailResult(level?: ErrorStatus.WARNING | ErrorStatus.ERROR) {
-    return createResult({ triggered: false, errorLevel: level });
+    return createResult({ triggered: true, errorLevel: level });
   }
 
   async function postResult(
@@ -155,7 +156,7 @@ describe('RuleAlerter', () => {
 
       expect(alert).toBeDefined();
       expect(alert.raisedAt).toBeDefined();
-      expect(alert.status).toBe('OPEN');
+      expect(alert.status).toBe('open');
       expect(alert.errorLevel).toBe(result.errorLevel);
       expect(alert.message).toBeDefined();
       expect(alert.value).toBe(result.value);

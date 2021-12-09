@@ -1,8 +1,8 @@
 'use strict';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import { ConnectionOptions, createClient } from './utils';
+import { createClient } from './utils';
 import { createDebug } from '../lib';
-import { RedisClient, RedisConnection } from 'bullmq';
+import { RedisClient, RedisConnection, ConnectionOptions } from 'bullmq';
 
 const debug = createDebug('keyspace notifications');
 
@@ -101,7 +101,7 @@ export class KeyspaceNotifier {
   async subscribeKey(
     key: string | string[],
     cb: KeyspaceNotificationFunc,
-  ): Promise<() => void> {
+  ): Promise<UnsubscribeFn> {
     return this.subscribe(KeyspaceNotificationType.KEYSPACE, key, cb);
   }
 
