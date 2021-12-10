@@ -5,7 +5,7 @@ import { StatsGranularity, StatsMetricType } from '../stats/types';
 
 const statsPrefix = getConfig('statsPrefix', 'alpen');
 
-export function getHostKey(host: string, ...tags: string[]): string {
+export function getHostKey(host: string | null, ...tags: string[]): string {
   return (
     `${statsPrefix}:host:${host}` + (tags.length ? ':' + tags.join(':') : '')
   );
@@ -15,7 +15,7 @@ export function getLockKey(host: string): string {
   return getHostKey(host, 'lock');
 }
 
-function getGranularitySuffix(granularity: StatsGranularity): string {
+function getGranularitySuffix(granularity?: StatsGranularity): string | null {
   if (!granularity) return null;
   if (granularity === StatsGranularity.Month) {
     return 'mt';
@@ -24,24 +24,24 @@ function getGranularitySuffix(granularity: StatsGranularity): string {
 }
 
 export function getKey(
-  host: string,
+  host: string | null,
   queue: Queue,
-  jobType: string = null,
-  tag: string = null,
+  jobType?: string | null,
+  tag?: string | null,
 ): string {
   if (jobType) {
     return [queue.toKey(jobType), tag].join(':');
   } else if (queue) {
-    return queue.toKey(tag);
+    return queue.toKey(tag ?? '');
   } else {
-    return getHostKey(host, tag);
+    return getHostKey(host, ...(tag ? [tag] : []));
   }
 }
 
 export function getStatsKey(
   queue: Queue,
-  jobName: string,
-  metric: StatsMetricType,
+  jobName?: string,
+  metric?: StatsMetricType,
   granularity?: StatsGranularity,
 ): string {
   const parts = ['stats', metric];
@@ -71,7 +71,7 @@ export function getHostStatsKey(
 
 export function getQueueStatsPattern(
   queue: Queue,
-  jobName: string = null,
+  jobName?: string,
   granularity?: StatsGranularity,
 ): string {
   const pattern = getStatsKey(queue, jobName, 'wait', granularity);
@@ -81,12 +81,12 @@ export function getQueueStatsPattern(
   return parts.join(':');
 }
 
-export function getRuleKey(queue: Queue, id: string = null): string {
+export function getRuleKey(queue: Queue, id?: string | null): string {
   const tag = 'rules' + (id ? `:${id}` : '');
   return getKey(null, queue, null, tag);
 }
 
-export function getRuleStateKey(queue: Queue, id: string = null): string {
+export function getRuleStateKey(queue: Queue, id?: string): string {
   const base = getRuleKey(queue, id);
   return `${base}:state`;
 }
@@ -100,7 +100,7 @@ export function getQueueAlertsIndex(queue: Queue): string {
   return getKey(null, queue, null, 'alerts-index');
 }
 
-export function getMetricsKey(queue: Queue, id: string = null): string {
+export function getMetricsKey(queue: Queue, id?: string): string {
   const tag = 'metrics' + (id ? `:${id}` : '');
   return getKey(null, queue, null, tag);
 }

@@ -41,7 +41,7 @@ function loadEnv(): Record<string, any> {
       const paths = getPath(key);
       const value = parseValues(process.env[key]);
       lset(store, paths, value);
-    })
+    });
     loaded = true;
   }
   return store;
@@ -56,7 +56,7 @@ function get(key: string): any {
 function processTemplate(tpl: any): any {
 
   function replacer(required = false) {
-    return function (match, varName: string): any {
+    return function (_: string, varName: string): any {
       const vars = varName.split('|');
       for (let i = 0; i < vars.length; i += 1) {
         const val = get(vars[i]);

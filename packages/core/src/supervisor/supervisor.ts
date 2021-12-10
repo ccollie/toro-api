@@ -32,9 +32,9 @@ const DEFAULT_SWEEP_INTERVAL = ms('15 mins');
 export class Supervisor {
   private static instance: Supervisor;
   private sweepTimer: NodeJS.Timer;
-  private sweepInterval: number;
+  private sweepInterval = 0;
 
-  private queueManagersById: Map<string, QueueManager>;
+  private queueManagersById: Map<string, QueueManager> = new Map();
   private hostManagerByQueue: Map<string, HostManager> = new Map<
     string,
     HostManager
@@ -122,7 +122,7 @@ export class Supervisor {
     return host && host.getQueue(prefixOrName, name);
   }
 
-  getQueueManager(queue: Queue | string): QueueManager {
+  getQueueManager(queue: Queue | string): QueueManager | null {
     const addToCache = (manager: QueueManager): void => {
       const queue = manager.queue;
       this.queueManagersById.set(manager.id, manager);
@@ -130,14 +130,13 @@ export class Supervisor {
     };
 
     if (isNil(queue)) return null;
-    if (!this.queueManagersById) {
-      this.queueManagersById = new Map<string, QueueManager>();
+    if (!this.queueManagersById.size) {
       this.hosts.forEach((host) => {
         host.queueManagers.forEach(addToCache);
       });
     }
     if (isString(queue)) {
-      return this.queueManagersById.get(queue as string);
+      return this.queueManagersById.get(queue as string) ?? null;
     }
 
     let result = queueManagerMap.get(queue);
@@ -154,7 +153,7 @@ export class Supervisor {
         }
       }
     }
-    return result;
+    return result || null;
   }
 
   getQueueById(id: string): Queue {
@@ -186,10 +185,10 @@ export class Supervisor {
     return id;
   }
 
-  getQueueHostManager(queueOrId: Queue | string): HostManager {
-    let result: HostManager;
+  getQueueHostManager(queueOrId: Queue | string): HostManager | null {
+    let result: HostManager | undefined;
     let id: string;
-    let mgr: QueueManager;
+    let mgr: QueueManager | null;
 
     if (isString(queueOrId)) {
       result = this.hostManagerByQueue.get(queueOrId);
@@ -209,7 +208,7 @@ export class Supervisor {
         result = host;
       }
     }
-    return result;
+    return result ?? null;
   }
 
   async ensureQueueExists(queueOrId: Queue | string): Promise<void> {

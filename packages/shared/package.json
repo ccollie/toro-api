@@ -37,6 +37,7 @@
     "build": "yarn run clean && yarn run types && yarn run compile",
     "clean": "rm -rf ./dist",
     "compile": "bob-ts -i src -f interop --paths",
+    "compile1": "tsc --build && tsc-alias",
     "dev": "bob-ts-watch -i src",
     "types": "tsc --declaration",
     "typecheck": "tsc --noEmit",

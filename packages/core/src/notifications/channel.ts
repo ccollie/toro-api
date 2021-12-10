@@ -47,7 +47,7 @@ export class Channel<TConfig extends ChannelConfig = ChannelConfig>
   }
 
   get enabled(): boolean {
-    return this.options.enabled;
+    return this.options?.enabled;
   }
 
   set enabled(value: boolean) {

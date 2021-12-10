@@ -3,9 +3,11 @@
   "private": true,
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "version": "0.0.2",
   "author": "clayton collie <collie.clayton@gmail.com>",
   "license": "MIT",
@@ -37,13 +39,13 @@
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-prettier": "4.0.0",
     "fs-extra": "^10.0.0",
-    "jest": "^27.4.2",
+    "jest": "^27.4.4",
     "jest-date-mock": "^1.0.8",
-    "prettier": "^2.5.0",
+    "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.0.7",
     "tsc-alias": "^1.4.2",
-    "typescript": "^4.5.2"
+    "typescript": "^4.5.3"
   },
   "dependencies": {
     "core-js": "^3.19.1",
@@ -64,7 +66,7 @@
     "graphql": "16.1.0",
     "esbuild": ">=0.14.1",
     "tsc-alias": "^1.4.2",
-    "typescript": ">=4.5.2",
+    "typescript": ">=4.5.3",
     "bob-ts": "^1.2.2"
   },
   "packageManager": "yarn@3.1.0-rc.12"

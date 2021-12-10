@@ -34,7 +34,7 @@ export interface StatsClientArgs {
  * Base class for manipulating and querying collected queue stats in redis
  */
 export class StatsClient extends Emittery {
-  private readonly cache: LRUCache;
+  private readonly cache: LRUCache<string, any>;
   protected readonly host: string;
   protected readonly queue: Queue;
   protected readonly queueId: string;
@@ -107,7 +107,7 @@ export class StatsClient extends Emittery {
     jobName: string,
     metric: StatsMetricType,
     unit: StatsGranularity,
-  ): Promise<StatisticalSnapshot> {
+  ): Promise<StatisticalSnapshot | null> {
     const client = await this.queue.client;
     const key = this.getKey(jobName, metric, unit);
     return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
@@ -292,7 +292,7 @@ export class StatsClient extends Emittery {
     jobName: string,
     metric: StatsMetricType,
     unit: StatsGranularity,
-  ): Promise<StatisticalSnapshot> {
+  ): Promise<StatisticalSnapshot | null> {
     const key = this.getHostKey(jobName, metric, unit);
     const client = await this.queue.client;
     return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
@@ -347,7 +347,7 @@ export class StatsClient extends Emittery {
   }
 
   async getLastWriteCursor(
-    jobType: string,
+    jobType: string | null,
     type: string,
     unit?: string,
   ): Promise<number | null> {
@@ -434,8 +434,8 @@ export class StatsClient extends Emittery {
   }
 }
 
-function getCursorKey(jobType: string, type: string, unit: string): string {
-  jobType = jobType || '~QUEUE';
+function getCursorKey(jobType: string | null, type: string, unit: string): string {
+  jobType = (jobType && jobType.length) ? jobType : '~QUEUE';
   const key = [jobType, type, unit].filter((value) => !!value).join('-');
   return `cursor:${key}`;
 }

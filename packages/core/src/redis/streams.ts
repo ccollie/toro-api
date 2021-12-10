@@ -33,8 +33,8 @@ export function convertTsForStream(timestamp: number | string | Date): string {
 export function streamAdd(
   multi: IORedis.Pipeline,
   key: string,
-  timestamp,
-  value,
+  timestamp: string | number | Date,
+  value: unknown,
 ): IORedis.Pipeline {
   const args = toKeyValueList(value);
   return multi.xadd(key, convertTsForStream(timestamp), ...args);
@@ -74,19 +74,20 @@ export function getStreamDeserializer(key: string) {
 export async function getStreamInfo(
   client: RedisClient,
   stream: string,
-): Promise<RedisStreamItem> {
+): Promise<RedisStreamItem | null> {
   try {
     const reply = await client.xinfo('STREAM', stream);
     return parseXinfoResponse(reply);
-  } catch (err) {
-    if (err.message.match(/no such key/)) {
+  } catch (err: unknown) {
+    const error = err as Error;
+    if (error.message.match(/no such key/)) {
       return null;
     }
     throw err;
   }
 }
 
-export function parseStreamId(ts: unknown): string {
+export function parseStreamId(ts: unknown): string | null {
   const type = typeof ts;
   if (type === 'string') {
     const parts = (ts as string).split('-');
@@ -96,7 +97,7 @@ export function parseStreamId(ts: unknown): string {
       return `${id}-${seq}`;
     }
   } else if (type === 'number') {
-    return ts.toString();
+    return (ts as number).toString();
   } else if (isDate(ts)) {
     return ts.getTime() + '-0';
   }
@@ -104,7 +105,7 @@ export function parseStreamId(ts: unknown): string {
 }
 
 // redis stream '*' returns epoch milliseconds
-export function timestampFromStreamId(id: string): Date {
+export function timestampFromStreamId(id: string | undefined | null): Date | undefined {
   if (!id) return undefined;
   const [timestamp] = id.split('-');
   return new Date(parseInt(timestamp));

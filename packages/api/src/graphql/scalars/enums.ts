@@ -8,7 +8,7 @@ import {
   RuleState,
   RuleType,
   Severity,
-} from '@alpen/core/rules';
+} from '@alpen/core';
 import { StatsGranularity } from '@alpen/core/stats';
 import { createEnumFromTS } from './types';
 

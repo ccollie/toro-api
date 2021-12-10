@@ -1,4 +1,4 @@
-import IORedis, { Pipeline } from 'ioredis';
+import IORedis, { Pipeline, RedisOptions } from 'ioredis';
 import { parseURL } from 'ioredis/built/utils';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
@@ -44,6 +44,8 @@ export function createClient(redisOpts?: ConnectionOptions | string): RedisClien
     client = new IORedis(redisOpts as string);
   } else if (isRedisInstance(redisOpts)) {
     client = (redisOpts as RedisClient).duplicate();
+  } else {
+    client = new IORedis(redisOpts as RedisOptions);
   }
 
   loadBaseScripts(client).catch((e) => logger.error(e));

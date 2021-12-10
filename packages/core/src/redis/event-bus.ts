@@ -14,7 +14,7 @@ function baseEmit(
   client: Pipeline | RedisClient,
   key: string,
   event: string,
-  data,
+  data: unknown,
 ) {
   return client.xadd(key, '*', EVENT_KEY, event, ...toKeyValueList(data));
 }

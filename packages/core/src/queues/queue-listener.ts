@@ -51,7 +51,7 @@ function shouldProxyEvent(eventName: string | symbol): boolean {
  * See https://github.com/taskforcesh/bullmq/blob/master/src/classes/queue-events.ts
  */
 export class QueueListener extends Emittery {
-  private readonly cache: LRUCache;
+  private readonly cache: LRUCache<string, any>;
   public readonly queue: Queue;
   private lastStreamId = '$';
   private lastTimestamp = 0;
@@ -147,12 +147,11 @@ export class QueueListener extends Emittery {
     ts: string,
   ): JobEventData {
     const timestamp = timestampFromStreamId(ts);
-    const isFinished = isFinishedStatus(eventName);
 
     this._clock.set(timestamp);
     const _state = eventName === 'progress' ? 'active' : eventName;
     const jobId = args.jobId;
-    let job = this.cache.get(jobId, !isFinished);
+    let job = this.cache.get(jobId);
     if (!job) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { data, jobId, prev, ...rest } = args;
@@ -349,7 +348,7 @@ export class QueueListener extends Emittery {
     };
 
     // Somewhat hacky
-    const cacheDump = this.cache.dumpLru();
+    const cacheDump = (this.cache as any).dumpLru();
     for (
       let walker = cacheDump.head;
       walker !== null && jobs.length < count;

@@ -118,7 +118,8 @@ export class HttpClient {
     this.client = createHttpRequester(this.opts);
     this.mapper = isEmpty(options.resultMap)
       ? NullMapper
-      : compile(options.resultMap);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      : compile(options.resultMap!);
   }
 
   protected constructPayload(data: Record<string, any>): Record<string, any> {

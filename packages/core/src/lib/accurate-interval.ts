@@ -38,7 +38,7 @@ export function createAccurateInterval(
   let stopped = false;
   let started = false;
   let now: number;
-  let timeout: ReturnType<typeof setTimeout> = null;
+  let timeout: ReturnType<typeof setTimeout>;
 
   opts = {
     ...defaultOpts,
@@ -71,7 +71,6 @@ export function createAccurateInterval(
     stopped = true;
     started = false;
     clearTimeout(timeout);
-    timeout = null;
   }
 
   function tick(): void {

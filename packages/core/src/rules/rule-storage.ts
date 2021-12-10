@@ -781,7 +781,7 @@ function serializeAlert(data: RuleAlert): Record<string, any> {
   return res;
 }
 
-function deserializeAlert(data: any): RuleAlert {
+function deserializeAlert(data: any): RuleAlert | null {
   if (typeof data === 'string') {
     data = JSON.parse(data);
   }

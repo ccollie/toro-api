@@ -1,6 +1,4 @@
 import pMap from 'p-map';
-import ms from 'ms';
-import LRUCache from 'lru-cache';
 import { Channel } from './channel';
 import { ChannelStorage } from './channel-storage';
 import { HostConfig, HostManager } from '../hosts';
@@ -16,7 +14,6 @@ function getChannelId(channel: NotificationChannel | string): string {
 }
 
 export class NotificationManager {
-  private readonly cache: LRUCache;
   private readonly channels: Channel[] = [];
   private readonly hostManager: HostManager;
   private readonly context: NotificationContext;
@@ -25,10 +22,6 @@ export class NotificationManager {
 
   constructor(hostManager: HostManager) {
     this.hostManager = hostManager;
-    this.cache = new LRUCache({
-      max: 250,
-      maxAge: ms('1 hour'),
-    });
     this.storage = new ChannelStorage(hostManager);
     this.context = hostManager.notificationContext;
     this.dispatch = this.dispatch.bind(this);
@@ -135,7 +128,7 @@ export class NotificationManager {
     channel: Channel | string,
     value: boolean,
   ): Promise<boolean> {
-    const success = this.storage.setChannelStatus(channel, value);
+    const success = await this.storage.setChannelStatus(channel, value);
     if (success) {
       const id = getChannelId(channel);
       const found = await this.getChannel(id);

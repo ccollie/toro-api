@@ -204,7 +204,7 @@ export class WriteCache {
     this._changed = true;
   }
 
-  zset(key: string, score: number, value): void {
+  zset(key: string, score: number, value: unknown): void {
     let entry = this.buffer.zset.get(key);
     if (!entry) {
       entry = [];
@@ -242,7 +242,7 @@ export class WriteCache {
       len = current.length;
     }
 
-    if (!len) {
+    if (!len || !current) {
       this._isFlushing = false;
       return;
     }

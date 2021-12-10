@@ -71,7 +71,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
   private _isFullWindow = false;
   private _value: number = undefined;
   private _count = 0;
-  private _lastTick: number;
+  private _lastTick = 0;
   private readonly measurements: ChunkedAssociativeArray<number, number>;
   private readonly aggregationType: ChangeAggregationType;
   private readonly calculationMethod: AggregateFunction;
@@ -84,7 +84,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
 
   constructor(metric: BaseMetric, options: ChangeConditionOptions) {
     super(metric, { ...options, type: RuleType.THRESHOLD });
-    const { timeShift, windowSize, sampleInterval } = options;
+    const { timeShift = 0, windowSize, sampleInterval } = options;
 
     this.windowSize = windowSize;
     // TODO: validate sampleInterval
@@ -179,7 +179,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
 
     // TODO: have param for default value
 
-    const diffs = [];
+    const diffs: number[] = [];
     current.forEach((curValue, index) => {
       const prevValue = previous[index];
       if (prevValue !== undefined) {

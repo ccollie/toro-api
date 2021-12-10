@@ -73,7 +73,7 @@ export class WebhookChannel extends Channel<WebhookChannelConfig> {
    * Defines if redirect responses should be followed automatically.
    */
   get followRedirect(): boolean {
-    return this.options.followRedirect;
+    return !!this.options?.followRedirect;
   }
 
   /***
@@ -81,7 +81,7 @@ export class WebhookChannel extends Channel<WebhookChannelConfig> {
    * This option is only meant to interact with non-compliant servers when you have no other choice.
    */
   get allowGetBody(): boolean {
-    return this.options.allowGetBody;
+    return !!this.options?.allowGetBody;
   }
 
   public get url(): string {

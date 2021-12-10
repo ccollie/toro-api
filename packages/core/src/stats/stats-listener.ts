@@ -36,10 +36,10 @@ export class StatsListener extends StatsWriter {
   private readonly listener: QueueListener;
   private readonly isValidJobName: (arg) => boolean;
   private readonly snapshotInterval: number;
-  private _unlisten: Emittery.UnsubscribeFn = null;
+  private _unlisten: Emittery.UnsubscribeFn | null = null;
   private _intervalTimer: any;
   private _lastTimestamp: number | null;
-  private _nextFlush: number | null;
+  private _nextFlush = 0;
   private _snapshotting: boolean;
   private jobStatsMap: Map<string, QueueStats>;
   public readonly queueStats: QueueStats;

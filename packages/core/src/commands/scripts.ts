@@ -13,7 +13,7 @@ const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
 );
 
 export interface ScriptFilteredJobsResult {
-  cursor: number;
+  cursor?: number;
   total: number;
   count: number;
   jobs: Job[];
@@ -47,7 +47,7 @@ export class Scripts {
   static async getJobState(
     queue: Queue,
     id: string,
-    client = null,
+    client?: RedisClient,
   ): Promise<string> {
     client = client || (await queue.client);
     const keys = Scripts.getStateKeys(queue);
@@ -118,7 +118,7 @@ export class Scripts {
     queue: Queue,
     status: JobStatusEnum,
     limit: number = DEFAULT_SAMPLE_SIZE,
-    jobName: string = null,
+    jobName = '',
   ): Array<string | number> {
     const prefix = queue.toKey('');
     const key = queue.toKey(status);
@@ -131,7 +131,7 @@ export class Scripts {
 
   private static getAvgJobMemoryArgs(
     queue: Queue,
-    jobName: string = null,
+    jobName= '',
     status: JobFinishedState,
     limit: number,
   ) {
@@ -142,7 +142,7 @@ export class Scripts {
 
   static async getAvgJobMemoryUsage(
     queue: Queue,
-    jobName: string = null,
+    jobName = '',
     status: JobFinishedState = JobStatusEnum.COMPLETED,
     limit = 100,
   ): Promise<number> {
@@ -154,7 +154,7 @@ export class Scripts {
   static async multiGetAvgJobMemoryUsage(
     client: RedisClient,
     queues: Queue[],
-    jobName: string = null,
+    jobName = '',
     status: JobFinishedState = JobStatusEnum.COMPLETED,
     limit = 100,
   ): Promise<number[]> {
@@ -169,7 +169,7 @@ export class Scripts {
 
   static async getAvgJobDuration(
     queue: Queue,
-    jobName: string = null,
+    jobName = '',
     status: JobFinishedState,
     limit = 100,
   ): Promise<number> {
@@ -182,7 +182,7 @@ export class Scripts {
 
   static async getAvgWaitTime(
     queue: Queue,
-    jobName: string = null,
+    jobName: string | null = null,
     status: JobFinishedState,
     limit = 1000,
   ): Promise<number> {
@@ -195,7 +195,7 @@ export class Scripts {
 
   static async getInQueueAvgWaitTime(
     queue: Queue,
-    jobName: string = null,
+    jobName: string | null = null,
     limit = 1000,
   ): Promise<number> {
     const client = await queue.client;
@@ -237,7 +237,7 @@ export class Scripts {
     const jobs: Job[] = [];
 
     let currentJob: Record<string, any> = {};
-    let jobId: string = null;
+    let jobId: string | null = null;
     const iterCount = Number(response[1]);
     const totalCount = Number(response[2]);
 
@@ -275,18 +275,23 @@ export class Scripts {
 
     addJobIfNeeded();
 
-    return {
-      cursor: newCursor,
+    const result: ScriptFilteredJobsResult =  {
       total: totalCount,
       count: iterCount,
       jobs,
     };
+
+    if (typeof(newCursor) === 'number') {
+      result.cursor = newCursor;
+    }
+
+    return result;
   }
 }
 
 async function parseListPipeline<T = any>(pipeline: Pipeline) {
   const res = await pipeline.exec();
-  const result = new Array<T>(res.length);
+  const result = new Array<T | null>(res.length);
 
   res.forEach((item, index) => {
     if (item[0]) {

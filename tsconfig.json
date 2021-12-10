@@ -4,12 +4,14 @@
     "module": "commonjs",
     "target": "es2020",
     "declaration": true,
+    "declarationMap": true,
     "diagnostics": true,
     "strict": false,
     "alwaysStrict": true,
     "composite": true,
     "incremental": true,
     "outDir": "dist",
+    "resolveJsonModule": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -42,5 +44,13 @@
     }
   },
   "exclude": ["node_modules", "**/dist", "**/coverage", "**/.next"],
-  "include": ["packages", "examples", "internal", "jest.config.js"]
+  "include": ["packages", "examples", "internal", "jest.config.js"],
+  "tsc-alias": {
+    "replacers": {
+      "logger": {
+        "enabled": true,
+        "file": "./alias-replacer.js"
+      },
+    }
+  }
 }

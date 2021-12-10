@@ -61,16 +61,15 @@ describe('KeyspaceNotifier', () => {
 
     it('captures "expire" events', async () => {
       const unsub = await sut.subscribeKey('foo', collectMessages);
-      await client.set('foo', 12345);
-      await delay(WAIT_DELAY);
-      expect(messages.length).toBe(1);
       messages = [];
       await client.psetex('foo', 10, 98765);
-      await delay(100);
-      expect(messages.length).toBe(1);
-      const msg = messages[0];
-      expect(msg.key).toBe('foo');
-      expect(msg.event).toBe('expire');
+      // attempting to get the value should cause a notification
+      // rather than wait for a background process to expire the key
+      await client.get('foo');
+
+      const expiredMsg = messages.find(m => m.event === 'expired');
+      expect(expiredMsg).toBeDefined();
+      expect(expiredMsg.key).toBe('foo');
       unsub();
     });
 
@@ -113,6 +112,8 @@ describe('KeyspaceNotifier', () => {
       await delay(5);
       await client.expire('bar', 1);
       await delay(1500);
+      // Force notification to be sent
+      await client.get('bar');
       expect(messages.length).toBe(1);
       const msg = messages[0];
       expect(msg.key).toBe('bar');

@@ -65,7 +65,7 @@ export class RedisStreamAggregator {
   private readonly options: RedisStreamAggregatorOptions = defaultOptions;
   private readonly events: Emittery;
   private isClosing = false;
-  private _readId?: string = null;
+  private _readId: string | null = null;
   private readStreamActive: boolean;
   private isSubscribing = false;
   private isConnecting = false;
@@ -74,8 +74,8 @@ export class RedisStreamAggregator {
     write: RedisConnection;
   };
   private initializing: Promise<void>;
-  private _readClient: RedisClient;
-  private _writeClient: RedisClient;
+  private _readClient: RedisClient | undefined = undefined;
+  private _writeClient: RedisClient | undefined = undefined;
 
   constructor(options?: Partial<RedisStreamAggregatorOptions>) {
     // Indicates if the read stream is currently blocked by an XREAD call
@@ -270,17 +270,18 @@ export class RedisStreamAggregator {
           ...streamIds,
           ...streamOffsets,
         );
-      } catch (err) {
+      } catch (err: unknown) {
+        const error = err as Error;
         // If the connection is closed during an xread, thats okay, we'll just not
         // emit any message events, which is what one would expect. Errors and close
         // events are forwarded to the user via the events emitter
-        if (err.message !== 'Connection is closed.') throw err;
+        if (error.message !== 'Connection is closed.') throw err;
 
         await delay(2000);
       }
       this.readStreamActive = false;
       if (messages) {
-        const calls = [];
+        const calls: Array<pAll.PromiseFactory<unknown>> = [];
 
         for (let i = 0; i < messages.length; i++) {
           const streamId = messages[i][0];

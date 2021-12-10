@@ -306,7 +306,7 @@ export class RuleScripts {
     rule: Rule | string,
     data: AlertData,
     timestamp?: number,
-  ): Promise<RuleAlert> {
+  ): Promise<RuleAlert | null> {
     const client = await getClient(queue);
     const pipeline = client.pipeline();
 
@@ -454,7 +454,7 @@ export class RuleScripts {
   }
 }
 
-export function deserializeAlert(data: any): RuleAlert {
+export function deserializeAlert(data: any): RuleAlert | null {
   if (typeof data === 'string') {
     data = JSON.parse(data);
   }

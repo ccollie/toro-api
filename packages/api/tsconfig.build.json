@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/**/*"],
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/*"],
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./"
+  },
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__mocks__/*", "**/__tests__/*"],
   "references": [{ "path": "../shared" }, { "path": "../core" }]
 }

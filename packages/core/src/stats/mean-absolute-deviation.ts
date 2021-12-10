@@ -6,10 +6,11 @@ export function medianAbsoluteDeviation(
   dataMedian?: number,
 ): number {
   const n = arr.length;
-  if (!n) return;
+  if (!n) return 0; // ?? what to return here
   if (n === 1) return 0;
-  dataMedian = dataMedian || median(arr, isSorted);
+  dataMedian = dataMedian ?? median(arr, isSorted);
   const absoluteDeviation = arr.map(function (val) {
+    // @ts-ignore
     return Math.abs(val - dataMedian);
   });
 

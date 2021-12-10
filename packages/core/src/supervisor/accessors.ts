@@ -99,13 +99,13 @@ export function raiseIfQueueIsReadonly(
   q: QueueManager | Queue | string,
   mutation?: string,
 ) {
-  let manager: QueueManager;
+  let manager: QueueManager | null = null;
   if (typeof q === 'string' || q instanceof Queue) {
     manager = getSupervisor().getQueueManager(q);
-  } else if (q instanceof QueueManager) {
+  } else {
     manager = q;
   }
-  const name = manager.queue.name;
+  const name = manager?.queue.name;
   const opName = mutation || 'modify queue';
   const message = `Queue ${name} is read-only (${opName})`;
   throw boom.forbidden(message, { name: 'AlpenError' });

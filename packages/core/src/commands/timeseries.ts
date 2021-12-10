@@ -45,13 +45,13 @@ function prepBulkItems(data: TimeseriesBulkItem[]): any[] {
 }
 
 function parseGapsReply(response): Timespan[] {
-  const result = [];
+  const result: Timespan[] = [];
 
   if (Array.isArray(response)) {
     for (let i = 0; i < response.length; i += 2) {
       result.push({
-        start: parseInt(response[i]),
-        end: parseInt(response[i + 1]),
+        startTime: parseInt(response[i]),
+        endTime: parseInt(response[i + 1])
       });
     }
   }
@@ -429,7 +429,7 @@ export class TimeSeries {
         end,
         interval,
       );
-      if (items.length) {
+      if (items?.length) {
         for (let i = 0; i < items.length; i++) {
           yield items[i];
         }
