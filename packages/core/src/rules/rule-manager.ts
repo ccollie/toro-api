@@ -159,7 +159,9 @@ export class RuleManager {
     if (metas) {
       const hasLock = this.hasLock;
       metas.forEach(
-        (meta) => void this.dispatchRule(metric, meta, ts, hasLock),
+        (meta) => {
+          this.dispatchRule(metric, meta, ts, hasLock);
+        }
       );
     }
   }

@@ -45,12 +45,21 @@ export class KeyspaceNotifier {
 
   constructor(opts: ConnectionOptions) {
     this.connectionOpts = opts;
+    this.onError = this.onError.bind(this);
     this.initializing = this.init();
+  }
+
+  async waitUntilReady(): Promise<void> {
+    await this.initializing;
   }
 
   async destroy(): Promise<void> {
     this.emitter.clearListeners();
     await this.client.disconnect();
+  }
+
+  onError(err: unknown): void {
+    debug('error', err);
   }
 
   private async init(): Promise<RedisClient> {
@@ -59,10 +68,7 @@ export class KeyspaceNotifier {
     this.client = client;
     this.db = (this.client as any).options.db;
 
-    client.on('error', (err) => {
-      throw new Error(err);
-      // emit
-    });
+    client.on('error', this.onError);
 
     await client.config('SET', 'notify-keyspace-events', 'AKE');
 
@@ -98,17 +104,17 @@ export class KeyspaceNotifier {
     return client;
   }
 
-  async subscribeKey(
+  subscribeKey(
     key: string | string[],
     cb: KeyspaceNotificationFunc,
-  ): Promise<UnsubscribeFn> {
+  ): UnsubscribeFn {
     return this.subscribe(KeyspaceNotificationType.KEYSPACE, key, cb);
   }
 
-  async subscribeEvent(
+  subscribeEvent(
     event: string | string[],
     cb: KeyspaceNotificationFunc,
-  ): Promise<UnsubscribeFn> {
+  ): UnsubscribeFn {
     return this.subscribe(KeyspaceNotificationType.KEYEVENT, event, cb);
   }
 
@@ -119,18 +125,18 @@ export class KeyspaceNotifier {
    * @param {KeyspaceNotificationFunc} cb function to call on a keyspace notification
    * @returns {Promise<Function>} an unsubscribe function
    */
-  private async subscribe(
+  private subscribe(
     type: KeyspaceNotificationType,
     key: string | string[],
     cb: KeyspaceNotificationFunc,
-  ): Promise<UnsubscribeFn> {
+  ): UnsubscribeFn {
     if (!isValidType(type)) {
       throw new Error(
         `Invalid subscription key type sent to #subscribe: ${type}`,
       );
     }
 
-    await this.initializing;
+    this.initializing.catch(this.onError);
 
     const keys = Array.isArray(key) ? key : [key];
     for (let i = 0; i < keys.length; i++) {
@@ -141,7 +147,7 @@ export class KeyspaceNotifier {
       // this de-dupes handlers
       this.emitter.on(channel, cb);
       if (!handlerCount) {
-        await this.client.psubscribe(channel);
+        this.client.psubscribe(channel).catch(this.onError);
       }
     }
 

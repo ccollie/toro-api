@@ -330,7 +330,7 @@ export async function processSearch(
   }
 
   const items: Job[] = [];
-  // its possible for an id to be returned more than once
+  // it's possible for an id to be returned more than once
   jobs.forEach((job) => {
     if (!idSet.has(job.id)) {
       idSet.add(job.id);

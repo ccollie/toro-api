@@ -13,6 +13,7 @@ import { RuleAlertOptions } from './rule-alert';
 export const ruleAlertOptionsSchema = Joi.object().keys({
   warmupWindow: DurationSchema.optional(),
   recoveryWindow: DurationSchema.optional().default(0),
+  triggerDelay: DurationSchema.optional().default(0),
   maxAlertsPerEvent: Joi.number().integer().positive().optional().default(1),
   alertOnReset: Joi.boolean().optional().default(true),
   notifyInterval: DurationSchema.optional(),
@@ -97,6 +98,7 @@ export const defaultRuleAlertOptions: RuleAlertOptions = {
   warmupWindow: 0,
   alertOnReset: true,
   maxAlertsPerEvent: 1,
+  triggerDelay: 0,
   recoveryWindow: 0,
   failureThreshold: 1,
   successThreshold: 0,

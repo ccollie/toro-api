@@ -1,15 +1,15 @@
-import { QueueFilterStatus } from '@alpen/core/hosts';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
   ErrorStatus,
   PeakSignalDirection,
+  QueueFilterStatus,
   RuleOperator,
   RuleState,
   RuleType,
   Severity,
+  StatsGranularity,
 } from '@alpen/core';
-import { StatsGranularity } from '@alpen/core/stats';
 import { createEnumFromTS } from './types';
 
 export const ChangeAggregationEnum = createEnumFromTS(

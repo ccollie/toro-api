@@ -19,18 +19,7 @@
     "/dist"
   ],
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
-    },
-    "./*": {
-      "require": "./dist/*.js",
-      "import": "./dist/*.mjs"
-    }
-  },
   "typesVersions": {
     "*": {
       "dist/index.d.ts": [
@@ -43,11 +32,10 @@
     }
   },
   "scripts": {
-    "dev": "bob-ts-watch -i src",
     "prepack": "yarn run build",
     "build": "yarn run clean && yarn run types && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "compile": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "types": "tsc --declaration --emitDeclarationOnly",
     "replace-paths": "tsc-alias -p tsconfig.json",

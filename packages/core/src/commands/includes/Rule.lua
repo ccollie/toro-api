@@ -65,6 +65,7 @@ Rule.__index = Rule
 local function rule__normalizeOptions(value)
     value = value or {}
     value.warmupWindow = tonumber(value.warmupWindow) or 0
+    value.triggerDelay = tonumber(value.triggerDelay) or 0
     value.failureThreshold = tonumber(value.failureThreshold) or 0
     value.successThreshold = tonumber(value.successThreshold) or 0
     value.alertThreshold = tonumber(value.alertThreshold) or 0
@@ -278,6 +279,18 @@ end
 function Rule:evaluateCircuit(now)
     local failures = self.ruleState.failures or 0
     local failureThreshold = self.options.failureThreshold or 0
+    local delay = self.options.triggerDelay or 0
+
+    if (delay > 0) then
+        local lastFailure = self.ruleState.lastFailure or 0
+        if (lastFailure > 0) then
+            local delta = now - lastFailure
+            if (delta < delay) then
+                --- we're still in the trigger delay period
+                return CIRCUIT_CLOSED
+            end
+        end
+    end
 
     if (failures >= failureThreshold) then
         local successes = self.ruleState.successes

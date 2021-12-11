@@ -1,4 +1,4 @@
-import { JobStatusEnum } from '@alpen/core/queues';
+import { JobStatusEnum } from '@alpen/core';
 import { GraphQLEnumType } from 'graphql';
 
 export const JobStatusEnumType = new GraphQLEnumType({

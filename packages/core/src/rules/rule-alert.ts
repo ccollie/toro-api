@@ -11,6 +11,11 @@ export interface RuleAlertOptions {
   warmupWindow?: number;
 
   /**
+   * wait a certain duration between first encountering a failure and triggering an alert
+   */
+  triggerDelay?: number;
+
+  /**
    * The minimum number of violations in "delay" period before an alert can be raised
    */
   failureThreshold?: number;

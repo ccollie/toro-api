@@ -13,7 +13,7 @@ import {
 import { delay } from '../../lib';
 import { RedisClient } from 'bullmq';
 
-const WAIT_DELAY = 100;
+const WAIT_DELAY = 300;
 
 describe('KeyspaceNotifier', () => {
   let sut: KeyspaceNotifier;
@@ -26,6 +26,7 @@ describe('KeyspaceNotifier', () => {
       ...DEFAULT_CONNECTION_OPTIONS,
       db: TEST_DB,
     });
+    await sut.waitUntilReady();
     client = await createClient();
     messages = [];
   });
@@ -41,7 +42,7 @@ describe('KeyspaceNotifier', () => {
 
   describe('keyspace notifications', () => {
     it('can listen to notifications', async () => {
-      const unsub = await sut.subscribeKey('foo', collectMessages);
+      const unsub = sut.subscribeKey('foo', collectMessages);
       await client.set('foo', 12345);
       await delay(WAIT_DELAY);
       expect(messages.length).toBe(1);
@@ -60,7 +61,7 @@ describe('KeyspaceNotifier', () => {
     });
 
     it('captures "expire" events', async () => {
-      const unsub = await sut.subscribeKey('foo', collectMessages);
+      const unsub = sut.subscribeKey('foo', collectMessages);
       messages = [];
       await client.psetex('foo', 10, 98765);
       // attempting to get the value should cause a notification
@@ -74,7 +75,7 @@ describe('KeyspaceNotifier', () => {
     });
 
     it('properly unsubscribes', async () => {
-      const unsub = await sut.subscribeKey('foo', collectMessages);
+      const unsub = sut.subscribeKey('foo', collectMessages);
       await client.set('foo', 12345);
       await delay(WAIT_DELAY);
       expect(messages.length).toBe(1);
@@ -88,7 +89,7 @@ describe('KeyspaceNotifier', () => {
 
   describe('keyevent notifications', () => {
     it('can listen to notifications', async () => {
-      const unsub = await sut.subscribeEvent('set', collectMessages);
+      const unsub = sut.subscribeEvent('set', collectMessages);
       await client.set('bar', 12345);
       await delay(WAIT_DELAY);
       expect(messages.length).toBe(1);
@@ -107,7 +108,7 @@ describe('KeyspaceNotifier', () => {
     });
 
     it('captures "expired" events', async () => {
-      const unsub = await sut.subscribeEvent('expired', collectMessages);
+      const unsub = sut.subscribeEvent('expired', collectMessages);
       await client.set('bar', 12345);
       await delay(5);
       await client.expire('bar', 1);
@@ -122,7 +123,7 @@ describe('KeyspaceNotifier', () => {
     });
 
     it('properly unsubscribes', async () => {
-      const unsub = await sut.subscribeEvent('set', collectMessages);
+      const unsub = sut.subscribeEvent('set', collectMessages);
       await client.set('bar', 12345);
       await delay(WAIT_DELAY);
       expect(messages.length).toBe(1);

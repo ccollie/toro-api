@@ -1,3 +1,4 @@
+import { UnsubscribeFn } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig, JobTC } from '../../index';
@@ -13,7 +14,7 @@ import { createSharedSubscriptionResolver } from '../../../pubsub';
 function getResolver(): GraphQLFieldResolver<any, any> {
   const DELAY = 250; // todo: read from config (or get from args)
 
-  let unsub;
+  let unsub: UnsubscribeFn;
   let hostId: string;
 
   function channelName(_, { queueId, jobId }): string {
@@ -38,15 +39,11 @@ function getResolver(): GraphQLFieldResolver<any, any> {
 
     const update = debounce(handler, DELAY, { maxItems: 4 });
 
-    notifier
-      .subscribeKey(logsKey, ({ event }) => {
-        if (event === 'rpush') {
-          update();
-        }
-      })
-      .then((fn) => {
-        unsub = fn;
-      });
+    unsub = notifier.subscribeKey(logsKey, ({ event }) => {
+      if (event === 'rpush') {
+        update();
+      }
+    });
   }
 
   async function onUnsubscribe(): Promise<any> {

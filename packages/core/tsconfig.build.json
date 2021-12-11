@@ -5,6 +5,6 @@
     "rootDir": "./src",
     "composite": true
   },
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__mocks__/*", "**/__tests__/*"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__mocks__/*", "src/**/__tests__/*.ts"],
   "references": [{ "path": "../shared" }]
 }

@@ -17,24 +17,13 @@
   "license": "MIT",
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
-    },
-    "./*": {
-      "require": "./dist/*.js",
-      "import": "./dist/*.mjs"
-    }
-  },
   "scripts": {
     "build": "yarn run clean && yarn run compile",
     "clean": "rm -rf ./dist",
-    "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "compile": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "emitTypes": "tsc --declaration",
-    "prepack": "bob-esbuild build"
+    "prepack": "yarn build"
   },
   "dependencies": {
     "@alpen/api": "^0.0.2",
@@ -44,15 +33,12 @@
     "graphql-ez": "^0.13.5"
   },
   "peerDependencies": {
-    "esbuild": ">=0.14.0",
     "express": "4.x"
   },
   "devDependencies": {
     "@types/express": "^4.17.11",
     "@types/node": "^16.11.4",
-    "bob-ts": "^1.2.2",
-    "bob-esbuild-cli": "^3.0.1",
     "express": "^4.17.1",
-    "tsc-alias": "^1.4.1"
+    "tsc-alias": "^1.4.2"
   }
 }

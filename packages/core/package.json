@@ -15,21 +15,10 @@
   },
   "homepage": "https://github.com/ccollie/alpen#readme",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
-    },
-    "./*": {
-      "require": "./dist/*.js",
-      "import": "./dist/*.mjs"
-    }
-  },
   "typesVersions": {
     "*": {
       "dist/index.d.ts": [
@@ -46,11 +35,9 @@
   },
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "build": "yarn run clean && yarn run compile && yarn run types && yarn run copyAssets",
-    "compile": "bob-ts -i src -f interop --paths '../../tsconfig.json' && tsc-alias -p tsconfig.json",
-    "compile1": "tsc --build tsconfig.build.json && yarn run replace-paths",
+    "build": "yarn run clean && yarn run compile && yarn run copyAssets",
+    "compile": "tsc --build tsconfig.build.json",
     "replace-paths": "tsc-alias -p ./tsconfig.build.json",
-    "dev": "bob-ts-watch -i src -f interop --paths",
     "copy:lua": "copyfiles -f ./src/commands/*.lua ./dist/commands",
     "copy:lua:includes": "copyfiles -f ./src/commands/includes/*.lua ./dist/commands/includes",
     "copy:config": "copyfiles -f ./src/config/*.json ./dist/src/config && copyfiles -f ./src/config/env/*.json ./dist/src/config/env",
@@ -62,7 +49,7 @@
     "clean": "rm -rf ./dist && rm tsconfig.build.buildinfo && rm tsconfig.buildinfo.json",
     "typecheck": "tsc --noEmit",
     "types": "tsc --declaration --emitDeclarationOnly",
-    "prepack": "bob-esbuild build && tsc-alias -p tsconfig.json",
+    "prepack": "yarn run build",
     "prettier": "prettier --config package.json src/**/*.ts",
     "prettier:fix": "prettier --write src/"
   },
@@ -80,14 +67,12 @@
     "@types/ms": "^0.7.31",
     "@types/node": "^16.11.6",
     "@types/nodemailer": "^6.4.4",
-    "bob-ts": "^1.2.2",
-    "bob-esbuild-cli": "^3.0.1",
     "copyfiles": "^2.4.1",
     "create-test-server": "^3.0.1",
     "jest": "^27.4.4",
     "jest-date-mock": "^1.0.8",
     "nock": "^13.1.4",
-    "tsc-alias": "^1.4.1",
+    "tsc-alias": "^1.4.2",
     "unirand": "^2.12.2",
     "typescript": "^4.5.3"
   },
@@ -139,7 +124,6 @@
     "tslib": "^2.3.1"
   },
   "peerDependencies": {
-    "esbuild": ">=0.14.0",
     "typescript": ">=4.5.3"
   },
   "engines": {

@@ -1,7 +1,6 @@
-
-import {ManualClock} from '../../../lib';
-import {AggregatorTypes, LatencyMetric, MaxAggregator} from '../../';
 import { validateCounts } from './helpers';
+import { ManualClock } from '../../../lib';
+import { AggregatorTypes, LatencyMetric, MaxAggregator } from '../../';
 
 describe('MaxAggregator', () => {
   describe('static properties', () => {

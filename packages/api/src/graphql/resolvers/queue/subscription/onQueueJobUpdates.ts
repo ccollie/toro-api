@@ -69,7 +69,7 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
     filters.push(fn);
   }
 
-  if (isNumber(filterArg.attemptsMade)) {
+  if (typeof (filterArg.attemptsMade) === 'number') {
     fn = ({ job }) => job.attemptsMade >= filterArg.attemptsMade;
     filters.push(fn);
   }
@@ -116,7 +116,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
         delta.waitTime = wait;
       }
     } else {
-      delta = diff(job, prev, { trackRemoved: false });
+      delta = diff(job, prev as Record<string, any>, { trackRemoved: false });
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { prevState, lastSeen, id, ...data } = delta;

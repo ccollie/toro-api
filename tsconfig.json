@@ -29,13 +29,12 @@
       "@alpen/api": ["packages/api/src/index.ts"],
       "@alpen/core/*": ["packages/core/src/*/index.ts"],
       "@alpen/core": ["packages/core/src/index.ts"],
+      "@alpen/core/hosts": ["packages/core/src/hosts/index.ts"],
       "@alpen/express": ["packages/express/src/index.ts"],
       "@alpen/fastify": ["packages/fastify/src/index.ts"],
       "@alpen/hapi": ["packages/hapi/src/index.ts"],
       "@alpen/koa": ["packages/koa/src/index.ts"],
-      "@alpen/shared/*": ["packages/shared/src/*"],
-      "@alpen/shared": ["packages/shared/src/index.ts"],
-      "@alpen/*": ["packages/*/src/index.ts", "node_modules/@alpen/*"],
+      "@alpen/shared/*": ["./packages/shared/src/*"],
       "@alpen/demo-base": ["examples/base/src/index.ts"],
       "@alpen/demo-base/*": ["examples/base/src/*/index.ts"],
       "alpen-testing/*": ["internal/testing/src/*"],
@@ -44,13 +43,5 @@
     }
   },
   "exclude": ["node_modules", "**/dist", "**/coverage", "**/.next"],
-  "include": ["packages", "examples", "internal", "jest.config.js"],
-  "tsc-alias": {
-    "replacers": {
-      "logger": {
-        "enabled": true,
-        "file": "./alias-replacer.js"
-      },
-    }
-  }
+  "include": ["packages", "examples", "internal", "jest.config.js"]
 }

@@ -2,10 +2,10 @@ import { Queue } from 'bullmq';
 import { random } from 'lodash';
 import { nanoid } from 'nanoid';
 import {
+  clearDb,
   createQueue,
   createQueueManager,
   createRule,
-  clearDb
 } from '../../__tests__/factories';
 import {
   AlertData,
@@ -190,6 +190,23 @@ describe('RuleScripts', () => {
       expect(state.totalFailures).toBe(2);
     });
 
+    it('respects the "triggerDelay" option', async () => {
+      const rule = await addRule({
+        isActive: true,
+        options: { failureThreshold: 1, triggerDelay: 100 },
+      });
+
+      const now = clock.getTime();
+      let result = await postFailure(rule, ErrorStatus.ERROR, now);
+      expect(result.state).toBe(CircuitState.CLOSED);
+
+      result = await postFailure(rule, ErrorStatus.ERROR, now + 10);
+      expect(result.state).toBe(CircuitState.CLOSED);
+
+      result = await postFailure(rule, ErrorStatus.ERROR, now + 100);
+      expect(result.state).toBe(CircuitState.OPEN);
+    });
+
     it('should raise an alert after failure threshold is reached', async () => {
       const rule = await addRule({
         isActive: true,
@@ -372,7 +389,6 @@ describe('RuleScripts', () => {
       await delay(1200);
 
       expect(eventData).toBeDefined();
-
     });
   });
 
