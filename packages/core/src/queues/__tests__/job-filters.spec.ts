@@ -8,9 +8,9 @@ import {
   deleteJobFilter,
   getJobFilter,
   getJobFilters,
-  JobFilter,
-  JobStatusEnum,
 } from '../';
+import { JobFilter, JobStatusEnum } from '../../types';
+
 import { getJobFiltersKey } from '../../keys';
 import { sampleSize, sortBy } from 'lodash';
 

@@ -1,5 +1,4 @@
-import { CircuitState } from '@alpen/core/commands';
-import { ErrorStatus, Rule } from '@alpen/core/rules';
+import { ErrorStatus, Rule, CircuitState } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
 import { createEnumFromTS, RuleStateEnum } from '../../../scalars';

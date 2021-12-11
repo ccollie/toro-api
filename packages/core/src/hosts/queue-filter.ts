@@ -1,20 +1,8 @@
+import { QueueFilter, QueueFilterStatus } from '../types';
 import { HostManager } from './host-manager';
 import { Queue } from 'bullmq';
 import { escapeRegExp } from '@alpen/shared';
 import { checkMultiErrors } from '../redis';
-
-export enum QueueFilterStatus {
-  Active = 'ACTIVE',
-  Inactive = 'INACTIVE',
-  Paused = 'PAUSED',
-  Running = 'RUNNING',
-}
-
-export interface QueueFilter {
-  search?: string;
-  prefix?: string;
-  statuses?: QueueFilterStatus[];
-}
 
 export async function getFilteredQueues(
   manager: HostManager,

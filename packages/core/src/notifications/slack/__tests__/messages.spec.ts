@@ -1,5 +1,6 @@
-import { getMessage } from 'packages/core/src/notifications/slack/messages';
-import { createNotificationContext } from 'packages/core/src/notifications/__tests__/helpers';
+import { NotificationContext } from '../../../types';
+import { getMessage } from '../messages';
+import { createNotificationContext } from '../../__tests__/helpers';
 import { random } from 'lodash';
 import ms from 'ms';
 import { nanoid } from 'nanoid';
@@ -10,8 +11,8 @@ import {
   RuleOperator,
   RuleType,
   Severity,
-} from 'packages/core/src/rules';
-import { NotificationContext } from 'packages/core/src/notifications/index';
+} from '../../../types';
+
 
 const ONE_HOUR = ms('1 hour');
 const ONE_MINUTE = ms('1 minute');

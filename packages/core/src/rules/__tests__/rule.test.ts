@@ -1,15 +1,15 @@
 'use strict';
 import { randomString } from '@alpen/shared';
 import { random } from 'lodash';
+import { Rule } from '../';
 import {
   ChangeAggregationType,
   ChangeTypeEnum,
-  Rule,
   RuleCondition,
   RuleConfigOptions,
   RuleOperator,
   RuleType,
-} from '../';
+} from '../../types';
 import { getUniqueId } from '../../ids';
 
 describe('Rule', () => {

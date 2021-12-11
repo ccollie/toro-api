@@ -14,8 +14,7 @@ import {
 import { systemClock } from '../lib/clock';
 import { has, isObject } from 'lodash';
 import { Rule } from '../rules/rule';
-import { RuleAlert } from '../rules/rule-alert';
-import { ErrorStatus } from '../rules/types';
+import { ErrorStatus, RuleAlert } from '../types';
 import { parseObjectResponse } from '../redis';
 import { Pipeline } from 'ioredis';
 import { HostManager } from '../hosts';

@@ -1,5 +1,5 @@
-import { ErrorStatus, Severity } from './types';
-import { RuleEvaluationState } from './condition-evaluator';
+import { RuleCondition } from './rule-conditions';
+import { RuleEvaluationState } from './rule-conditions';
 
 /**
  * Options determining when rule alerts are raised.
@@ -81,4 +81,79 @@ export interface RuleAlert {
   readonly errorLevel: ErrorStatus;
   severity: Severity;
   isRead: boolean;
+}
+
+
+/** configuration options for a {@link Rule} */
+export interface RuleConfigOptions {
+  /** the Rule id */
+  id?: string;
+  /** names of the rule */
+  name: string;
+  /** description of the {@link Rule} */
+  description?: string;
+  /** Rule creation timestamp */
+  createdAt?: number;
+  /** Rule modification timestamp */
+  updatedAt?: number;
+  /** id of monitored metric */
+  metricId: string;
+  /** the condition which should trigger an alert */
+  condition: RuleCondition;
+  /** true if the {@link Rule} is ACTIVE. */
+  isActive?: boolean;
+  /*** Optional text for message when an alert is raised */
+  message?: string;
+  /** optional data passed on to alerts */
+  payload?: Record<string, any>;
+  /** options for {@link Rule} alerts */
+  options?: RuleAlertOptions;
+  /** channels for alert notifications. */
+  channels?: string[];
+  severity?: Severity;
+  state?: RuleState;
+  lastTriggeredAt?: number;
+  totalFailures?: number;
+  /** Total (current) number of alerts */
+  alertCount?: number;
+}
+
+export enum RuleState {
+  NORMAL = 'NORMAL',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+  MUTED = 'MUTED',
+}
+
+export enum Severity {
+  INFO = 'INFO',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+  CRITICAL = 'CRITICAL',
+}
+
+export enum ErrorStatus {
+  NONE = 'NONE',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+}
+
+export type RuleMetric = {
+  readonly type: string;
+  options: Record<string, any>;
+  [propName: string]: any;
+};
+
+export enum RuleEventsEnum {
+  ALERT_TRIGGERED = 'alert.triggered',
+  ALERT_RESET = 'alert.reset',
+  ALERT_DELETED = 'alert.deleted',
+  ALERT_UPDATED = 'alert.updated',
+  RULE_ADDED = 'rule.added',
+  RULE_DELETED = 'rule.deleted',
+  RULE_UPDATED = 'rule.updated',
+  RULE_ALERTS_CLEARED = 'rule.alerts-cleared',
+  RULE_ACTIVATED = 'rule.activated',
+  RULE_DEACTIVATED = 'rule.deactivated',
+  STATE_CHANGED = 'rule.state-changed',
 }

@@ -1,14 +1,9 @@
-import { FieldConfig } from '../../utils';
-import {
-  BaseHistogramInputFields,
-  HistogramPayloadTC,
-  parseHistogramBinningOptions,
-} from '../../stats';
-import { BaseMetric } from '@alpen/core/metrics';
-import { BinnedHistogramValues, computeBins } from '@alpen/core/stats';
-import { MetricsHistogramInput } from '../../../typings';
+import { BaseMetric, BinnedHistogramValues, computeBins } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
+import { MetricsHistogramInput } from '../../../typings';
+import { BaseHistogramInputFields, HistogramPayloadTC, parseHistogramBinningOptions, } from '../../stats';
 import { OutlierFilterInputTC } from '../../stats/types';
+import { FieldConfig } from '../../utils';
 import { getMetricData } from './getData';
 
 const MetricHistogramInputTC = schemaComposer.createInputTC({

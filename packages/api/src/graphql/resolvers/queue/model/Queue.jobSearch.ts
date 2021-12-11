@@ -1,4 +1,4 @@
-import { JobStatusEnum, processSearch } from '@alpen/core/queues';
+import { JobStatusEnum, processSearch } from '@alpen/core';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
 import { JobStatusEnumType } from '../../../scalars';

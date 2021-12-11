@@ -4,7 +4,7 @@ import {
   SlackNotificationChannelInputTC,
 } from '../scalars';
 import { addChannel } from './utils';
-import { SlackChannel } from '@alpen/core/notifications';
+import { SlackChannel } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 
 const SlackNotificationChannelAddInput = schemaComposer.createInputTC({

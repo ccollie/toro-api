@@ -5,15 +5,14 @@ import {
   createRuleOptions,
   QueueListenerHelper,
 } from '../../__tests__/factories';
+import { Rule, RuleManager } from '../';
 import {
-  Rule,
-  RuleManager,
   RuleCondition,
   RuleMetric,
   RuleType,
   RuleOperator,
   RuleConfigOptions,
-} from '../';
+} from '../../types';
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueManager } from '../../queues';
 import { delay } from '../../lib';

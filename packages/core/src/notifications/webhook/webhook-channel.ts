@@ -2,7 +2,7 @@ import { badData } from '@hapi/boom';
 import { createDebug, validateUrl } from '../../lib';
 import { Channel } from '../channel';
 import { HttpClient } from '../../lib/http-client';
-import { NotificationChannelProps, NotificationContext } from '../types';
+import { NotificationChannelProps, NotificationContext } from '../../types';
 
 const debug = createDebug('notifications:webhook');
 

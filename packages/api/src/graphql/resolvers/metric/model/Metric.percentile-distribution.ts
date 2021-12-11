@@ -1,17 +1,13 @@
-import { EZContext } from 'graphql-ez';
-import { FieldConfig } from '../../utils';
+import { BaseMetric, getPercentileDistribution } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
+import { MetricPercentileDistributionInput, PercentileDistribution, } from '../../../typings';
 import {
   OutlierFilterInputTC,
   PercentileDistributionDefaultPercentiles,
   PercentileDistributionTC,
 } from '../../stats/types';
-import {
-  MetricPercentileDistributionInput,
-  PercentileDistribution,
-} from '../../../typings';
-import { BaseMetric } from '@alpen/core/metrics';
-import { getPercentileDistribution } from '@alpen/core/stats';
+import { FieldConfig } from '../../utils';
 import { getMetricData } from './getData';
 
 export const MetricPercentileDistributionInputTC = schemaComposer.createInputTC(

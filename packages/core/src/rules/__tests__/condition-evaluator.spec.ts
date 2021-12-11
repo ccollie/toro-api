@@ -1,14 +1,17 @@
 import { LatencyMetric } from '../../metrics';
 import {
+  PeakConditionEvaluator,
+  ThresholdConditionEvaluator,
+} from '../';
+import {
   ErrorStatus,
   PeakCondition,
   PeakSignalDirection,
   RuleOperator,
   RuleType,
   ThresholdCondition,
-  PeakConditionEvaluator,
-  ThresholdConditionEvaluator,
-} from '../';
+} from '../../types';
+
 import { ManualClock } from '../../lib';
 
 describe('Condition Evaluation', () => {

@@ -1,16 +1,15 @@
+import { ChangeConditionEvaluator, getAggregationFunction } from '../change-condition-evaluator';
 import { getRandomIntArray } from '../../__tests__/factories';
 import { BaseMetric, LatencyMetric } from '../../metrics';
 import { ManualClock } from '../../lib';
 import { random } from 'lodash';
 import ms from 'ms';
 import {
-  ChangeConditionEvaluator,
   ChangeConditionOptions,
   ChangeAggregationType,
   RuleOperator,
   ChangeTypeEnum,
-  getAggregationFunction,
-} from '../';
+} from '../../types';
 
 function getDiffs(
   prevWindow: number[],

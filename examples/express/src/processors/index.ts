@@ -2,7 +2,7 @@ import * as tacos from './tacos';
 import * as widgets from './widgets';
 import * as encoding from './encoding';
 import * as backup from './backup';
-import { HostConfig } from '@alpen/core/hosts';
+import { HostConfig } from '@alpen/core';
 
 export { tacos, widgets, encoding, backup };
 

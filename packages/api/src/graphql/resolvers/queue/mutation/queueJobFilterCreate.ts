@@ -1,6 +1,6 @@
 'use strict';
 import { EZContext } from 'graphql-ez';
-import { addJobFilter } from '@alpen/core/queues';
+import { addJobFilter } from '@alpen/core';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobFilterTC } from '../../job/model/Job.filter';

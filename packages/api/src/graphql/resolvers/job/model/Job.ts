@@ -9,7 +9,7 @@ import { Job } from 'bullmq';
 import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';
 import { parent } from './Job.parent';
-import { JobStatusEnum } from '@alpen/core/queues';
+import { JobStatusEnum } from '@alpen/core';
 import { checkState } from './loaders';
 import { EZContext } from 'graphql-ez';
 

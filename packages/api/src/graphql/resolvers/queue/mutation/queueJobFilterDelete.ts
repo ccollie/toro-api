@@ -1,5 +1,5 @@
 import { EZContext } from 'graphql-ez';
-import { deleteJobFilter } from '@alpen/core/queues';
+import { deleteJobFilter } from '@alpen/core';
 import { FieldConfig, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import boom from '@hapi/boom';

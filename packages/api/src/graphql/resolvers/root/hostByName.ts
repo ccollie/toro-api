@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { HostTC, FieldConfig } from '../index';
-import { HostManager } from '@alpen/core/hosts';
+import { HostManager } from '@alpen/core';
 
 export const hostByName: FieldConfig = {
   type: HostTC,

@@ -1,14 +1,13 @@
-import { EZContext } from 'graphql-ez';
-import ms from 'ms';
-import LRUCache from 'lru-cache';
-import { isEmpty, isNumber } from 'lodash';
-import { createSharedSubscriptionResolver } from '../../../pubsub';
-import { GraphQLFieldResolver } from 'graphql';
-import { JobStatusEnum } from '@alpen/core/queues';
-import { createJobNameFilter } from '@alpen/core/metrics';
-import { FieldConfig, JobStatusEnumType } from '../../index';
-import { schemaComposer } from 'graphql-compose';
+import { createJobNameFilter, JobStatusEnum } from '@alpen/core';
 import { diff, hashObject, isFinishedStatus } from '@alpen/shared';
+import { GraphQLFieldResolver } from 'graphql';
+import { schemaComposer } from 'graphql-compose';
+import { EZContext } from 'graphql-ez';
+import { isEmpty, isNumber } from 'lodash';
+import LRUCache from 'lru-cache';
+import ms from 'ms';
+import { createSharedSubscriptionResolver } from '../../../pubsub';
+import { FieldConfig, JobStatusEnumType } from '../../index';
 
 const EVENT_NAMES = Object.values(JobStatusEnum)
   .map((name) => `job.${name}`)

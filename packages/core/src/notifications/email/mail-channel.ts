@@ -2,7 +2,7 @@ import * as boom from '@hapi/boom';
 import { Channel } from '../channel';
 import { sendMail, validateEmail } from '../../lib';
 import { getMessage } from './templates';
-import { NotificationChannelProps, NotificationContext } from '../types';
+import { NotificationChannelProps, NotificationContext } from '../../types';
 
 export interface MailChannelConfig extends NotificationChannelProps {
   readonly type: 'mail';

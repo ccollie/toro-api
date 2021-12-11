@@ -1,21 +1,19 @@
 import { random } from 'lodash';
+import { Rule, RuleAlerter, RuleStorage } from '../';
 import {
   ErrorStatus,
   EvaluationResult,
-  Rule,
   RuleAlert,
-  RuleAlerter,
   RuleConfigOptions,
   RuleOperator,
   RuleState,
-  RuleStorage,
   RuleType,
-} from '../';
+} from '../../types';
 import {
   clearDb,
   getRandomBool,
   createQueueManager,
-  createRule
+  createRule,
 } from '../../__tests__/factories';
 import { QueueManager } from '../../queues';
 import { ManualClock, nanoid, delay } from '../../lib';

@@ -4,7 +4,6 @@ import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation';
 import { calculateInterval, quantile } from '../stats';
 import {
-  RuleEvaluationState,
   ThresholdConditionEvaluator,
   ThresholdRuleEvaluationState,
 } from './condition-evaluator';
@@ -12,9 +11,11 @@ import {
   ChangeAggregationType,
   ChangeConditionOptions,
   ChangeTypeEnum,
+  ErrorStatus,
   RuleType,
-} from './rule-conditions';
-import { ErrorStatus } from './types';
+  RuleEvaluationState,
+} from '../types';
+
 
 export interface ChangeRuleEvaluationState
   extends ThresholdRuleEvaluationState {

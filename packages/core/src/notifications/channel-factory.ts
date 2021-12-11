@@ -1,10 +1,10 @@
 import { badRequest, badImplementation } from '@hapi/boom';
-import { NotificationChannel, NotificationChannelPlugin } from './types';
+import { NotificationChannel, NotificationChannelPlugin, NotificationChannelProps } from '../types';
 import { emailPlugin } from './email';
 import { webhookPlugin } from './webhook';
 import { slackPlugin } from './slack';
 
-const plugins: NotificationChannelPlugin[] = [
+const plugins: NotificationChannelPlugin<NotificationChannelProps>[] = [
   emailPlugin,
   webhookPlugin,
   slackPlugin,

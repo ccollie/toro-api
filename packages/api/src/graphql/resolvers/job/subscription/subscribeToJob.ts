@@ -1,13 +1,11 @@
-
-import { systemClock } from '@alpen/core';
-import { AppJob, JobEventData, JobStatusEnum } from '@alpen/core/queues';
-import { EZContext } from 'graphql-ez';
+import { AppJob, JobEventData, JobStatusEnum, systemClock } from '@alpen/core';
+import { diff, isNumber } from '@alpen/shared';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
-import { fieldsList } from 'graphql-fields-list';
-import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { isNumber, diff } from '@alpen/shared';
+import { EZContext } from 'graphql-ez';
+import { fieldsList } from 'graphql-fields-list';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
+import { FieldConfig, JobTC, QueueTC } from '../../index';
 
 export type JobData = Partial<AppJob> & {
   ts: number;

@@ -1,3 +1,5 @@
+import { ErrorStatus } from './rules';
+
 export enum RuleType {
   THRESHOLD = 'THRESHOLD',
   PEAK = 'PEAK',
@@ -103,3 +105,20 @@ export type RuleCondition =
   | PeakCondition
   | ThresholdCondition
   | ChangeCondition;
+
+export interface EvaluationResult {
+  value: number;
+  triggered: boolean;
+  errorLevel: ErrorStatus;
+  state: RuleEvaluationState;
+}
+
+export interface RuleEvaluationState {
+  ruleType: RuleType;
+  errorLevel: ErrorStatus;
+  value: number;
+  comparator: RuleOperator;
+  errorThreshold: number;
+  warningThreshold?: number;
+  unit: string;
+}

@@ -14,7 +14,7 @@ import pAll from 'p-all';
 import pMap from 'p-map';
 import { sortBy, uniqBy } from 'lodash';
 import { ensureScriptsLoaded } from '../commands';
-import { JobCounts, JobStatusEnum } from '../queues/types';
+import { JobCounts, JobStatusEnum } from '../types';
 import { QueueManager } from '../queues/queue-manager';
 import {
   DiscoveredQueue,
@@ -46,9 +46,9 @@ import {
 import { getHostBusKey, getHostKey, getLockKey } from '../keys';
 import {
   Channel,
-  NotificationContext,
   NotificationManager,
 } from '../notifications';
+import { NotificationContext } from '../types';
 import { getHostUri } from '../lib';
 import { convertWorker, QueueWorker } from '../queues';
 

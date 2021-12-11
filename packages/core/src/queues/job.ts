@@ -2,7 +2,7 @@ import {  notFound, badRequest } from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
-import { JobStatusEnum } from './types';
+import { JobStatusEnum } from '../types';
 import { Scripts } from '../commands';
 
 // https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11

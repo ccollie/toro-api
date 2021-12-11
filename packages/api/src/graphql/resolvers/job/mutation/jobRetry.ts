@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { processJobCommand } from '@alpen/core/queues';
+import { processJobCommand } from '@alpen/core';
 import { JobLocatorInput } from './jobLocatorInput';
 
 export const jobRetry: FieldConfig = {

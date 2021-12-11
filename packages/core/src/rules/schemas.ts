@@ -1,14 +1,16 @@
 import * as Joi from 'joi';
-import { DurationSchema } from '../validation';
-import { RuleState, Severity } from './types';
 import {
   ChangeAggregationType,
   PeakSignalDirection,
+  RuleAlertOptions,
   RuleCondition,
   RuleOperator,
+  RuleState,
   RuleType,
-} from './rule-conditions';
-import { RuleAlertOptions } from './rule-alert';
+  Severity
+} from '../types';
+import { DurationSchema } from '../validation';
+
 
 export const ruleAlertOptionsSchema = Joi.object().keys({
   warmupWindow: DurationSchema.optional(),

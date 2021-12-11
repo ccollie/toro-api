@@ -3,7 +3,7 @@ import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { getUniqueId, nanoid } from '../lib';
 import { Job, JobJsonRaw, Queue } from 'bullmq';
-import { FilteredJobsResult, JobFilter, JobStatusEnum } from './types';
+import type { FilteredJobsResult, JobFilter, JobStatusEnum } from '../types/queues';
 import { Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
 import { getMultipleJobsById } from './queue';

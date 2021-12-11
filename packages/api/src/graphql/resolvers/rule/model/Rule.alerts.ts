@@ -2,7 +2,7 @@ import { EZContext } from 'graphql-ez';
 import { OrderEnumType } from '../../../scalars';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
-import { Rule, RuleAlert } from '@alpen/core/rules';
+import { Rule, RuleAlert } from '@alpen/core';
 import { RuleAlertTC } from './RuleAlert';
 import { RuleAlertsInput, SortOrderEnum } from '../../../typings';
 

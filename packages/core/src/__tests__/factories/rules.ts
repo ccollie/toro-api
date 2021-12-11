@@ -1,11 +1,6 @@
 import { getUniqueId, nanoid } from '../../ids';
-import {
-  Rule,
-  RuleConfigOptions,
-  RuleType,
-  RuleOperator,
-  defaultRuleAlertOptions,
-} from '../../rules';
+import { Rule, defaultRuleAlertOptions } from '../../rules';
+import { RuleConfigOptions, RuleType, RuleOperator } from '../../types';
 
 export function createRuleOptions(
   options: Partial<RuleConfigOptions> = {},

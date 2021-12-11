@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { SummaryStatisticsTC } from '../../stats/types';
-import { BaseMetric } from '@alpen/core/metrics';
+import { BaseMetric } from '@alpen/core';
 import { MetricDataInput, SummaryStatistics } from '../../../typings';
 import { MetricDataInputTC } from './Metric.data';
 import { calcSummaryStats } from '../../stats/summary';

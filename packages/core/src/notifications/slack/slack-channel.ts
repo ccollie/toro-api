@@ -1,5 +1,5 @@
 import * as boom from '@hapi/boom';
-import { NotificationChannelProps, NotificationContext } from '../types';
+import { NotificationChannelProps, NotificationContext } from '../../types';
 import { validateUrl } from '../../lib';
 import { Channel } from '../channel';
 import { getMessage } from './messages';

@@ -1,12 +1,7 @@
 import { Queue } from 'bullmq';
 import { random } from 'lodash';
 import { nanoid } from 'nanoid';
-import {
-  clearDb,
-  createQueue,
-  createQueueManager,
-  createRule,
-} from '../../__tests__/factories';
+import { clearDb, createQueue, createQueueManager, createRule, } from '../../__tests__/factories';
 import {
   AlertData,
   CheckAlertResult,
@@ -18,15 +13,8 @@ import {
 import { delay, getUniqueId, ManualClock } from '../../lib';
 import { QueueManager } from '../../queues';
 import { EventBus } from '../../redis';
-import {
-  ErrorStatus,
-  Rule,
-  RuleAlert,
-  RuleConfigOptions,
-  RuleEventsEnum,
-  RuleState,
-  RuleStorage,
-} from '../../rules';
+import { Rule, RuleStorage } from '../../rules';
+import { ErrorStatus, RuleAlert, RuleConfigOptions, RuleEventsEnum, RuleState } from '../../types';
 
 describe('RuleScripts', () => {
   let queueManager: QueueManager;

@@ -1,16 +1,17 @@
-import { EZContext } from 'graphql-ez';
-import { StatsRateQueryInputTC } from './types';
-import { aggregateRates, getClient } from './utils';
-import { MeterTC } from './MeterTC';
 import {
+  HostManager,
   MeterSummary,
   QueueStats,
-} from '@alpen/core/stats';
-import { StatsRateType, StatsGranularity } from '@alpen/core/stats';
-import { HostManager } from '@alpen/core/hosts';
-import { FieldConfig } from '../index';
-import { Queue } from 'bullmq';
+  StatsGranularity,
+  StatsRateType,
+} from '@alpen/core';
 import boom from '@hapi/boom';
+import { Queue } from 'bullmq';
+import { EZContext } from 'graphql-ez';
+import { FieldConfig } from '../index';
+import { MeterTC } from './MeterTC';
+import { StatsRateQueryInputTC } from './types';
+import { aggregateRates, getClient } from './utils';
 
 export function getQueueRatesResolver(type: StatsRateType): FieldConfig {
   function getInstantRate(context: EZContext, queue: Queue, jobName?: string) {

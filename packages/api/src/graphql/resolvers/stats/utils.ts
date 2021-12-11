@@ -1,15 +1,15 @@
-import { EZContext } from 'graphql-ez';
-import { parseRange } from '@alpen/shared';
 import {
-  StatsMetricType,
-  StatisticalSnapshot,
-  StatsGranularity,
+  HostManager,
   MeterSummary,
+  StatisticalSnapshot,
   StatsClient,
+  StatsGranularity,
+  StatsMetricType,
   StatsRateType,
-} from '@alpen/core/stats';
-import { HostManager } from '@alpen/core/hosts';
+} from '@alpen/core';
+import { parseRange } from '@alpen/shared';
 import { Queue } from 'bullmq';
+import { EZContext } from 'graphql-ez';
 
 export function normalizeGranularity(granularity: string): StatsGranularity {
   return (

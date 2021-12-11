@@ -1,6 +1,6 @@
 'use strict';
 import boom from '@hapi/boom';
-import { getJobFilter, updateJobFilter } from '@alpen/core/queues';
+import { getJobFilter, updateJobFilter } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';

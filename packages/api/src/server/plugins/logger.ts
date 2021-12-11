@@ -1,7 +1,7 @@
 import { NullableEnvelopPlugin } from 'graphql-ez';
-import { Logger, LevelWithSilent } from '@alpen/core/logger';
+import { Logger, LevelWithSilent } from '@alpen/core';
 import { Kind, OperationDefinitionNode } from 'graphql';
-import { nanoid } from '@alpen/core/ids';
+import { nanoid } from '@alpen/core';
 
 /**
  * Options for request and response information to include in the log statements

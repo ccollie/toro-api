@@ -15,27 +15,28 @@ import {
   getUniqueId,
 } from '../lib';
 import { logger } from '../logger';
-import { NotificationContext, NotificationManager } from '../notifications';
+import type { NotificationContext } from '../types';
+import { NotificationManager } from '../notifications';
 import { QueueManager } from '../queues';
+import {
+  ChangeAggregationType,
+  ChangeTypeEnum,
+  ErrorStatus,
+  EvaluationResult,
+  RuleAlert,
+  RuleEvaluationState,
+  RuleEventsEnum,
+  RuleOperator,
+  RuleState,
+  RuleType,
+} from '../types';
 import {
   ChangeRuleEvaluationState,
   isChangeRuleEvaluationState,
 } from './change-condition-evaluator';
-import {
-  EvaluationResult,
-  isPeakRuleEvaluationState,
-  RuleEvaluationState,
-} from './condition-evaluator';
+import { isPeakRuleEvaluationState } from './condition-evaluator';
 import { Rule } from './rule';
-import { RuleAlert } from './rule-alert';
-import {
-  ChangeAggregationType,
-  ChangeTypeEnum,
-  RuleOperator,
-  RuleType,
-} from './rule-conditions';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
-import { ErrorStatus, RuleEventsEnum, RuleState } from './types';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
@@ -157,9 +158,13 @@ export class RuleAlerter {
     if (response.status === 'inactive') {
       this.rule.state = RuleState.MUTED;
     } else {
-      if (response.state === CircuitState.OPEN || response.state === CircuitState.HALF_OPEN) {
+      if (
+        response.state === CircuitState.OPEN ||
+        response.state === CircuitState.HALF_OPEN
+      ) {
         const status = response.errorStatus || result.errorLevel;
-        this.rule.state = (status === ErrorStatus.ERROR) ? RuleState.ERROR : RuleState.WARNING;
+        this.rule.state =
+          status === ErrorStatus.ERROR ? RuleState.ERROR : RuleState.WARNING;
       } else {
         this.rule.state = RuleState.NORMAL;
       }

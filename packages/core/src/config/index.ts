@@ -8,8 +8,30 @@ dotenv.config();
 const DEFAULT_KEY_PREFIX = 'alpen';
 const env = global.process.env.NODE_ENV || 'development';
 
+
+/**
+ * Determines if log environment is test
+ *
+ * @type {boolean}
+ *
+ */
 const isTest = env === 'test';
+
+/**
+ * Determines if log environment is development
+ *
+ * @type {boolean}
+ *
+ */
 const isDevelopment = env === 'development';
+
+/**
+ * Determines if log environment is production by checking if not development
+ *
+ * @type {boolean}
+ *
+ */
+const isProduction = !isTest && !isDevelopment;
 
 const SEPARATOR = '__';
 
@@ -123,6 +145,7 @@ export {
   appInfo,
   env,
   isDevelopment,
+  isProduction,
   isTest,
   keyPrefix,
   packageInfo

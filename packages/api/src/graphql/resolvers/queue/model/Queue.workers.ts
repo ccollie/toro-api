@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { Queue } from 'bullmq';
 import { FieldConfig } from '../../utils';
-import { QueueWorker } from '@alpen/core/queues';
+import { QueueWorker } from '@alpen/core';
 import toDate from 'date-fns/toDate';
 import { EZContext } from 'graphql-ez';
 

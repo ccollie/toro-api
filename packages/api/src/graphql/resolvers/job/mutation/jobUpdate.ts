@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
-import { validateJobData } from '@alpen/core/queues';
+import { validateJobData } from '@alpen/core';
 import boom from '@hapi/boom';
 
 const JobUpdateInput = schemaComposer.createInputTC({

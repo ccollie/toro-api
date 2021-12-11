@@ -1,15 +1,17 @@
 import {
-  ChangeAggregationType,
   ChangeConditionEvaluator,
-  ChangeTypeEnum,
   ConditionEvaluator,
   PeakConditionEvaluator,
-  RuleConfigOptions,
   RuleEvaluator,
-  RuleOperator,
-  RuleType,
   ThresholdConditionEvaluator,
 } from '../';
+import {
+  ChangeAggregationType,
+  ChangeTypeEnum,
+  RuleConfigOptions,
+  RuleOperator,
+  RuleType,
+} from '../../types';
 import {
   BaseMetric,
   LatencyMetric,

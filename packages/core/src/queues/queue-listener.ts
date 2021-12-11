@@ -1,4 +1,4 @@
-import { isFinishedStatus, parseTimestamp } from '@alpen/shared';
+import { parseTimestamp } from '@alpen/shared';
 import { Queue, QueueEvents, QueueEventsListener, RedisClient } from 'bullmq';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
@@ -13,7 +13,7 @@ import {
 import { logger } from '../logger';
 import { Events } from '../metrics/constants';
 import { parseStreamId, timestampFromStreamId } from '../redis';
-import { AppJob, JobStatusEnum } from './types';
+import { AppJob, JobStatusEnum } from '../types';
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');

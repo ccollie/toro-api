@@ -1,7 +1,6 @@
-import { FieldConfig } from '../index';
-import { aggregateMap } from '@alpen/core/metrics';
+import { aggregateMap, AggregatorTypes } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
-import { AggregatorTypes } from '@alpen/core/metrics';
+import { FieldConfig } from '../index';
 
 export interface AggregateInfo {
   type: AggregatorTypes;
@@ -22,7 +21,7 @@ export const aggregates: FieldConfig = {
   args: {},
   resolve(): AggregateInfo[] {
     const result: AggregateInfo[] = [];
-    for (const [key, ctor] of Object.entries(aggregateMap)) {
+    for (const [, ctor] of Object.entries(aggregateMap)) {
       if (ctor) {
         result.push({
           type: (ctor as any).key,

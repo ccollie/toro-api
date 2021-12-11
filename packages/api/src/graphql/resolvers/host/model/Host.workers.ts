@@ -1,6 +1,5 @@
+import { HostManager, QueueWorker } from '@alpen/core';
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core/hosts';
-import { QueueWorker } from '@alpen/core/queues';
 
 export const hostWorkers: FieldConfig = {
   args: {

@@ -2,16 +2,15 @@ import { Queue, RedisClient } from 'bullmq';
 import { random, sortBy } from 'lodash';
 import pAll from 'p-all';
 import pSettle from 'p-settle';
+import { Rule, RuleStorage } from '../';
 import {
   ErrorStatus,
-  Rule,
   RuleAlert,
   RuleConfigOptions,
   RuleEventsEnum,
   RuleOperator,
-  RuleStorage,
   RuleType,
-} from '../';
+} from '../../types';
 import {
   clearDb,
   createClient,

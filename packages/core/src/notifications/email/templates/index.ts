@@ -9,7 +9,7 @@ import * as Mail from 'nodemailer/lib/mailer';
 import { markdownToHtml, systemClock } from '../../../lib';
 import { handlebarsHelpers } from './helpers';
 import { logger } from '../../../logger';
-import { NotificationContext } from '../../types';
+import { NotificationContext } from '../../../types';
 
 type TemplateFn = handlebars.TemplateDelegate<any>;
 

@@ -1,6 +1,6 @@
 import { Job } from 'bullmq';
 import { FieldConfig } from '../../utils';
-import { getJobKeyProperties } from '@alpen/core/queues';
+import { getJobKeyProperties } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export const parent: FieldConfig = {

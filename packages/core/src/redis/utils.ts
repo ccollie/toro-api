@@ -2,11 +2,11 @@ import IORedis, { Pipeline, RedisOptions } from 'ioredis';
 import { parseURL } from 'ioredis/built/utils';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
-import { load } from '../commands/scriptLoader';
-import { RedisClient, ConnectionOptions, isRedisInstance } from 'bullmq';
+import { RedisClient, ConnectionOptions, isRedisInstance, scriptLoader } from 'bullmq';
 import { logger } from '../logger';
 import * as path from 'path';
 
+const ScriptPath = path.join(__dirname, '../commands');
 
 export type RedisMetrics = {
   /* eslint-disable */
@@ -39,7 +39,11 @@ export interface RedisStreamItem {
 export function createClient(redisOpts?: ConnectionOptions | string): RedisClient {
   let client;
   if (isNil(redisOpts)) {
-    client = new IORedis(); // supported in 4.19.0
+    client = new IORedis({
+      lazyConnect: false,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+    }); // supported in 4.19.0
   } else if (isString(redisOpts)) {
     client = new IORedis(redisOpts as string);
   } else if (isRedisInstance(redisOpts)) {
@@ -55,8 +59,8 @@ export function createClient(redisOpts?: ConnectionOptions | string): RedisClien
 export async function loadBaseScripts(
   client: RedisClient,
 ): Promise<RedisClient> {
-  const dir = path.join(__dirname, '../commands');
-  return load(client, dir);
+  await scriptLoader.load(client, ScriptPath);
+  return client;
 }
 
 export async function disconnect(client: RedisClient): Promise<void> {

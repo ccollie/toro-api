@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { NotificationChannelTC } from '../../host/scalars';
-import { Rule } from '@alpen/core/rules';
+import { Rule } from '@alpen/core';
 
 export const ruleChannels: FieldConfig = {
   type: NotificationChannelTC.NonNull.List.NonNull,

@@ -1,16 +1,17 @@
 import { badImplementation, badData, notImplemented } from '@hapi/boom';
 import { systemClock } from '../lib';
+
 import {
-  ChannelConfig,
-  NotificationChannel,
+  NotificationChannelProps,
   NotificationContext,
-} from './types';
+  NotificationChannel,
+} from '../types';
 
 /***
  * This class holds metadata for a channel instance
  */
-export class Channel<TConfig extends ChannelConfig = ChannelConfig>
-  implements NotificationChannel
+export class Channel<TConfig extends NotificationChannelProps = NotificationChannelProps>
+  implements NotificationChannel<TConfig>
 {
   public options: TConfig;
   public createdAt: number;

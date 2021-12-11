@@ -1,5 +1,5 @@
 import { Job, Queue } from 'bullmq';
-import { JobStatusEnum } from '@alpen/core/queues';
+import { JobStatusEnum } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export async function checkState(

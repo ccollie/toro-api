@@ -1,7 +1,6 @@
 'use strict';
 import { getQueueUri, linkify } from '../../lib';
-import { NotificationContext } from '../types';
-import { ErrorStatus } from '../../rules';
+import { ErrorStatus, NotificationContext } from '../../types';
 
 export function getHostUrl(host: Record<string, any>): string {
   const { uri, name = 'host' } = host || {};

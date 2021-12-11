@@ -7,7 +7,7 @@ import {
   MetricValueType,
   QueueMetricOptions,
 } from './types';
-import { JobStatusEnum } from '../queues/types';
+import { JobStatusEnum } from '../types';
 
 /**
  * Base class to provide spot/instant values of job counts from a queue.

@@ -1,12 +1,10 @@
+import { logger, QueueManager, QueueWorker } from '@alpen/core';
+import { GraphQLFieldResolver } from 'graphql';
+import { schemaComposer } from 'graphql-compose';
 import { keyBy } from 'lodash';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
-import { GraphQLFieldResolver } from 'graphql';
-import { QueueWorker } from '@alpen/core/queues';
 import { FieldConfig } from '../../index';
-import { schemaComposer } from 'graphql-compose';
 import { QueueWorkerTC } from '../model/Queue.workers';
-import { logger } from '@alpen/core/logger';
-import { QueueManager } from '@alpen/core/queues';
 
 const POLLING_INTERVAL = 4500; // todo: get from config
 

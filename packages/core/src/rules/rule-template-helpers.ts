@@ -1,4 +1,4 @@
-import { ErrorStatus, RuleEventsEnum } from './types';
+import { ErrorStatus, RuleEventsEnum } from '../types';
 
 export function createRuleTemplateHelpers(
   event: RuleEventsEnum,

@@ -1,11 +1,10 @@
-import { RedisClient } from 'bullmq';
-import { load, ScriptInfo } from './scriptLoader';
+import { RedisClient, scriptLoader } from 'bullmq';
 
 export async function ensureScriptsLoaded(
   client: RedisClient,
-  cache?: Map<string, ScriptInfo>,
 ): Promise<RedisClient> {
-  return load(client, __dirname, cache);
+  await scriptLoader.load(client, __dirname);
+  return client;
 }
 
 const RE_ERROR = /user_script\:([0-9]+)\:\s*(.*)/m;

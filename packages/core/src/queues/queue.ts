@@ -10,7 +10,7 @@ import {
   validateBySchema,
   validateJobData,
 } from './job-schemas';
-import { JobCountStates, JobCreationOptions, JobStatusEnum } from './types';
+import { JobCountStates, JobCreationOptions, JobStatusEnum } from '../types/queues';
 import { Pipeline } from 'ioredis';
 import { logger } from '../logger';
 import { Scripts } from '../commands';
@@ -273,7 +273,7 @@ export async function getJobCountByType(
     types: states,
   };
   const counts = await loaders.jobCounts.load(key);
-  return Object.values(counts).reduce((sum, count) => sum + count);
+  return Object.values(counts).reduce((sum: number, count: number) => sum + count, 0);
 }
 
 export async function getJobMemoryUsage(

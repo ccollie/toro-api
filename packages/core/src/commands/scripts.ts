@@ -1,7 +1,7 @@
 import ms from 'ms';
-import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
+import { Job, JobJsonRaw, Queue, RedisClient, scriptLoader } from 'bullmq';
 import { isEmpty } from 'lodash';
-import { JobFinishedState, JobStatusEnum } from '../queues/types';
+import { JobFinishedState, JobStatusEnum } from '../types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
 import { getConfigDuration } from '../lib/config-utils';

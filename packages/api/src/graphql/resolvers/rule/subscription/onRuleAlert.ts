@@ -1,5 +1,5 @@
 import { GraphQLFieldResolver } from 'graphql';
-import { RuleAlert } from '@alpen/core/rules';
+import { RuleAlert } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleAlertTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';

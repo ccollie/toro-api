@@ -2,7 +2,7 @@ import { GraphQLFieldResolver } from 'graphql';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { logger } from '@alpen/core/logger';
+import { logger } from '@alpen/core';
 
 const POLLING_INTERVAL = 2500; // todo: get from config
 

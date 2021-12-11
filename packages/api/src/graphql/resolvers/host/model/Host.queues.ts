@@ -8,7 +8,7 @@ import {
   getFilteredQueues,
   HostManager,
   QueueFilterStatus,
-} from '@alpen/core/hosts';
+} from '@alpen/core';
 
 const HostQueuesFilter = schemaComposer.createInputTC({
   name: 'HostQueuesFilter',

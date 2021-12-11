@@ -1,17 +1,8 @@
-import { BaseMetric } from '@alpen/core/metrics';
-import {
-  filterOutlierObjects,
-  OutlierMethod,
-  TimeseriesDataPoint,
-} from '@alpen/core/stats';
+import { BaseMetric, filterOutlierObjects, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
 import { DateLike } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
-import {
-  Maybe,
-  OutlierDetectionMethod,
-  OutlierFilterInput,
-} from '../../../typings';
+import { Maybe, OutlierDetectionMethod, OutlierFilterInput, } from '../../../typings';
 
 export interface GetDataOptions {
   from?: DateLike;

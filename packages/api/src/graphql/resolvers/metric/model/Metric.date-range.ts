@@ -1,8 +1,7 @@
+import { BaseMetric, Timespan } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
-import { FieldConfig } from '../../utils';
-import { BaseMetric } from '@alpen/core/metrics';
-import { Timespan } from '@alpen/core/types';
 import { TimeSpanTC } from '../../../scalars';
+import { FieldConfig } from '../../utils';
 
 export const metricDateRangeFC: FieldConfig = {
   type: TimeSpanTC,

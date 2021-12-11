@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { createEnumFromTS } from '../../../scalars';
-import { MetricTypes } from '@alpen/core/metrics';
+import { MetricTypes } from '@alpen/core';
 import { AggregatorInputTC } from '../../aggregator/model';
 
 export const MetricTypeTC = createEnumFromTS(MetricTypes, 'MetricType');

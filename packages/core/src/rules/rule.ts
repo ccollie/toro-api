@@ -7,43 +7,7 @@ import {
   ruleConditionSchema,
   ruleConfigSchema,
 } from './schemas';
-import { RuleCondition } from './rule-conditions';
-import { RuleState, Severity } from './types';
-import { RuleAlertOptions } from './rule-alert';
-
-/** configuration options for a {@link Rule} */
-export interface RuleConfigOptions {
-  /** the Rule id */
-  id?: string;
-  /** names of the rule */
-  name: string;
-  /** description of the {@link Rule} */
-  description?: string;
-  /** Rule creation timestamp */
-  createdAt?: number;
-  /** Rule modification timestamp */
-  updatedAt?: number;
-  /** id of monitored metric */
-  metricId: string;
-  /** the condition which should trigger an alert */
-  condition: RuleCondition;
-  /** true if the {@link Rule} is ACTIVE. */
-  isActive?: boolean;
-  /*** Optional text for message when an alert is raised */
-  message?: string;
-  /** optional data passed on to alerts */
-  payload?: Record<string, any>;
-  /** options for {@link Rule} alerts */
-  options?: RuleAlertOptions;
-  /** channels for alert notifications. */
-  channels?: string[];
-  severity?: Severity;
-  state?: RuleState;
-  lastTriggeredAt?: number;
-  totalFailures?: number;
-  /** Total (current) number of alerts */
-  alertCount?: number;
-}
+import { RuleAlertOptions, RuleCondition, RuleConfigOptions, RuleState, Severity } from '../types';
 
 // todo: tags, copy ctor
 
@@ -223,7 +187,7 @@ export class Rule {
       : undefined;
 
     const payload = { ...this.payload };
-    const channels = [ ...this.channels ];
+    const channels = [...this.channels];
     const condition = { ...this.condition };
 
     return {

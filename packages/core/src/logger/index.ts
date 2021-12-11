@@ -1,4 +1,6 @@
 // The following was adapted from redwoodjs
+import { isDevelopment, isTest, isProduction } from '../config';
+
 // https://github.com/redwoodjs/redwood/blob/main/packages/api/src/logger/index.ts
 import type P from 'pino';
 import pino from 'pino';
@@ -19,29 +21,8 @@ type LogDefinition = {
   level: LogLevel;
   emit: 'stdout' | 'event';
 };
-/**
- * Determines if log environment is development
- *
- * @type {boolean}
- *
- */
-export const isDevelopment = process.env.NODE_ENV === 'development';
 
-/**
- * Determines if log environment is test
- *
- * @type {boolean}
- *
- */
-export const isTest = process.env.NODE_ENV === 'test';
 
-/**
- * Determines if log environment is production by checking if not development
- *
- * @type {boolean}
- *
- */
-export const isProduction = !isDevelopment && !isTest;
 
 /**
  * Determines if logs should be prettified.

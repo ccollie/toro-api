@@ -8,7 +8,7 @@ import {
   RuleTypeEnum,
   SeverityType,
 } from '../../../scalars';
-import { RuleType } from '@alpen/core/rules';
+import { RuleType } from '@alpen/core';
 
 const BaseStateFields = {
   ruleType: {

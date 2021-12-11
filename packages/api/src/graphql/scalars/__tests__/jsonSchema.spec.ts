@@ -1,7 +1,7 @@
 import { exec, extractError } from './utils';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema, graphql } from 'graphql';
 import { GraphQLJSONSchema } from '../';
-import { JobOptionsSchema } from '@alpen/core/queues';
+import { JobOptionsSchema } from '@alpen/core';
 
 const INVALID_SCHEMA = {
   type: 'object',

@@ -4,7 +4,7 @@ import {
   MailNotificationChannelInputTC,
 } from '../scalars';
 import { addChannel } from './utils';
-import { MailChannel } from '@alpen/core/notifications';
+import { MailChannel } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 
 const MailNotificationChannelAddInput = schemaComposer.createInputTC({

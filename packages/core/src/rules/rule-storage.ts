@@ -1,26 +1,32 @@
-import * as boom from '@hapi/boom';
-import { isEmpty, isFunction, isNumber, isObject, isString } from 'lodash';
 import { parseBool, parseTimestamp } from '@alpen/shared';
-import {
-  checkMultiErrors,
-  convertTsForStream,
-  EventBus,
-  parseMessageResponse,
-} from '../redis';
-import { getAlertsKey, getRuleKey, getRuleStateKey } from '../keys';
-
-import { Rule, RuleConfigOptions } from './rule';
+import * as boom from '@hapi/boom';
 import { Queue, RedisClient } from 'bullmq';
-import { getUniqueId, systemClock } from '../lib';
+import { isEmpty, isFunction, isNumber, isObject, isString } from 'lodash';
 import {
   AlertData,
   PossibleTimestamp,
   RuleScripts,
   TimeSeries,
 } from '../commands';
+import { getAlertsKey, getRuleKey, getRuleStateKey } from '../keys';
+import { getUniqueId, systemClock } from '../lib';
+import {
+  checkMultiErrors,
+  convertTsForStream,
+  EventBus,
+  parseMessageResponse,
+} from '../redis';
+import {
+  ErrorStatus,
+  RuleAlert,
+  RuleConfigOptions,
+  RuleEventsEnum,
+  RuleState,
+  Severity,
+} from '../types';
+
+import { Rule } from './rule';
 import { getAlertTitle } from './rule-alerter';
-import { ErrorStatus, RuleEventsEnum, RuleState, Severity } from './types';
-import { RuleAlert } from './rule-alert';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -123,7 +129,6 @@ export class RuleStorage {
     const client = this.queue.client;
     if (!this._scriptLoaded) {
       this._scriptLoaded = true;
-
     }
     return client;
   }
@@ -178,7 +183,7 @@ export class RuleStorage {
     const eventData = rule.toJSON();
     await Promise.all([
       pipeline.exec().then(checkMultiErrors),
-      this.bus.emit(event, eventData)
+      this.bus.emit(event, eventData),
     ]);
 
     return rule;
@@ -400,8 +405,11 @@ export class RuleStorage {
       alert.severity = data.severity = severity;
     }
 
-    const title = !isEmpty(data.state) ? getAlertTitle(data.state)
-      : (data.errorLevel === ErrorStatus.ERROR ? 'Error' : 'Warning');
+    const title = !isEmpty(data.state)
+      ? getAlertTitle(data.state)
+      : data.errorLevel === ErrorStatus.ERROR
+      ? 'Error'
+      : 'Warning';
 
     const alertData: AlertData = {
       id,

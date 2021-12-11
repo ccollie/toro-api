@@ -1,10 +1,9 @@
+import { createAggregator, QueueMetricOptions } from '@alpen/core';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
-import { MetricInputTC } from '../scalars';
-import { QueueMetricOptions } from '@alpen/core/metrics';
-import { createAggregator } from '@alpen/core/metrics/aggregators';
 import { MetricTC } from '../model';
+import { MetricInputTC } from '../scalars';
 
 export const metricUpdate: FieldConfig = {
   description: 'Update a job metric',

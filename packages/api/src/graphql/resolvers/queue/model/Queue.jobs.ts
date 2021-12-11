@@ -9,7 +9,7 @@ import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC } from '../../job/model/Job';
 import { QueueJobsInput } from '../../../typings';
-import { JobStatus, JobStatusEnum } from '@alpen/core/queues';
+import { JobStatus, JobStatusEnum } from '@alpen/core';
 
 export const queueJobs: FieldConfig = {
   type: JobTC.NonNull.List.NonNull,

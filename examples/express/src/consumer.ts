@@ -1,4 +1,4 @@
-import { HostConfig } from '@alpen/core/hosts';
+import { HostConfig } from '@alpen/core';
 
 process.env.NODE_ENV = 'example';
 import { Worker, QueueScheduler } from 'bullmq';

@@ -5,6 +5,10 @@ import { delay } from '../../lib';
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueManager } from '../../queues';
 import {
+  Rule,
+  RuleManager
+} from '../';
+import {
   ErrorStatus,
   RuleAlert,
   RuleCondition,
@@ -13,9 +17,7 @@ import {
   RuleOperator,
   RuleState,
   RuleType,
-  Rule,
-  RuleManager
-} from '../';
+} from '../../types';
 import {
   clearDb,
   randomString,

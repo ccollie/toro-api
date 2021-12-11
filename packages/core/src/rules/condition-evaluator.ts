@@ -2,30 +2,15 @@ import { StreamingPeakDetector } from '../stats';
 import { getStaticProp, isNumber } from '@alpen/shared';
 import { BaseMetric } from '../metrics';
 import {
+  ErrorStatus,
+  EvaluationResult,
   PeakCondition,
   PeakSignalDirection,
+  RuleEvaluationState,
   RuleOperator,
   RuleType,
   ThresholdCondition,
-} from './rule-conditions';
-import { ErrorStatus } from './types';
-
-export interface EvaluationResult {
-  value: number;
-  triggered: boolean;
-  errorLevel: ErrorStatus;
-  state: RuleEvaluationState;
-}
-
-export interface RuleEvaluationState {
-  ruleType: RuleType;
-  errorLevel: ErrorStatus;
-  value: number;
-  comparator: RuleOperator;
-  errorThreshold: number;
-  warningThreshold?: number;
-  unit: string;
-}
+} from '../types';
 
 export function isRuleEvaluationState(
   arg: unknown,
