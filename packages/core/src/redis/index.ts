@@ -6,3 +6,4 @@ export * from './write-cache';
 export * from './lock-manager';
 export * from './event-bus';
 export * from './streams';
+export * from './script-error';

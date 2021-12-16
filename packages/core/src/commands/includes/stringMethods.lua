@@ -286,6 +286,9 @@ end
 -- @include "matches.lua"
 
 function stringMethods.match(a, pattern)
+    if (isNil(pattern)) then
+        return cjson.null
+    end
     return matches(a, pattern)
 end
 

@@ -1,6 +1,7 @@
-import { clearDb, createClient } from '../utils';
+import { RedisClient } from 'bullmq';
 import ms from 'ms';
-import { loadIncludeScript, compileExpression, Command } from '../utils';
+import { translateReplyError } from '../../../redis';
+import { clearDb, Command, compileExpression, createClient, loadIncludeScript } from '../utils';
 
 const Person = {
   _id: '100',
@@ -117,13 +118,25 @@ describe('eval.lua', () => {
     return val;
   }
 
+  function handleReplyError(e: unknown, client?: RedisClient): void {
+    if (e instanceof Error) {
+      throw translateReplyError(e, client);
+    }
+    throw e;
+  }
+
   async function checkExpression(
     expression: string,
     expectedValue: any,
     context: Record<string, unknown> | null = {},
     expectMatch = true,
   ) {
-    const res = await evalExpression(expression, context);
+    let res: unknown;
+    try {
+      res = await evalExpression(expression, context);
+    } catch (e) {
+      handleReplyError(e, client);
+    }
 
     if (expectedValue === null) {
       expect(res).toBeNull();
@@ -236,13 +249,14 @@ describe('eval.lua', () => {
   });
 
   describe('Binary Operators', () => {
-    async function check(expression: string): Promise<void> {
+    async function check(expression: string, expected: unknown = true): Promise<void> {
       const context = { user: Person };
-      return checkExpression(expression, true, context);
+      return checkExpression(expression, expected, context);
     }
 
     test('==', async () => {
       await check('user.firstName == "Francis"');
+      await check('user.retirement == null');
     });
 
     test('== with objects in a given position in an array with dot notation', async () => {
@@ -253,24 +267,39 @@ describe('eval.lua', () => {
       await check('user.lastName =~ "a.+e"');
     });
 
+    test('=~ should error on null pattern', async () => {
+      try {
+        await check('user.lastName =~ null');
+        fail('should have thrown');
+      } catch (e) {
+        expect(e.message).toMatch(/pattern should be a string/);
+      }
+    });
+
     test('!=', async () => {
       await check('user.username != "mufasa"');
+      await check('user.username != null');
+      await check('user.retirement != null', false);
     });
 
     test('>', async () => {
       await check('user.jobs > 1');
+      await check('user.jobs > null', null);
     });
 
     test('>=', async () => {
       await check('user.jobs >= 6');
+      await check('user.jobs >= null', null);
     });
 
     test('<', async () => {
       await check('user.jobs < 10');
+      await check('user.jobs < null', null);
     });
 
     test('<=', async () => {
       await check('user.jobs <= 6');
+      await check('user.jobs <= null', null);
     });
 
     test('can compare value inside array at a given index', async () => {
@@ -279,6 +308,7 @@ describe('eval.lua', () => {
 
     test('%', async () => {
       await check('user.date.month % 8 == 1');
+      await check('user.date.month % null == null');
     });
 
     describe('??', () => {

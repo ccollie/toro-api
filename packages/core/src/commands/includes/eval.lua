@@ -96,6 +96,9 @@ function ExprEval.evaluateArray(list, context, res)
 end
 
 function ExprEval.getProp(object, key)
+    if (object == nil or object == cjson.null) then
+        return cjson.null
+    end
     local val = object[key]
 
     debug(' getProp: key = ' .. toStr(key), ', val = ', toStr(val))

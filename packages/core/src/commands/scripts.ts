@@ -1,6 +1,7 @@
 import ms from 'ms';
 import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
 import { isEmpty } from 'lodash';
+import { translateReplyError } from '../redis';
 import { JobFinishedState, JobStatusEnum } from '../types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
@@ -21,6 +22,13 @@ export interface ScriptFilteredJobsResult {
 
 const DEFAULT_SAMPLE_SIZE = 50;
 const MAX_SAMPLE_SIZE = 1000;
+
+function handleReplyError(e: unknown, client?: RedisClient): void {
+  if (e instanceof Error) {
+    throw translateReplyError(e, client);
+  }
+  throw e;
+}
 
 export class Scripts {
   private static getStateKeys(queue: Queue): string[] {
@@ -224,14 +232,19 @@ export class Scripts {
 
     const globStr = globals ? JSON.stringify(globals) : '';
 
-    const response = await (client as any).jobFilter(
-      key,
-      prefix,
-      criteria,
-      globStr,
-      cursor,
-      count,
-    );
+    let response: any;
+    try {
+      response = await (client as any).jobFilter(
+        key,
+        prefix,
+        criteria,
+        globStr,
+        cursor,
+        count,
+      );
+    } catch (e: unknown) {
+      handleReplyError(e, client);
+    }
 
     const newCursor = response[0] === '0' ? null : Number(response[0]);
     const jobs: Job[] = [];

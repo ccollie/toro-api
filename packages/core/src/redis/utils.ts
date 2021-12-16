@@ -3,6 +3,7 @@ import { parseURL } from 'ioredis/built/utils';
 import { isObject, chunk, isNil, isString } from 'lodash';
 import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
 import { RedisClient, ConnectionOptions, isRedisInstance, scriptLoader } from 'bullmq';
+import { ScriptError } from './script-error';
 import { logger } from '../logger';
 import * as path from 'path';
 
@@ -300,6 +301,66 @@ export async function deserializePipeline<T>(
     }
   });
   return result;
+}
+
+const RE_ERROR = /user_script\:([0-9]+)\:\s*(.*)/m;
+
+export function isScriptError(err: Error | string): boolean {
+  const text = (typeof err === 'string') ? err : err.message;
+  return RE_ERROR.test(text);
+}
+
+export function parseScriptError(
+  err: string,
+): { line: number; message: string; scriptHash?: string } | undefined {
+  const res = RE_ERROR.exec(err);
+  if (res) {
+    const hashPrefix = 'call to f_';
+    let scriptHash: string;
+    const idx = err.indexOf(hashPrefix);
+    if (idx > 0) {
+      const end = err.indexOf(')', idx);
+      if (end > 0) {
+        scriptHash = err.substring(idx + hashPrefix.length, end).trim();
+      }
+    }
+    // eslint-disable-next-line prefer-const
+    let [, l, t] = res;
+
+    // user_script can appear twice
+    if (t.startsWith('user_script:')) {
+      const [,, msg] = RE_ERROR.exec(t);
+      t = msg;
+    }
+    return {
+      line: parseInt(l),
+      message: t,
+      scriptHash
+    };
+  }
+  return undefined;
+}
+
+export function translateReplyError(e: Error, client?: RedisClient): Error {
+  if (isScriptError(e)) {
+    let script = '';
+    const { message, line, scriptHash } = parseScriptError(e.message);
+    if (scriptHash && client) {
+      // ugly hack to get the script details from the client
+      const scriptsSet = ((client as any).scriptsSet) as Record<string, any>;
+      if (scriptsSet) {
+        const keys = Object.keys(scriptsSet);
+        for (const key of keys) {
+          if (scriptsSet[key].sha == scriptHash) {
+            script = key;
+            break;
+          }
+        }
+      }
+    }
+    return new ScriptError(message, line, script);
+  }
+  return e;
 }
 
 type MetricName = keyof RedisMetrics;

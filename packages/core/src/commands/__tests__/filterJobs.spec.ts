@@ -4,7 +4,6 @@ import { Job, Queue, Command, scriptLoader } from 'bullmq';
 import { Scripts } from '../';
 import * as path from 'path';
 
-const loadCommand = scriptLoader.loadCommand;
 
 const Person = {
   _id: '100',
@@ -58,22 +57,15 @@ function quote(source: string): string {
   return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
 }
 
-const isPrimitive = (val: unknown) => {
-  if (val === null) {
-    return true;
-  }
-  return !(typeof val == 'object' || typeof val == 'function');
-};
-
 describe('filterJobs', () => {
   let client;
   let queue: Queue;
   let command: Command;
 
-  const SCRIPT_NAME = path.normalize('../jobFilter-1.lua');
+  const SCRIPT_NAME = path.join(__dirname, '../jobFilter-1.lua');
 
   beforeAll(async () => {
-    command = await loadCommand(SCRIPT_NAME);
+    command = await scriptLoader.loadCommand(SCRIPT_NAME);
   });
 
   beforeEach(async () => {
@@ -119,62 +111,13 @@ describe('filterJobs', () => {
       const compare = (a: Record<string, any>, b: Record<string, any>) => {
         const a2 = a[sortBy];
         const b2 = b[sortBy];
-        return a2 === b2 ? 0 : a2 < b2 ? 1 : -1;
+        return a2 === b2 ? 0 : a2 > b2 ? 1 : -1;
       };
       result = result.sort(compare);
       expected = expected.sort(compare);
     }
 
     expect(result).toStrictEqual(expected);
-  }
-
-
-  async function evalExpression(
-    expression: string,
-    context?: Record<string, unknown>,
-  ): Promise<unknown> {
-    const { compiled } = compileExpression(expression);
-    const criteria = JSON.stringify(compiled);
-    const data = context ? JSON.stringify(context) : '';
-    const val = await (client as any).exprEval(criteria, data);
-    if (val !== null && val !== undefined) {
-      return JSON.parse(val);
-    }
-    return val;
-  }
-
-  async function testExpression(
-    expression: string,
-    expectedValue: any,
-    context: Record<string, unknown> | null = {},
-    expectMatch = true,
-  ) {
-    const res = await evalExpression(expression, context);
-
-    if (expectedValue === null) {
-      expect(res).toBeNull();
-    }
-    if (isPrimitive(expectedValue)) {
-      if (expectMatch) {
-        expect(res).toBe(expectedValue);
-      } else {
-        expect(res).not.toBe(expectedValue);
-      }
-    } else {
-      if (Array.isArray(expectedValue)) {
-        if (expectMatch) {
-          expect(res).toStrictEqual(expectedValue);
-        } else {
-          expect(res).not.toStrictEqual(expectedValue);
-        }
-      } else {
-        if (expectMatch) {
-          expect(res).toMatchObject(expectedValue);
-        } else {
-          expect(res).not.toMatchObject(expectedValue);
-        }
-      }
-    }
   }
 
   async function check(criteria: string, expectMatch = true): Promise<void> {
@@ -196,51 +139,6 @@ describe('filterJobs', () => {
   ) {
     const criteria = `(${expression}) == ${expectedValue}`;
     await check(criteria, expectMatch);
-  }
-
-  function quoteValue(x): string {
-    if (x === null) return 'null';
-    return typeof x === 'string' ? quote(x) : JSON.stringify(x);
-  }
-
-  function formatFunction(
-    name: string,
-    args: any | any[] | undefined | number,
-  ): string {
-    let argStr = '';
-    if (args !== undefined) {
-      const _args = Array.isArray(args) ? args : [args];
-      argStr = _args.map(quoteValue).join(', ');
-    }
-    return `${name}(${argStr})`;
-  }
-
-  async function testMethodOnce(name, value, args, expected?: any) {
-    if (expected === undefined) {
-      expected = args;
-      args = undefined;
-    }
-    const data = {
-      value,
-      expected,
-    };
-    const filter = `job.data.value.${formatFunction(
-      name,
-      args,
-    )} == job.data.expected`;
-
-    await queue.add('default', data);
-    await check(filter, true);
-  }
-
-  async function testFunctionOnce(name, args, expected) {
-    const data = {
-      expected,
-    };
-    const filter = `${formatFunction(name, args)} == job.data.expected`;
-
-    await queue.add('default', data);
-    await check(filter, true);
   }
 
   describe('Basic field access', () => {
@@ -502,11 +400,6 @@ describe('filterJobs', () => {
         await queue.add('default', data);
         return check(query, expected);
       }
-
-      // eslint-disable-next-line max-len
-      test('deep matching on nested value', async () => {
-        await testAccessor('job.data.key0.key1[0][0].key2.a == "value2"');
-      });
 
       test('should match with full array index selector to nested value', async () => {
         await testAccessor('job.data.key0.key1[1].key2 == "value"');
