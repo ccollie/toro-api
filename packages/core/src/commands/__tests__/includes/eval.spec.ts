@@ -376,11 +376,6 @@ describe('eval.lua', () => {
 
       const context = { data };
 
-      // eslint-disable-next-line max-len
-      test('deep matching on nested value', async () => {
-        await checkExpression('data.key0.key1[0][0].key2.a', 'value2', context);
-      });
-
       test('should match with full array index selector to nested value', async () => {
         await checkExpression('data.key0.key1[1].key2', 'value', context);
       });
@@ -670,7 +665,7 @@ describe('eval.lua', () => {
 
     async function checkDateMethod(method, date = SampleDate) {
       const expected = date[method]();
-      const context = { data: { date, expected } };
+      const context = { data: { date } };
       const expression = `Date.parse(data.date).${method}()`;
       await checkExpression(expression, expected, context);
     }
@@ -685,6 +680,9 @@ describe('eval.lua', () => {
         'getMinutes',
         'getSeconds',
       ];
+      test.each(Methods)('%p', async (name) => {
+        await checkDateMethod(name, date);
+      });
     }
 
     describe('parse', () => {
@@ -1257,21 +1255,64 @@ describe('eval.lua', () => {
   });
 
   describe('Object', () => {
-    describe('getOwnProperties', () => {
-      it('can get the keys of an object', async () => {
-        const data = {
-          str: 'string',
-          num: 12345,
-          bool: true,
-          null_: null,
-          arr: ['this', 1, true, 'thing'],
-          obj: { a: 1, b: 1 },
-        };
-        const context = { test: data };
-        const expected = Object.keys(data).sort();
-        const res = await evalExpression('test.getOwnProperties()', { context });
-        const p = (res as Array<string>).sort();
-        expect(p).toStrictEqual(expected);
+
+    describe('keys', () => {
+      it('returns an array of keys', async () => {
+        const context = { test: { a: 1, b: 2 } };
+        const actual = await evalExpression('Object.keys(test)', context);
+        expect(actual).toEqual(['a', 'b']);
+      });
+
+      it('returns an empty array for an empty object', async () => {
+        const context = { test: {} };
+        const actual = await evalExpression('Object.keys(test)', context);
+        expect(actual).toEqual({});
+      });
+
+      it('returns an empty array for a null object', async () => {
+        const context = { test: null };
+        const actual = await evalExpression('Object.keys(test)', context);
+        expect(actual).toEqual({});
+      });
+    });
+
+    describe('values', () => {
+      it('returns an array of values', async () => {
+        const context = { test: { a: 1, b: 2 } };
+        const actual = await evalExpression('Object.values(test)', context);
+        expect(actual).toEqual([1, 2]);
+      });
+
+      it('returns an empty array for an empty object', async () => {
+        const context = { test: {} };
+        const actual = await evalExpression('Object.values(test)', context);
+        expect(actual).toEqual({});
+      });
+
+      it('returns an empty array for a null object', async () => {
+        const context = { test: null };
+        const actual = await evalExpression('Object.values(test)', context);
+        expect(actual).toEqual({});
+      });
+    });
+
+    describe('entries', () => {
+      it('returns an array of key-value pairs', async () => {
+        const context = { test: { a: 1, b: 2 } };
+        const actual = await evalExpression('Object.entries(test)', context);
+        expect(actual).toEqual([['a', 1], ['b', 2]]);
+      });
+
+      it('returns an empty array for an empty object', async () => {
+        const context = { test: {} };
+        const actual = await evalExpression('Object.entries(test)', context);
+        expect(actual).toEqual({});
+      });
+
+      it('returns an empty array for a null object', async () => {
+        const context = { test: null };
+        const actual = await evalExpression('Object.entries(test)', context);
+        expect(actual).toEqual({});
       });
     });
 

@@ -79,55 +79,16 @@ export function optimizeMemberExpression(
   }
 
   function evaluateMember(node: jsep.MemberExpression) {
-    let computed = node.computed;
-
-    function getPathItems(prop: jsep.Expression): jsep.Expression[] {
-      if (!node.computed) {
-        identifiers.add((node.property as jsep.Identifier).name);
+    if (node.object.type === 'Identifier') {
+      const name = (node.object as jsep.Identifier).name;
+      if (Globals.includes(name)) {
+        node.isBuiltIn = true;
       }
-      if (prop.type === 'Literal' || prop.type === 'Identifier') {
-        return [prop];
-      } else if (prop.type === 'MemberExpression') {
-        const member = prop as jsep.MemberExpression;
-        computed = computed || member.computed;
-        const obj = getPathItems(member.object);
-        const propPart = getPathItems(member.property);
-        return [...obj, ...propPart];
-      } else if (
-        prop.type === 'CallExpression' &&
-        (prop as jsep.CallExpression).callee?.type === 'MemberExpression'
-      ) {
-        const callee = ((prop as jsep.CallExpression).callee as jsep.MemberExpression);
-        const res = optimizeMemberExpression(callee);
-
-        computed = computed || callee.computed;
-        const method = {
-          type: 'CallExpression',
-          callee: res.object ?? res,
-          arguments: evaluateArray(prop.arguments),
-        };
-        return [method];
-      } else {
-        const res = optimizeMemberExpression(prop);
-        return [res];
-      }
+      // todo: we can validate method names here
     }
-
-    // ugly hack below. The following is only meant for the lua evaluator
-    node.path = getPathItems(node);
-    if (node.path[0].type === 'Identifier') {
-      const id = (node.path[0] as jsep.Identifier).name;
-      if (Globals.includes(id)) node.isBuiltIn = true;
+    if (!node.computed) {
+      identifiers.add((node.property as jsep.Identifier).name);
     }
-
-    if (!computed) {
-      delete node.computed;
-    } else {
-      // add if not present
-      node.computed = computed;
-    }
-    delete node.property;
-    delete node.object;
 
     return node;
   }
@@ -145,6 +106,17 @@ export function optimizeMemberExpression(
 
     case 'CallExpression':
       if (node.callee.type === 'MemberExpression') {
+        const callee = node.callee as jsep.Expression;
+        if (callee.type === 'MemberExpression') {
+          const object = callee.object as jsep.Expression;
+          if (object.type === 'Identifier') {
+            const name = (object as jsep.Identifier).name;
+            if (Globals.includes(name)) {
+              node.callee.isBuiltIn = true;
+            }
+            // todo: we can validate method names here
+          }
+        }
         evaluateMember(node.callee as jsep.MemberExpression);
       } else {
         optimizeMemberExpression(node.callee);
@@ -166,7 +138,6 @@ export function optimizeMemberExpression(
       break;
 
     case 'MemberExpression':
-      // @ts-ignore
       return evaluateMember(node);
 
     case 'UnaryExpression':

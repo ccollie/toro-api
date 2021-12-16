@@ -105,6 +105,17 @@ function ExprEval.getProp(object, key)
         if (t == 'table') then
             --- lua's handling of tables is "special"
             val = arrayMethods[key] or objectMethods[key]
+            if (val) then return val end
+            --- check metatable
+            debug(' getProp: checking metatable')
+            local mt = getmetatable(object)
+            if type(mt) =='table' then
+                -- get the __index from mt, if exists
+                local index = mt.__index
+                if type(index) == 'table' then
+                    return index[key]
+                end
+            end
         else
             local obj = ObjectTypeMethods[t]
             val = obj and obj[key]
@@ -122,11 +133,11 @@ function ExprEval.getProp(object, key)
     return val
 end
 
-local function evaluateMember(node, context)
+function ExprEval.evalMember(node, context)
     local evaluate = ExprEval.evaluate
     local object = evaluate(node.object, context)
     local val
-    local key = node.computed and evaluate(node.key, context) or node.property.value
+    local key = node.computed and evaluate(node.property, context) or node.property.name
     if (type(key) == 'number') then
         if type(object) == 'string' then
             val = stringMethods.charAt(object, key)
@@ -136,44 +147,12 @@ local function evaluateMember(node, context)
     else
         val = ExprEval.getProp(object, key)
     end
-    return {object, val, key}
-end
-
-
-function ExprEval.evalMember(node, context)
-    local eval = ExprEval.evaluate
-    local getProp = ExprEval.getProp
-    local key
-    local saveObj
-
-    local object = context
-    debug('EvalMember. Path = ' .. toStr(node.path) .. ' context ' .. toStr(context))
-    for _, segment in ipairs(node.path) do
-
-        if (object == nil or object == cjson.null) then
-            break
-        end
-
-        saveObj = object
-
-        debug('i = ' .. tostring(_) ..', Segment = ' .. toStr(segment))
-        local t = segment.type
-        if (t == 'Literal') then
-            key = segment.value
-        elseif t == 'Identifier' then
-            key = segment.name
-        else
-            key = eval(segment, context)
-        end
-
-        object = (type(key) == 'number') and object[key+1] or getProp(object, key)
-    end
-    return {saveObj, object, key}
+    return object, val, key
 end
 
 function ExprEval.MemberExpression(node, context)
-    local value = ExprEval.evalMember(node, context)
-    return value[2]
+    local _, value = ExprEval.evalMember(node, context)
+    return value
 end
 
 function ExprEval.UnaryExpression(node, context)
@@ -182,26 +161,31 @@ end
 
 function ExprEval.CallExpression(node, context)
     local caller, name
-    local callerArg
+    local callerArg = {}
 
     local fn = node.fn  -- cached fn
     if (not fn) then
         local cacheable = false;
         local callee = node.callee
         if (callee.type == 'MemberExpression') then
-            local ctx = callee.isBuiltIn and EXPR_GLOBALS or false
-            local assign = ExprEval.evalMember(callee, ctx or context)
-            caller = assign[1]
-            fn = assign[2]
-            name = assign[3]
-            callerArg = ctx and {} or { caller }
-            cacheable = (not callee.computed) and ctx
+            --- this extra work is because we anticipate expressions being executed in a loop
+            --- so try to cache the function lookup
+            local isBuiltIn = callee.object.type == 'Identifier' and EXPR_GLOBALS[callee.object.name]
+            if isBuiltIn then
+                caller, fn, name = ExprEval.evalMember(callee, EXPR_GLOBALS)
+            else
+                caller, fn, name = ExprEval.evalMember(callee, context)
+                callerArg = { caller }
+            end
+            debug('Here, name = ' .. toStr(name) .. ', caller = ' .. toStr(caller))
+            cacheable = isBuiltIn and not callee.computed
         else
             cacheable = callee.type == 'Identifier'
             fn = ExprEval.evaluate(callee, context)
         end
         if (type(fn) ~= 'function') then
             name = name or ExprEval.nodeFunctionName(caller or callee or node);
+            debug('Invalid fn = ' .. toStr(fn) .. ', name = ' .. toStr(name))
             error('"' .. toStr(name) .. '" is not a function',0)
             return cjson.null
         end
@@ -211,6 +195,7 @@ function ExprEval.CallExpression(node, context)
     end
 
     local args = ExprEval.evaluateArray(node.arguments, context, callerArg)
+    debug('running fn: ' .. toStr(name) .. ' with args: ' .. toStr(args))
     return fn( unpack(args) )
 end
 

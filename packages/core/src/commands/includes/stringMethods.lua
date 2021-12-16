@@ -7,7 +7,7 @@
 local stringMethods = {}
 
 --- String Functions ------------------------------------------
----
+--- NOTE: all functions requiring indices expect them to start at 0 to match js
 function stringMethods.substr(s, start, count)
     if (isNil(s)) then
         return nil
@@ -280,10 +280,7 @@ function stringMethods.strcasecmp(a, b)
     if (a > b) then
         return 1
     end
-    if (a < b) then
-        return -1
-    end
-    return 0
+    return (a < b) and -1 or 0
 end
 
 -- @include "matches.lua"

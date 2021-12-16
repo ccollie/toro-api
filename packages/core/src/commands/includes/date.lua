@@ -370,6 +370,10 @@ function dobj:getYear()
     dobj_ensureDateCache(self)
     return self._cache['y']
 end
+function dobj:getFullYear()
+    dobj_ensureDateCache(self)
+    return self._cache['y']
+end
 function dobj:getMonth()
     dobj_ensureDateCache(self)
     return self._cache['m']
