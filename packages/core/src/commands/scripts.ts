@@ -1,5 +1,5 @@
 import ms from 'ms';
-import { Job, JobJsonRaw, Queue, RedisClient, scriptLoader } from 'bullmq';
+import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
 import { isEmpty } from 'lodash';
 import { JobFinishedState, JobStatusEnum } from '../types';
 import { nanoid } from '../lib';

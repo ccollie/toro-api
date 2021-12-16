@@ -134,12 +134,12 @@ export class RuleAlerter {
 
   // TODO: Move to rule-manager
   async start(): Promise<void> {
-    await RuleScripts.startRule(this.queue, this.rule.id);
+    await RuleScripts.activateRule(this.queue, this.rule.id);
     this._ruleState = RuleState.NORMAL;
   }
 
   async stop(): Promise<void> {
-    await RuleScripts.stopRule(this.queue, this.rule.id);
+    await RuleScripts.deactivateRule(this.queue, this.rule.id);
     this._ruleState = RuleState.MUTED;
   }
 

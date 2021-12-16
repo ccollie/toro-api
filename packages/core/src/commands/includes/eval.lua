@@ -24,8 +24,9 @@ ExprEval.__index = ExprEval
 
 --- todo: cache dates
 local DateOps = {
-    parse = date,
-    isLeapYear = date.isLeapYear
+    parse = date_create,
+    isLeapYear = date.isLeapYear,
+    epoch = date.epoch
 }
 
 local TypeProps = {
@@ -121,6 +122,24 @@ function ExprEval.getProp(object, key)
     return val
 end
 
+local function evaluateMember(node, context)
+    local evaluate = ExprEval.evaluate
+    local object = evaluate(node.object, context)
+    local val
+    local key = node.computed and evaluate(node.key, context) or node.property.value
+    if (type(key) == 'number') then
+        if type(object) == 'string' then
+            val = stringMethods.charAt(object, key)
+        else
+            val = object[key+1]
+        end
+    else
+        val = ExprEval.getProp(object, key)
+    end
+    return {object, val, key}
+end
+
+
 function ExprEval.evalMember(node, context)
     local eval = ExprEval.evaluate
     local getProp = ExprEval.getProp
@@ -128,11 +147,16 @@ function ExprEval.evalMember(node, context)
     local saveObj
 
     local object = context
-    debug('EvalMember. Path = ' .. toStr(node.path) .. ' context ', context)
+    debug('EvalMember. Path = ' .. toStr(node.path) .. ' context ' .. toStr(context))
     for _, segment in ipairs(node.path) do
 
+        if (object == nil or object == cjson.null) then
+            break
+        end
+
         saveObj = object
-        debug('Segment = ' .. toStr(segment))
+
+        debug('i = ' .. tostring(_) ..', Segment = ' .. toStr(segment))
         local t = segment.type
         if (t == 'Literal') then
             key = segment.value
@@ -143,9 +167,6 @@ function ExprEval.evalMember(node, context)
         end
 
         object = (type(key) == 'number') and object[key+1] or getProp(object, key)
-        if (object == nil or object == cjson.null) then
-            break
-        end
     end
     return {saveObj, object, key}
 end

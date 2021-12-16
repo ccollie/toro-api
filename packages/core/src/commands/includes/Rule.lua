@@ -10,24 +10,25 @@
 --- @include "hashToArray"
 --- @include "RuleAlert"
 --- @include "safeJsonDecode"
+--- @include "toStr"
 
 local HASH_FIELDS = {
-    'id',
-    'isActive',
-    'options',
-    'severity',
-    'state',
-    'channels'
+  'id',
+  'isActive',
+  'options',
+  'severity',
+  'state',
+  'channels'
 }
 
 local NUMBER_STATE_FIELDS = {
-    lastNotify = true,
-    alertCount = true,
-    failures   = true,
-    lastTriggeredAt = true,
-    lastFailure = true,
-    successes = true,
-    warmupStart = true,
+  lastNotify = true,
+  alertCount = true,
+  failures   = true,
+  lastTriggeredAt = true,
+  lastFailure = true,
+  endTriggerDelay = true,
+  successes = true
 }
 
 local RULE_STATE_NORMAL = 'NORMAL'
@@ -44,9 +45,6 @@ local CIRCUIT_HALF_OPEN = 'HALF_OPEN'
 
 local RUN_STATE_ACTIVE = 'active'
 local RUN_STATE_INACTIVE = 'inactive'
-local RUN_STATE_MUTED = 'muted'
-local RUN_STATE_WARMUP = 'warmup'
-
 
 local function rule__getNumberState(self, name, default)
     local state = self:loadState();
@@ -64,8 +62,8 @@ Rule.__index = Rule
 
 local function rule__normalizeOptions(value)
     value = value or {}
-    value.warmupWindow = tonumber(value.warmupWindow) or 0
     value.triggerDelay = tonumber(value.triggerDelay) or 0
+    value.endTriggerDelay = tonumber(value.endTriggerDelay) or 0
     value.failureThreshold = tonumber(value.failureThreshold) or 0
     value.successThreshold = tonumber(value.successThreshold) or 0
     value.alertThreshold = tonumber(value.alertThreshold) or 0
@@ -145,15 +143,15 @@ function Rule:data(...)
 end
 
 function Rule:loadState()
-    if (not self.ruleState) then
-        local state = redis.call('hgetall', self.ruleStateKey) or {}
-        local rs = {}
-        for i = 1, #state, 2 do
-            rs[state[i]] = state[i+1]
-        end
-        self.ruleState = rule__normalizeState(rs)
+  if (not self.ruleState) then
+    local state = redis.call('hgetall', self.ruleStateKey) or {}
+    local rs = {}
+    for i = 1, #state, 2 do
+      rs[state[i]] = state[i+1]
     end
-    return self.ruleState
+    self.ruleState = rule__normalizeState(rs)
+  end
+  return self.ruleState
 end
 
 function Rule:getOption(name, defaultValue)
@@ -166,163 +164,146 @@ function Rule:getBoolOption(name, defaultValue)
 end
 
 local function rule__checkNotify(self, now)
-   local canNotify = true
-   local result = { status = 'ok' }
+  local canNotify = true
+  local result = { status = 'ok', notify = false }
 
-   local channels = self.channels or {}
-   if (type(channels) ~= 'table') or (#channels == 0) then
-       canNotify = false
-       result.status = 'no_channels'
-   end
-   result.channels = channels
-
-   local alertCount = self.ruleState.alertCount or 0
-   local maxAlertsPerEvent = tonumber(self.options.maxAlertsPerEvent) or 0
-    if (maxAlertsPerEvent > 0) then
-        result.remaining = math.min(0, maxAlertsPerEvent - alertCount)
-        if (result.remaining == 0 and canNotify) then
-            canNotify = false
-            result.msg = result.status or 'max_alerts_exceeded'
-        end
-    end
-    local notifyInterval = self.options.notifyInterval or 0
-    local lastNotify = self.ruleState.lastNotify or 0
-    if (notifyInterval > 0 and lastNotify > 0 and canNotify) then
-        result.nextEarliest = now + notifyInterval
-        local delta = now - lastNotify
-        if (delta < notifyInterval) then
-            result.nextEarliest = lastNotify + notifyInterval + 1
-            canNotify = false
-            result.msg = 'notify_interval_exceeded'
-        end
-    end
-    result.shouldNotify = canNotify
+  local circuitState = self.ruleState.circuitState
+  if (circuitState == CIRCUIT_CLOSED) and (not self.options.alertOnReset) then
+    result.status = 'no_reset_alerts'
     return result
+  end
+
+  local channels = self.channels or {}
+  if (type(channels) ~= 'table') or (#channels == 0) then
+    result.status = 'no_channels'
+    return result
+  end
+
+  local alertCount = self.ruleState.alertCount or 0
+  local maxAlertsPerEvent = tonumber(self.options.maxAlertsPerEvent or 0) or 0
+  if (alertCount > 0 and maxAlertsPerEvent > 0) then
+    result.remaining = math.max(0, maxAlertsPerEvent - alertCount)
+    if (result.remaining == 0) then
+      result.status = 'max_alerts_exceeded'
+      return result
+    end
+  end
+
+  local notifyInterval = self.options.notifyInterval or 0
+  local lastNotify = tonumber(self.ruleState.lastNotify or 0) or 0
+  if (notifyInterval > 0 and lastNotify > 0 and canNotify) then
+    result.nextEarliest = now + notifyInterval
+    local delta = now - lastNotify
+    if (delta < notifyInterval) then
+      result.nextEarliest = lastNotify + notifyInterval + 1
+      result.status = 'notify_interval_exceeded'
+      return result
+    end
+  end
+
+  result.notify = true
+  return result
 end
 
 function Rule:setState(args)
-    local arr = {}
-    for k, v in pairs(args) do
-        table.insert(arr, k)
-        table.insert(arr, v)
-        if (NUMBER_STATE_FIELDS[k]) then
-            self.ruleState[k] = tonumber(v) or 0
-        else
-            self.ruleState[k] = v
-        end
+  local arr = {}
+  for k, v in pairs(args) do
+    table.insert(arr, k)
+    table.insert(arr, v)
+    if (NUMBER_STATE_FIELDS[k]) then
+      self.ruleState[k] = tonumber(v) or 0
+    else
+      self.ruleState[k] = v
     end
-    redis.call('hset', self.ruleStateKey, unpack(arr))
+  end
+  redis.call('hset', self.ruleStateKey, unpack(arr))
 end
 
 function Rule:reset(now)
-    local res = false
-    --- todo: reset the state of the rule
-    return res
+  local res = false
+  --- todo: reset the state of the rule
+  return res
 end
 
 function Rule:clearState(now)
-    self:reset(now)
-    return self:recalcState(now)
+  self:reset(now)
+  return self:recalcState(now)
 end
 
-function Rule:isStarted()
-    return toBool(self.ruleState.isStarted)
+function Rule:activate(now)
+  if (not self.isActive) then
+    self:clearState(now)
+    self:setState({ isActive = 1 })
+  end
+ return RUN_STATE_ACTIVE
 end
 
-function Rule:start(now)
-    if (not self.isActive) then
-        return RUN_STATE_INACTIVE
-    end
-    if (not self:isStarted()) then
-        self:clearState(now)
-        self:setState({ isStarted = 1 })
-        self:startWarmup(now)
-    end
-    if (self:isWarmingUp(now)) then
-        return RUN_STATE_WARMUP
-    else
-       return RUN_STATE_ACTIVE
-    end
-end
-
-function Rule:stop(now)
-    if (not self.isActive) then
-        return RUN_STATE_INACTIVE
-    end
-    if (self:isStarted()) then
-        self:clearState(now)
-        self:setState({ isStarted = 0 })
-    end
+function Rule:deactivate(now)
+  if (not self.isActive) then
     return RUN_STATE_INACTIVE
+  end
+  self:clearState(now)
+  self:setState({ isActive = 0 })
+  return RUN_STATE_INACTIVE
 end
 
-
-function Rule:startWarmup(now)
-    local warmupWindow = tonumber(self.options.warmupWindow) or 0
-    if (warmupWindow > 0) then
-        self:setState({ warmupStart = now })
+-- assumes that failures > 0
+local function rule__checkCooldown(rule, now)
+  local cooldown = rule.options.recoveryWindow
+  if (cooldown > 0) then
+    local lastFailure = rule.ruleState.lastFailure
+    if (lastFailure > 0) then
+      local delta = now - lastFailure
+      return delta >= cooldown and CIRCUIT_CLOSED or CIRCUIT_OPEN
     end
-end
-
---- Returns whether we're currently in the warmup phase
-function Rule:isWarmingUp(now)
-    if (not self:isStarted()) then
-        return false
-    end
-    local warmupWindow = self.options.warmupWindow or 0
-    if (warmupWindow == 0) then return false end
-    local warmupStart = tonumber(self.ruleState.warmupStart) or 0
-    return now < (warmupStart + warmupWindow)
+  end
+  return false
 end
 
 --- https://java-design-patterns.com/patterns/circuit-breaker/
 function Rule:evaluateCircuit(now)
-    local failures = self.ruleState.failures or 0
-    local failureThreshold = self.options.failureThreshold or 0
-    local delay = self.options.triggerDelay or 0
+  local failures = self.ruleState.failures or 0
+  local failureThreshold = self.options.failureThreshold or 0
+  local delay = self.options.triggerDelay or 0
 
-    if (delay > 0) then
-        local lastFailure = self.ruleState.lastFailure or 0
-        if (lastFailure > 0) then
-            local delta = now - lastFailure
-            if (delta < delay) then
-                --- we're still in the trigger delay period
-                return CIRCUIT_CLOSED
-            end
-        end
-    end
-
-    if (failures >= failureThreshold) then
-        local successes = self.ruleState.successes
-        local successThreshold = self.options.successThreshold
-        if (successThreshold > 0) then
-            if (successes >= successThreshold) then
-                return CIRCUIT_CLOSED
-            end
-        elseif successes > 0 then
-            return CIRCUIT_CLOSED
-        end
-
-        local cooldown = self.options.recoveryWindow
-        local lastFailure = self.ruleState.lastFailure
---         debug('Checking cooldown. LastFailure = ', lastFailure, ', cooldown = ', cooldown)
---         debug('Here ',
---            {
---                ['cooldown'] = cooldown,
---                ['now'] = now,
---                ['lastFailure'] = lastFailure,
---                ['timeSinceLastFailure'] = now - lastFailure,
---                ['expired'] = (now - lastFailure) > cooldown
---            }
---         )
-        if  (cooldown > 0) and (now - lastFailure) >= cooldown then
-            return CIRCUIT_CLOSED
-        else
-            return CIRCUIT_OPEN
-        end
+  if (delay > 0 and failures > 0) then
+    if (failures == 1) then
+      self:setState({ endTriggerDelay = now + delay })
+      return CIRCUIT_CLOSED
     else
+      local endDelay = tonumber(self.ruleState.endTriggerDelay or 0) or 0
+      if (now < endDelay) then
         return CIRCUIT_CLOSED
+      end
     end
+  end
+
+  if (failures < failureThreshold) then
+    return CIRCUIT_CLOSED
+  end
+
+  debug('here: state = ' .. toStr(self.ruleState))
+  local successes = tonumber(self.ruleState.successes or 0) or 0
+  local successThreshold = self.options.successThreshold or 0
+  if (successes > 0 and successes >= successThreshold) then
+    debug('here: successes = ' .. toStr(successes) .. ', successThreshold = ' .. toStr(successThreshold))
+    local recovered = rule__checkCooldown(self, now)
+
+    if (recovered ~= false) then
+      return recovered
+    end
+
+    self:setState({ failures = 0, successes = 0 })
+    return CIRCUIT_CLOSED
+  end
+
+  local recovered = rule__checkCooldown(self, now)
+
+  if (recovered ~= false) then
+    return recovered
+  end
+
+  return CIRCUIT_OPEN
 end
 
 function Rule:recalcState(now, errorStatus)
@@ -331,53 +312,51 @@ function Rule:recalcState(now, errorStatus)
     local circuitState = self:evaluateCircuit(now)
     self.ruleState.circuitState = circuitState
 
+    debug('here. Old state = ', oldCircuitState, ', new state = ', circuitState)
     local changed = false
     if (oldCircuitState ~= circuitState) then
-        changed = true
-        local args = { circuitState = circuitState, successes = 0, alertId = '', warmupStart = 0 }
+      changed = true
+      local args = { circuitState = circuitState, successes = 0, alertId = '' }
 
-        --- see if we should notify
-        if (circuitState == CIRCUIT_CLOSED) and (not self.options.alertOnReset) then
-           args.notifyPending = 0
-        else
-           local res = rule__checkNotify(self, now)
-           args.notifyPending = res.shouldNotify and 1 or 0
-           if (res.status == 'notify_interval_exceeded') then
-               args.earliestNotification = res.nextEarliest
-           end
+      --- see if we should notify
+      local res = rule__checkNotify(self, now)
+
+      args.notifyPending = res.notify and 1 or 0
+      if (res.status == 'notify_interval_exceeded') then
+        args.earliestNotification = res.nextEarliest
+      end
+
+      local ruleState, tsKey
+
+      if (circuitState == CIRCUIT_OPEN) then
+          -- error
+        args.lastNotify = 0
+
+        local notificationStart = self.ruleState.lastNotify
+        if (notificationStart == 0) then
+          if (args.notifyPending) then
+            args.lastNotify = now
+          end
+          args.lastTriggeredAt = now
         end
+        tsKey = 'lastTriggeredAt'
+        args.errorStatus = errorStatus or ERROR_STATUS_ERROR
+        ruleState = (args.errorStatus == ERROR_STATUS_ERROR) and RULE_STATE_ERROR or RULE_STATE_WARNING
+      elseif (circuitState == CIRCUIT_CLOSED) then
+        args.failures = 0
+        args.alertCount = 0
+        args.errorStatus = ERROR_STATUS_NONE
+        args.lastFailure = 0
+        self:reset()
+        tsKey = 'lastResolvedAt'
+        ruleState = RULE_STATE_NORMAL
+      end
 
-        local ruleState, tsKey
+      self:setState(args)
 
-        if (circuitState == CIRCUIT_OPEN) then
-            -- error
-            args.lastNotify = 0
-
-            local notificationStart = self.ruleState.lastNotify
-            if (notificationStart == 0) then
-                if (args.notifyPending) then
-                    args.lastNotify = now
-                end
-                args.lastTriggeredAt = now
-            end
-            tsKey = 'lastTriggeredAt'
-            args.errorStatus = errorStatus or ERROR_STATUS_ERROR
-            ruleState = (args.errorStatus == ERROR_STATUS_ERROR) and RULE_STATE_ERROR or RULE_STATE_WARNING
-        elseif (circuitState == CIRCUIT_CLOSED) then
-            args.failures = 0
-            args.alertCount = 0
-            args.errorStatus = ERROR_STATUS_NONE
-            args.lastFailure = 0
-            self:reset()
-            tsKey = 'lastResolvedAt'
-            ruleState = RULE_STATE_NORMAL
-        end
-
-        self:setState(args)
-
-        args = { state = ruleState }
-        args[tsKey] = now
-        self:update(args)
+      args = { state = ruleState }
+      args[tsKey] = now
+      self:update(args)
     end
     return circuitState, changed
 end
@@ -390,12 +369,13 @@ function Rule:handleFailure(now, errorStatus)
     self:setState({
         failures = failures,
         totalFailures = totalFailures,
-        lastFailure = now,
         errorStatus = errorStatus,
         successes = 0
     })
     self:update({ totalFailures = totalFailures })
-    return self:recalcState(now, errorStatus)
+    local state, changed = self:recalcState(now, errorStatus)
+    self:setState({ lastFailure = now })
+    return state, changed
 end
 
 function Rule:handleSuccess(now)
@@ -412,35 +392,28 @@ function Rule:handleResult(now, errorStatus)
     if (not self.isActive) then
         status = RUN_STATE_INACTIVE
     else
-        if self:isWarmingUp(now) then
-            local start = self.ruleState.warmupStart or 0
-            local warmupWindow = self.options.warmupWindow
-            result.warmupEnd = start + warmupWindow
-            status = RUN_STATE_WARMUP
-        else
-            local newState, changed
-            if (errorStatus == ERROR_STATUS_NONE) then
-                newState, changed = self:handleSuccess(now)
-            else
-                newState, changed = self:handleFailure(now, errorStatus)
-            end
+      local newState, changed
+      if (errorStatus == ERROR_STATUS_NONE) then
+        newState, changed = self:handleSuccess(now)
+      else
+        newState, changed = self:handleFailure(now, errorStatus)
+      end
 
-            if (changed) then
-                local alertId = self.ruleState.alertId
-                if (type(alertId) == 'string' and (#alertId > 0)) then
-                    result.alertId = alertId
-                end
-            end
-
-            result['errorStatus'] = self.ruleState.errorStatus
-            result['changed'] = changed
-            result['state'] = newState
-            result['failures'] = rule__getNumberState(self, 'failures')
-            result['successes'] = rule__getNumberState(self, 'successes')
-            result['alertCount'] = rule__getNumberState(self, 'alertCount')
-            result['notify'] = rule__getNumberState(self, 'notifyPending')
-            result['ruleState'] = self.state
+      if (changed) then
+        local alertId = self.ruleState.alertId
+        if (type(alertId) == 'string' and (#alertId > 0)) then
+          result.alertId = alertId
         end
+      end
+
+      result['errorStatus'] = self.ruleState.errorStatus
+      result['changed'] = changed
+      result['state'] = newState
+      result['failures'] = rule__getNumberState(self, 'failures')
+      result['successes'] = rule__getNumberState(self, 'successes')
+      result['alertCount'] = rule__getNumberState(self, 'alertCount')
+      result['notify'] = rule__getNumberState(self, 'notifyPending')
+      result['ruleState'] = self.state
     end
     result.status = status
     return result
@@ -468,13 +441,13 @@ end
 
 -- Update the rule's attributes with the provided dictionary
 function Rule:update(data)
-    local arr = {}
-    for k, v in pairs(data) do
-        table.insert(arr, k)
-        table.insert(arr, v)
-        self[k] = v
-    end
-    redis.call('hmset', self.key, unpack(arr))
+  local arr = {}
+  for k, v in pairs(data) do
+    table.insert(arr, k)
+    table.insert(arr, v)
+    self[k] = v
+  end
+  redis.call('hmset', self.key, unpack(arr))
 end
 
 -- Return whether or not this job exists

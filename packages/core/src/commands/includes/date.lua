@@ -673,11 +673,15 @@ function date.time(h, r, s, t)
     end
 end
 
-function date:__call(arg1, ...)
+local function date_create(arg1, ...)
     local arg_count = select("#", ...) + (arg1 == nil and 0 or 1)
     if arg_count > 1 then return (date_from(arg1, ...))
     elseif arg_count == 0 then return (date_getdobj(false))
     else local o, r = date_getdobj(arg1);  return r and o:copy() or o end
+end
+
+function date:__call(arg1, ...)
+    return date_create(arg1, ...)
 end
 
 date.diff = dobj.__sub

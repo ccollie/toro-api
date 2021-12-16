@@ -8,7 +8,7 @@ import { parseObjectResponse, toKeyValueList } from './utils';
 import { isEmpty } from 'lodash';
 
 const SENDER_ID_KEY = '__sid';
-const EVENT_KEY = '__evt';
+const EVENT_KEY = '__evt';// __evt
 
 function baseEmit(
   client: Pipeline | RedisClient,

@@ -4,12 +4,6 @@ export const RuleAlertOptionsTC = schemaComposer.createObjectTC({
   name: 'RuleAlertOptions',
   description: 'Options for raising alerts for a Rule',
   fields: {
-    warmupWindow: {
-      type: 'Duration',
-      description:
-        'Timeout after startup (in ms) during which no alerts are raised, irrespective of ' +
-        'the truthiness of the rule condition.',
-    },
     triggerDelay: {
       type: 'Duration',
       // eslint-disable-next-line max-len

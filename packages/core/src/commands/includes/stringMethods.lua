@@ -108,7 +108,7 @@ function stringMethods.endsWith(haystack, needle)
 end
 
 function stringMethods.charAt(str, idx)
-    -- assert(isArray(arr), 'First operand to $arrayElemAt must resolve to an array');
+    -- assert(isArray(arr), 'First operand to string.charAt must resolve to a string');
     idx = assert(tonumber(idx), 'string index must be an integer')
     idx = absIndex(#str, idx, true)
     if (idx < len) then

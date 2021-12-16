@@ -95,7 +95,6 @@ function RuleAlert.create(key, id, data)
     alert.key = key
     alert.isRead = isTruthy(alert.isRead)
     alert:normalize()
-
     return alert:save()
 end
 

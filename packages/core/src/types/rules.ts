@@ -5,11 +5,6 @@ import { RuleEvaluationState } from './rule-conditions';
  * Options determining when rule alerts are raised.
  */
 export interface RuleAlertOptions {
-  /** a timeout after startup (in ms) during which no alerts are raised, irrespective of
-   * the truthiness of the rule condition.
-   */
-  warmupWindow?: number;
-
   /**
    * wait a certain duration between first encountering a failure and triggering an alert
    */

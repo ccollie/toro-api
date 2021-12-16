@@ -2,7 +2,7 @@
 --
 -- Stand-alone Lua script for managing an timeseries in Redis based on lexicographically sorted sets
 --
--- A timeseries is an
+-- A timeseries is
 --  1) ordered (with respect to timestamps)
 --  2) unique (each timestamp is unique within the timeseries)
 --  3) associative (it associate a timestamp with a value).
@@ -321,7 +321,6 @@ end
 -- Count the number of elements between *min* and *max*
 function Timeseries.count(key, min, max, ...)
   local params = parseRangeParams(key,{}, min, max, ...)
-  debug('params ', params)
   return redis.call('zlexcount', key, params.min, params.max)
 end
 
@@ -545,7 +544,6 @@ function Timeseries.incrBy(key, timestamp, ...)
 
   return store_value(key, timestamp, hash, true)
 end
-
 
 local function storeTimeseries(dest, range)
   for _, val in ipairs(range) do

@@ -9,346 +9,62 @@
         ARGV[1]   rule id
         ARGV[2]   current timestamp
         ARGV[3]   action
-        ARGV[4]   action parameter
+        ARGV[4]   payload
 ]]
-local HASH_FIELDS = {
-    'id',
-    'isActive',
-    'options',
-    'severity',
-    'state',
-    'channels'
-}
+
+--- @include "includes/Rule"
+--- @include "includes/RuleAlert"
+--- @include "includes/toStr"
+--- @include "includes/debug"
+--- @include "includes/isTruthy"
+--- @include "includes/hashToArray"
+--- @include "includes/destructureJobKey"
 
 local ALERT_TRIGGERED_EVENT = 'alert.triggered'
 local ALERT_RESET_EVENT = 'alert.reset'
 local STATE_CHANGED = 'rule.state-changed'
-local RULE_STATE_NORMAL = 'NORMAL'
-local RULE_STATE_ERROR = 'ERROR'
-local RULE_STATE_WARNING = 'WARNING'
 
-local ERROR_LEVEL_NONE = 'NONE'
-local ERROR_LEVEL_WARNING = 'CRITICAL'
-local ERROR_LEVEL_CRITICAL = 'WARNING'
-
-local CIRCUIT_OPEN = 'OPEN'
-local CIRCUIT_CLOSED = 'CLOSED'
-local CIRCUIT_HALF_OPEN = 'HALF_OPEN'
-
-local SEPARATOR = '|'
-
-local ruleKey = KEYS[1]
+local ruleKey = KEYS[1] or ''
 local ruleStateKey = KEYS[2]
 local alertsKey = KEYS[3]
 local busKey = KEYS[4]
 
-local ruleId = ARGV[1]
-local now = tonumber(ARGV[2] or 0)
-local action = assert(ARGV[3], 'missing "action" argument')
-local parameter = ARGV[4]
-local errorType = nil
+local now = tonumber(ARGV[1] or 0)
+local action = assert(ARGV[2], 'missing "action" argument')
+local parameter = ARGV[3]
 
-local rule = {}
-local ruleState = {}
-local result = {}
-local isLoaded = false
-
---- @include "includes/isNil"
---- @include "includes/isArray"
---- @include "includes/toStr"
---- @include "includes/debug"
---- @include "includes/isTruthy"
---- @include "includes/isString"
---- @include "includes/incrementTimestamp"
+local rule
 
 local rcall = redis.call
 
-local function arrayHashAppend(arr, ...)
-    local arg = { ... }
-    local n = #arg
-    assert(math.mod(n, 2) == 0, 'Number of arguments must be even')
-
-    for i = 1, n, 2 do
-        table.insert(arr, arg[i])
-        table.insert(arr, arg[i + 1])
-    end
-end
-
-local function split(source, sep)
-    local start, ending = string.find(source, sep or SEPARATOR, 1, true)
-    local timestamp = source:sub(1, start - 1)
-    local value = source:sub(ending + 1)
-    return timestamp, value
-end
-
-local function encodeValue(ts, data, is_hash)
-    if (is_hash == true) then
-        data = cjson.encode(data)
-    end
-    return tostring(ts) .. SEPARATOR .. data
-end
-
-local function decodeValue(raw_value)
-    local ts, block = split(raw_value)
-    return ts, block
-end
-
-local function storeValue(timestamp, value, is_hash)
-    local val = encodeValue(timestamp, value, is_hash)
-    rcall('ZADD', alertsKey, 0, val)
-    return val
-end
-
-local stateLoaded = false
-local function loadState()
-    if not stateLoaded then
-        local state = rcall('HGETALL', ruleStateKey) or {}
-        ruleState = {}
-        for i = 1, #state, 2 do
-            ruleState[state[i]] = state[i+1]
-        end
-        ruleState.state = ruleState.state or CIRCUIT_CLOSED
-        stateLoaded = true
-    end
-    return ruleState
-end
-
 local function loadRule()
-    if isLoaded == false then
-        loadState()
-        local values = rcall('HMGET', ruleKey, unpack(HASH_FIELDS))
-        local len = #values
-        assert(len > 0, 'Could not load rule #' .. ruleId)
-        rule = {}
-        for i = 1, len do
-            rule[HASH_FIELDS[i]] = values[i]
+    if not rule then
+        rule = Rule.get(ruleKey, ruleStateKey)
+        if (rule == nil) then
+            local id = getJobIdFromKey(ruleKey)
+            error('rule not found: ' .. toStr(id or ruleKey))
         end
-
-        local opts = rule.options
-        if (type(opts) == 'string') then
-            rule.opts = assert(cjson.decode(opts), 'No job options specified ')
-        else
-            rule.opts = {}
-        end
-        if (type(rule.channels) == 'string') then
-            rule.channels = cjson.decode(rule.channels)
-        else
-            rule.channels = {}
-        end
-        rule.isActive = isTruthy(rule.isActive)
-        isLoaded = true
-        debug(rule)
+        rule:loadState()
         --- todo: error if not found
     end
+    return rule
 end
 
-local function getOption(name, defaultValue)
-    return rule.opts[name] or defaultValue
-end
-
-local function getNumberOption(name, defaultValue)
-    local val = tonumber(rule.opts[name] or defaultValue)
-    return val ~= nil and val or defaultValue
-end
-
-local function getBoolOption(name, defaultValue)
-    if (defaultValue == nil) then defaultValue = false end
-    return isTruthy(getOption(name, defaultValue))
-end
-
-local function getState(name, defaultValue)
-    return ruleState[name] or defaultValue
-end
-
-local function getBoolState(name, defaultValue)
-    if (defaultValue == nil) then defaultValue = false end
-    local val = ruleState[name] or defaultValue
-    return isTruthy(val)
-end
-
-local function getNumberState(name, defaultValue)
-    return tonumber(ruleState[name]) or defaultValue
-end
-
-local function setState(...)
-    local ruleState = ruleState
-    local arg = { ... }
-    local n = #arg
-    assert(math.mod(n, 2) == 0, 'Number of arguments must be even')
-
-    for i = 1, n, 2 do
-        local name = arg[i]
-        ruleState[name] = arg[i+1]
-    end
-    rcall('hset', ruleStateKey, unpack(arg))
-end
-
-local function deleteState(...)
-    local args = { ... }
-    local n = #args
-
-    if (n == 0) then
-        ruleState = {}
-        return rcall('del', ruleStateKey)
-    end
-    for i = 1, n do
-        ruleState[args[i]] = nil
-    end
-    return rcall('hdel', ruleStateKey, unpack(args))
-end
-
-local function incrState(name)
-    local val = (tonumber(ruleState[name]) or 0) + 1
-    setState(name, val)
-    return val
-end
-
-local function getFailures()
-    return getNumberState('failures', 0)
-end
-
-local function getLastFailure()
-    return getNumberState('lastFailure', 0)
-end
-
-local function startWarmup()
-    local warmupWindow = getNumberOption('warmupWindow', 0)
-    if (warmupWindow > 0) then
-        setState('warmupStart', now)
-    end
-end
-
---- Returns whether we're currently in the warmup phase
-local function isWarmingUp()
-    local warmupWindow = getNumberOption('warmupWindow', 0)
-    if (warmupWindow == 0) then return false end
-    local warmupStart = getNumberState('warmupStart', 0)
-    return now < (warmupStart + warmupWindow)
-end
 
 local function emitEvent(event, ...)
     local args = { ... }
     --- debug('event ', event, ' rule Id= "' .. toStr(rule.id) .. '" ', 'args=' .. cjson.encode(args))
-    rcall("XADD", busKey, "*", "event", event, "ruleId", rule.id, "ts", now, unpack(args))
+    rcall("XADD", busKey, "*", "__evt", event, "ruleId", rule.id, "ts", now, unpack(args))
     --- todo: trim
 end
 
-local function updateRuleState(state)
-    if (rule.state ~= state) then
-        -- set state and raise event
-        rule.state = state
-        local args = {'state', state}
-        args[#args+1] = (state == RULE_STATE_NORMAL) and 'lastResolvedAt' or 'lastTriggeredAt'
-        args[#args+1] = now
-        rcall('hset', ruleKey, unpack(args))
-
-        emitEvent(STATE_CHANGED, unpack(args))
-    end
-end
-
-local function fetchAlert(id)
-    id = id or getState('alertId')
-    if (id == nil) or (#id == 0) then
-        return nil
-    end
-    local min = '[' .. tostring(id) .. SEPARATOR
-    local max = '(' .. tostring(incrementTimestamp(id)) .. SEPARATOR
-
-    local ra = rcall('zrangebylex', alertsKey, min, max, 'limit', 0, 2)
-    if ra ~= nil and #ra == 1 then
-        local raw_value = ra[1]
-        local ts, value = decodeValue(raw_value)
-        return {
-            ts = ts,
-            value = value,
-            raw_value = raw_value
-        }
-    elseif #ra > 1 then
-        error(
-    'Multiple values for alert: "' .. id .. '". key: "' .. alertsKey ..'", ' ..
-            'id: ' .. tostring(id)
-        )
-    end
-    return nil
-end
-
--- Set the value associated with *id*
-local function setAlert(id, value)
-    local current = fetchAlert(id)
-    -- remove old value
-    if (current ~= nil) then
-        rcall("zrem", alertsKey, current.raw_value)
-    end
-
-    storeValue(id, value, false)
-
-    local alertCount = rcall('zcard', alertsKey)
-    --- update rule alert count
-    rcall('hset', ruleKey, 'alertCount', alertCount)
-end
-
 local function getAlert(id)
-    local current = fetchAlert(id)
-    if (current ~= nil) then
-        return cjson.decode(current.value)
-    end
-    return nil
+    return RuleAlert.get(alertsKey, id)
 end
 
-local function shouldNotify(oldState)
-    local getOpt = getNumberOption
-    local state = ruleState.state
-    oldState = oldState or state
-
-    if state == CIRCUIT_CLOSED then
-        if (oldState == CIRCUIT_CLOSED) then
-            return false
-        end
-        -- we transitioned from error to normal
-        local alertOnReset = getBoolOption('alertOnReset', false)
-        if not alertOnReset then
-            return false
-        end
-    end
-
-    local channels = rule['channels'] or {}
-    if (type(channels) ~= 'table') or (#channels == 0) then
-        return false
-    end
-
-    local notifyInterval = getOpt('notifyInterval',  0)
-    if (notifyInterval > 0) then
-        debug('checking notifyInterval')
-        local lastNotify = getNumberState('lastNotify', 0)
-        if (lastNotify > 0) then
-            local delta = now - lastNotify
-            if (delta < notifyInterval) then
-                return false
-            end
-        end
-    end
-
-    local alertCount = getNumberState('alertCount', 0)
-    local maxAlertsPerEvent = getOpt('maxAlertsPerEvent', 0)
-
-    if (maxAlertsPerEvent > 0) and (alertCount >= maxAlertsPerEvent) then
-        return false
-    end
-
-    debug("shouldNotify. at end ")
-
-    return true
-end
-
---- ??? setState(event, data)
-local function writeAlert(parameter)
-    if (not rule.isActive) then
-        return '{}'
-    end
-    local data = cjson.decode(parameter)
+local function createAlert(data)
     local id = data.id
 
-    local newState
     local alert = {
         id = id,
         ruleId = rule.id,
@@ -358,293 +74,157 @@ local function writeAlert(parameter)
         state = data.state,
         title = data.title or '',
         message = data.message or '',
-        failures = getFailures(),
+        failures = data.failures,
         value = data.value,
         raisedAt = now
     }
-    if (data.errorLevel == ERROR_LEVEL_WARNING) then
-        newState = RULE_STATE_WARNING
-    elseif data.errorLevel == ERROR_LEVEL_CRITICAL then
-        newState = RULE_STATE_ERROR
-    end
 
-    setState('alertId', id)
-
-    local serialized = cjson.encode(alert)
-
-    --- create an entry compatible with timeseries-1.lua
-    --- Note: this works because id passed in is actually a snowflake id compatible with a long int
-    setAlert(id, serialized)
+    local alertObj = RuleAlert.create(alertsKey, id, alert)
 
     --- Raise event
-    emitEvent(ALERT_TRIGGERED_EVENT, 'id', id, 'data', serialized)
+    local args = { id = id, errorLevel = alert.errorLevel }
+    emitEvent(ALERT_TRIGGERED_EVENT, unpack(args))
 
-    updateRuleState(newState)
-
-    return serialized
+    local alertCount = rcall('zcard', alertsKey)
+    rule:update({
+        alertCount = alertCount
+    })
+    rule:setState({ alertId = id })
+    return alertObj
 end
 
---- https://java-design-patterns.com/patterns/circuit-breaker/
-local function calculateState()
-    local getOpt = getNumberOption
-    local failures = getFailures()
-
-    local failureThreshold = getOpt('failureThreshold',  0)
-
-    if (failures >= failureThreshold) then
-        local successes = getNumberState('successes', 0)
-        local successThreshold = getOpt('successThreshold', 0)
-        if (successThreshold > 0) then
-            if (successes >= successThreshold) then
-                return CIRCUIT_CLOSED
-            end
-        elseif successes > 0 then
-            return CIRCUIT_CLOSED
-        end
-
-        local lastFailure = getLastFailure()
-        local cooldown = getNumberOption('recoveryWindow', 0)
-        --debug('Checking cooldown. LastFailure = ', lastFailure, ', cooldown = ', cooldown)
-        --debug('Heere ',
-        --    {
-        --        ['cooldown'] = cooldown,
-        --        ['now'] = now,
-        --        ['lastFailure'] = lastFailure,
-        --        ['timeSinceLastFailure'] = now - lastFailure,
-        --        ['expired'] = (now - lastFailure) > cooldown
-        --    }
-        --)
-        if  (cooldown > 0) and (now - lastFailure) >= cooldown then
-            return CIRCUIT_CLOSED
-        else
-            return CIRCUIT_OPEN
-        end
-    else
-        return CIRCUIT_CLOSED
+--- ??? setState(event, data)
+local function updateAlert(id, data)
+    local alert = getAlert(id)
+    if (alert == nil) then
+        error('alert not found: ' .. toStr(id))
     end
+    local id = data.id
+
+    local update = {
+        id = id,
+        status = 'open',
+        errorLevel = data.errorLevel,
+        state = data.state,
+        title = data.title or '',
+        message = data.message or '',
+        failures = data.failures,
+        value = data.value,
+    }
+
+    alert:update(update)
 end
 
-local function resetAndCloseCircuit()
-    local res = false
-    local alertId = ruleState.alertId
+local function resetAlert(now, id)
+    local alert = RuleAlert.get(alertsKey, id)
+    if (alert == nil) then
+        error('alert not found: ' .. toStr(id))
+    end
+    -- todo: check alert state ???? Also set state on rule itself
+    if (alert:reset(now)) then
+        emitEvent(ALERT_RESET_EVENT, 'id', id)
+        return true
+    end
+    return false
+end
+
+local function resetCurrentAlert(now)
+    local alertId = rule.ruleState.alertId
     if (alertId ~= nil) then
-        local alert = getAlert(alertId)
-        if (alert ~= nil) then
-            alert.resetAt = now
-            alert.status = 'CLOSED';
-            local serialized = cjson.encode(alert)
-
-            --- Update
-            setAlert(alertId, serialized)
-
-            --- Raise event
-            emitEvent(ALERT_RESET_EVENT, 'id', alertId, 'data', serialized)
-            res = true
-        end
-    end
-    return res
+        local ok, result = pcall(resetAlert, now, alertId)
+        return ok and result or false
+     end
+    return false
 end
 
-local function updateCircuit()
-    local ruleState = ruleState
+local function handleResult(now, data)
+    local errorStatus = data.errorStatus or ERROR_STATUS_ERROR
+    local saveState = rule.state
 
-    ruleState.state = ruleState.state or CIRCUIT_CLOSED
-    local oldState = ruleState.state
-    local state = calculateState()
+    local result = rule:handleResult(now, errorStatus)
 
-    local changed = false
-    if (ruleState.state ~= state) then
-        local newRuleState = ruleState.errorType
-
-        local args = {'state', state}
-
-        ruleState.state = state
-        if (state == CIRCUIT_OPEN) then
-            -- error
-            arrayHashAppend(args, 'lastNotify', 0, 'successes', 0)
-            local notificationStart = getNumberState('lastNotify', 0)
-            if (notificationStart == 0) then
-                arrayHashAppend(args, 'lastNotify', now, 'lastTriggeredAt', now)
-            end
-            newRuleState = ruleState['errorType'] or ERROR_LEVEL_CRITICAL
-        elseif (state == CIRCUIT_CLOSED) then
-            arrayHashAppend(args, 'failures', 0, 'alertCount', 0)
-            resetAndCloseCircuit()
-            newRuleState = RULE_STATE_NORMAL
-        end
-
-        local notifyPending = shouldNotify(oldState) and 1 or 0
-        ruleState['notifyPending'] = notifyPending
-
-        arrayHashAppend(args, 'notifyPending', notifyPending)
-
-        if (newRuleState ~= nil) then
-            updateRuleState(newRuleState)
-        end
-
-        rcall('hset', ruleStateKey, unpack(args))
-        if (state == CIRCUIT_CLOSED) then
-            deleteState('warmupStart', 'lastNotify', 'alertId', 'successes', 'errorType', 'lastFailure')
-        end
-
-        changed = true
-    end
-    return state, changed
-end
-
---- TODO: when we are in a triggered state, increment the count on the currently open alert
---- as well as on the rule
-local function handleFailure(errorType)
-    local totalFailures = getNumberState('totalFailures', 0) + 1
-    local failures = getFailures() + 1
-    setState(
-        'errorType', errorType,
-        'lastFailure', now,
-        'failures', failures,
-        'successes', 0,
-        'totalFailures', totalFailures
-    )
-    -- rcall('hset', ruleKey, 'failures', totalFailures)
-end
-
-local function handleSuccess()
-    incrState('successes')
-end
-
-local function setResult(...)
-    arrayHashAppend(result, ...)
-end
-
-local function checkNotify(parameter)
-    local getOpt = getNumberOption
-    local status = 'ok'
-
-    result = {}
-
-    if (parameter == ERROR_LEVEL_NONE) then
-        errorType = RULE_STATE_NORMAL
-    else
-        errorType = (parameter == ERROR_LEVEL_WARNING) and RULE_STATE_WARNING or RULE_STATE_ERROR
-    end
-
-    if (not rule.isActive) then
-        status = 'inactive'
-    else
-        if isWarmingUp() then
-            setResult('endDelay', now + getOpt('warmupWindow', 0))
-            status = 'warmup'
-            debug('warming up....')
-        else
-            if (errorType == RULE_STATE_NORMAL) then
-                handleSuccess()
+    if (result.status == RUN_STATE_ACTIVE) then
+      if (result.changed) then
+        if result.state == CIRCUIT_OPEN then
+            local alertId = result.alertId
+            data.failures = result.failures
+            if (not alertId) then
+                createAlert(data)
+                result.alertId = data.id
             else
-                handleFailure(errorType)
+                updateAlert(alertId, data)
             end
-            local newState, changed = updateCircuit()
-            if (changed) then
-                local alertId = getState('alertId',  '')
-                if (#alertId > 0) then
-                    setResult('alertId', alertId)
-                end
-            end
-            setResult(
-                'state', newState,
-                'failures', getFailures(),
-                'successes', getNumberState('successes', 0),
-                'alertCount', getNumberState('alertCount', 0),
-                'notify', getNumberState('notifyPending', 0)
-            )
+        else
+            resetCurrentAlert(now)
         end
-    end
-    setResult('status', status)
-    --- debug('about to return. Result23 = ', result)
 
-    return result
+        local eventArgs = { 'oldState', saveState, 'newState', rule.state }
+        if (result.alertId) then
+            table.insert(eventArgs, 'alertId')
+            table.insert(eventArgs, result.alertId)
+        end
+        emitEvent(STATE_CHANGED, unpack(eventArgs))
+      end
+    end
+
+    return hashToArray(result)
 end
 
-local function markNotification(alertId)
-    local getOpt = getNumberOption
-
-    local currAlertId = ruleState['alertId']
+local function markNotification(now, alertId)
+    local currAlertId = rule.ruleState['alertId']
     if (currAlertId ~= alertId) then
         if (currAlertId ~= nil) then
 
         end
     end
-    local alertCount = getNumberState('alertCount', 0)
-    local doNotify = getBoolState('notifyPending')
-    if doNotify then
-        alertCount = alertCount + 1
-        setState('lastNotify', now, 'alertCount', alertCount, 'notifyPending', 0)
-        local maxAlertsPerEvent = getOpt('maxAlertsPerEvent', 0)
-        if (maxAlertsPerEvent > 0) then
-            local remaining = math.min(0, maxAlertsPerEvent - alertCount)
-            setResult('remaining', remaining)
-        end
-        local interval = getOpt('notifyInterval', 0)
-        if (interval > 0) then
-            setResult('nextEarliest', now + interval)
-        end
-    end
-    setResult('notified', doNotify, 'alertCount', alertCount)
-    return result
+    local result = rule:notify(now)
+    return hashToArray(result)
 end
 
-local function checkState()
+local function checkState(now)
     if (rule == nil) then
         return {'status', 'not_found'}
     end
-    updateCircuit()
-    local res = {'isActive', rule.isActive, 'ruleState', rule.state}
-    for k, v in pairs(ruleState) do
-        table.insert(res, k)
-        table.insert(res, v)
+    local newState, changed = rule:recalcState(now)
+    if (changed and newState == CIRCUIT_CLOSED) then
+        resetCurrentAlert(now)
     end
+    local res = hashToArray(rule.ruleState)
+    local len = #res
+    res[len + 1] = 'isActive'
+    res[len + 2] = rule.isActive
+    res[len + 3] = 'ruleState'
+    res[len + 4] = rule.state
+
     return res
 end
 
-local function clearState()
-    resetAndCloseCircuit()
-    updateCircuit()
+local function clearState(now)
+    resetCurrentAlert(now)
+    return rule:checkStateChange(now)
 end
 
-local function isStarted()
-    return getBoolState('isStarted')
-end
-
-local function start()
-    if (isStarted() == false) then
-        setState('isStarted', '1')
-        clearState()
-        startWarmup()
-    end
-    return 1
-end
-
-local function stop()
-    if (isStarted()) then
-        setState('isStarted', '0')
-        clearState()
-        -- TODO: have 'MUTED' / 'INACTIVE' state
-        -- updateRuleState('INACTIVE')
-    end
-    return 1
-end
-
+--- todo: deleteAlert
+--- todo: make this into a dispatch table
 loadRule()
 if (action == 'check') then
-    start()
-    return checkNotify(parameter)
-elseif (action == 'start') then
-    return start()
-elseif (action == 'stop') then
-    return stop()
-elseif (action == 'clear') then
-    return clearState() and 1 or 0
-elseif (action == 'alert') then
-    return writeAlert(parameter)
+    local evalData = cmsgpack.unpack(parameter)
+    return handleResult(now, evalData)
 elseif (action == 'state') then
-    return checkState()
+    return checkState(now)
+elseif (action == 'activate') then
+    return rule:activate(now)
+elseif (action == 'deactivate') then
+    return rule:deactivate(now)
+elseif (action == 'clear') then
+    return clearState(now) and 1 or 0
+elseif (action == 'reset-alert') then
+    return resetAlert(now, parameter) and 1 or 0
+elseif (action == 'alert') then
+    local alertData = cmsgpack.unpack(parameter)
+    local alert = createAlert(alertData)
+    local data = alert:getData()
+    return cjson.encode(data)
 elseif (action == 'mark-notify') then
-    return markNotification(parameter)
+    return markNotification(now, parameter)
 end

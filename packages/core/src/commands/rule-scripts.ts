@@ -28,7 +28,7 @@ export enum CircuitState {
   HALF_OPEN = 'HALF_OPEN',
 }
 
-export type RuleRunState = 'inactive' | 'active' | 'warmup';
+export type RuleRunState = 'inactive' | 'active';
 
 export interface CheckAlertResult {
   status: RuleRunState;
@@ -42,10 +42,6 @@ export interface CheckAlertResult {
   state: CircuitState;
   triggered: boolean;
   errorStatus: ErrorStatus;
-  /**
-   * If we're warming up, this is the end of the warmup period.
-   */
-  warmupEnd?: number;
   alertId?: string;
   alertCount?: number;
   failures?: number;
@@ -142,7 +138,7 @@ export class RuleScripts {
     );
     // horrible. fix this at the source
     const client = await getClient(queue);
-    return (client as any).rules2(...args);
+    return (client as any).rules(...args);
   }
 
   static pipelineRuleAction(
@@ -160,11 +156,11 @@ export class RuleScripts {
       parameter,
       timestamp,
     );
-    (pipeline as any).rules2(...args);
+    (pipeline as any).rules(...args);
     return pipeline;
   }
 
-  static async startRule(
+  static async activateRule(
     queue: Queue,
     rule: Rule | string,
     timestamp?: number,
@@ -172,14 +168,14 @@ export class RuleScripts {
     return RuleScripts.execRuleAction(
       queue,
       rule,
-      'start',
+      'activate',
       '',
       timestamp,
     );
   }
 
-  static async stopRule(queue: Queue, rule: Rule | string): Promise<RuleRunState> {
-    return RuleScripts.execRuleAction(queue, rule, 'stop');
+  static async deactivateRule(queue: Queue, rule: Rule | string): Promise<RuleRunState> {
+    return RuleScripts.execRuleAction(queue, rule, 'deactivate', '');
   }
 
   static async checkAlert(
@@ -211,9 +207,6 @@ export class RuleScripts {
     };
     if (res['earliestNotification']) {
       result.earliestNotification = parseInt(res['earliestNotification'], 10);
-    }
-    if (res['warmupEnd']) {
-      result.warmupEnd = parseInt(res['warmupEnd'], 10);
     }
     return result;
   }

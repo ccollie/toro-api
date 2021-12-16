@@ -1,7 +1,12 @@
 import { Queue } from 'bullmq';
 import { random } from 'lodash';
 import { nanoid } from 'nanoid';
-import { clearDb, createQueue, createQueueManager, createRule, } from '../../__tests__/factories';
+import {
+  clearDb,
+  createQueue,
+  createQueueManager,
+  createRule,
+} from '../../__tests__/factories';
 import {
   AlertData,
   CheckAlertResult,
@@ -14,7 +19,13 @@ import { delay, getUniqueId, ManualClock } from '../../lib';
 import { QueueManager } from '../../queues';
 import { EventBus } from '../../redis';
 import { Rule, RuleStorage } from '../../rules';
-import { ErrorStatus, RuleAlert, RuleConfigOptions, RuleEventsEnum, RuleState } from '../../types';
+import {
+  ErrorStatus,
+  RuleAlert,
+  RuleConfigOptions,
+  RuleEventsEnum,
+  RuleState,
+} from '../../types';
 
 describe('RuleScripts', () => {
   let queueManager: QueueManager;
@@ -31,7 +42,7 @@ describe('RuleScripts', () => {
 
   afterEach(async () => {
     const client = await queue.client;
-    await clearDb(client);
+    //await clearDb(client);
     await queueManager.destroy();
     storage.destroy();
   });
@@ -103,35 +114,23 @@ describe('RuleScripts', () => {
     });
   });
 
-  describe('startRule', () => {
-    it('can start a Rule', async () => {
+  describe('activateRule', () => {
+    it('can activate a Rule', async () => {
       const rule = await addRule({ isActive: true });
-      const state = await RuleScripts.startRule(queue, rule);
+      const state = await RuleScripts.activateRule(queue, rule);
       expect(state).toBe('active');
-    });
-
-    it('does not start an inactive Rule', async () => {
-      const rule = await addRule({ isActive: false });
-      const state = await RuleScripts.startRule(queue, rule);
-      expect(state).toBe('inactive');
-    });
-
-    it('handles the warmup option', async () => {
-      const rule = await addRule({
-        options: {
-          warmupWindow: 1500,
-        },
-      });
-      const state = await RuleScripts.startRule(queue, rule);
-      expect(state).toBe('warmup');
+      const fromRedis = await getRule(rule.id);
+      expect(fromRedis.isActive).toBe(true);
     });
   });
 
-  describe('stopRule', () => {
+  describe('deactivateRule', () => {
     it('does not stop an inactive Rule', async () => {
       const rule = await addRule({ isActive: false });
-      const state = await RuleScripts.stopRule(queue, rule);
+      const state = await RuleScripts.deactivateRule(queue, rule);
       expect(state).toBe('inactive');
+      const fromRedis = await getRule(rule.id);
+      expect(fromRedis.isActive).toBe(false);
     });
 
     it('does not notify if the rule is not active', async () => {
@@ -184,7 +183,7 @@ describe('RuleScripts', () => {
         options: { failureThreshold: 1, triggerDelay: 100 },
       });
 
-      const now = clock.getTime();
+      const now = 5000;
       let result = await postFailure(rule, ErrorStatus.ERROR, now);
       expect(result.state).toBe(CircuitState.CLOSED);
 
@@ -289,7 +288,8 @@ describe('RuleScripts', () => {
         isActive: true,
       });
 
-      await postFailure(rule, ErrorStatus.WARNING);
+      const res = await postFailure(rule, ErrorStatus.WARNING);
+      await delay(5000);
     });
   });
 
@@ -309,7 +309,6 @@ describe('RuleScripts', () => {
 
       state = await getState(rule);
       expect(state.failures).toBe(0);
-      expect(state.successes).toBe(1);
       expect(state.totalFailures).toBe(5);
     });
 
@@ -356,7 +355,7 @@ describe('RuleScripts', () => {
       result = await postSuccess(rule);
     });
 
-    it('should emit event on transition to normal', async (done) => {
+    it('should emit event on transition to normal', async () => {
       const rule = await addRule({ isActive: true });
       const bus = queueManager.bus;
       await bus.waitUntilReady();
@@ -368,11 +367,7 @@ describe('RuleScripts', () => {
       });
 
       await postFailure(rule);
-      try {
-        await postSuccess(rule);
-      } catch (err) {
-        expect(err).toBeUndefined();
-      }
+      await postSuccess(rule);
 
       await delay(1200);
 
@@ -489,30 +484,6 @@ describe('RuleScripts', () => {
 
       const fromRedis = await getRule(rule.id);
       expect(fromRedis.state).toBe(RuleState.WARNING);
-    });
-
-    describe('Options', () => {
-      it('respects the warmupWindow option', async () => {
-        const timeout = 100;
-        const rule = await addRule({
-          isActive: true,
-          options: {
-            warmupWindow: timeout,
-          },
-        });
-
-        await RuleScripts.startRule(queue, rule, clock.getTime());
-        const result = await postFailure(rule);
-
-        expect(result.status).toBe('warmup');
-
-        clock.advanceBy(timeout + 1);
-        await postFailure(rule);
-
-        expect(result.status).toBe('ok');
-      });
-
-      // todo: should not add a new alert if previous is not reset
     });
   });
 
