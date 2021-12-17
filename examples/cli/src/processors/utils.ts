@@ -16,17 +16,6 @@ export const sleep = (t: number, v = undefined): Promise<void> => {
   });
 };
 
-export function sample<T = any>(arr: T[]): T | undefined{
-  const len = arr == null ? 0 : arr.length;
-  return len ? arr[Math.floor(Math.random() * len)] : undefined;
-}
-
-export function round(value: number, decimalPlaces = 2): number {
-  const factorOfTen = Math.pow(10, decimalPlaces);
-  return Math.round(value * factorOfTen) / factorOfTen;
-};
-
-
 /***
  * Generate an array of n random numbers which add up to total
  * @param {Number} n the number of items

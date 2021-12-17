@@ -22,7 +22,7 @@ const HostQueuesFilter = schemaComposer.createInputTC({
       description: 'Queue prefix',
     },
     statuses: {
-      type: [QueueFilterStatusEnum],
+      type: [QueueFilterStatusEnum.NonNull],
       description: 'Statuses to filter on',
     },
     include: {

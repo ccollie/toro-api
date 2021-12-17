@@ -6,6 +6,7 @@ import { NotificationChannelProps, NotificationContext } from '../../types';
 
 export interface MailChannelConfig extends NotificationChannelProps {
   readonly type: 'mail';
+  enabled?: boolean;
   recipients: string[];
 }
 

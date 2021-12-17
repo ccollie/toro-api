@@ -31,8 +31,8 @@ export type GraphQLLoggerOptions = {
    * - 'trace'
    * - 'silent'
    *
-   * The logging level is a __minimum__ level. For instance if `logger.level` is `'info'` then all `'fatal'`, `'error'`, `'warn'`,
-   * and `'info'` logs will be enabled.
+   * The logging level is a __minimum__ level. For instance if `logger.level` is `'info'` then all `
+   * 'fatal'`, `'error'`, `'warn'`, and `'info'` logs will be enabled.
    *
    * You can pass `'silent'` to disable logging.
    *

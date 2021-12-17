@@ -1,5 +1,5 @@
+import { sample } from 'lodash';
 import { Job, Queue } from 'bullmq';
-import { sample } from '../utils';
 const log = console.log.bind(console);
 
 const PROTEINS = 'carnitas brisket camarones pescado'.split(' ');

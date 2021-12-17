@@ -23,7 +23,7 @@ import {
 } from '../../__tests__/factories';
 import { HostConfig, HostManager } from '../../hosts';
 import { EventBus } from '../../redis';
-import { delay } from '../../lib';
+import { delay, nanoid } from '../../lib';
 
 describe('ChannelStorage', () => {
   let client: RedisClient;
@@ -72,6 +72,7 @@ describe('ChannelStorage', () => {
 
   async function addWebhookChannel(): Promise<WebhookChannel> {
     const config: WebhookChannelConfig = {
+      id: nanoid(),
       type: 'webhook',
       method: 'POST',
       name: 'Captain',

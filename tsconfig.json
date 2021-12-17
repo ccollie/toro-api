@@ -37,6 +37,7 @@
       "@alpen/shared/*": ["./packages/shared/src/*"],
       "@alpen/demo-base": ["examples/base/src/index.ts"],
       "@alpen/demo-base/*": ["examples/base/src/*/index.ts"],
+      "@alpen/demo-cli/*": ["examples/cli/src/*"],
       "alpen-testing/*": ["internal/testing/src/*"],
       "alpen-testing": ["internal/testing/src/index.ts"],
       "~/*": ["packages/*/src"]

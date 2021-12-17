@@ -1,6 +1,5 @@
+import { HostManager, RedisMetrics } from '@alpen/core';
 import { FieldConfig } from '../../utils';
-import { HostManager } from '@alpen/core';
-import { RedisMetrics } from '@alpen/core';
 import { RedisInfoTC } from './RedisInfo';
 
 export const hostRedisFC: FieldConfig = {

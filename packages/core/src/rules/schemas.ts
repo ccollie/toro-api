@@ -97,7 +97,6 @@ export const ruleConditionSchema = Joi.alternatives().try(
 
 export const defaultRuleAlertOptions: RuleAlertOptions = {
   notifyInterval: 0,
-  warmupWindow: 0,
   alertOnReset: true,
   maxAlertsPerEvent: 1,
   triggerDelay: 0,

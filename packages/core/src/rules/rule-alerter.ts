@@ -50,8 +50,6 @@ export class RuleAlerter {
   private _state: CircuitState = CircuitState.CLOSED;
   private _failures = 0;
   private _alertCount = 0;
-  /** The timestamp marking the end of the warmupWindow period */
-  private _warmupEnd = 0;
   private _resetTimer: AccurateInterval;
   private readonly clock: Clock;
   private readonly _baseContext: Record<string, any>;
@@ -85,10 +83,6 @@ export class RuleAlerter {
 
   get isActive(): boolean {
     return this.rule.isActive;
-  }
-
-  get isWarmingUp(): boolean {
-    return !!this._warmupEnd && this.getTime() < this._warmupEnd;
   }
 
   get failures(): number {
@@ -152,8 +146,6 @@ export class RuleAlerter {
 
     this._alertCount = response.alertCount ?? 0;
     this._failures = response.failures ?? 0;
-    this._warmupEnd =
-      response.status === 'warmup' ? response.warmupEnd ?? 0 : 0;
 
     if (response.status === 'inactive') {
       this.rule.state = RuleState.MUTED;
@@ -178,7 +170,7 @@ export class RuleAlerter {
   }
 
   async handleResult(result: EvaluationResult): Promise<void> {
-    if (!this.isActive || this.isWarmingUp) return;
+    if (!this.isActive) return;
 
     if (!result.triggered) {
       if (this._ruleState === RuleState.NORMAL) return;

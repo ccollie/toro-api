@@ -11,6 +11,9 @@ type WebHookMethod = 'get' | 'GET' | 'post' | 'POST';
 
 /** Configuration options for the webhook channel */
 export interface WebhookChannelConfig extends NotificationChannelProps {
+  id: string;
+  name: string;
+  enabled?: boolean;
   readonly type: 'webhook';
   /* Webhook target url */
   url: string;

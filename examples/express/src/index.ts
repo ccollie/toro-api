@@ -1,22 +1,19 @@
-import Express from 'express';
 import { ExpressServerAdapter } from '@alpen/express';
-import { Consumer } from './consumer';
-import { Producer } from './producer';
+import Express from 'express';
+import { DemoHosts } from './hosts';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const port = 3000;
+const port = process.env.port || 4000;
 const baseUrl = '/';
+
 (async () => {
   const app = Express();
-  const consumer = new Consumer();
-  const producer = new Producer();
-  await producer.run();
   const adapter = new ExpressServerAdapter({
-    hosts: Producer.hosts,
+    hosts: DemoHosts,
     showPlayground: !isProduction,
   });
-  const { router } = await adapter.setOptions({ cors: true }).build({ app });
+  const { router } = await adapter.setOptions({cors: true}).build({app});
   app.use(baseUrl, router);
   app.listen(port, () => console.log(`http://localhost:${port}${baseUrl}`));
 })();

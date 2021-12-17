@@ -228,7 +228,7 @@ export function createAppOptions(
     loggerConfig = { logger },
     extraPlugins,
     depthLimitOptions,
-    allowIntrospection,
+    allowIntrospection = !isProduction,
     cacheOptions,
     allowBatchedQueries = 5
   } = {

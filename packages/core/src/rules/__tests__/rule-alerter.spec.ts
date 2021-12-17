@@ -209,26 +209,6 @@ describe('RuleAlerter', () => {
     });
 
     describe('Options', () => {
-      it('respects the warmupWindow option', async () => {
-        const timeout = 100;
-        const sut = await createAlerter({
-          options: {
-            warmupWindow: timeout,
-          },
-        });
-
-        await sut.start();
-
-        expect(sut.isWarmingUp).toBe(true);
-        await trigger(sut);
-
-        expect(sut.isWarmingUp).toBe(true);
-
-        clock.advanceBy(timeout);
-        await trigger(sut);
-
-        expect(sut.isWarmingUp).toBe(false);
-      });
 
       it('only raises an alert after a minimum number of violations', async () => {
         const MIN_VIOLATIONS = 3;

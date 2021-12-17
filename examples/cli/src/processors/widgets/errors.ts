@@ -1,4 +1,4 @@
-import { sample } from '../utils';
+import { sample } from 'lodash';
 
 const VERBS = [
   'vaporized',

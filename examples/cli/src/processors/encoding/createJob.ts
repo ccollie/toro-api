@@ -1,4 +1,5 @@
-import { getOrderNumber, getRandomString, rand, sample } from '../utils';
+import { getOrderNumber, getRandomString } from '../utils';
+import { random as getRandomInt, sample } from 'lodash';
 import { Job, Queue } from 'bullmq';
 const STAGES = ['download', 'transcode', 'metadata', 'upload'];
 
@@ -14,7 +15,7 @@ function createData(): object {
   return {
     filename: generateFileName(),
     destination: generateFileName(),
-    size: rand(100, 400) * 1000000,
+    size: getRandomInt(100, 400) * 1000000,
     stage: STAGES[0],
   };
 }

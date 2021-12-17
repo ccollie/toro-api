@@ -34,15 +34,15 @@
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-prettier": "4.0.0",
     "fs-extra": "^10.0.0",
-    "jest": "^27.4.4",
+    "jest": "^27.4.5",
     "jest-date-mock": "^1.0.8",
     "prettier": "^2.5.1",
     "rimraf": "^3.0.2",
-    "ts-jest": "^27.1.1",
+    "ts-jest": "^27.1.2",
     "ts-node": "^10.4.0",
     "tsc-alias": "^1.5.0",
     "ttypescript": "^1.5.13",
-    "typescript": "^4.5.3"
+    "typescript": "^4.5.4"
   },
   "dependencies": {
     "core-js": "^3.19.1",
@@ -60,7 +60,6 @@
     "printWidth": 80
   },
   "resolutions": {
-    "graphql": "16.1.0-experimental-stream-defer.6",
     "tsc-alias": "^1.5.0",
     "typescript": ">=4.5.3"
   },

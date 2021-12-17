@@ -1,0 +1,11 @@
+{
+  "name": "@alpen/demo-cli",
+  "version": "1.0.0",
+  "dependencies": {
+    "@alpen/core": "^0.0.2",
+    "@alpen/shared": "^0.0.2",
+    "bullmq": "^1.58.0",
+    "lodash-es": "^4.17.21",
+    "unirand": "^2.12.2"
+  }
+}

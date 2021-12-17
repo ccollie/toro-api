@@ -1,16 +1,8 @@
+import { HostConfig } from '@alpen/core';
+
 process.env.NODE_ENV = 'example';
 import { Queue } from 'bullmq';
-import { tacos, widgets, backup } from './processors/index';
-import { DemoHosts } from './hosts';
-
-const DefaultConnectionParams = {
-  host: 'localhost',
-  port: 6379,
-  db: 0,
-  lazyConnect: false,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-};
+import { tacos, widgets, backup, DemoHosts } from './processors/index';
 
 export class Producer {
   private isStopped = false;
@@ -20,26 +12,13 @@ export class Producer {
   private timeouts = new Map<Queue, ReturnType<typeof setTimeout>>();
 
   constructor() {
-    const host = DemoHosts[0];
-    const { connection, prefix } = host;
-    const connectionParams = {
-      ...DefaultConnectionParams,
-      ...connection
-    };
-    const opts = {
-      prefix: prefix || 'bullmq',
-      connection: connectionParams,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 500,
-        },
-      },
-    };
-    this.tacoQueue = new Queue('tacos', opts);
-    this.widgetQueue = new Queue('widgets', opts);
-    this.backupQueue = new Queue('backup', opts);
+    this.tacoQueue = new Queue('tacos');
+    this.widgetQueue = new Queue('widgets');
+    this.backupQueue = new Queue('backup');
+  }
+
+  static get hosts(): HostConfig[] {
+    return DemoHosts;
   }
 
   async run(): Promise<void> {
