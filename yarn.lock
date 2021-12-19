@@ -3120,10 +3120,10 @@ buffer@^5.5.0, buffer@^5.7.0:
     base64-js "^1.3.1"
     ieee754 "^1.1.13"
 
-bullmq@^1.58.0:
-  version "1.58.0"
-  resolved "https://registry.yarnpkg.com/bullmq/-/bullmq-1.58.0.tgz#6dba3c457939a4ccef5f18124ef6e7953ed9153d"
-  integrity sha512-UzhiUv1bkAzq5l+GT6hnCXrM+Y7R8qNUr6IlE0rYp+rRU5ynDS0JYSaJcg6+0Q4iJ6nVlsPELLlwE+UqFist5A==
+bullmq@^1.59.1:
+  version "1.59.1"
+  resolved "https://registry.yarnpkg.com/bullmq/-/bullmq-1.59.1.tgz#4254d69ac4b47366fcdc7cac4d29c4a7c0ba59d4"
+  integrity sha512-w8fNGw/MuhfB+QtNe0D3ShODYImhU+NZjG/ZZyvx2BJE1ikex/I4ZLVyKKHNfWE6S7SEv2zWK7jweI6NWnLzdg==
   dependencies:
     cron-parser "^2.18.0"
     get-port "^5.1.1"
@@ -3679,7 +3679,7 @@ copyfiles@^2.4.1:
     untildify "^4.0.0"
     yargs "^16.1.0"
 
-core-js@^3.19.1, core-js@^3.19.3:
+core-js@^3.19.1, core-js@^3.20.0:
   version "3.20.0"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.20.0.tgz#1c5ac07986b8d15473ab192e45a2e115a4a95b79"
   integrity sha512-KjbKU7UEfg4YPpskMtMXPhUKn7m/1OdTHTVjy09ScR2LVaoUXe8Jh0UdvN2EKUR6iKTJph52SJP95mAB0MnVLQ==
