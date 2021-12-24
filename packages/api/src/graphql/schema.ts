@@ -69,7 +69,6 @@ schemaComposer.Subscription.addFields({
   ...metric.Subscription,
 });
 
-export const toSDL = () => schemaComposer.toSDL();
 
 let schema: GraphQLSchema;
 
@@ -80,4 +79,9 @@ export const getSchema = (): GraphQLSchema => {
     logger.info('building schema: done');
   }
   return schema;
+};
+
+export const getSDL = () => {
+  getSchema();
+  return schemaComposer.toSDL();
 };

@@ -52,9 +52,9 @@ export const MetricInputTC = schemaComposer
   })
   .makeFieldNullable(['name', 'options', 'aggregator', 'sampleInterval']);
 
-export const MetricCreateTC = schemaComposer
+export const CreateMetricTC = schemaComposer
   .createInputTC({
-    name: 'MetricCreateInput',
+    name: 'CreateMeetricInput',
     description: 'Input fields for creating a metric',
     fields: {
       ...InputFields,

@@ -1,23 +1,23 @@
-import { mailNotificationChannelAdd } from './mailNotificationChannelAdd';
-import { slackNotificationChannelAdd } from './slackNotificationChannelAdd';
-import { webhookNotificationChannelAdd } from './webhookNotificationChannelAdd';
-import { notificationChannelEnable } from './notificationChannelEnable';
-import { notificationChannelDisable } from './notificationChannelDisable';
-import { notificationChannelDelete } from './notificationChannelDelete';
-import { mailNotificationChannelUpdate } from './mailNotificationChannelUpdate';
-import { slackNotificationChannelUpdate } from './slackNotificationChannelUpdate';
-import { webhookNotificationChannelUpdate } from './webhookNotificationChannelUpdate';
-import { flowAdd } from './flowAdd';
+import { createMailNotificationChannel } from './createMailNotificationChannel';
+import { createSlackNotificationChannel } from './createSlackNotificationChannel';
+import { createWebhookNotificationChannel } from './createWebhookNotificationChannel';
+import { enableNotificationChannel } from './enableNotificationChannel';
+import { disableNotificationChannel } from './disableNotificationChannel';
+import { deleteNotificationChannel } from './deleteNotificationChannel';
+import { updateMailNotificationChannel } from './updateMailNotificationChannel';
+import { updateSlackNotificationChannel } from './updateSlackNotificationChannel';
+import { updateWebhookNotificationChannel } from './updateWebhookNotificationChannel';
+import { createFlow} from './createFlow';
 
 export default {
-  flowAdd,
-  mailNotificationChannelAdd,
-  slackNotificationChannelAdd,
-  webhookNotificationChannelAdd,
-  notificationChannelEnable,
-  notificationChannelDisable,
-  notificationChannelDelete,
-  mailNotificationChannelUpdate,
-  slackNotificationChannelUpdate,
-  webhookNotificationChannelUpdate,
+  createFlow,
+  createMailNotificationChannel,
+  createSlackNotificationChannel,
+  createWebhookNotificationChannel,
+  enableNotificationChannel,
+  disableNotificationChannel,
+  deleteNotificationChannel,
+  updateMailNotificationChannel,
+  updateSlackNotificationChannel,
+  updateWebhookNotificationChannel,
 };

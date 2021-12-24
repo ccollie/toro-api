@@ -91,8 +91,8 @@ export const RuleTC = schemaComposer.createObjectTC({
   },
 });
 
-export const RuleAddInputTC = schemaComposer.createInputTC({
-  name: 'RuleAddInput',
+export const CreateRuleInputTC = schemaComposer.createInputTC({
+  name: 'CreateRuleInput',
   description: 'Information required to add or edit a Rule',
   fields: {
     ...BaseFields,
@@ -119,7 +119,7 @@ export const RuleAddInputTC = schemaComposer.createInputTC({
 
 const OptionalFields = ['metricId', 'isActive', 'name', 'severity'];
 
-export const RuleUpdateInputTC = RuleAddInputTC.clone('RuleUpdateInput')
+export const RuleUpdateInputTC = CreateRuleInputTC.clone('RuleUpdateInput')
   .setDescription('Information needed to update a rule')
   .addFields({
     id: {
