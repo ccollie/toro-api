@@ -62,7 +62,7 @@
     "graphql-scalars": "^1.14.1",
     "graphql-subscriptions": "^2.0.0",
     "node-error-formatter": "^1.0.4",
-    "pino": "^7.5.1"
+    "pino": "^7.6.0"
   },
   "peerDependencies": {
     "@types/node": "*",
