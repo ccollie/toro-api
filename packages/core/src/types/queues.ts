@@ -107,3 +107,10 @@ export interface FilteredJobsResult {
   current: number;
   jobs: Job[];
 }
+
+export interface FilteredJobIdsResult {
+  cursor: string;
+  total: number;
+  current: number;
+  ids: string[];
+}

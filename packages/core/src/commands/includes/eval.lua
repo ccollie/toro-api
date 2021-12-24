@@ -188,7 +188,7 @@ function ExprEval.CallExpression(node, context)
         end
         if (type(fn) ~= 'function') then
             name = name or ExprEval.nodeFunctionName(caller or callee or node);
-            debug('Invalid fn = ' .. toStr(fn) .. ', name = ' .. toStr(name))
+            --- debug('Invalid fn = ' .. toStr(fn) .. ', name = ' .. toStr(name))
             error('"' .. toStr(name) .. '" is not a function',0)
             return cjson.null
         end

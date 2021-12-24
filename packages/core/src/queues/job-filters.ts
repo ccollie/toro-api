@@ -4,7 +4,7 @@ import LRUCache from 'lru-cache';
 import { getUniqueId, nanoid } from '../lib';
 import { Job, JobJsonRaw, Queue } from 'bullmq';
 import type { FilteredJobsResult, JobFilter, JobStatusEnum } from '../types/queues';
-import { Scripts } from '../commands';
+import { ScriptFilteredJobsResult, Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
 import { getMultipleJobsById } from './queue';
 import { getJobFiltersKey } from '../keys';
@@ -280,8 +280,7 @@ export async function processSearch(
     while ((firstRun || meta.cursor) && jobs.length < count) {
       const {
         cursor: nextCursor,
-        jobs: _jobs,
-        count: iterCount,
+        jobs: _jobs = [],
         total,
       } = await Scripts.getJobsByFilter(
         queue,
@@ -294,7 +293,7 @@ export async function processSearch(
 
       meta.cursor = nextCursor;
       meta.total = total;
-      meta.current += iterCount;
+      meta.current += _jobs.length;
 
       if (!nextCursor) {
         break;
@@ -349,4 +348,23 @@ export async function processSearch(
     total: meta.total,
     current: meta.current,
   };
+}
+
+export async function removeJobsByFilter(
+  queue: Queue,
+  type: string,
+  filter: any,
+  globals: Record<string, any> | undefined | null,
+  cursor: number,
+  count = 10,
+): Promise<ScriptFilteredJobsResult> {
+  return Scripts.execJobFilterAction(
+    queue,
+    type,
+    filter,
+    'remove',
+    globals,
+    cursor,
+    count,
+  );
 }

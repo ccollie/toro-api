@@ -1,5 +1,5 @@
 --- @include "debug.lua"
-
+--- @include "safeJsonDecode"
 ----- Job Definition -----------------------------------------------------
 -- https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L23
 local JOB_JSON_FIELDS = {
@@ -48,8 +48,7 @@ local Job = {
         end
         if (JOB_JSON_FIELDS[key]) then
             if (type(raw) == 'string') then
-                local ok, res = pcall(cjson.decode, raw)
-                return ok and res or raw
+                return safeJsonDecode(raw)
             else
                 return raw
             end
@@ -61,8 +60,7 @@ local Job = {
             if (num ~= nil) then
                 return num
             else
-                local ok, res = pcall(cjson.decode, raw)
-                return ok and res or raw
+                return safeJsonDecode(raw)
             end
         end
         return raw ~= nil and raw or cjson.null

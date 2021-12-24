@@ -1,11 +1,13 @@
 --[[
-  scan job ids by cursor, executing a callback for each id
+  return job ids by cursor. Uses variants of the redis SCAN command based
+  on the input key type
      Input:
         redisKey Queue / Name Set Key
         keyPrefix Key Prefix
         cursor  scan cursor
-        count count
-        callback callback function. Receives a job id (non prefixed)
+        count count - max number of ids to return per scan
+    Output:
+        job ids, scan cursor, total job ids at key, or dbsize in case of a full db scan
 ]]
 --- @include "getRedisKeyType"
 --- @include "debug"
@@ -23,73 +25,87 @@ local ADMIN_KEYS = {
     ['delayed'] = 1,
     ['paused'] = 1,
     ['repeat'] = 1,
+    ['logs'] = 1,
 }
 
-local function scanJobIds(redisKey, keyPrefix, cursor, count, callback)
+local function scanJobIds(redisKey, keyPrefix, cursor, count)
     local rcall = redis.call
 
     count = tonumber(count or 25)
-    local scanResult
     local match = keyPrefix .. '*'
     local fullScan = false
     local prefixLen = #keyPrefix
+    local newCursor, scannedJobIds
 
     local itemCount = 0;
 
-    if type(callback) ~= 'function' then
-        error("function expected for callback in scanJobIds")
-    end
-
-    local idSeen = {}
-
     local keyType = getRedisKeyType(redisKey)
-    if (keyType == 'zset') then
-        itemCount = rcall('zcard', redisKey)
-        scanResult = rcall('zscan', redisKey, cursor, "COUNT", count, 'MATCH', match)
-    elseif keyType == 'set' then
-        itemCount = rcall('scard', redisKey)
-        scanResult = rcall('sscan', redisKey, cursor, "COUNT", count, 'MATCH', match)
-    elseif keyType == 'hash' then
-        itemCount = rcall('hlen', redisKey)
-        scanResult = rcall('hscan', redisKey, cursor, "COUNT", count, 'MATCH', match)
-    else
-        fullScan = true
-        itemCount = rcall('dbsize')
-        scanResult = rcall('scan', cursor, "COUNT", count, 'MATCH', match)
+
+    local function scan()
+        local scanResult
+        if (keyType == 'zset') then
+            itemCount = rcall('zcard', redisKey)
+            scanResult = rcall('zscan', redisKey, cursor, "COUNT", count, 'MATCH', match)
+        elseif keyType == 'set' then
+            itemCount = rcall('scard', redisKey)
+            scanResult = rcall('sscan', redisKey, cursor, "COUNT", count, 'MATCH', match)
+        elseif keyType == 'hash' then
+            itemCount = rcall('hlen', redisKey)
+            scanResult = rcall('hscan', redisKey, cursor, "COUNT", count, 'MATCH', match)
+        else
+            fullScan = true
+            itemCount = rcall('dbsize')
+            scanResult = rcall('scan', cursor, "COUNT", count, 'MATCH', match)
+        end
+        newCursor = scanResult[1]
+        scannedJobIds = scanResult[2]
     end
 
-    local newCursor = scanResult[1]
-    local scannedJobIds = scanResult[2]
+    scan()
 
+    -- its possible for duplicate items to be returned, so we need to filter them out
+    -- https://redis.io/commands/scan#scan-guarantees
+    local idSeen = {}
+    local items = {}
     local n = 0
 
-    local function exec(id)
-        --- iteration can visit an id more than once
-        if (not idSeen[id]) then
-            idSeen[id] = true
+    local function addItem(item)
+        local items = items
+        if not idSeen[item] then
+            idSeen[item] = true
             n = n + 1
-            return callback(id, n, itemCount)
+            items[n] = item
         end
     end
 
     if (fullScan) then
-        -- does a keyspace as opposed to list scan. Filter out non-ids
-        for _, k in ipairs(scannedJobIds) do
-            local id = k:sub(prefixLen + 1)
-            if id:find(':') == nil and not ADMIN_KEYS[id] then
-                if (exec(id) == false) then break end
+        -- does a keyspace as opposed to list scan.
+        -- The total number of keys in the db can greatly outnumber the number of jobs
+        -- so we try to minimise calls to this function by doing an extra loop if we
+        -- dont find any ids in an iteration
+        for j = 1, 2 do
+            for _, k in ipairs(scannedJobIds) do
+                local id = k:sub(prefixLen + 1)
+                -- filter out admin keys
+                if id:find(':') == nil and not ADMIN_KEYS[id] then
+                    addItem(id)
+                end
             end
+            if (n > 0) then
+                break
+            end
+            scan()
         end
     elseif (keyType == 'zset') then
-        -- strip out score
         for _, val in ipairs(scannedJobIds) do
-            if (exec(val[1]) == false) then break end
+            -- strip out score
+            addItem(val[1])
         end
     else
         for _, id in ipairs(scannedJobIds) do
-            if (exec(id) == false) then break end
+            addItem(id)
         end
     end
 
-    return newCursor, itemCount
+    return items, newCursor, itemCount
 end

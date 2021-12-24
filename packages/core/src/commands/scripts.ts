@@ -1,6 +1,7 @@
 import ms from 'ms';
 import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
 import { isEmpty } from 'lodash';
+import { pack } from 'msgpackr';
 import { translateReplyError } from '../redis';
 import { JobFinishedState, JobStatusEnum } from '../types';
 import { nanoid } from '../lib';
@@ -13,11 +14,14 @@ const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
   ms('15 secs'),
 );
 
+export type FilterJobAction = 'getJobs' | 'getIds' | 'remove';
+
 export interface ScriptFilteredJobsResult {
   cursor?: number;
   total: number;
-  count: number;
-  jobs: Job[];
+  jobs?: Job[];
+  ids?: string[];
+  removed?: number;
 }
 
 const DEFAULT_SAMPLE_SIZE = 50;
@@ -139,7 +143,7 @@ export class Scripts {
 
   private static getAvgJobMemoryArgs(
     queue: Queue,
-    jobName= '',
+    jobName = '',
     status: JobFinishedState,
     limit: number,
   ) {
@@ -213,49 +217,53 @@ export class Scripts {
     return (client as any).getInQueueWaitTimeAverage(...args);
   }
 
-  static async getJobsByFilter(
+  static async execJobFilterAction(
     queue: Queue,
     type: string,
     filter: any,
+    action: FilterJobAction,
     globals: Record<string, any> | undefined | null,
     cursor: number,
     count = 10,
   ): Promise<ScriptFilteredJobsResult> {
     const client = await queue.client;
     if (!(client as any).jobFilter) {
-        await ensureScriptsLoaded(client);
+      await ensureScriptsLoaded(client);
     }
     type = type === 'waiting' ? 'wait' : type; // alias
     const key = type ? queue.toKey(type) : '';
     const prefix = queue.toKey('');
-    const criteria = JSON.stringify(filter);
-
-    const globStr = globals ? JSON.stringify(globals) : '';
 
     let response: any;
     try {
-      response = await (client as any).jobFilter(
-        key,
+      const opts = pack({
+        action,
         prefix,
-        criteria,
-        globStr,
+        criteria: filter,
+        globals: globals ?? null,
         cursor,
         count,
-      );
+      });
+      response = await (client as any).jobFilter(key, opts);
     } catch (e: unknown) {
       handleReplyError(e, client);
     }
 
-    const newCursor = response[0] === '0' ? null : Number(response[0]);
-    const jobs: Job[] = [];
+    const unpacked = JSON.parse(response) as Record<string, any>;
 
-    let currentJob: Record<string, any> = {};
-    let jobId: string | null = null;
-    const iterCount = Number(response[1]);
-    const totalCount = Number(response[2]);
+    const totalCount = Number(unpacked.total);
 
-    function addJobIfNeeded() {
-      if (!isEmpty(currentJob) && jobId) {
+    const result: ScriptFilteredJobsResult = {
+      total: totalCount,
+    };
+
+    const newCursor = parseInt(unpacked['cursor'], 10);
+    if (!Number.isNaN(newCursor)) {
+      result.cursor = newCursor;
+    }
+
+    function fixupJob(currentJob: any): Job {
+      if (!isEmpty(currentJob)) {
         // TODO: verify this
         const trace = currentJob['stacktrace'];
         if (!Array.isArray(trace)) {
@@ -265,40 +273,94 @@ export class Scripts {
             currentJob['stacktrace'] = [];
           }
         }
+        // logs ???
+        const jobId = currentJob.id;
         const raw = currentJob as JobJsonRaw;
         const job = Job.fromJSON(queue, raw, jobId);
         const ts = currentJob['timestamp'];
         job.timestamp = ts ? parseInt(ts) : Date.now();
-        jobs.push(job);
+        return job;
       }
+      return null;
     }
 
-    for (let i = 3; i < response.length; i += 2) {
-      const key = response[i];
-      const value = response[i + 1];
+    if (typeof unpacked.jobs !== undefined) {
+      const jobs: Job[] = [];
+      if (Array.isArray(unpacked.jobs)) {
+        unpacked.jobs.forEach((currentJob) => {
+          const job = fixupJob(currentJob);
+          job && jobs.push(job);
+        });
+      }
+      result.jobs = jobs;
+    }
 
-      if (key === 'jobId') {
-        addJobIfNeeded();
-        jobId = value;
-        currentJob = {};
+    if (typeof unpacked.ids !== undefined) {
+      if (Array.isArray(unpacked.ids)) {
+        result.ids = [...unpacked.ids];
       } else {
-        currentJob[key] = value;
+        result.ids = [];
       }
-    }
-
-    addJobIfNeeded();
-
-    const result: ScriptFilteredJobsResult =  {
-      total: totalCount,
-      count: iterCount,
-      jobs,
-    };
-
-    if (typeof(newCursor) === 'number') {
-      result.cursor = newCursor;
     }
 
     return result;
+  }
+
+  static async getJobsByFilter(
+    queue: Queue,
+    type: string,
+    filter: any,
+    globals: Record<string, any> | undefined | null,
+    cursor: number,
+    count = 10,
+  ): Promise<ScriptFilteredJobsResult> {
+    return Scripts.execJobFilterAction(
+      queue,
+      type,
+      filter,
+      'getJobs',
+      globals,
+      cursor,
+      count,
+    );
+  }
+
+  static async getJobIdsByFilter(
+    queue: Queue,
+    type: string,
+    filter: any,
+    globals: Record<string, any> | undefined | null,
+    cursor: number,
+    count = 10,
+  ): Promise<ScriptFilteredJobsResult> {
+    return Scripts.execJobFilterAction(
+      queue,
+      type,
+      filter,
+      'getIds',
+      globals,
+      cursor,
+      count,
+    );
+  }
+
+  static async removeJobsByFilter(
+    queue: Queue,
+    type: string,
+    filter: any,
+    globals: Record<string, any> | undefined | null,
+    cursor: number,
+    count = 10,
+  ): Promise<ScriptFilteredJobsResult> {
+    return Scripts.execJobFilterAction(
+      queue,
+      type,
+      filter,
+      'remove',
+      globals,
+      cursor,
+      count,
+    );
   }
 }
 

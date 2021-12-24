@@ -53,10 +53,6 @@ const Person = {
   today: '1970-01-01',
 };
 
-function quote(source: string): string {
-  return '\'' + source.replace(/([^'\\]*(?:\\.[^'\\]*)*)'/g, '$1\\\'') + '\'';
-}
-
 describe('filterJobs', () => {
   let client;
   let queue: Queue;

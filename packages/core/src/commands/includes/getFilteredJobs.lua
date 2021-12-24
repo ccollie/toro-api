@@ -22,14 +22,12 @@ local function getFilteredJobs(key, keyPrefix, criteria, context, cursor, count)
 
     count = count or 25
     context = context or {}
-    --- debug("getFilteredJobs: ========================")
-    --- debug(criteria)
 
     local jobs = {}
-    local newCursor, total = scanJobIds(key, keyPrefix, cursor, count, function(jobId)
-        local job = Job:new(keyPrefix .. jobId, jobId)
+    local ids, newCursor, total = scanJobIds(key, keyPrefix, cursor, count)
 
-        --- debug('in callback. Id = ', jobId, ' job = ', job)
+    for _, jobId in ipairs(ids) do
+        local job = Job:new(keyPrefix .. jobId, jobId)
         if (job.found) then
             context['job'] = job
             context['this'] = job
@@ -37,7 +35,7 @@ local function getFilteredJobs(key, keyPrefix, criteria, context, cursor, count)
                 table.insert(jobs, job)
             end
         end
-    end)
+    end
 
     return jobs, newCursor, total
 end

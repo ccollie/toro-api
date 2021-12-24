@@ -11,42 +11,58 @@
 --- @include "includes/debug"
 --- @include "includes/getFilteredJobs"
 
-
 local key = KEYS[1]
-local keyPrefix = assert(ARGV[1], 'Key prefix not specified')
-local expression = assert(cjson.decode(ARGV[2]), 'Invalid filter criteria. Expected a JSON encoded string')
-local globals = ARGV[3]
-local cursor = ARGV[4]
-local count = tonumber(ARGV[5] or 10)
 
+local opts = cmsgpack.unpack(ARGV[1])
+local keyPrefix = assert(opts.prefix, 'Key prefix not specified')
+local action = assert(opts.action, 'action not specified')
+
+local expression = assert(opts.criteria, 'Missing filter criteria')
+assert(type(expression) == 'table', 'filter should be an object')
 -- debug("===================== EXPRESSION ========================")
 -- debug(expression)
 
+local cursor = opts.cursor
+local count = tonumber(opts.count or 10)
+
+local globals = opts.globals
 if (globals ~= nil and #globals > 0) then
-    globals = assert(cjson.decode(globals), 'Invalid globals. Expected a JSON encoded string')
     assert(type(globals) == 'table', 'globals should be a key-value hash')
 else
     globals = {}
 end
 
-local result = { '', 0, 0 } -- placeholders for cursor, filtered count, total count
 
 local jobs, newCursor, total = getFilteredJobs(key, keyPrefix, expression, globals, cursor, count)
-local n = 0
-for _, job in ipairs(jobs) do
-    table.insert(result, "jobId")
-    table.insert(result, job.id)
-    local hash = job._hash;
-    for k, v in pairs(hash) do
-        table.insert(result, k)
-        table.insert(result, v)
+
+local result = {
+    cursor = newCursor,
+    total = total,
+}
+
+if (action == 'getJobs') then
+    local items = {}
+    for _, job in ipairs(jobs) do
+        table.insert(items, job._hash)
     end
-    n = n + 1
+    result.jobs = items
+elseif (action == 'getIds') then
+    local ids = {}
+    for _, job in ipairs(jobs) do
+        table.insert(ids, job.id)
+    end
+    result.ids = ids
+elseif (action == 'remove') then
+    local n = 0
+    for _, job in ipairs(jobs) do
+        table.insert(result, job.id)
+        -- remove the job from the queue
+        error('remove job not implemented')
+        n = n + 1
+    end
+    filter.removed = n
+else
+    error('Invalid action: ' .. action)
 end
 
-if (newCursor == nil) then newCursor = cjson.null end
-result[1] = newCursor
-result[2] = n
-result[3] = total
-
-return result
+return cjson.encode(result)
