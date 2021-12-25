@@ -1,15 +1,15 @@
-process.env.NODE_ENV = 'example';
-import { Queue } from 'bullmq';
-import { tacos, widgets, backup } from './processors/index';
-import { DemoHosts } from './hosts';
+import { HostConfig } from '@alpen/core';
 
-const DefaultConnectionParams = {
-  host: 'localhost',
-  port: 6379,
-  db: 0,
-  lazyConnect: false,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
+process.env.NODE_ENV = 'example';
+import { Queue, QueueOptions } from 'bullmq';
+import { tacos, widgets, backup, DemoHosts } from '../processors';
+
+const DefaultOptions: QueueOptions = {
+  connection: {
+    lazyConnect: false,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false
+  },
 };
 
 export class Producer {
@@ -20,30 +20,22 @@ export class Producer {
   private timeouts = new Map<Queue, ReturnType<typeof setTimeout>>();
 
   constructor() {
-    const host = DemoHosts[0];
-    const { connection, prefix } = host;
-    const connectionParams = {
-      ...DefaultConnectionParams,
-      ...connection
-    };
-    const opts = {
-      prefix: prefix || 'bullmq',
-      connection: connectionParams,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 500,
-        },
-      },
-    };
-    this.tacoQueue = new Queue('tacos', opts);
-    this.widgetQueue = new Queue('widgets', opts);
-    this.backupQueue = new Queue('backup', opts);
+    this.tacoQueue = this.createQueue('tacos');
+    this.widgetQueue = this.createQueue('widgets');
+    this.backupQueue = this.createQueue('backup');
+  }
+
+  private createQueue(name: string): Queue {
+    const options = DemoHosts[0].queues[name] || {};
+    return new Queue(name, { ...DefaultOptions, ...options });
+  }
+
+  static get hosts(): HostConfig[] {
+    return DemoHosts;
   }
 
   async run(): Promise<void> {
-    if (this.isStopped) {
+    if (!this.isStopped) {
       await backup.createScheduledJobs(this.backupQueue);
       await this.keepProducingJobs(this.tacoQueue, tacos.createJob, 1, 10);
       await this.keepProducingJobs(this.widgetQueue, widgets.createJob, 1, 5);

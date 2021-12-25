@@ -1,7 +1,7 @@
 overwrite: true
 schema: './src/graphql/sdl/sdl.graphql'
 generates:
-  ./src/server/graphql/typings/gql.ts:
+  ./src/graphql/typings/gql.ts:
     plugins:
       - add:
           content:

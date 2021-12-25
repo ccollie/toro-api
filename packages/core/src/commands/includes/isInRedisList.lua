@@ -7,12 +7,13 @@
         1 if id is in any of the lists specified by KEYS
         0 otherwise
 ]]
+--- @include "isCommandSupported"
+---
 local _inlistFn = nil
 local function isInRedisList (key, item)
     if (not _inlistFn) then
         local rcall = redis.call
-        local hasLPOS = rcall('COMMAND', 'INFO', 'LPOS') ~= nil
-        if hasLPOS then
+        if isCommandSupported('LPOS') then
             _inlistFn = function(k, v)
                 return rcall("LPOS", k, v) ~= false
             end

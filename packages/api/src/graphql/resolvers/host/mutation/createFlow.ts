@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../index';
 import { JobNodeTC } from '../../flow/model/jobNode';
-import { FlowAddInput } from '../../../typings';
+import { CreateFlowInput } from '../../../typings';
 import { FlowJob, JobNode } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
 
@@ -53,7 +53,7 @@ export const createFlow: FieldConfig = {
   },
   resolve: async (
     _,
-    { input }: { input: FlowAddInput },
+    { input }: { input: CreateFlowInput },
     { accessors }: EZContext,
   ): Promise<JobNode> => {
     const { host, job } = input;

@@ -4,7 +4,7 @@ import { schemaComposer } from 'graphql-compose';
 import { BaseMetric } from '@alpen/core';
 import { parseRange } from '@alpen/shared';
 import boom from '@hapi/boom';
-import { MetricDataRefreshInput } from '../../../typings';
+import { RefreshMetricDataInput } from '../../../typings';
 import { MetricTC } from '../model';
 
 const RefreshMetricDataInput = schemaComposer.createInputTC({
@@ -46,7 +46,7 @@ export const refreshMetricData: FieldConfig = {
   },
   async resolve(
     parent: BaseMetric,
-    { input }: { input: MetricDataRefreshInput },
+    { input }: { input: RefreshMetricDataInput },
     { accessors }: EZContext,
   ) {
     const { start, end, range, metricId } = input;

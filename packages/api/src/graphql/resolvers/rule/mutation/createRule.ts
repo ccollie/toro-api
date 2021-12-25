@@ -1,6 +1,6 @@
 import { Rule } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
-import { RuleAddInput } from '../../../typings';
+import { CreateRuleInput } from '../../../typings';
 import { CreateRuleInputTC, FieldConfig, RuleTC } from '../../index';
 import { convertCondition, translateSeverity } from './utils';
 
@@ -12,7 +12,7 @@ export const createRule: FieldConfig = {
   },
   async resolve(
     _,
-    { input }: { input: RuleAddInput },
+    { input }: { input: CreateRuleInput },
     { accessors }: EZContext,
   ): Promise<Rule> {
     const { queueId, severity, condition: cond, ...rest } = input;

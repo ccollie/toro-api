@@ -149,16 +149,18 @@ function inferOptions(recs: Record<string, any>[]): Partial<JobsOptions> {
   return {};
 }
 
+const DEFAULT_INFER_SCHEMA_SCAN_COUNT = 25;
+
 export async function inferJobSchema(
   queue: Queue,
-  jobName: string,
+  jobName?: string,
 ): Promise<JobSchema> {
   // get a list of items from completed list
   const it = getIterator(queue, JobStatusEnum.COMPLETED, [
     'data',
     'opts',
     'jobName',
-  ]);
+  ], DEFAULT_INFER_SCHEMA_SCAN_COUNT, jobName);
   const sampleSize = INFER_SAMPLE_SIZE;
   const jobs: Record<string, any>[] = [];
   const opts: Record<string, any>[] = [];
@@ -180,7 +182,6 @@ export async function inferJobSchema(
       }
     }
   }
-  it.destroy();
 
   if (!jobs.length) {
     throw boom.badData('Cannot infer schema. No completed jobs found.');

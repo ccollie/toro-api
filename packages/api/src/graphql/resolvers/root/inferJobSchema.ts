@@ -1,5 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { inferJobSchema as inferSchema, JobSchema } from '@alpen/core';
+import { InferJobSchemaInput } from '../../typings';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobSchemaTC } from '../job/model/Job.schema';
@@ -16,7 +17,11 @@ export const inferJobSchema: FieldConfig = {
       },
     }),
   },
-  async resolve(_, { input }, { accessors }: EZContext): Promise<JobSchema> {
+  async resolve(
+    _,
+    { input }: { input: InferJobSchemaInput },
+    { accessors }: EZContext,
+  ): Promise<JobSchema> {
     const { queueId, jobName } = input;
     const queue = accessors.getQueueById(queueId);
 

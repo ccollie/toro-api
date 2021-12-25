@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import { resolve, join } from 'path';
-import { schemaComposer } from 'graphql-compose';
+import { getSDL } from '@alpen/api';
 
-const PATH = '../src/server/graphql/sdl';
+const PATH = '../src/graphql/sdl';
 
 const resolvedPath = resolve(__dirname, PATH);
 if (!fs.existsSync(resolvedPath)) {
@@ -10,7 +10,7 @@ if (!fs.existsSync(resolvedPath)) {
   console.log('Directory is created.');
 }
 const destFilename = join(resolvedPath, 'sdl.graphql');
-const sdl = schemaComposer.toSDL();
+const sdl = getSDL();
 (async () => {
   await fs.promises.writeFile(destFilename, sdl, {
     encoding: 'utf8',

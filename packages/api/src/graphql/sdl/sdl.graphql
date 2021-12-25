@@ -10,10 +10,10 @@ type Query {
   job(queueId: ID!, id: ID!): Job!
 
   """Validate job data against a schema previously defined on a queue"""
-  jobDataValidate(input: JobDataValidateInput!): JobDataValidatePayload!
+  validateJobData(input: ValidateJobDataInput!): ValidateJobDataResult!
 
   """Validate BullMQ job options structure"""
-  jobOptionsValidate(input: JobOptionsInput!): ValidateJobOptionsPayload!
+  validateJobOptions(input: JobOptionsInput!): ValidateJobOptionsResult!
 
   """Find a queue by name"""
   findQueue(hostName: String!, prefix: String, queueName: String!): Queue
@@ -52,131 +52,131 @@ type Query {
   bulkJobOptionsSchema: JSONSchema!
 
   """Infer a JSONSchema from completed jobs in a queue"""
-  jobSchemaInfer(input: JobSchemaInferInput): JobSchema
+  inferJobSchema(input: InferJobSchemaInput): JobSchema
 }
 
 type Mutation {
-  metricDataRefresh(input: MetricDataRefreshInput!): [MetricDataRefreshPayload]!
+  """Delete a queue metric"""
+  deleteMetric(input: DeleteMetricInput!): DeleteMetricResult!
 
   """Create a queue metric"""
-  metricCreate(input: MetricCreateInput!): Metric!
+  createMetric(input: CreateMeetricInput!): Metric!
+  refreshMetricData(input: RefreshMetricDataInput!): [RefreshMetricDataResult]!
 
   """Update a job metric"""
-  metricUpdate(input: MetricInput!): Metric!
-
-  """Delete a queue metric"""
-  metricDelete(input: MetricDeleteInput!): MetricDeletePayload!
-  flowAdd(input: FlowAddInput): JobNode!
+  updateMetric(input: MetricInput!): Metric!
+  createFlow(input: CreateFlowInput): JobNode!
 
   """Add a mail notification channel"""
-  mailNotificationChannelAdd(input: MailNotificationChannelAddInput!): MailNotificationChannel!
+  createMailNotificationChannel(input: CreateMailNotificationChannelInput!): MailNotificationChannel!
 
-  """Add a slack notification channel"""
-  slackNotificationChannelAdd(input: SlackNotificationChannelAddInput!): SlackNotificationChannel!
+  """Create a slack notification channel"""
+  createSlackNotificationChannel(input: SlackNotificationChannelAddInput!): SlackNotificationChannel!
 
   """Add a webhook notification channel"""
-  webhookNotificationChannelAdd(input: WebhookNotificationChannelAddInput!): WebhookNotificationChannel!
-  notificationChannelEnable(hostId: ID!, channelId: ID!): NotificationChannelEnablePayload!
-  notificationChannelDisable(hostId: ID!, channelId: ID!): NotificationChannelDisablePayload!
-  notificationChannelDelete(hostId: ID!, channelId: ID!): NotificationChannelDeletePayload!
-  mailNotificationChannelUpdate(input: MailNotificationChannelUpdateInput!): MailNotificationChannel!
-  slackNotificationChannelUpdate(input: SlackNotificationChannelUpdateInput!): SlackNotificationChannel!
-  webhookNotificationChannelUpdate(input: WebhookNotificationChannelUpdateInput!): WebhookNotificationChannel!
-  jobAdd(input: JobAddInput): Job!
-  jobAddBulk(queueId: String!, jobs: [BulkJobItemInput]!): JobAddBulkPayload
-  jobAddCron(input: JobAddCronInput!): JobAddCronPayload!
-  jobAddEvery(input: JobAddEveryInput): JobAddEveryPayload!
-  jobDiscard(input: JobLocatorInput!): JobDiscardPayload!
-  jobPromote(input: JobLocatorInput!): JobPromotePayload!
-  jobRemove(input: JobLocatorInput!): JobRemovePayload!
+  createWebhookNotificationChannel(input: CreateWebhookNotificationChannelInput!): WebhookNotificationChannel!
+  enableNotificationChannel(hostId: ID!, channelId: ID!): EnableNotificationChannelResult!
+  disableNotificationChannel(hostId: ID!, channelId: ID!): DisableNotificationChannelResult!
+  deleteNotificationChannel(hostId: ID!, channelId: ID!): DeleteNotificationChannelResult!
+  updateMailNotificationChannel(input: UpdateMailNotificationChannelInput!): MailNotificationChannel!
+  updateSlackNotificationChannel(input: UpdateSlackNotificationChannelInput!): SlackNotificationChannel!
+  updateWebhookNotificationChannel(input: UpdateWebhookNotificationChannelInput!): WebhookNotificationChannel!
+  createJob(input: CreateJobInput): Job!
+  bulkCreateJobs(queueId: String!, jobs: [BulkJobItemInput]!): CreateBulkJobsResult
+  createRepeatableJobByCron(input: CreateRepeatableJobByCronInput!): CreateRepeatableJobByCronResult!
+  createRepeatableJob(input: JobAddEveryInput): JobAddEveryPayload!
+  discardJob(input: JobLocatorInput!): DiscardJobResult!
+  promoteJob(input: JobLocatorInput!): PromoteJobResult!
+  deleteJob(input: JobLocatorInput!): DeleteJobPayload!
 
   """Bulk deletes a list of jobs by id"""
-  jobRemoveBulk(input: BulkJobActionInput!): BulkJobActionPayload
-  jobRetry(input: JobLocatorInput!): JobRetryPayload!
-  jobUpdate(input: JobUpdateInput!): JobUpdatePayload!
-  jobLogAdd(queueId: String!, id: String!, row: String!): JobLogAddPayload!
-  jobMoveToCompleted(input: JobLocatorInput!): JobMoveToCompletedPayload!
+  bulkDeleteJobs(input: BulkJobActionInput!): BulkJobActionPayload
+  retryJob(input: JobLocatorInput!): RetryJobResult!
+  updateJob(input: UpdateJobInput!): UpdateJobResult!
+  addJobLog(queueId: String!, id: String!, row: String!): AddJobLogResult!
+  moveJobToCompleted(input: JobLocatorInput!): MoveJobToCompletedResult!
 
   """Moves job from active to delayed."""
-  jobMoveToDelayed(input: JobMoveToDelayedInput): JobMoveToDelayedPayload!
-  jobMoveToFailed(input: JobMoveToFailedInput): JobMoveToFailedPayload!
+  moveJobToDelayed(input: MoveJobToDelayedInput): MoveJobToDelayedResult!
+  moveJobToFailed(input: MoveJobToFailedInput): MoveoJobToFailedResult!
 
   """Bulk promotes a list of jobs by id"""
-  jobPromoteBulk(input: BulkJobActionInput!): BulkJobActionPayload
+  bulkPromoteJobs(input: BulkJobActionInput!): BulkJobActionPayload
 
   """Bulk retries a list of jobs by id"""
-  jobRetryBulk(input: BulkJobActionInput!): BulkJobActionPayload
-  repeatableJobRemoveByKey(input: RepeatableJobRemoveByKeyInput!): RepeatableJobRemoveByKeyPayload!
-  repeatableJobRemove(id: ID!, jobName: String, repeat: RepeatableJobRemoveOptions!): QueueRemoveRepeatablePayload!
+  bulkRetryJobs(input: BulkJobActionInput!): BulkJobActionPayload
+  deleteRepeatableJobByKey(input: DeleteRepeatableJobByKeyInput!): DeleteRepeatableJobByKeyResult!
+  deleteRepeatableJob(id: ID!, jobName: String, repeat: DeleteRepeatableJobOptions!): DeleteRepeatableResult!
+  changeJobDelay(input: ChangeJobDelayInput): Job!
 
   """
   Remove all jobs created outside of a grace interval in milliseconds. You can clean the jobs with the following states: COMPLETED, wait (typo for WAITING), isActive, DELAYED, and FAILED.
   """
-  queueClean(input: QueueCleanFilter!): QueueCleanPayload!
+  cleanQueue(input: QueueCleanInput!): QueueCleanResult!
 
   """
   Drains the queue, i.e., removes all jobs that are waiting or delayed, but not active, completed or failed.
   """
-  queueDrain(id: ID!, delayed: Boolean = false): QueueDrainPayload!
+  drainQueue(id: ID!, delayed: Boolean = false): DrainQueueResult!
 
   """
   Pause the queue.
-
+  
   A PAUSED queue will not process new jobs until resumed, but current jobs being processed will continue until they are finalized.
   """
-  queuePause(id: ID!): Queue!
+  pauseQueue(id: ID!): Queue!
 
   """Resume a queue after being PAUSED."""
-  queueResume(id: ID!): Queue!
-  queueDelete(id: ID!, options: QueueDeleteOptions): QueueDeletePayload!
+  resumeQueue(id: ID!): Queue!
+  deleteQueue(id: ID!, options: DeleteQueueOptions): DeleteQueueDeleteResult!
 
   """Start tracking a queue"""
-  queueRegister(input: RegisterQueueInput): Queue!
+  registerQueue(input: RegisterQueueInput): Queue!
 
   """Stop tracking a queue"""
-  queueUnregister(id: ID!): QueueUnregisterPayload!
+  unregisterQueue(id: ID!): UnregisterQueueResult!
 
   """Add a named job filter"""
-  queueJobFilterCreate(input: JobFilterInput!): JobFilter!
+  createJobFilter(input: CreateJobFilterInput!): JobFilter!
 
   """Associate a JSON schema with a job name on a queue"""
-  queueJobSchemaSet(input: JobSchemaInput!): JobSchema!
+  setJobSchema(input: JobSchemaInput!): JobSchema!
 
   """Delete a schema associated with a job name on a queue"""
-  queueJobSchemaDelete(input: QueueJobSchemaDeleteInput!): QueueJobSchemaDeletePayload!
+  deleteJobSchema(input: DeleteJobSchemaInput!): DeleteJobSchemaResult!
 
   """Delete a job filter"""
-  queueJobFilterDelete(input: QueueJobFilterDeleteInput!): QueueJobFilterDeletePayload!
+  deleteJobFilter(input: DeleteJobFilterInput!): DeleteJobFilterResult!
 
   """Update a job filter"""
-  queueJobFilterUpdate(input: JobFilterUpdateInput!): JobFilterUpdatePayload!
+  updateJobFilter(input: UpdateJobFilterInput!): UpdateJobFilterResult!
 
   """Delete all stats associated with a queue"""
-  queueStatsDelete(input: QueueStatsDeleteInput!): QueueStatsDeletePayload!
+  deleteQueueStats(input: DeleteQueueStatsInput!): DeleteQueueStatsResult!
 
-  """Delete a rule alert"""
-  ruleAlertDelete(input: RuleAlertDeleteInput!): RuleAlertDeletePayload!
+  """Incrementally delete jobs filtered by query criteria"""
+  deleteJobsByFilter(filter: DeleteJobsByFilterInput!): DeleteJobsByFilterPayload!
 
   """Removes all alerts associated with a rule"""
-  ruleAlertsClear(input: RuleAlertsClearInput!): RuleAlertsClearPayload!
+  clearRuleAlerts(input: ClesrRuleAlertsInput!): ClearRuleAlertsResult!
 
-  """Delete a rule"""
-  ruleDelete(input: RuleDeleteInput!): RuleDeletePayload!
+  """Delete a rule alert"""
+  DeleteRuleAlert(input: DeleteRuleAlertInput!): DeleteRuleAlertResult!
 
   """Create a rule for a queue"""
-  ruleAdd(input: RuleAddInput!): Rule!
-
-  """Removes all alerts associated with a rule"""
-  ruleActivate(input: RuleActivateInput!): RuleActivatePayload!
-
-  """Removes all alerts associated with a rule"""
-  ruleDeactivate(input: RuleDeactivateInput!): RuleDeactivatePayload!
+  createRule(input: CreateRuleInput!): Rule!
 
   """Update a rule"""
-  ruleUpdate(input: RuleUpdateInput!): Rule!
+  updateRule(input: RuleUpdateInput!): Rule!
+
+  """Delete a rule"""
+  deleteRule(input: DeleteRuleInput!): DeleteRuleResult!
+
+  """Removes all alerts associated with a rule"""
+  activateRule(input: ActivateRuleInput!): ActivateRuleResult!
 
   """Delete a rule alert"""
-  ruleAlertMarkAsRead(input: RuleAlertMarkAsReadInput!): RuleAlertMarkAsReadPayload!
+  markRuleAlertAsRead(input: MarkRuleAlertAsReadInput!): MarkRuleAlertAsReadResult!
 }
 
 type Subscription {
@@ -283,12 +283,12 @@ scalar JobRemoveOption
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
-scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+scalar JSON
 
 """
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
-scalar JSONObject @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+scalar JSONObject
 
 """
 The `JSONSchema` scalar type represents JSONSchema values as specified by https://json-schema.org/draft/2019-09/json-schema-validation.html.
@@ -346,7 +346,7 @@ enum ConditionChangeType {
 enum ErrorLevel {
   NONE
   WARNING
-  CRITICAL
+  ERROR
 }
 
 """
@@ -554,6 +554,26 @@ interface RuleConditionInterface {
   operator: RuleOperator!
 }
 
+"""Describes the state value from a rule evaluation."""
+interface RuleEvaluationState {
+  """The type of rule"""
+  ruleType: RuleType!
+  errorLevel: ErrorLevel!
+
+  """The error threshold of the rule"""
+  errorThreshold: Float!
+
+  """The warning threshold of the rule"""
+  warningThreshold: Float
+
+  """The value which triggered the alert"""
+  value: Float!
+
+  """The rule operator"""
+  comparator: RuleOperator!
+  unit: String!
+}
+
 """A data point representing the value of a metric in a time series."""
 interface TimeseriesDataPointInterface {
   """The timestamp of when the event occurred"""
@@ -561,6 +581,20 @@ interface TimeseriesDataPointInterface {
 
   """The value at the given timestamp"""
   value: Float!
+}
+
+type ActivateRuleResult {
+  isActive: Boolean!
+  rule: Rule!
+}
+
+type AddJobLogResult {
+  """The job id"""
+  id: String!
+
+  """The number of log entries after adding"""
+  count: Int!
+  state: JobStatus
 }
 
 type AggregateInfo {
@@ -599,12 +633,122 @@ type BulkStatusItem {
   reason: String
 }
 
+type ClearRuleAlertsResult {
+  """The count of deleted alerts"""
+  deletedItems: Int!
+  rule: Rule!
+}
+
+type CreateBulkJobsResult {
+  jobs: [Job]!
+}
+
+type CreateRepeatableJobByCronResult {
+  job: Job
+}
+
+type DeleteJobFilterResult {
+  filterId: String!
+  queue: Queue!
+  isDeleted: Boolean!
+}
+
+type DeleteJobPayload {
+  queue: Queue!
+  job: Job!
+}
+
+type DeleteJobsByFilterPayload {
+  cursor: Int
+
+  """The total number of jobs to be removed"""
+  total: Int!
+
+  """The number of jobs removed this iteration"""
+  removed: Int!
+}
+
+type DeleteJobSchemaResult {
+  jobName: String!
+  queue: Queue!
+}
+
+type DeleteMetricResult {
+  queue: Queue!
+  isDeleted: Boolean!
+}
+
+type DeleteNotificationChannelResult {
+  hostId: ID!
+  channelId: ID!
+  deleted: Boolean!
+}
+
+type DeleteQueueDeleteResult {
+  """The id of the deleted queue"""
+  queueId: ID!
+
+  """The name of the deleted queue"""
+  queueName: String!
+
+  """The queue host"""
+  host: QueueHost!
+
+  """The number of keys deleted"""
+  deletedKeys: Int!
+}
+
+type DeleteQueueStatsResult {
+  isDeleted: Boolean!
+  queue: Queue!
+}
+
+type DeleteRepeatableJobByKeyResult {
+  key: String!
+  queue: Queue
+}
+
+type DeleteRepeatableResult {
+  queue: Queue!
+}
+
+type DeleteRuleAlertResult {
+  ruleId: ID!
+  rule: Rule
+  isDeleted: Boolean!
+}
+
+type DeleteRuleResult {
+  ruleId: ID!
+  queueId: ID!
+  isDeleted: Boolean!
+}
+
+type DisableNotificationChannelResult {
+  updated: Boolean!
+}
+
+"""
+Marks a job to not be retried if it fails (even if attempts has been configured)
+"""
+type DiscardJobResult {
+  job: Job!
+}
+
 type DiscoverQueuesPayload {
   """The queue name"""
   name: String!
 
   """The queue prefix"""
   prefix: String!
+}
+
+type DrainQueueResult {
+  queue: Queue!
+}
+
+type EnableNotificationChannelResult {
+  updated: Boolean!
 }
 
 type HistogramBin {
@@ -648,6 +792,11 @@ type Job {
   processedOn: Date
   opts: JobOptions!
   state: JobStatus!
+
+  """
+  Returns the fully qualified id of a job, including the queue prefix and queue name
+  """
+  fullId: String!
   queueId: String!
   parentKey: String
   logs(start: Int! = 0, end: Int! = -1): JobLogs!
@@ -669,19 +818,14 @@ type Job {
   """Returns the parent of a job that is part of a flow"""
   parent: Job
 
+  """Returns the parent queue of a job that is part of a flow"""
+  parentQueue: Queue
+
   """Get children job keys if this job is a parent and has children."""
   dependencies(input: JobDependenciesOptsInput): JobDependenciesPayload!
 
   """Get children job counts if this job is a parent and has children."""
   dependenciesCount(input: JobDependenciesCountInput): JobDependenciesCountPayload!
-}
-
-type JobAddBulkPayload {
-  jobs: [Job]!
-}
-
-type JobAddCronPayload {
-  job: Job
 }
 
 type JobAddEveryPayload {
@@ -698,11 +842,6 @@ type JobCounts {
   paused: Int
 }
 
-type JobDataValidatePayload {
-  queueId: ID!
-  jobName: String!
-}
-
 type JobDependenciesCountPayload {
   processed: Int
   unprocessed: Int
@@ -713,13 +852,6 @@ type JobDependenciesPayload {
   unprocessed: [String!]
   nextProcessedCursor: Int
   nextUnprocessedCursor: Int
-}
-
-"""
-Marks a job to not be retried if it fails (even if attempts has been configured)
-"""
-type JobDiscardPayload {
-  job: Job!
 }
 
 """Options for filtering queue jobs"""
@@ -739,20 +871,6 @@ type JobFilter {
   createdAt: Date
 }
 
-type JobFilterUpdatePayload {
-  filter: JobFilter
-  isUpdated: Boolean!
-}
-
-type JobLogAddPayload {
-  """The job id"""
-  id: String!
-
-  """The number of log entries after adding"""
-  count: Int!
-  state: JobStatus
-}
-
 type JobLogs {
   count: Int!
   items: [String!]!
@@ -764,24 +882,6 @@ type JobMemoryUsagePayload {
 
   """The total number of jobs contributing to the byteCount"""
   jobCount: Int!
-}
-
-type JobMoveToCompletedPayload {
-  queue: Queue!
-  job: Job
-}
-
-type JobMoveToDelayedPayload {
-  job: Job!
-  delay: Int!
-
-  """Estimated date/time of execution"""
-  executeAt: Date!
-}
-
-type JobMoveToFailedPayload {
-  job: Job!
-  queue: Queue!
 }
 
 type JobNode {
@@ -798,7 +898,7 @@ type JobOptions {
   priority: Int
 
   """
-  An amount of milliseconds to wait until this job can be processed.
+  An amount of milliseconds to wait until this job can be processed. 
   Note that for accurate delays, worker and producers should have their clocks synchronized.
   """
   delay: Int
@@ -860,16 +960,6 @@ type JobParent {
   queue: String!
 }
 
-type JobPromotePayload {
-  job: Job!
-  queue: Queue!
-}
-
-type JobRemovePayload {
-  queue: Queue!
-  job: Job!
-}
-
 type JobRepeatOptions {
   tz: String
   endDate: Date
@@ -880,11 +970,6 @@ type JobRepeatOptions {
   startDate: Date
   cron: String
   every: String
-}
-
-type JobRetryPayload {
-  job: Job!
-  queue: Queue!
 }
 
 """Options for validating job data"""
@@ -911,10 +996,6 @@ type JobUpdateDelta {
   delta: JSONObject!
 }
 
-type JobUpdatePayload {
-  job: Job!
-}
-
 """A channel which sends notifications through email"""
 type MailNotificationChannel implements NotificationChannel {
   id: ID!
@@ -936,6 +1017,10 @@ type MailNotificationChannel implements NotificationChannel {
 
   """Emails of notification recipients"""
   recipients: [EmailAddress]!
+}
+
+type MarkRuleAlertAsReadResult {
+  alert: RuleAlert!
 }
 
 """
@@ -1013,40 +1098,32 @@ type Metric {
   dateRange: TimeSpan
 }
 
-type MetricDataRefreshPayload {
-  metricId: String!
-  metric: Metric!
-  start: Date
-  end: Date
-}
-
-type MetricDeletePayload {
-  queue: Queue!
-  isDeleted: Boolean!
-}
-
 type MetricInfo {
   key: String!
   description: String
-  category: MetricCategory
+  category: MetricCategory!
   type: MetricType!
   valueType: MetricValueType!
   unit: String
   isPolling: Boolean!
 }
 
-type NotificationChannelDeletePayload {
-  hostId: ID!
-  channelId: ID!
-  deleted: Boolean!
+type MoveJobToCompletedResult {
+  queue: Queue!
+  job: Job
 }
 
-type NotificationChannelDisablePayload {
-  updated: Boolean!
+type MoveJobToDelayedResult {
+  job: Job!
+  delay: Int!
+
+  """Estimated date/time of execution"""
+  executeAt: Date!
 }
 
-type NotificationChannelEnablePayload {
-  updated: Boolean!
+type MoveoJobToFailedResult {
+  job: Job!
+  queue: Queue!
 }
 
 type OnJobAddedPayload {
@@ -1220,6 +1297,11 @@ type PingPayload {
   latency: Int!
 }
 
+type PromoteJobResult {
+  job: Job!
+  queue: Queue!
+}
+
 type Queue {
   id: String!
   prefix: String!
@@ -1230,6 +1312,7 @@ type Queue {
   host: String!
   hostId: ID!
   isPaused: Boolean!
+  isReadonly: Boolean!
   jobCounts: JobCounts!
   jobNames: [String!]!
   jobFilters(ids: [ID!]): [JobFilter!]!
@@ -1326,7 +1409,7 @@ type Queue {
   workerCount: Int!
 }
 
-type QueueCleanPayload {
+type QueueCleanResult {
   """The queue id"""
   id: ID!
 
@@ -1335,24 +1418,6 @@ type QueueCleanPayload {
 
   """Returns a list of cleared job ids"""
   jobIds: [ID!]
-}
-
-type QueueDeletePayload {
-  """The id of the deleted queue"""
-  queueId: ID!
-
-  """The name of the deleted queue"""
-  queueName: String!
-
-  """The queue host"""
-  host: QueueHost!
-
-  """The number of keys deleted"""
-  deletedKeys: Int!
-}
-
-type QueueDrainPayload {
-  queue: Queue!
 }
 
 type QueueHost {
@@ -1443,32 +1508,6 @@ type QueueJobCountDelta {
   waiting: Int!
 }
 
-type QueueJobFilterDeletePayload {
-  filterId: String!
-  queue: Queue!
-  isDeleted: Boolean!
-}
-
-type QueueJobSchemaDeletePayload {
-  jobName: String!
-  queue: Queue!
-}
-
-type QueueRemoveRepeatablePayload {
-  queue: Queue!
-}
-
-type QueueStatsDeletePayload {
-  isDeleted: Boolean!
-  queue: Queue!
-}
-
-type QueueUnregisterPayload {
-  host: QueueHost!
-  queue: Queue!
-  isRemoved: Boolean!
-}
-
 type QueueWorker {
   id: String
 
@@ -1517,6 +1556,13 @@ type RedisInfo {
   os: String!
 }
 
+type RefreshMetricDataResult {
+  metricId: String!
+  metric: Metric!
+  start: Date
+  end: Date
+}
+
 type RepeatableJob {
   key: String!
   name: String
@@ -1534,9 +1580,9 @@ type RepeatableJob {
   next: Date
 }
 
-type RepeatableJobRemoveByKeyPayload {
-  key: String!
-  queue: Queue
+type RetryJobResult {
+  job: Job!
+  queue: Queue!
 }
 
 type Rule {
@@ -1595,11 +1641,6 @@ type Rule {
   totalFailures: Int!
 }
 
-type RuleActivatePayload {
-  isActive: Boolean!
-  rule: Rule!
-}
-
 """An event recording the occurrence of an rule violation or reset"""
 type RuleAlert {
   id: ID!
@@ -1607,6 +1648,8 @@ type RuleAlert {
   """The id of the rule that raised this alert"""
   ruleId: String!
   status: String!
+  title: String
+  message: String
 
   """Timestamp of when this alert was raised"""
   raisedAt: DateTime!
@@ -1618,7 +1661,7 @@ type RuleAlert {
   value: Float!
 
   """State that triggered alert"""
-  state: JSONObject
+  state: RuleEvaluationState!
 
   """The number of failures before this alert was generated"""
   failures: Int!
@@ -1636,22 +1679,12 @@ type RuleAlert {
   isRead: Boolean!
 }
 
-type RuleAlertDeletePayload {
-  ruleId: ID!
-  rule: Rule
-  isDeleted: Boolean!
-}
-
-type RuleAlertMarkAsReadPayload {
-  alert: RuleAlert!
-}
-
 """Options for raising alerts for a Rule"""
 type RuleAlertOptions {
   """
-  a timeout after startup (in ms) during which no alerts are raised, irrespective of the truthiness of the rule condition.
+  Wait a certain duration between first encountering a failure and triggering an alert
   """
-  warmupWindow: Duration
+  triggerDelay: Duration
 
   """The minimum number of violations before an alert can be raised"""
   failureThreshold: Int
@@ -1679,23 +1712,6 @@ type RuleAlertOptions {
   Raise an alert after an event trigger when the situation returns to normal
   """
   alertOnReset: Boolean
-}
-
-type RuleAlertsClearPayload {
-  """The count of deleted alerts"""
-  deletedItems: Int!
-  rule: Rule!
-}
-
-type RuleDeactivatePayload {
-  isActive: Boolean!
-  rule: Rule!
-}
-
-type RuleDeletePayload {
-  ruleId: ID!
-  queueId: ID!
-  isDeleted: Boolean!
 }
 
 """Real time status of a Rule"""
@@ -1867,7 +1883,27 @@ type TimeSpan {
   endTime: DateTime!
 }
 
-type ValidateJobOptionsPayload {
+type UnregisterQueueResult {
+  host: QueueHost!
+  queue: Queue!
+  isRemoved: Boolean!
+}
+
+type UpdateJobFilterResult {
+  filter: JobFilter
+  isUpdated: Boolean!
+}
+
+type UpdateJobResult {
+  job: Job!
+}
+
+type ValidateJobDataResult {
+  queueId: ID!
+  jobName: String!
+}
+
+type ValidateJobOptionsResult {
   isValid: Boolean!
   errors: [String!]!
 }
@@ -1920,6 +1956,11 @@ type WebhookNotificationChannel implements NotificationChannel {
   httpSuccessCodes: [Int!]
 }
 
+input ActivateRuleInput {
+  queueId: ID!
+  ruleId: ID!
+}
+
 input AggregatorInput {
   type: AggregateTypeEnum!
   options: JSONObject
@@ -1957,13 +1998,188 @@ input ChangeConditionInput {
   aggregationType: ChangeAggregation!
 }
 
-input FlowAddInput {
+input ChangeJobDelayInput {
+  queueId: String!
+  jobId: String!
+  delay: Int!
+}
+
+input ClesrRuleAlertsInput {
+  queueId: ID!
+  ruleId: ID!
+}
+
+input CreateFlowInput {
   """The host to which to add the flow"""
   host: String!
   job: FlowJobInput!
 }
 
-"""TODO: fill in description"""
+input CreateJobFilterInput {
+  queueId: ID!
+  name: String!
+  status: JobStatus
+  expression: String!
+}
+
+input CreateJobInput {
+  queueId: ID!
+  jobName: String!
+  data: JSONObject
+  options: JobOptionsInput
+}
+
+input CreateMailNotificationChannelInput {
+  hostId: ID!
+  channel: MailNotificationChannelUpdate!
+}
+
+"""Input fields for creating a metric"""
+input CreateMeetricInput {
+  type: MetricType!
+
+  """The id of the queue to which the metric belongs"""
+  queueId: ID!
+
+  """The name of the metric"""
+  name: String!
+
+  """A description of the metric being measured."""
+  description: String
+
+  """The metric sampling interval."""
+  sampleInterval: Int
+
+  """Is the metric active (i.e. is data being collected)."""
+  isActive: Boolean!
+
+  """The metric options"""
+  options: JSONObject!
+  aggregator: AggregatorInput
+}
+
+input CreateRepeatableJobByCronInput {
+  queueId: ID!
+  jobName: ID!
+  data: JSONObject
+  options: JobOptionsInput
+}
+
+"""Information required to add or edit a Rule"""
+input CreateRuleInput {
+  """The id of the queue to which the rule belongs"""
+  queueId: ID!
+
+  """The names of the rule"""
+  name: String!
+
+  """A helpful description of the rule"""
+  description: String
+  severity: Severity
+
+  """Is this rule active or not"""
+  isActive: Boolean!
+
+  """Optional data passed on to alerts"""
+  payload: JSONObject
+
+  """
+  Optional text for message when an alert is raised. Markdown and handlebars supported
+  """
+  message: String
+
+  """The id of the metric being monitored"""
+  metricId: String!
+
+  """The rule condition"""
+  condition: RuleConditionInput!
+
+  """Notification channel ids"""
+  channels: [String!]
+
+  """Options controlling the generation of events"""
+  options: RuleAlertOptionsInput
+}
+
+input CreateWebhookNotificationChannelInput {
+  hostId: ID!
+  channel: WebhookNotificationChannelUpdate!
+}
+
+input DeleteJobFilterInput {
+  queueId: ID!
+  filterId: ID!
+}
+
+input DeleteJobsByFilterInput {
+  """Search for jobs having this status"""
+  status: JobStatus = COMPLETED
+
+  """The job filter expression"""
+  criteria: String
+
+  """
+  The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null
+  """
+  cursor: Int = null
+
+  """The maximum number of jobs to remove per iteration"""
+  count: Int! = 10
+}
+
+input DeleteJobSchemaInput {
+  queueId: ID!
+  jobName: String!
+}
+
+input DeleteMetricInput {
+  queueId: ID!
+  metricId: ID!
+}
+
+input DeleteQueueOptions {
+  checkExistence: Boolean = true
+  checkActivity: Boolean = true
+}
+
+input DeleteQueueStatsInput {
+  queueId: ID!
+
+  """
+  Optional job name to delete stats for. If omitted, all queue stats are erased
+  """
+  jobName: String
+
+  """
+  Optional stats granularity. If omitted, the entire range of data is deleted
+  """
+  granularity: StatsGranularity
+}
+
+input DeleteRepeatableJobByKeyInput {
+  queueId: ID!
+  key: String!
+}
+
+input DeleteRepeatableJobOptions {
+  tz: String
+  endDate: Date
+  cron: String
+  every: String
+}
+
+input DeleteRuleAlertInput {
+  queueId: ID!
+  ruleId: ID!
+  alertId: ID!
+}
+
+input DeleteRuleInput {
+  queueId: ID!
+  ruleId: ID!
+}
+
+"""Values needed to create a FlowJob"""
 input FlowJobInput {
   name: String!
 
@@ -1989,7 +2205,7 @@ input FlowJobOptionsInput {
   priority: Int
 
   """
-  An amount of milliseconds to wait until this job can be processed.
+  An amount of milliseconds to wait until this job can be processed. 
   Note that for accurate delays, worker and producers should have their clocks synchronized.
   """
   delay: Int
@@ -2106,7 +2322,7 @@ input HostQueuesFilter {
   prefix: String
 
   """Statuses to filter on"""
-  statuses: [QueueFilterStatus]
+  statuses: [QueueFilterStatus!]
 
   """Ids of queues to include"""
   include: [String!]
@@ -2115,11 +2331,9 @@ input HostQueuesFilter {
   exclude: [String!]
 }
 
-input JobAddCronInput {
+input InferJobSchemaInput {
   queueId: ID!
-  jobName: ID!
-  data: JSONObject
-  options: JobOptionsInput
+  jobName: String
 }
 
 input JobAddEveryInput {
@@ -2127,20 +2341,6 @@ input JobAddEveryInput {
   jobName: ID!
   data: JSONObject
   options: JobOptionsInput
-}
-
-input JobAddInput {
-  queueId: ID!
-  jobName: String!
-  data: JSONObject
-  options: JobOptionsInput
-}
-
-input JobDataValidateInput {
-  queueId: ID!
-  jobName: String!
-  data: JSONObject
-  opts: JobOptionsInput
 }
 
 input JobDependenciesCountInput {
@@ -2158,38 +2358,9 @@ input JobDependencyCursorInput {
   count: Int
 }
 
-input JobFilterInput {
-  queueId: ID!
-  name: String!
-  status: JobStatus
-  expression: String!
-}
-
-input JobFilterUpdateInput {
-  queueId: ID!
-  filterId: ID!
-  name: String
-  status: JobStatus
-  expression: String!
-}
-
 input JobLocatorInput {
   queueId: ID!
   jobId: ID!
-}
-
-input JobMoveToDelayedInput {
-  queueId: ID!
-  jobId: String!
-
-  """The amount of time to delay execution (in ms)"""
-  delay: Duration = 60000
-}
-
-input JobMoveToFailedInput {
-  queueId: String!
-  jobId: String!
-  failedReason: String
 }
 
 input JobOptionsInput {
@@ -2201,7 +2372,7 @@ input JobOptionsInput {
   priority: Int
 
   """
-  An amount of milliseconds to wait until this job can be processed.
+  An amount of milliseconds to wait until this job can be processed. 
   Note that for accurate delays, worker and producers should have their clocks synchronized.
   """
   delay: Int
@@ -2285,11 +2456,6 @@ input JobsByFilterIdInput {
   count: Int!
 }
 
-input JobSchemaInferInput {
-  queueId: ID!
-  jobName: String
-}
-
 input JobSchemaInput {
   queueId: ID!
   jobName: String!
@@ -2324,17 +2490,6 @@ input JobsMemoryAvgInput {
   limit: Int = 50
 }
 
-input JobUpdateInput {
-  queueId: String!
-  jobId: String!
-  data: JSONObject!
-}
-
-input MailNotificationChannelAddInput {
-  hostId: ID!
-  channel: MailNotificationChannelUpdate!
-}
-
 input MailNotificationChannelUpdate {
   """The type of the channel, e.g. slack, email, webhook etc"""
   type: String!
@@ -2349,33 +2504,11 @@ input MailNotificationChannelUpdate {
   recipients: [EmailAddress]!
 }
 
-input MailNotificationChannelUpdateInput {
-  hostId: ID!
-  channel: MailNotificationChannelUpdate!
-}
-
-"""Input fields for creating a metric"""
-input MetricCreateInput {
-  type: MetricType!
-
-  """The id of the queue to which the metric belongs"""
+input MarkRuleAlertAsReadInput {
   queueId: ID!
-
-  """The name of the metric"""
-  name: String!
-
-  """A description of the metric being measured."""
-  description: String
-
-  """The metric sampling interval."""
-  sampleInterval: Int
-
-  """Is the metric active (i.e. is data being collected)."""
-  isActive: Boolean!
-
-  """The metric options"""
-  options: JSONObject!
-  aggregator: AggregatorInput
+  ruleId: ID!
+  alertId: ID!
+  isRead: Boolean!
 }
 
 input MetricDataInput {
@@ -2393,20 +2526,6 @@ input MetricDataOutliersInput {
   the threshold for outline detection. Defaults depend on the method of detection
   """
   threshold: Float
-}
-
-input MetricDataRefreshInput {
-  metricId: String!
-  start: Date
-  end: Date
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String
-}
-
-input MetricDeleteInput {
-  queueId: ID!
-  metricId: ID!
 }
 
 """Input fields for updating a metric"""
@@ -2453,6 +2572,20 @@ input MetricsHistogramInput {
   to: Date!
   options: HistogramBinOptionsInput
   outlierFilter: OutlierFilterInput
+}
+
+input MoveJobToDelayedInput {
+  queueId: ID!
+  jobId: String!
+
+  """The amount of time to delay execution (in ms)"""
+  delay: Duration = 60000
+}
+
+input MoveJobToFailedInput {
+  queueId: String!
+  jobId: String!
+  failedReason: String
 }
 
 """Input parameters for outlier filtering"""
@@ -2505,7 +2638,7 @@ input PercentileDistributionInput {
   percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
 }
 
-input QueueCleanFilter {
+input QueueCleanInput {
   id: ID!
 
   """Grace period interval (ms). Jobs older this this will be removed."""
@@ -2520,16 +2653,6 @@ input QueueCleanFilter {
   limit: Int = 0
 }
 
-input QueueDeleteOptions {
-  checkExistence: Boolean = true
-  checkActivity: Boolean = true
-}
-
-input QueueJobFilterDeleteInput {
-  queueId: ID!
-  filterId: ID!
-}
-
 input QueueJobFilterInput {
   queueId: ID!
   fieldId: ID!
@@ -2537,11 +2660,6 @@ input QueueJobFilterInput {
 
 input QueueJobsByIdInput {
   ids: [ID!]!
-}
-
-input QueueJobSchemaDeleteInput {
-  queueId: ID!
-  jobName: String!
 }
 
 input QueueJobSchemaInput {
@@ -2581,18 +2699,13 @@ input QueueRuleAlertsInput {
   limit: Int!
 }
 
-input QueueStatsDeleteInput {
-  queueId: ID!
+input RefreshMetricDataInput {
+  metricId: String!
+  start: Date
+  end: Date
 
-  """
-  Optional job name to delete stats for. If omitted, all queue stats are erased
-  """
-  jobName: String
-
-  """
-  Optional stats granularity. If omitted, the entire range of data is deleted
-  """
-  granularity: StatsGranularity
+  """An expression specifying the range to query e.g. yesterday, last_7days"""
+  range: String
 }
 
 input RegisterQueueInput {
@@ -2605,83 +2718,17 @@ input RegisterQueueInput {
   trackMetrics: Boolean = false
 }
 
-input RepeatableJobRemoveByKeyInput {
-  queueId: ID!
-  key: String!
-}
-
-input RepeatableJobRemoveOptions {
-  tz: String
-  endDate: Date
-  cron: String
-  every: String
-}
-
 input RepeatableJobsInput {
   offset: Int = 0
   limit: Int = 20
   order: SortOrderEnum = DESC
 }
 
-input RuleActivateInput {
-  queueId: ID!
-  ruleId: ID!
-}
-
-"""Information required to add or edit a Rule"""
-input RuleAddInput {
-  """The id of the queue to which the rule belongs"""
-  queueId: ID!
-
-  """The names of the rule"""
-  name: String!
-
-  """A helpful description of the rule"""
-  description: String
-  severity: Severity
-
-  """Is this rule active or not"""
-  isActive: Boolean!
-
-  """Optional data passed on to alerts"""
-  payload: JSONObject
-
-  """
-  Optional text for message when an alert is raised. Markdown and handlebars supported
-  """
-  message: String
-
-  """The id of the metric being monitored"""
-  metricId: String!
-
-  """The rule condition"""
-  condition: RuleConditionInput!
-
-  """Notification channel ids"""
-  channels: [String!]
-
-  """Options controlling the generation of events"""
-  options: RuleAlertOptionsInput
-}
-
-input RuleAlertDeleteInput {
-  queueId: ID!
-  ruleId: ID!
-  alertId: ID!
-}
-
-input RuleAlertMarkAsReadInput {
-  queueId: ID!
-  ruleId: ID!
-  alertId: ID!
-  isRead: Boolean!
-}
-
 input RuleAlertOptionsInput {
   """
-  a timeout after startup (in ms) during which no alerts are raised, irrespective of the truthiness of the rule condition.
+  Wait a certain duration between first encountering a failure and triggering an alert
   """
-  warmupWindow: Duration
+  triggerDelay: Duration
 
   """The minimum number of violations before an alert can be raised"""
   failureThreshold: Int
@@ -2711,11 +2758,6 @@ input RuleAlertOptionsInput {
   alertOnReset: Boolean
 }
 
-input RuleAlertsClearInput {
-  queueId: ID!
-  ruleId: ID!
-}
-
 input RuleAlertsInput {
   start: Int = 0
   end: Int = 10
@@ -2727,16 +2769,6 @@ input RuleConditionInput {
   changeCondition: ChangeConditionInput
   peakCondition: PeakConditionInput
   thresholdCondition: ThresholdConditionInput
-}
-
-input RuleDeactivateInput {
-  queueId: ID!
-  ruleId: ID!
-}
-
-input RuleDeleteInput {
-  queueId: ID!
-  ruleId: ID!
 }
 
 """Information needed to update a rule"""
@@ -2801,11 +2833,6 @@ input SlackNotificationChannelUpdate {
 
   """A valid slack auth token. Not needed if a webhook is specified"""
   token: String
-}
-
-input SlackNotificationChannelUpdateInput {
-  hostId: ID!
-  channel: SlackNotificationChannelUpdate!
 }
 
 """Queue stats filter to getting latest snapshot."""
@@ -2880,9 +2907,40 @@ input ThresholdConditionInput {
   operator: RuleOperator!
 }
 
-input WebhookNotificationChannelAddInput {
+input UpdateJobFilterInput {
+  queueId: ID!
+  filterId: ID!
+  name: String
+  status: JobStatus
+  expression: String!
+}
+
+input UpdateJobInput {
+  queueId: String!
+  jobId: String!
+  data: JSONObject!
+}
+
+input UpdateMailNotificationChannelInput {
+  hostId: ID!
+  channel: MailNotificationChannelUpdate!
+}
+
+input UpdateSlackNotificationChannelInput {
+  hostId: ID!
+  channel: SlackNotificationChannelUpdate!
+}
+
+input UpdateWebhookNotificationChannelInput {
   hostId: ID!
   channel: WebhookNotificationChannelUpdate!
+}
+
+input ValidateJobDataInput {
+  queueId: ID!
+  jobName: String!
+  data: JSONObject
+  opts: JobOptionsInput
 }
 
 input WebhookNotificationChannelUpdate {
@@ -2922,9 +2980,4 @@ input WebhookNotificationChannelUpdate {
 
   """Optional success http status codes. Defaults to http codes 200 - 206"""
   httpSuccessCodes: [Int!]
-}
-
-input WebhookNotificationChannelUpdateInput {
-  hostId: ID!
-  channel: WebhookNotificationChannelUpdate!
 }

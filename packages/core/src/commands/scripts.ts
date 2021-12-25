@@ -24,6 +24,12 @@ export interface ScriptFilteredJobsResult {
   removed?: number;
 }
 
+export interface ScanJobsResult {
+  cursor?: number;
+  total: number;
+  jobs: Partial<Job>[];
+}
+
 const DEFAULT_SAMPLE_SIZE = 50;
 const MAX_SAMPLE_SIZE = 1000;
 
@@ -232,13 +238,11 @@ export class Scripts {
     }
     type = type === 'waiting' ? 'wait' : type; // alias
     const key = type ? queue.toKey(type) : '';
-    const prefix = queue.toKey('');
 
     let response: any;
     try {
       const opts = pack({
         action,
-        prefix,
         criteria: filter,
         globals: globals ?? null,
         cursor,
@@ -262,33 +266,11 @@ export class Scripts {
       result.cursor = newCursor;
     }
 
-    function fixupJob(currentJob: any): Job {
-      if (!isEmpty(currentJob)) {
-        // TODO: verify this
-        const trace = currentJob['stacktrace'];
-        if (!Array.isArray(trace)) {
-          if (typeof trace === 'string') {
-            currentJob['stacktrace'] = JSON.parse(trace);
-          } else {
-            currentJob['stacktrace'] = [];
-          }
-        }
-        // logs ???
-        const jobId = currentJob.id;
-        const raw = currentJob as JobJsonRaw;
-        const job = Job.fromJSON(queue, raw, jobId);
-        const ts = currentJob['timestamp'];
-        job.timestamp = ts ? parseInt(ts) : Date.now();
-        return job;
-      }
-      return null;
-    }
-
     if (typeof unpacked.jobs !== undefined) {
       const jobs: Job[] = [];
       if (Array.isArray(unpacked.jobs)) {
         unpacked.jobs.forEach((currentJob) => {
-          const job = fixupJob(currentJob);
+          const job = fixupJob(queue, currentJob);
           job && jobs.push(job);
         });
       }
@@ -362,6 +344,62 @@ export class Scripts {
       count,
     );
   }
+
+  static async scanJobs(
+    queue: Queue,
+    status: JobStatusEnum,
+    jobName: string,
+    fields: string[] | undefined | null,
+    cursor: number,
+    count = 20,
+  ): Promise<ScanJobsResult> {
+    const client = await queue.client;
+    if (!(client as any).jobFilter) {
+      await ensureScriptsLoaded(client);
+    }
+    const type = status === 'waiting' ? 'wait' : status; // alias
+    const key = queue.toKey(type);
+
+    let response: any;
+    try {
+      const opts = pack({
+        fields: fields ?? null,
+        jobName,
+        cursor,
+        count,
+      });
+      response = await (client as any).scanJobs(key, opts);
+    } catch (e: unknown) {
+      handleReplyError(e, client);
+    }
+
+    const unpacked = JSON.parse(response) as Record<string, any>;
+
+    const totalCount = Number(unpacked.total);
+
+    const result: ScanJobsResult = {
+      total: totalCount,
+      jobs: [],
+    };
+
+    const newCursor = parseInt(unpacked['cursor'], 10);
+    if (!Number.isNaN(newCursor)) {
+      result.cursor = newCursor;
+    }
+
+    if (typeof unpacked.jobs !== undefined) {
+      const jobs: Job[] = [];
+      if (Array.isArray(unpacked.jobs)) {
+        unpacked.jobs.forEach((currentJob) => {
+          const job = fixupJob(queue, currentJob);
+          job && jobs.push(job);
+        });
+      }
+      result.jobs = jobs;
+    }
+
+    return result;
+  }
 }
 
 async function parseListPipeline<T = any>(pipeline: Pipeline) {
@@ -383,4 +421,26 @@ async function parseListPipeline<T = any>(pipeline: Pipeline) {
 async function parseNumberListPipeline(pipeline: Pipeline): Promise<number[]> {
   const result = await parseListPipeline<number>(pipeline);
   return result.map((x) => x ?? 0);
+}
+
+export function fixupJob(queue: Queue, currentJob: any): Job {
+  if (!isEmpty(currentJob)) {
+    // TODO: verify this
+    const trace = currentJob['stacktrace'];
+    if (!Array.isArray(trace)) {
+      if (typeof trace === 'string') {
+        currentJob['stacktrace'] = JSON.parse(trace);
+      } else {
+        currentJob['stacktrace'] = [];
+      }
+    }
+    // logs ???
+    const jobId = currentJob.id;
+    const raw = currentJob as JobJsonRaw;
+    const job = Job.fromJSON(queue, raw, jobId);
+    const ts = currentJob['timestamp'];
+    job.timestamp = ts ? parseInt(ts) : Date.now();
+    return job;
+  }
+  return null;
 }

@@ -1,92 +1,118 @@
-import { Queue } from 'bullmq';
-import { get } from 'lodash';
-import { Readable } from 'stream';
+import { Queue, Job } from 'bullmq';
 import { JobStatusEnum } from '../types';
-import { safeParse } from '@alpen/shared';
+import { fixupJob, Scripts } from '../commands';
 
 const DEFAULT_TEXT_SEARCH_SCAN_COUNT = 20;
 
-type TSearchArgs = {
-  status: JobStatusEnum;
-  limit: number;
-  offset: number;
-  term: string;
-  key?: string;
-  jobNames?: [];
-  scanCount?: number;
-};
-
 type TJobExcerpt = {
   id: string;
-  job: Record<string, any>;
+  job: Record<string, any> | Partial<Job>;
 };
 
 type TIteratorConfig = {
   scanCount?: number;
   keys?: string[];
+  jobName?: string;
+  status?: JobStatusEnum;
 };
 
 abstract class AbstractIterator {
   protected _scanCount: number;
   protected _keys: string[];
+  protected _jobName: string;
+
   protected constructor(protected _queue: Queue, config: TIteratorConfig) {
     this._scanCount = config.scanCount || DEFAULT_TEXT_SEARCH_SCAN_COUNT;
     this._keys = config.keys && config.keys.length ? config.keys : ['data'];
+    this._jobName = config.jobName;
   }
-  protected async _extractJobsData(ids: string[]): Promise<TJobExcerpt[]> {
-    const client = await this._queue.client;
-    const pipeline = client.pipeline();
-    ids.forEach((id) => pipeline.hmget(this._queue.toKey(id), ...this._keys));
-    const data = await pipeline.exec();
-    return data.reduce((acc, [error, fields], idx) => {
-      if (!error && fields && fields.length) {
-        const job = Object.create(null);
-        this._keys.forEach((key, index) => (job[key] = fields[index]));
-        acc.push({
-          job,
-          id: ids[idx],
-        });
-      }
-      return acc;
-    }, [] as TJobExcerpt[]);
-  }
+
   abstract generator(): AsyncGenerator<TJobExcerpt[]>;
-  abstract destroy(): void;
 }
 
 class SetIterator extends AbstractIterator {
-  private _stream: Readable;
-  constructor(queue: Queue, private _key: string, config: TIteratorConfig) {
+  protected _status: JobStatusEnum;
+  protected _cursor = 0;
+  protected _total = 0;
+
+  constructor(queue: Queue, status: JobStatusEnum, config: TIteratorConfig) {
     super(queue, config);
+    this._status = status;
   }
+
+  get total(): number {
+    return this._total;
+  }
+
+  get cursor(): number {
+    return this._cursor;
+  }
+
   async *generator() {
-    const client = await this._queue.client;
-    this._stream = client.zscanStream(this._key, {
-      count: this._scanCount,
-    });
-    for await (const ids of this._stream) {
-      this._stream.pause();
-      const filteredIds = (ids as string[]).filter(
-        (_k: string, idx) => !(idx % 2),
+    this._cursor = 0;
+
+    const scan = async (): Promise<TJobExcerpt[]> => {
+      const { cursor, jobs, total } = await Scripts.scanJobs(
+        this._queue,
+        this._status,
+        this._jobName,
+        this._keys,
+        this._cursor,
+        this._scanCount,
       );
-      const data = await this._extractJobsData(filteredIds);
-      yield data;
-      this._stream.resume();
-    }
-  }
-  destroy() {
-    if (this._stream) {
-      this._stream.destroy();
-    }
+
+      this._cursor = cursor;
+      this._total = total;
+      return jobs.map((job) => ({ id: job.id, job }));
+    };
+
+    do {
+      const jobs = await scan();
+      yield jobs;
+    } while (this._cursor);
   }
 }
 
 class ListIterator extends AbstractIterator {
   private _ids: string[];
   private _cursor = 0;
+  private _requestedJobName = false;
   constructor(queue: Queue, private _key: string, config: TIteratorConfig) {
     super(queue, config);
+    this._requestedJobName = this._keys.includes('jobName');
   }
+
+  protected async _extractJobsData(ids: string[]): Promise<TJobExcerpt[]> {
+    const shouldFilter = this._jobName && this._jobName.length;
+    const keys: string[] =
+      !this._requestedJobName && shouldFilter
+        ? [...this._keys, 'jobName']
+        : this._keys;
+
+    const client = await this._queue.client;
+    const pipeline = client.pipeline();
+    ids.forEach((id) => pipeline.hmget(this._queue.toKey(id), ...keys));
+    const data = await pipeline.exec();
+    return data.reduce((acc, [error, fields], idx) => {
+      if (!error && fields && fields.length) {
+        const job = Object.create(null);
+        this._keys.forEach((key, index) => (job[key] = fields[index]));
+        if (!shouldFilter || job.jobName === this._jobName) {
+          if (!this._requestedJobName) {
+            delete job.jobName;
+          }
+          const j = fixupJob(this._queue, job);
+          // todo: fixup
+          acc.push({
+            job: j,
+            id: ids[idx],
+          });
+        }
+      }
+      return acc;
+    }, [] as TJobExcerpt[]);
+  }
+
   async *generator() {
     const client = await this._queue.client;
     this._ids = await client.lrange(this._key, 0, -1);
@@ -105,9 +131,7 @@ class ListIterator extends AbstractIterator {
       }
     }
   }
-  // noop
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  destroy() {}
+
   private _incCursor(n: number) {
     this._cursor += n;
   }
@@ -121,57 +145,18 @@ export function getIterator(
   status: JobStatusEnum,
   keys = ['data'],
   scanCount = DEFAULT_TEXT_SEARCH_SCAN_COUNT,
+  jobName?: string,
 ): SetIterator | ListIterator {
   const redisKey = queue.toKey(status);
-  const config: TIteratorConfig = { scanCount, keys };
+  const config: TIteratorConfig = { scanCount, keys, jobName };
   switch (status) {
     case JobStatusEnum.COMPLETED:
     case JobStatusEnum.FAILED:
     case JobStatusEnum.DELAYED:
-      return new SetIterator(queue, redisKey, config);
+      return new SetIterator(queue, status, config);
     case JobStatusEnum.ACTIVE:
     case JobStatusEnum.WAITING:
     case JobStatusEnum.PAUSED:
       return new ListIterator(queue, redisKey, config);
-  }
-}
-
-export class DataTextSearcher {
-  constructor(private _queue: Queue) {}
-  async search(args: TSearchArgs) {
-    const it = this._getIterator(args);
-    const start = args.offset;
-    const end = args.limit + start;
-    const acc: string[] = [];
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/label
-    mainLoop: for await (const jobs of it.generator()) {
-      for (const job of jobs) {
-        const matched = this._matchData(job['data'], args.term, args.key);
-        if (matched) {
-          acc.push(job.id);
-        }
-        if (acc.length >= end) {
-          break mainLoop;
-        }
-      }
-    }
-    it.destroy();
-    return await Promise.all(
-      acc.slice(start, end).map((id) => this._queue.getJob(id)),
-    );
-  }
-  private _getIterator(args: TSearchArgs): AbstractIterator {
-    return getIterator(this._queue, args.status, ['data'], args.scanCount);
-  }
-  private _matchData(data: string, term: string, key?: string) {
-    if (key) {
-      const parsedData = safeParse(data);
-      if (typeof parsedData === 'object') {
-        const value = String(get(parsedData, key));
-        return value?.includes(term);
-      }
-    } else {
-      return data.includes(term);
-    }
   }
 }

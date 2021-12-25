@@ -5,6 +5,6 @@
     "outDir": "./dist",
     "baseUrl": "./"
   },
-  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__mocks__/*", "**/__tests__/*"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/__mocks__/*", "**/__tests__/*", "./scripts/*.ts"],
   "references": [{ "path": "../shared" }, { "path": "../core" }]
 }

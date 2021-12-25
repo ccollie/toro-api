@@ -1,5 +1,5 @@
 import { ensureScriptsLoaded } from '../../commands';
-import { Queue, QueueOptions } from 'bullmq';
+import { Queue, QueueOptions, removeAllQueueData } from 'bullmq';
 import { DEFAULT_CONNECTION_OPTIONS, TEST_QUEUE_PREFIX, TEST_DB } from './client';
 import { nanoid } from 'nanoid';
 
@@ -20,4 +20,9 @@ export async function createQueue(
   const client = await queue.client;
   await ensureScriptsLoaded(client);
   return queue;
+}
+
+export async function clearQueueData(queue: Queue): Promise<void> {
+  const client = await queue.client;
+  await removeAllQueueData(client, queue.name, queue.opts.prefix);
 }

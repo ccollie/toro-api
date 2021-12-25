@@ -17,7 +17,7 @@ async function getQueueJobsById(
     multi.hgetall(queue.toKey(jid));
   });
   const res = await multi.exec();
-  const result: Job<any, any>[] = [];
+  const result: Job[] = [];
   const now = systemClock.getTime();
   res.forEach((item, index) => {
     if (item[0]) {
