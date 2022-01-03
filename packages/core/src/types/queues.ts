@@ -25,30 +25,28 @@ export enum QueueEventsEnum {
   CLEANED = 'cleaned',
 }
 
-export enum JobStatusEnum {
-  ACTIVE = 'active',
-  WAITING = 'waiting',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  DELAYED = 'delayed',
-  PAUSED = 'paused',
-  STALLED = 'stalled',
-  WAITING_CHILDREN = 'waiting-children',
-  UNKNOWN = 'unknown',
-}
+export type JobStatus =
+  | 'active'
+  | 'waiting'
+  | 'completed'
+  | 'failed'
+  | 'delayed'
+  | 'paused'
+  | 'stalled'
+  | 'waiting-children'
+  | 'unknown';
 
-export type JobFinishedState = JobStatusEnum.COMPLETED | JobStatusEnum.FAILED;
-
-export type JobStatus = keyof typeof JobStatusEnum;
+export type JobFinishedState = 'completed' | 'failed';
 
 export type JobCountStates =
-  | JobStatusEnum.COMPLETED
-  | JobStatusEnum.WAITING
-  | JobStatusEnum.ACTIVE
-  | JobStatusEnum.FAILED
-  | JobStatusEnum.DELAYED
-  | JobStatusEnum.PAUSED
-  | JobStatusEnum.WAITING_CHILDREN;
+  | 'active'
+  | 'waiting'
+  | 'completed'
+  | 'failed'
+  | 'delayed'
+  | 'paused'
+  | 'stalled'
+  | 'waiting-children';
 
 export type JobCounts = Record<JobCountStates, number>;
 
@@ -95,7 +93,7 @@ export interface JobCreationOptions {
 export type JobFilter = {
   id: string;
   name: string;
-  status?: JobStatusEnum;
+  status?: JobStatus;
   hash: string;
   expression: string;
   createdAt: number;

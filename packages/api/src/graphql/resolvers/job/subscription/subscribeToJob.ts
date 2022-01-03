@@ -1,4 +1,4 @@
-import { AppJob, JobEventData, JobStatusEnum, systemClock } from '@alpen/core';
+import { AppJob, JobEventData, JobStatus, systemClock } from '@alpen/core';
 import { diff, isNumber } from '@alpen/shared';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 import { schemaComposer } from 'graphql-compose';
@@ -80,7 +80,7 @@ const JobStateChangePayload = schemaComposer.createObjectTC({
   },
 });
 
-export function createStateSubscription(state: JobStatusEnum): FieldConfig {
+export function createStateSubscription(state: JobStatus): FieldConfig {
   const description = `Returns job ${state} events`;
   return {
     type: JobStateChangePayload,

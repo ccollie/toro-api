@@ -1,4 +1,4 @@
-import { createJobNameFilter, JobStatusEnum } from '@alpen/core';
+import { createJobNameFilter, JOB_STATES, JobStatus } from '@alpen/core';
 import { diff, hashObject, isFinishedStatus } from '@alpen/shared';
 import { GraphQLFieldResolver } from 'graphql';
 import { schemaComposer } from 'graphql-compose';
@@ -9,8 +9,7 @@ import ms from 'ms';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 
-const EVENT_NAMES = Object.values(JobStatusEnum)
-  .map((name) => `job.${name}`)
+const EVENT_NAMES = JOB_STATES.map((name) => `job.${name}`)
   .concat('job.removed')
   .concat('job.finished');
 
@@ -30,7 +29,7 @@ type ChangeBatch = {
 
 interface QueueJobChangesFilter {
   names?: string[];
-  states?: JobStatusEnum[];
+  states?: JobStatus[];
   attemptsMade?: number;
   batchInterval?: number;
 }

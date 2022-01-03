@@ -24,7 +24,7 @@ export const moveJobToDelayed: FieldConfig = {
         queueId: {
           type: 'ID!',
         },
-        jobId: 'String!',
+        jobId: 'ID!',
         delay: {
           type: Duration,
           description: 'The amount of time to delay execution (in ms)',

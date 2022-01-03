@@ -2,7 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
 import { JobStatusEnumType } from '../../index';
 import { FieldConfig } from '../../index';
-import { JobStatusEnum } from '@alpen/core';
+import { JobStatus } from '@alpen/core';
 import { Duration } from '../../../scalars';
 import { parseDuration } from '@alpen/shared';
 import boom from '@hapi/boom';
@@ -45,7 +45,7 @@ export const cleanQueue: FieldConfig = {
         },
         status: {
           type: JobStatusEnumType,
-          defaultValue: JobStatusEnum.COMPLETED,
+          defaultValue: 'completed' as JobStatus,
           description: 'Status of the jobs to clean',
         },
         limit: {

@@ -1,13 +1,13 @@
 import { Queue, RedisClient } from 'bullmq';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { JobStatusEnum } from '../types';
+import { JobStatus } from '../types';
 import { Scripts } from '../commands';
 import { getAccessor } from './accessors';
 
 export interface JobMemoryLoaderKey {
   queue: Queue;
-  state: JobStatusEnum;
+  state: JobStatus;
   limit?: number;
   jobName?: string;
 }

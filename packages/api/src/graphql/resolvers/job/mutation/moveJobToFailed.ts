@@ -15,8 +15,8 @@ export const moveJobToFailed: FieldConfig = {
     input: schemaComposer.createInputTC({
       name: 'MoveJobToFailedInput',
       fields: {
-        queueId: 'String!',
-        jobId: 'String!',
+        queueId: 'ID!',
+        jobId: 'ID!',
         failedReason: 'String',
       },
     }),

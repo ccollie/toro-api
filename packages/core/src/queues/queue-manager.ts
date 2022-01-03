@@ -19,7 +19,7 @@ import { getConfigDuration } from '../lib/config-utils';
 import { logger } from '../logger';
 import { convertWorker, QueueWorker } from './queue-worker';
 
-const ALL_STATUSES: JobStatus[] = ['COMPLETED', 'WAITING', 'ACTIVE', 'FAILED'];
+const ALL_STATUSES: JobStatus[] = ['completed', 'waiting', 'active', 'failed'];
 
 export function getCronDescription(cron: string | number): string {
   function fromNumber(value: number): string {

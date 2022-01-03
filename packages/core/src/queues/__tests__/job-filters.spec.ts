@@ -9,7 +9,7 @@ import {
   getJobFilter,
   getJobFilters,
 } from '../';
-import { JobFilter, JobStatusEnum } from '../../types';
+import { JobFilter } from '../../types';
 
 import { getJobFiltersKey } from '../../keys';
 import { sampleSize, sortBy } from 'lodash';
@@ -41,7 +41,7 @@ describe('Job Filters', function () {
 
   async function createFilter(expr?: string): Promise<JobFilter> {
     expr = expr || SAMPLE_EXPR;
-    return addJobFilter(queue, 'Simple', JobStatusEnum.COMPLETED, expr);
+    return addJobFilter(queue, 'Simple', 'completed', expr);
   }
 
   describe('addJobFilter', function () {
@@ -50,13 +50,13 @@ describe('Job Filters', function () {
       const saved = await addJobFilter(
         queue,
         'test',
-        JobStatusEnum.FAILED,
+        'failed',
         SAMPLE_EXPR,
       );
       expect(saved).toBeDefined();
       expect(saved.name).toBe('test');
       expect(saved.expression).toEqual(SAMPLE_EXPR);
-      expect(saved.status).toEqual(JobStatusEnum.FAILED);
+      expect(saved.status).toEqual('failed');
       expect(saved.createdAt).toBeGreaterThanOrEqual(now);
 
       const data = await getHashValue(saved.id);
@@ -74,7 +74,7 @@ describe('Job Filters', function () {
         addJobFilter(
           queue,
           'test',
-          JobStatusEnum.COMPLETED,
+          'completed',
           'job.missing > (50',
         ),
       ).rejects.toThrow();
@@ -87,7 +87,7 @@ describe('Job Filters', function () {
       const saved = await addJobFilter(
         queue,
         'Simple',
-        JobStatusEnum.COMPLETED,
+        'completed',
         expr,
       );
       const retrieved = await getJobFilter(queue, saved.id);
@@ -113,7 +113,7 @@ describe('Job Filters', function () {
 
     async function createFilters() {
       filters = await pMap(FilterNames, (name) =>
-        addJobFilter(queue, name, JobStatusEnum.COMPLETED, SAMPLE_EXPR),
+        addJobFilter(queue, name, 'completed', SAMPLE_EXPR),
       );
       filters = sortBy(filters, 'id');
     }
@@ -158,7 +158,7 @@ describe('Job Filters', function () {
     it('it should delete all filters for a queue', async () => {
       const names = ['lorem', 'ipsum', 'dolor', 'sit', 'amet'];
       await pMap(names, (name) =>
-        addJobFilter(queue, name, JobStatusEnum.FAILED, SAMPLE_EXPR),
+        addJobFilter(queue, name, 'failed', SAMPLE_EXPR),
       );
       // ensure we've stored our values
       const items = await client.hkeys(getKey());

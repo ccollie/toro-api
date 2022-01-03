@@ -3,7 +3,7 @@ import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
 import { isEmpty } from 'lodash';
 import { pack } from 'msgpackr';
 import { translateReplyError } from '../redis';
-import { JobFinishedState, JobStatusEnum } from '../types';
+import { JobFinishedState, JobStatus } from '../types';
 import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
 import { getConfigDuration } from '../lib/config-utils';
@@ -134,7 +134,7 @@ export class Scripts {
 
   static getKeysMemoryUsageArgs(
     queue: Queue,
-    status: JobStatusEnum,
+    status: JobStatus,
     limit: number = DEFAULT_SAMPLE_SIZE,
     jobName = '',
   ): Array<string | number> {
@@ -161,7 +161,7 @@ export class Scripts {
   static async getAvgJobMemoryUsage(
     queue: Queue,
     jobName = '',
-    status: JobFinishedState = JobStatusEnum.COMPLETED,
+    status: JobFinishedState = 'completed',
     limit = 100,
   ): Promise<number> {
     const client = await queue.client;
@@ -173,7 +173,7 @@ export class Scripts {
     client: RedisClient,
     queues: Queue[],
     jobName = '',
-    status: JobFinishedState = JobStatusEnum.COMPLETED,
+    status: JobFinishedState = 'completed',
     limit = 100,
   ): Promise<number[]> {
     const pipeline = client.pipeline();
@@ -347,7 +347,7 @@ export class Scripts {
 
   static async scanJobs(
     queue: Queue,
-    status: JobStatusEnum,
+    status: JobStatus,
     jobName: string,
     fields: string[] | undefined | null,
     cursor: number,

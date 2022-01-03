@@ -6,6 +6,7 @@
     "baseUrl": "./",
     "composite": true,
     "incremental": true,
+    "isolatedModules": true
   },
   "include": [
     "src/**/*"

@@ -10,14 +10,22 @@ import {
   validateBySchema,
   validateJobData,
 } from './job-schemas';
-import { JobCountStates, JobCreationOptions, JobStatusEnum } from '../types/queues';
+import { JobCountStates, JobCreationOptions, JobStatus } from '../types/queues';
 import { Pipeline } from 'ioredis';
 import { logger } from '../logger';
 import { Scripts } from '../commands';
 import { StatsGranularity } from '../stats';
 import { JobMemoryLoaderKey, JobMemoryLoaderResult, loaders } from '../loaders';
 
-const JOB_STATES = Object.values(JobStatusEnum);
+export const JOB_STATES: JobStatus[] = [
+  'completed',
+  'failed',
+  'delayed',
+  'active',
+  'waiting',
+  'paused',
+  'waiting-children',
+];
 
 /****
  * A more performant way to fetch multiple getJobs from a queue.
@@ -273,12 +281,15 @@ export async function getJobCountByType(
     types: states,
   };
   const counts = await loaders.jobCounts.load(key);
-  return Object.values(counts).reduce((sum: number, count: number) => sum + count, 0);
+  return Object.values(counts).reduce(
+    (sum: number, count: number) => sum + count,
+    0,
+  );
 }
 
 export async function getJobMemoryUsage(
   queue: Queue,
-  state: JobStatusEnum,
+  state: JobStatus,
   limit?: number,
   jobName?: string,
 ): Promise<JobMemoryLoaderResult> {
@@ -293,7 +304,7 @@ export async function getJobMemoryUsage(
 
 export async function getJobMemoryAvg(
   queue: Queue,
-  state: JobStatusEnum,
+  state: JobStatus,
   limit?: number,
   jobName?: string,
 ): Promise<number> {

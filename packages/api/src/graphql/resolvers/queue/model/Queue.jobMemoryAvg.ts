@@ -5,8 +5,7 @@ import {
 import { Queue } from 'bullmq';
 import {
   getJobMemoryAvg,
-  getJobMemoryUsage,
-  JobStatusEnum,
+  getJobMemoryUsage
 } from '@alpen/core';
 import { JobStatusEnumType } from '../../../scalars';
 
@@ -39,7 +38,7 @@ export const jobMemoryAvg: ObjectTypeComposerFieldConfigDefinition<any, any> = {
     const {
       limit = 50,
       jobName,
-      status = JobStatusEnum.COMPLETED,
+      status = 'completed',
     } = args || {};
     return getJobMemoryAvg(queue, status, limit, jobName);
   },
@@ -70,7 +69,7 @@ export const jobMemoryUsage: ObjectTypeComposerFieldConfigDefinition<any, any> =
       const {
         limit = 50,
         jobName,
-        status = JobStatusEnum.COMPLETED,
+        status = 'completed',
       } = args || {};
       const { byteCount, jobCount } = await getJobMemoryUsage(
         queue,

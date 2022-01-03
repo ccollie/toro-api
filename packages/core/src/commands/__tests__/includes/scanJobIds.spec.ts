@@ -1,7 +1,7 @@
 import { safeParse } from '@alpen/shared';
 import { Queue } from 'bullmq';
 import { nanoid } from 'nanoid';
-import { JobStatusEnum } from '../../../types';
+import { JobStatus } from '../../../types';
 import { Command, createQueue, loadIncludeScript, } from '../utils';
 
 
@@ -23,11 +23,11 @@ function createTestScript(include: string): string {
   `;
 }
 
-function isZset(status: JobStatusEnum): boolean {
+function isZset(status: JobStatus): boolean {
   return (
-    status === JobStatusEnum.COMPLETED ||
-    status === JobStatusEnum.FAILED ||
-    status === JobStatusEnum.DELAYED
+    status === 'completed' ||
+    status === 'failed' ||
+    status === 'delayed'
   );
 }
 
@@ -84,7 +84,7 @@ describe('scanJobIds.lua', () => {
   }
 
   async function generateIds(
-    status: JobStatusEnum,
+    status: JobStatus,
     count = 10,
   ): Promise<{ key: string; ids: string[] }> {
     const ids = [];
@@ -111,7 +111,7 @@ describe('scanJobIds.lua', () => {
   }
 
   async function getIdsByType(
-    type: JobStatusEnum,
+    type: JobStatus,
     cursor = 0,
     count = 10,
   ): Promise<GetIdsReturnType> {
@@ -122,8 +122,8 @@ describe('scanJobIds.lua', () => {
   describe('zset', () => {
 
     test('can get ids in a single iteration', async () => {
-      const { ids } = await generateIds(JobStatusEnum.COMPLETED, 10);
-      const res = await getIdsByType(JobStatusEnum.COMPLETED, 0, 20);
+      const { ids } = await generateIds('completed', 10);
+      const res = await getIdsByType('completed', 0, 20);
       expect(res.ids).toStrictEqual(ids);
       expect(res.cursor).toBe(0);
     });
@@ -132,10 +132,10 @@ describe('scanJobIds.lua', () => {
       const actual: string[] = [];
       // items set this high so that redis doesn't use optimized storage
       // https://redis.io/commands/scan#the-count-option
-      const { ids } = await generateIds(JobStatusEnum.COMPLETED, 500);
+      const { ids } = await generateIds('completed', 500);
       let cursor = 0;
       do {
-        const res = await getIdsByType(JobStatusEnum.COMPLETED, cursor, 50);
+        const res = await getIdsByType('completed', cursor, 50);
         actual.push(...res.ids);
         cursor = res.cursor;
       } while (cursor !== 0);
@@ -175,8 +175,8 @@ describe('scanJobIds.lua', () => {
 
 
     test('can get ids in a single iteration', async () => {
-      const { ids } = await generateIds(JobStatusEnum.DELAYED, 10);
-      const res = await getIdsByType(JobStatusEnum.DELAYED, 0, 20);
+      const { ids } = await generateIds('delayed', 10);
+      const res = await getIdsByType('delayed', 0, 20);
       expect(res.ids).toStrictEqual(ids);
       expect(res.cursor).toBe(0);
     });

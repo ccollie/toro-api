@@ -60,7 +60,7 @@ type Mutation {
   deleteMetric(input: DeleteMetricInput!): DeleteMetricResult!
 
   """Create a queue metric"""
-  createMetric(input: CreateMeetricInput!): Metric!
+  createMetric(input: CreateMetricInput!): Metric!
   refreshMetricData(input: RefreshMetricDataInput!): [RefreshMetricDataResult]!
 
   """Update a job metric"""
@@ -373,14 +373,14 @@ enum HttpMethodEnum {
 }
 
 enum JobStatus {
-  COMPLETED
-  WAITING
-  ACTIVE
-  DELAYED
-  FAILED
-  PAUSED
-  WAITING_CHILDREN
-  UNKNOWN
+  completed
+  waiting
+  active
+  delayed
+  failed
+  paused
+  waiting_children
+  unknown
 }
 
 enum MetricCategory {
@@ -1505,7 +1505,7 @@ type QueueJobCountDelta {
   failed: Int
   delayed: Int
   active: Int
-  waiting: Int!
+  waiting: Int
 }
 
 type QueueWorker {
@@ -2035,7 +2035,7 @@ input CreateMailNotificationChannelInput {
 }
 
 """Input fields for creating a metric"""
-input CreateMeetricInput {
+input CreateMetricInput {
   type: MetricType!
 
   """The id of the queue to which the metric belongs"""
@@ -2113,7 +2113,7 @@ input DeleteJobFilterInput {
 
 input DeleteJobsByFilterInput {
   """Search for jobs having this status"""
-  status: JobStatus = COMPLETED
+  status: JobStatus = completed
 
   """The job filter expression"""
   criteria: String
@@ -2318,8 +2318,8 @@ input HostQueuesFilter {
   """Regex pattern for queue name matching"""
   search: String
 
-  """Queue prefix"""
-  prefix: String
+  """Return Queues with these prefixes"""
+  prefixes: [String!]
 
   """Statuses to filter on"""
   statuses: [QueueFilterStatus!]
@@ -2465,7 +2465,7 @@ input JobSchemaInput {
 
 input JobSearchInput {
   """Search for jobs having this status"""
-  status: JobStatus = COMPLETED
+  status: JobStatus = completed
 
   """The job filter expression"""
   criteria: String
@@ -2645,7 +2645,7 @@ input QueueCleanInput {
   grace: Duration = 0
 
   """Status of the jobs to clean"""
-  status: JobStatus = COMPLETED
+  status: JobStatus = completed
 
   """
   limit Maximum amount of jobs to clean per call. If not provided will clean all matching jobs.
@@ -2670,7 +2670,7 @@ input QueueJobSchemaInput {
 input QueueJobsInput {
   offset: Int = 0
   limit: Int = 10
-  status: JobStatus = COMPLETED
+  status: JobStatus = completed
   sortOrder: SortOrderEnum = ASC
 }
 

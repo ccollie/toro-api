@@ -64,10 +64,10 @@ local keyPrefix = string.sub(key, 1, lastColon - 1)
 if (#ids > 0) then
     local getAll = false
     if (#fields > 0) then
-        --- if we specify jobName, we need to return "jobName" so we can filter on it
+        --- if we specify jobName, we need to return "name" so we can filter on it
         if (jobName) then
-            if (not hasField('jobName')) then
-                table.insert(fields, 'jobName')
+            if (not hasField('name')) then
+                table.insert(fields, 'name')
             end
         end
     else
@@ -82,8 +82,8 @@ if (#ids > 0) then
             res = redis.call('hmget', jid, unpack(fields))
         end
         debug('POOPOOLALA: key = '..keyPrefix..id ..', res ' .. toStr(res))
-        job = toHash(res)
-        if (jobName == nil or job.jobName == jobName) then
+        local job = toHash(res)
+        if (jobName == nil or job.name == jobName) then
             -- always return id
             job.id = id
             table.insert(result.jobs, job)

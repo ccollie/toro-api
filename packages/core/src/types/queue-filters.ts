@@ -7,6 +7,6 @@ export enum QueueFilterStatus {
 
 export interface QueueFilter {
   search?: string;
-  prefix?: string;
+  prefixes?: string[];
   statuses?: QueueFilterStatus[];
 }

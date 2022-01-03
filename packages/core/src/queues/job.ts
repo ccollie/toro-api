@@ -2,7 +2,7 @@ import {  notFound, badRequest } from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
-import { JobStatusEnum } from '../types';
+import { JobStatus } from '../types';
 import { Scripts } from '../commands';
 
 // https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
@@ -26,18 +26,18 @@ async function processJobInternal(
   queue: Queue,
   cmd: string,
   job: Job,
-  state: JobStatusEnum,
+  state: JobStatus,
 ): Promise<Job> {
   switch (cmd) {
     case 'retry':
-      if (state === JobStatusEnum.COMPLETED || state === JobStatusEnum.FAILED) {
+      if (state === 'completed' || state === 'failed') {
         await job.retry(state);
       } else {
         throw notFound('Only COMPLETED or FAILED jobs can be retried');
       }
       break;
     case 'promote':
-      if (state !== JobStatusEnum.DELAYED) {
+      if (state !== 'delayed') {
         throw badRequest(
           `Only "delayed" jobs can be promoted (job ${job.name}#${job.id})`,
         );
@@ -45,7 +45,7 @@ async function processJobInternal(
       await job.promote();
       break;
     case 'remove':
-      if (state === JobStatusEnum.ACTIVE) {
+      if (state === 'active') {
         await job.discard();
         await job.moveToFailed(new Error('Aborted by user'), queue.token);
       } else {
@@ -126,7 +126,7 @@ export async function bulkJobHandler(
     const ids = jobs.map((job) => job.id);
     const states = await Scripts.multiGetJobState(queue, ids);
     const promises = jobs.map((job, index) => {
-      const state = states[index] as JobStatusEnum;
+      const state = states[index] as JobStatus;
       return processJobInternal(queue, action, job, state);
     });
     const settled = await pSettle(promises, { concurrency: 4 });

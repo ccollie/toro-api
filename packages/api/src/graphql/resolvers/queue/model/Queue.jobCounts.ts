@@ -2,20 +2,20 @@ import { Queue } from 'bullmq';
 import { get } from 'lodash';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
-import { JobCountStates, JobStatusEnum } from '@alpen/core';
+import { JobCountStates } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export const JobCountsTC = schemaComposer.createObjectTC({
   name: 'JobCounts',
   description: 'The count of jobs according to status',
   fields: {
-    [JobStatusEnum.COMPLETED]: 'Int',
-    [JobStatusEnum.FAILED]: 'Int',
-    [JobStatusEnum.DELAYED]: 'Int',
-    [JobStatusEnum.ACTIVE]: 'Int',
-    [JobStatusEnum.WAITING]: 'Int',
-    // [JobStatusEnum.WAITING_CHILDREN]: 'Int',
-    [JobStatusEnum.PAUSED]: 'Int',
+    completed: 'Int',
+    failed: 'Int',
+    delayed: 'Int',
+    active: 'Int',
+    waiting: 'Int',
+    // ['waiting-children']: 'Int',
+    paused: 'Int',
   },
 });
 

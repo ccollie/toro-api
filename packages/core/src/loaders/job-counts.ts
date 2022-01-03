@@ -3,14 +3,10 @@ import { Pipeline } from 'ioredis';
 import DataLoader from 'dataloader';
 import { aggregateQueuesByClient } from './utils';
 import pMap from 'p-map';
-import { JobCounts, JobCountStates, JobStatusEnum } from '../types/queues';
+import { JobCounts, JobCountStates } from '../types/queues';
 import { getAccessor } from './accessors';
 
-const DefaultTypes: JobCountStates[] = [
-  JobStatusEnum.DELAYED,
-  JobStatusEnum.PAUSED,
-  JobStatusEnum.WAITING,
-];
+const DefaultTypes: JobCountStates[] = ['delayed', 'paused', 'waiting'];
 
 export interface JobCountsLoaderKey {
   queue: Queue;

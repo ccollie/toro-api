@@ -10,8 +10,8 @@ export async function getFilteredQueues(
 ): Promise<Queue[]> {
   let queues = manager.getQueues();
   if (!filter) return queues;
-  const { search, prefix, statuses } = filter;
-  if (!search && !prefix && !statuses?.length) {
+  const { search, prefixes, statuses } = filter;
+  if (!search && !prefixes && !statuses?.length) {
     return queues;
   }
 
@@ -19,13 +19,14 @@ export async function getFilteredQueues(
     const regex = new RegExp(escapeRegExp(search), 'i');
     queues = queues.filter((queue) => queue.name.match(regex));
   }
-  if (prefix) {
+  if (prefixes && prefixes.length) {
     queues = queues.filter((queue) => {
-      return queue.opts.prefix?.startsWith(prefix);
+      const prefix = queue.opts.prefix;
+      return prefix && prefixes.includes(prefix);
     });
   }
   // queues = queues.filter((queue) => excludeSet.has(queue.id));
-  if (statuses && statuses.length) {
+  if (statuses && statuses.length && queues.length) {
     const pipeline = manager.client.pipeline();
     const valid = new Set(Array.from(queues));
 

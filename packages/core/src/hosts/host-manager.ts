@@ -14,12 +14,13 @@ import pAll from 'p-all';
 import pMap from 'p-map';
 import { sortBy, uniqBy } from 'lodash';
 import { ensureScriptsLoaded } from '../commands';
-import { JobCounts, JobStatusEnum } from '../types';
+import type { JobCounts, JobStatus } from '../types';
 import { QueueManager } from '../queues/queue-manager';
 import {
   DiscoveredQueue,
   discoverQueues,
   getPipelinedCounts,
+  JOB_STATES,
 } from '../queues/queue';
 import { JobValidationResult, validateJobData } from '../queues/job-schemas';
 import {
@@ -326,8 +327,8 @@ export class HostManager {
     return values;
   }
 
-  async getJobCounts(states?: JobStatusEnum[]): Promise<JobCounts> {
-    states = states?.length === 0 ? Object.values(JobStatusEnum) : states;
+  async getJobCounts(states?: JobStatus[]): Promise<JobCounts> {
+    states = states?.length === 0 ? JOB_STATES : states;
     const counts: JobCounts = Object.create(null);
     states.forEach((state) => {
       counts[state] = 0;

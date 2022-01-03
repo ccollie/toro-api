@@ -13,7 +13,7 @@ import {
 import { logger } from '../logger';
 import { Events } from '../metrics/constants';
 import { parseStreamId, timestampFromStreamId } from '../redis';
-import { AppJob, JobStatusEnum } from '../types';
+import { AppJob } from '../types';
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');
@@ -207,7 +207,7 @@ export class QueueListener extends Emittery {
     const { job } = data;
     data.prevState = args.prev;
     job.returnvalue = args.returnvalue;
-    this.markFinished(data, JobStatusEnum.COMPLETED);
+    this.markFinished(data, 'completed');
   }
 
   protected failedListener(
@@ -217,7 +217,7 @@ export class QueueListener extends Emittery {
     const data = this.preprocessJobEvent('failed', args, id);
     const { job } = data;
     job.failedReason = args.failedReason;
-    this.markFinished(data, JobStatusEnum.FAILED);
+    this.markFinished(data, 'failed');
   }
 
   protected waitingListener(args: { jobId: string }, id: string): void {
@@ -274,10 +274,10 @@ export class QueueListener extends Emittery {
 
   markFinished(
     data: JobEventData,
-    status: JobStatusEnum.COMPLETED | JobStatusEnum.FAILED,
+    status: 'completed' | 'failed',
   ): void {
     const { job, ts } = data;
-    const failed = status === JobStatusEnum.FAILED;
+    const failed = status === 'failed';
     job.state = status;
     job.finishedOn = ts;
 

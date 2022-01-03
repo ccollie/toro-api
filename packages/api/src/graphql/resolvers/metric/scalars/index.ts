@@ -54,7 +54,7 @@ export const MetricInputTC = schemaComposer
 
 export const CreateMetricTC = schemaComposer
   .createInputTC({
-    name: 'CreateMeetricInput',
+    name: 'CreateMetricInput',
     description: 'Input fields for creating a metric',
     fields: {
       ...InputFields,

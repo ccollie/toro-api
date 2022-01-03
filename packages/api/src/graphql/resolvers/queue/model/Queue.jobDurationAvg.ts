@@ -1,6 +1,6 @@
 import { ObjectTypeComposerFieldConfigDefinition } from 'graphql-compose';
 import { Queue } from 'bullmq';
-import { JobStatusEnum, Scripts } from '@alpen/core';
+import { Scripts } from '@alpen/core';
 
 export const jobDurationAvg: ObjectTypeComposerFieldConfigDefinition<any, any> =
   {
@@ -23,7 +23,7 @@ export const jobDurationAvg: ObjectTypeComposerFieldConfigDefinition<any, any> =
       return Scripts.getAvgJobDuration(
         queue,
         jobName,
-        JobStatusEnum.COMPLETED,
+        'completed',
         limit,
       );
     },

@@ -2,7 +2,6 @@ import { Queue } from 'bullmq';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { getJobCountByType } from './loaders';
-import { JobStatusEnum } from '@alpen/core';
 
 export const pendingJobCount: FieldConfig = {
   type: 'Int!',
@@ -11,9 +10,9 @@ export const pendingJobCount: FieldConfig = {
     return getJobCountByType(
       context,
       queue,
-      JobStatusEnum.WAITING,
-      JobStatusEnum.PAUSED,
-      JobStatusEnum.DELAYED,
+      'waiting',
+      'paused',
+      'delayed',
     );
   },
 };

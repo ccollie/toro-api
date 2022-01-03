@@ -9,7 +9,7 @@ if (!fs.existsSync(resolvedPath)) {
   fs.mkdirSync(resolvedPath, { recursive: true });
   console.log('Directory is created.');
 }
-const destFilename = join(resolvedPath, 'sdl.graphql');
+const destFilename = join(resolvedPath, 'schema.graphql');
 const sdl = getSDL();
 (async () => {
   await fs.promises.writeFile(destFilename, sdl, {

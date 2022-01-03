@@ -1,6 +1,6 @@
 import {
+  type HostConfig,
   accessors,
-  HostConfig,
   initLoaders,
   loaders,
   logger,
@@ -10,19 +10,21 @@ import {
 } from '@alpen/core';
 import { useApolloServerErrors } from '@envelop/apollo-server-errors';
 import {
+  type FormatErrorHandler,
+  type Plugin,
   EnvelopError,
-  FormatErrorHandler,
-  Plugin,
   useErrorHandler,
   useMaskedErrors,
 } from '@envelop/core';
 import { DepthLimitConfig, useDepthLimit } from '@envelop/depth-limit';
 import type { AllowedOperations } from '@envelop/filter-operation-type';
 import { useFilterAllowedOperations } from '@envelop/filter-operation-type';
-import { AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
-import type { PersistedQueryStore } from '@graphql-ez/plugin-automatic-persisted-queries';
-import {
+import { type AltairOptions, ezAltairIDE } from '@graphql-ez/plugin-altair';
+import type {
+  PersistedQueryStore,
   AutomaticPersistedQueryOptions,
+} from '@graphql-ez/plugin-automatic-persisted-queries';
+import {
   createLRUStore,
   ezAutomaticPersistedQueries,
 } from '@graphql-ez/plugin-automatic-persisted-queries';
@@ -30,7 +32,7 @@ import boom from '@hapi/boom';
 
 import { ApolloError } from 'apollo-server-errors';
 import { GraphQLError, OperationTypeNode } from 'graphql';
-import {
+import type {
   AppOptions,
   BuildAppOptions,
   BuildContextArgs,
@@ -230,7 +232,7 @@ export function createAppOptions(
     depthLimitOptions,
     allowIntrospection = !isProduction,
     cacheOptions,
-    allowBatchedQueries = 5
+    allowBatchedQueries = 5,
   } = {
     extraPlugins: [],
     ...(opts ?? {

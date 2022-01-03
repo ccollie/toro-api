@@ -7,7 +7,7 @@ import {
   MetricValueType,
   QueueMetricOptions,
 } from './types';
-import { JobStatusEnum } from '../types';
+import type { JobStatus } from '../types';
 
 /**
  * Base class to provide spot/instant values of job counts from a queue.
@@ -16,15 +16,15 @@ import { JobStatusEnum } from '../types';
  * current values from the queue.
  */
 export class JobSpotCountMetric extends PollingMetric {
-  private readonly _statuses: JobStatusEnum[];
+  private readonly _statuses: JobStatus[];
 
   // public only for testing
-  constructor(props: MetricOptions, statuses: JobStatusEnum[]) {
+  constructor(props: MetricOptions, statuses: JobStatus[]) {
     super(props);
     this._statuses = statuses;
   }
 
-  get statuses(): JobStatusEnum[] {
+  get statuses(): JobStatus[] {
     return this._statuses;
   }
 
@@ -51,7 +51,7 @@ export class JobSpotCountMetric extends PollingMetric {
  */
 export class CurrentActiveCountMetric extends JobSpotCountMetric {
   constructor(options: QueueMetricOptions) {
-    super(options, [JobStatusEnum.ACTIVE]);
+    super(options, ['active']);
   }
 
   static get key(): MetricTypes {
@@ -68,7 +68,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
  */
 export class CurrentWaitingCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, [JobStatusEnum.WAITING]);
+    super(options, ['waiting']);
   }
 
   static get key(): MetricTypes {
@@ -85,7 +85,7 @@ export class CurrentWaitingCountMetric extends JobSpotCountMetric {
  */
 export class WaitingChildrenCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, [JobStatusEnum.WAITING, JobStatusEnum.PAUSED]);
+    super(options, ['waiting', 'paused']);
   }
 
   static get key(): MetricTypes {
@@ -102,7 +102,7 @@ export class WaitingChildrenCountMetric extends JobSpotCountMetric {
  */
 export class CurrentCompletedCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, [JobStatusEnum.COMPLETED]);
+    super(options, ['completed']);
   }
 
   static get key(): MetricTypes {
@@ -119,7 +119,7 @@ export class CurrentCompletedCountMetric extends JobSpotCountMetric {
  */
 export class CurrentFailedCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, [JobStatusEnum.FAILED]);
+    super(options, ['failed']);
   }
 
   static get key(): MetricTypes {
@@ -136,7 +136,7 @@ export class CurrentFailedCountMetric extends JobSpotCountMetric {
  */
 export class CurrentDelayedCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, [JobStatusEnum.DELAYED]);
+    super(options, ['delayed']);
   }
 
   static get key(): MetricTypes {
@@ -155,9 +155,9 @@ export class CurrentDelayedCountMetric extends JobSpotCountMetric {
 export class PendingCountMetric extends JobSpotCountMetric {
   constructor(props: MetricOptions) {
     super(props, [
-      JobStatusEnum.WAITING,
-      JobStatusEnum.PAUSED,
-      JobStatusEnum.DELAYED,
+      'waiting',
+      'paused',
+      'delayed',
     ]);
   }
 

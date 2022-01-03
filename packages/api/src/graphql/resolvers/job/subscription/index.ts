@@ -1,5 +1,4 @@
 import { createStateSubscription } from './subscribeToJob';
-import { JobStatusEnum } from '@alpen/core';
 
 export { onJobAdded } from './onJobAdded';
 export { onJobUpdated } from './onJobUpdated';
@@ -8,7 +7,7 @@ export { onJobRemoved } from './onJobRemoved';
 export { onJobLogAdded } from './onJobLogAdded';
 
 export * from './onJobDelayed';
-export const obJobActive = createStateSubscription(JobStatusEnum.ACTIVE);
-export const obJobFailed = createStateSubscription(JobStatusEnum.FAILED);
-export const obJobCompleted = createStateSubscription(JobStatusEnum.COMPLETED);
-export const obJobStalled = createStateSubscription(JobStatusEnum.STALLED);
+export const obJobActive = createStateSubscription('active');
+export const obJobFailed = createStateSubscription('failed');
+export const obJobCompleted = createStateSubscription('completed');
+export const obJobStalled = createStateSubscription('stalled');

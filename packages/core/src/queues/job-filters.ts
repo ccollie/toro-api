@@ -3,7 +3,7 @@ import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { getUniqueId, nanoid } from '../lib';
 import { Job, JobJsonRaw, Queue } from 'bullmq';
-import type { FilteredJobsResult, JobFilter, JobStatusEnum } from '../types/queues';
+import type { FilteredJobsResult, JobFilter, JobStatus } from '../types/queues';
 import { ScriptFilteredJobsResult, Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
 import { getMultipleJobsById } from './queue';
@@ -66,7 +66,7 @@ async function storeFilter(queue: Queue, filter: JobFilter): Promise<void> {
 export async function addJobFilter(
   queue: Queue,
   name: string,
-  status: JobStatusEnum | null,
+  status: JobStatus | null,
   expression: string,
 ): Promise<JobFilter> {
   const hash = getExpressionHash(expression);
@@ -221,7 +221,7 @@ const MAX_BATCH_COUNT = getConfigNumeric('JOB_MATCH_BATCH_SIZE', 200);
 
 export async function processSearch(
   queue: Queue,
-  status: JobStatusEnum,
+  status: JobStatus,
   filter: string,
   hash: string = null,
   cursor: string,

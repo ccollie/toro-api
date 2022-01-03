@@ -9,7 +9,6 @@ import toJsonSchema from 'to-json-schema';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
 import { getIterator } from './job-iterator';
-import { JobStatusEnum } from '../types';
 import { getJobSchemaKey } from '../keys';
 
 const jobsOptionsValidator = ajv.compile(JobOptionsSchema);
@@ -156,7 +155,7 @@ export async function inferJobSchema(
   jobName?: string,
 ): Promise<JobSchema> {
   // get a list of items from completed list
-  const it = getIterator(queue, JobStatusEnum.COMPLETED, [
+  const it = getIterator(queue, 'completed', [
     'data',
     'opts',
     'jobName',

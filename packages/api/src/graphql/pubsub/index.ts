@@ -32,4 +32,5 @@ export function publish(
 }
 
 export { createSharedSubscriptionResolver };
-export { PubSubEngine, pubsub };
+export { pubsub };
+export type { PubSubEngine };

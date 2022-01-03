@@ -1,5 +1,5 @@
 overwrite: true
-schema: './src/graphql/sdl/sdl.graphql'
+schema: './src/graphql/sdl/schema.graphql'
 generates:
   ./src/graphql/typings/gql.ts:
     plugins:

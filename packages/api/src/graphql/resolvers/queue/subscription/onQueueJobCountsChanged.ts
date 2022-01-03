@@ -5,11 +5,10 @@ import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnum, QueueEventsEnum, QueueManager } from '@alpen/core';
+import { QueueEventsEnum, QueueManager, JOB_STATES } from '@alpen/core';
 import { diff } from '@alpen/shared';
 
 const DEFAULT_COUNT_INTERVAL = ms('1.5 s');
-const JOB_STATES = Object.values(JobStatusEnum) as string[];
 const EVENT_NAMES = Object.values(QueueEventsEnum) as string[];
 
 // ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
@@ -89,11 +88,11 @@ export const onQueueJobCountsChanged: FieldConfig = {
       delta: schemaComposer.createObjectTC({
         name: 'QueueJobCountDelta',
         fields: {
-          [JobStatusEnum.COMPLETED]: 'Int',
-          [JobStatusEnum.FAILED]: 'Int',
-          [JobStatusEnum.DELAYED]: 'Int',
-          [JobStatusEnum.ACTIVE]: 'Int',
-          [JobStatusEnum.WAITING]: 'Int!',
+          completed: 'Int',
+          failed: 'Int',
+          delayed: 'Int',
+          active: 'Int',
+          waiting: 'Int',
         },
       }),
     },

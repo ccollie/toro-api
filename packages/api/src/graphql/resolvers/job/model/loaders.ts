@@ -1,14 +1,14 @@
 import { Job, Queue } from 'bullmq';
-import { JobStatusEnum } from '@alpen/core';
+import { JobStatus } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export async function checkState(
   context: EZContext,
   job: Job,
-  ...states: JobStatusEnum[]
+  ...states: JobStatus[]
 ): Promise<boolean> {
   const state = await getJobState(context, job);
-  return state && states.includes(state as JobStatusEnum);
+  return state && states.includes(state as JobStatus);
 }
 
 export function getJobState(context: EZContext, job: Job): Promise<string> {

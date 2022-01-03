@@ -1,17 +1,16 @@
-import { JobStatusEnum } from '@alpen/core';
 import { GraphQLEnumType } from 'graphql';
 
 export const JobStatusEnumType = new GraphQLEnumType({
   name: 'JobStatus',
   values: {
-    COMPLETED: { value: JobStatusEnum.COMPLETED },
-    WAITING: { value: JobStatusEnum.WAITING },
-    ACTIVE: { value: JobStatusEnum.ACTIVE },
-    DELAYED: { value: JobStatusEnum.DELAYED },
-    FAILED: { value: JobStatusEnum.FAILED },
-    // eslint-disable-next-line max-len
-    PAUSED: { value: JobStatusEnum.PAUSED }, //TODO: в bull написано что устарело, теперь все WAITING
-    WAITING_CHILDREN: { value: JobStatusEnum.WAITING_CHILDREN },
-    UNKNOWN: { value: JobStatusEnum.UNKNOWN },
+    completed: { value: 'completed' },
+    waiting: { value: 'waiting' },
+    active: { value: 'active' },
+    delayed: { value: 'delayed' },
+    failed: { value: 'failed' },
+    paused: { value: 'paused' },
+    // eslint-disable-next-line camelcase
+    waiting_children: { value: 'waiting-children' },
+    unknown: { value: 'unknown' },
   },
 });

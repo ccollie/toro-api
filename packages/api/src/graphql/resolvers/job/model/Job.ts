@@ -10,7 +10,6 @@ import { dependencies } from './Job.dependencies';
 import { dependenciesCount } from './Job.dependenciesCount';
 import { parent } from './Job.parent';
 import { parentQueue } from './Job.parentQueue';
-import { JobStatusEnum } from '@alpen/core';
 import { checkState } from './loaders';
 import { EZContext } from 'graphql-ez';
 
@@ -69,8 +68,8 @@ export const JobTC = schemaComposer.createObjectTC({
         return checkState(
           context,
           job,
-          JobStatusEnum.WAITING,
-          JobStatusEnum.PAUSED,
+          'waiting',
+          'paused',
         );
       },
     },
@@ -78,7 +77,7 @@ export const JobTC = schemaComposer.createObjectTC({
       type: 'Boolean!',
       description: 'returns true if this job is waiting for children.',
       resolve(job: Job, args, context: EZContext): Promise<boolean> {
-        return checkState(context, job, JobStatusEnum.WAITING_CHILDREN);
+        return checkState(context, job, 'waiting-children');
       },
     },
     childrenValues: {

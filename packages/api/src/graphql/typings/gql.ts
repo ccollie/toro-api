@@ -203,7 +203,7 @@ export type CreateMailNotificationChannelInput = {
 };
 
 /** Input fields for creating a metric */
-export type CreateMeetricInput = {
+export type CreateMetricInput = {
   aggregator?: InputMaybe<AggregatorInput>;
   /** A description of the metric being measured. */
   description?: InputMaybe<Scalars['String']>;
@@ -551,8 +551,8 @@ export type HostQueuesFilter = {
   exclude?: InputMaybe<Array<Scalars['String']>>;
   /** Ids of queues to include */
   include?: InputMaybe<Array<Scalars['String']>>;
-  /** Queue prefix */
-  prefix?: InputMaybe<Scalars['String']>;
+  /** Return Queues with these prefixes */
+  prefixes?: InputMaybe<Array<Scalars['String']>>;
   /** Regex pattern for queue name matching */
   search?: InputMaybe<Scalars['String']>;
   /** Statuses to filter on */
@@ -857,14 +857,14 @@ export type JobStatsInterface = {
 };
 
 export enum JobStatus {
-  Active = 'ACTIVE',
-  Completed = 'COMPLETED',
-  Delayed = 'DELAYED',
-  Failed = 'FAILED',
-  Paused = 'PAUSED',
-  Unknown = 'UNKNOWN',
-  Waiting = 'WAITING',
-  WaitingChildren = 'WAITING_CHILDREN',
+  Active = 'active',
+  Completed = 'completed',
+  Delayed = 'delayed',
+  Failed = 'failed',
+  Paused = 'paused',
+  Unknown = 'unknown',
+  Waiting = 'waiting',
+  WaitingChildren = 'waiting_children',
 }
 
 export type JobUpdateDelta = {
@@ -1288,7 +1288,7 @@ export type MutationCreateMailNotificationChannelArgs = {
 };
 
 export type MutationCreateMetricArgs = {
-  input: CreateMeetricInput;
+  input: CreateMetricInput;
 };
 
 export type MutationCreateRepeatableJobArgs = {
@@ -2074,7 +2074,7 @@ export type QueueJobCountDelta = {
   completed?: Maybe<Scalars['Int']>;
   delayed?: Maybe<Scalars['Int']>;
   failed?: Maybe<Scalars['Int']>;
-  waiting: Scalars['Int'];
+  waiting?: Maybe<Scalars['Int']>;
 };
 
 export type QueueJobFilterInput = {

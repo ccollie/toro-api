@@ -9,7 +9,7 @@ import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC } from '../../job/model/Job';
 import { QueueJobsInput } from '../../../typings';
-import { JobStatus, JobStatusEnum } from '@alpen/core';
+import { JobStatus } from '@alpen/core';
 
 export const queueJobs: FieldConfig = {
   type: JobTC.NonNull.List.NonNull,
@@ -27,7 +27,7 @@ export const queueJobs: FieldConfig = {
         },
         status: {
           type: JobStatusEnumType,
-          defaultValue: JobStatusEnum.COMPLETED,
+          defaultValue: 'completed',
         },
         sortOrder: {
           type: OrderEnumType,
@@ -51,7 +51,6 @@ export const queueJobs: FieldConfig = {
     const manager = accessors.getQueueManager(queue);
     // todo: check out requested fields. If "states" is requested
     // use the optimized method to get states in bulk
-    const state = status as JobStatus;
-    return manager.getJobs(state, offset, limit, asc);
+    return manager.getJobs(status as JobStatus, offset, limit, asc);
   },
 };

@@ -17,9 +17,9 @@ const HostQueuesFilter = schemaComposer.createInputTC({
       type: 'String',
       description: 'Regex pattern for queue name matching',
     },
-    prefix: {
-      type: 'String',
-      description: 'Queue prefix',
+    prefixes: {
+      type: '[String!]',
+      description: 'Return Queues with these prefixes',
     },
     statuses: {
       type: [QueueFilterStatusEnum.NonNull],
@@ -52,7 +52,7 @@ export const hostQueues: FieldConfig = {
     }
     const {
       search,
-      prefix,
+      prefixes,
       include = [],
       exclude = [],
       statuses: _statuses = [],
@@ -63,7 +63,7 @@ export const hostQueues: FieldConfig = {
     );
     const queues = await getFilteredQueues(host, {
       search,
-      prefix,
+      prefixes,
       statuses,
     });
     if (queues.length && (exclude.length || include.length)) {

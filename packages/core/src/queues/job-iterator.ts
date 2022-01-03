@@ -1,5 +1,5 @@
 import { Queue, Job } from 'bullmq';
-import { JobStatusEnum } from '../types';
+import type { JobStatus } from '../types';
 import { fixupJob, Scripts } from '../commands';
 
 const DEFAULT_TEXT_SEARCH_SCAN_COUNT = 20;
@@ -13,7 +13,7 @@ type TIteratorConfig = {
   scanCount?: number;
   keys?: string[];
   jobName?: string;
-  status?: JobStatusEnum;
+  status?: JobStatus;
 };
 
 abstract class AbstractIterator {
@@ -31,11 +31,11 @@ abstract class AbstractIterator {
 }
 
 class SetIterator extends AbstractIterator {
-  protected _status: JobStatusEnum;
+  protected _status: JobStatus;
   protected _cursor = 0;
   protected _total = 0;
 
-  constructor(queue: Queue, status: JobStatusEnum, config: TIteratorConfig) {
+  constructor(queue: Queue, status: JobStatus, config: TIteratorConfig) {
     super(queue, config);
     this._status = status;
   }
@@ -142,7 +142,7 @@ class ListIterator extends AbstractIterator {
 
 export function getIterator(
   queue: Queue,
-  status: JobStatusEnum,
+  status: JobStatus,
   keys = ['data'],
   scanCount = DEFAULT_TEXT_SEARCH_SCAN_COUNT,
   jobName?: string,
@@ -150,13 +150,13 @@ export function getIterator(
   const redisKey = queue.toKey(status);
   const config: TIteratorConfig = { scanCount, keys, jobName };
   switch (status) {
-    case JobStatusEnum.COMPLETED:
-    case JobStatusEnum.FAILED:
-    case JobStatusEnum.DELAYED:
+    case 'completed':
+    case 'failed':
+    case 'delayed':
       return new SetIterator(queue, status, config);
-    case JobStatusEnum.ACTIVE:
-    case JobStatusEnum.WAITING:
-    case JobStatusEnum.PAUSED:
+    case 'active':
+    case 'waiting':
+    case 'paused':
       return new ListIterator(queue, redisKey, config);
   }
 }

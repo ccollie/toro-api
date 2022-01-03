@@ -20,5 +20,7 @@ export async function getJobCountByType(
   ...states: JobCountStates[]
 ): Promise<number> {
   const counts = await getJobCounts(context, queue, ...states);
-  return Object.values(counts).reduce((sum, count) => sum + count);
+  return states.reduce((acc, state) => {
+    return acc + (counts[state] ?? 0);
+  }, 0);
 }
