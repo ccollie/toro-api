@@ -1,0 +1,168 @@
+query HostsAndQueues {
+    hosts {
+        id
+        name
+        description
+        uri
+        queues {
+            ...Queue
+        }
+    }
+}
+
+fragment RedisStats on RedisInfo {
+    redis_version
+    uptime_in_seconds
+    uptime_in_days
+    connected_clients
+    blocked_clients
+    total_system_memory
+    used_memory
+    used_memory_peak
+    used_memory_lua
+    used_cpu_sys
+    maxmemory
+    number_of_cached_scripts
+    instantaneous_ops_per_sec
+    mem_fragmentation_ratio
+    role
+}
+
+fragment Host on QueueHost {
+    id
+    name
+    description
+    uri
+    redis {
+        ...RedisStats
+    }
+    channels {
+        ...NotificationChannel
+    }
+}
+
+query GetAllHosts {
+    hosts {
+        ...Host
+    }
+}
+
+query GetHostsAndQueues {
+    hosts {
+        id
+        name
+        description
+        uri
+        redis {
+            ...RedisStats
+        }
+        queues {
+            ...Queue
+        }
+    }
+}
+
+query GetHostById($id: ID!) {
+    host(id: $id) {
+        ...Host
+    }
+}
+
+query GetHostByIdFull($id: ID!) {
+    host(id: $id) {
+        id
+        name
+        description
+        uri
+        redis {
+            ...RedisStats
+        }
+        queues {
+            ...Queue
+        }
+    }
+}
+
+query GetHostQueues($id: ID!) {
+    host(id: $id) {
+        id
+        name
+        description
+        queues {
+            ...Queue
+        }
+    }
+}
+
+query HostQueues($id: ID!, $range: String!, $filter: HostQueuesFilter) {
+    host(id: $id) {
+        id
+        name
+        description
+        queues(filter: $filter) {
+            id
+            name
+            isPaused
+            ...JobCounts
+            workerCount
+            throughput {
+                count
+                m1Rate
+                m5Rate
+                m15Rate
+            }
+            errorRate {
+                count
+                m1Rate
+                m5Rate
+                m15Rate
+            }
+            ruleAlertCount
+            workerCount
+            stats(input: { range: $range, granularity: Minute }) {
+                ...StatsSnapshot
+            }
+            statsAggregate(input: { range: $range, granularity: Minute }) {
+                ...StatsSnapshot
+            }
+            lastStatsSnapshot(input:{ granularity: Minute }) {
+                ...StatsSnapshot
+            }
+        }
+    }
+}
+
+query GetRedisStats($hostId: ID!) {
+    host(id: $hostId) {
+        id
+        redis {
+            ...RedisStats
+        }
+    }
+}
+
+query discoverQueues($hostId: ID!, $prefix: String, $unregisteredOnly: Boolean) {
+    host(id: $hostId) {
+        discoverQueues(prefix: $prefix, unregisteredOnly: $unregisteredOnly) {
+            name,
+            prefix
+        }
+    }
+}
+
+mutation RegisterQueue($hostId: ID!, $name: String!, $prefix: String, $checkExists: Boolean = false) {
+    registerQueue(input: { hostId: $hostId, name: $name, prefix: $prefix, checkExists: $checkExists }) {
+        __typename,
+        ...Queue
+    }
+}
+
+mutation UnregisterQueue($queueId: ID!) {
+    unregisterQueue(id: $queueId) {
+        host {
+            id
+        }
+        isRemoved
+    }
+}
+

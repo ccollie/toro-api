@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "lib": [
+      "es2019",
+      "dom",
+      "es2021.promise"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "strict": true,
+    "jsx": "react",
+    "target": "es2019",
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "typeRoots": ["./src/types", "./node_modules/@types", "./typings"],
+    "types": ["vite/client"]
+  },
+  "include": ["./src", "./typings/*.d.ts"],
+  "references": [{ "path": "../shared" }]
+}

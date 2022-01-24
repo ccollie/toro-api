@@ -1,0 +1,57 @@
+.stats {
+  display: inline-grid;
+  overflow: hidden;
+  overflow-x: auto;
+  grid-auto-flow: column;
+}
+
+.stat {
+  display: inline-grid;
+  width: 100%;
+  grid-template-columns: 1fr auto;
+  padding: 1rem 1.5rem;
+}
+
+.stat-figure {
+  place-self: center;
+  justify-self: end;
+  grid-column-start: 2;
+  grid-row: span 3 / span 3;
+  grid-row-start: 1;
+}
+.stat-title {
+  white-space: nowrap;
+  grid-column-start: 1;
+  opacity: 0.5;
+}
+.stat-value {
+  white-space: nowrap;
+  grid-column-start: 1;
+  font-weight: 800;
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+.stat-desc {
+  white-space: nowrap;
+  grid-column-start: 1;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  opacity: 0.5;
+}
+.stat-actions {
+  white-space: nowrap;
+  grid-column-start: 1;
+  margin-top: 1rem;
+}
+.stats.grid-flow-row {
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+.stat + .stat {
+  border-color: #aaaaaa;
+  border-left-width: 1px;
+}
+.stats.grid-flow-row .stat + .stat {
+  border-left-width: 0;
+  border-top-width: 1px;
+}

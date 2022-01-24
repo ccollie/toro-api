@@ -1,0 +1,12 @@
+.jobLogs {
+  margin: 0;
+}
+
+.jobLogs > li + li {
+  margin-top: 0.5em;
+}
+
+.jobLogs > li {
+  white-space: pre-wrap;
+  word-break: break-all;
+}

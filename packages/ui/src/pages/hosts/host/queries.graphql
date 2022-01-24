@@ -1,0 +1,56 @@
+query HostOverview($id: ID!, $range: String!, $granularity: StatsGranularity! = Minute) {
+  host(id: $id) {
+    id
+    redis {
+      ...RedisStats
+    }
+    jobCounts {
+      active
+      failed
+      paused
+      completed
+      delayed
+      waiting
+    }
+    throughput(input: { range: $range, granularity: $granularity }) {
+      count
+      m1Rate
+      m5Rate
+      m15Rate
+    }
+    queueCount
+    workerCount
+    errorRate(input: { range: $range, granularity: $granularity }) {
+      count
+      m1Rate
+      m5Rate
+      m15Rate
+    }
+    stats(input: { range: $range, granularity: $granularity }) {
+      ...StatsSnapshot
+    }
+    statsAggregate(input: { range: $range, granularity: $granularity }) {
+      ...StatsSnapshot
+    }
+    lastStatsSnapshot(input: { granularity: $granularity }) {
+      ...StatsSnapshot
+    }
+  }
+}
+
+
+query HostWorkers($id: ID!) {
+  host(id: $id) {
+    workers {
+      id
+      addr
+      name
+      age
+      idle
+      started
+      db
+      role
+    }
+    workerCount
+  }
+}

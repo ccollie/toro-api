@@ -1,0 +1,256 @@
+fragment JobRepeatOptions on JobRepeatOptions {
+    cron
+    tz
+    startDate
+    endDate
+    limit
+    every
+    jobId
+    count
+}
+
+fragment JobOptions on JobOptions {
+    timestamp
+    priority
+    delay
+    attempts
+    repeat {
+        ...JobRepeatOptions
+    }
+    backoff
+    lifo
+    timeout
+    jobId
+    removeOnComplete
+    removeOnFail
+    stackTraceLimit
+}
+
+fragment Job on Job {
+    id
+    queueId
+    timestamp
+    state
+    name
+    data
+    opts {
+        ...JobOptions
+    }
+    delay
+    progress
+    attemptsMade
+    processedOn
+    finishedOn
+    failedReason
+    stacktrace
+    returnvalue
+}
+
+fragment RepeatableJob on RepeatableJob {
+    key
+    id
+    name
+    endDate
+    tz
+    cron
+    next
+    descr
+}
+
+query GetJobsByFilter($id: ID!, $status: JobStatus, $cursor: String, $criteria: String, $count: Int = 10) {
+    queue(id: $id) {
+        id
+        jobSearch(filter: { cursor: $cursor, count: $count, status: $status, criteria: $criteria }) {
+            cursor
+            total
+            current
+            jobs {
+                ...Job
+            }
+        }
+        ...JobCounts
+    }
+}
+
+query GetJobFilters($queueId: ID!, $ids: [ID!]) {
+    queue(id: $queueId) {
+        jobFilters(ids: $ids) {
+            id
+            name
+            expression
+            createdAt
+        }
+    }
+}
+
+mutation CreateJobFilter($input: CreateJobFilterInput!) {
+    createJobFilter(input: $input) {
+        id
+        name
+        expression
+        createdAt
+    }
+}
+
+mutation UpdateJobFilter($input: UpdateJobFilterInput!) {
+    updateJobFilter(input: $input) {
+        filter {
+            id
+            name
+            expression
+            createdAt
+        }
+        isUpdated
+    }
+}
+
+mutation DeleteJobFilter($input: DeleteJobFilterInput!) {
+    deleteJobFilter(input: $input) {
+        isDeleted
+    }
+}
+
+query GetQueueJobCounts($id: ID!) {
+    queue(id: $id) {
+        id
+        ...JobCounts
+    }
+}
+
+query GetQueueJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobStatus, $sortOrder: SortOrderEnum) {
+    queue(id: $id) {
+        id
+        jobs(input: { offset: $offset, limit: $limit, status: $status, sortOrder: $sortOrder }) {
+            ...Job
+        }
+        ...JobCounts
+    }
+}
+
+
+query GetRepeatableJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $sortOrder: SortOrderEnum) {
+    queue(id: $id) {
+        id
+        repeatableJobs(input: { offset: $offset, limit: $limit, order: $sortOrder }) {
+            ...RepeatableJob
+        }
+        repeatableJobCount
+    }
+}
+
+query GetJobById($queueId: ID!, $id: ID!) {
+    job(queueId: $queueId, id: $id) {
+        ...Job
+    }
+}
+
+query GetJobLogs($queueId: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
+    job(queueId: $queueId, id: $id) {
+        logs(start: $start, end: $end) {
+            count
+            items
+        }
+    }
+}
+
+mutation CreateJob($queueId: ID!, $jobName: String!, $data: JSONObject, $options: JobOptionsInput) {
+    createJob(
+        input: {
+            queueId: $queueId,
+            jobName: $jobName,
+            data: $data,
+            options: $options
+        }) {
+        ...Job
+    }
+}
+
+mutation DeleteJob($queueId: ID!, $jobId: ID!) {
+    deleteJob(input: { queueId: $queueId, jobId: $jobId }) {
+        job {
+            id
+        }
+    }
+}
+
+mutation DiscardJob($queueId: ID!, $jobId: ID!) {
+    discardJob(input: { queueId: $queueId, jobId: $jobId }) {
+        job {
+            id
+            state
+        }
+    }
+}
+
+mutation MoveJobToCompleted($queueId: ID!, $jobId: ID!) {
+    moveJobToCompleted(input: { queueId: $queueId, jobId: $jobId }) {
+        job {
+            id
+            state
+        }
+    }
+}
+
+mutation MoveJobToFailed($queueId: ID!, $jobId: ID!) {
+    moveJobToFailed(input: { queueId: $queueId, jobId: $jobId }) {
+        job {
+            id
+            state
+        }
+    }
+}
+
+mutation DeleteRepeatableJobByKey($queueId: ID!, $key: String!) {
+    deleteRepeatableJobByKey(input: { queueId: $queueId, key: $key }) {
+        key
+    }
+}
+
+mutation DeleteBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
+    bulkDeleteJobs(input: { queueId: $queueId, jobIds: $jobIds }) {
+        status {
+            id
+            success
+            reason
+        }
+    }
+}
+
+mutation RetryJob($queueId: ID!, $jobId: ID!) {
+    retryJob(input: { queueId: $queueId, jobId: $jobId }) {
+        job {
+            id
+            state
+        }
+    }
+}
+
+mutation RetryBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
+    bulkRetryJobs(input: { queueId: $queueId, jobIds: $jobIds }) {
+        status {
+            id
+            success
+            reason
+        }
+    }
+}
+
+mutation PromoteJob($queueId: ID!, $jobId: ID!) {
+    promoteJob(input: { queueId: $queueId, jobId: $jobId }) {
+        job {
+            id
+            state
+        }
+    }
+}
+
+
+mutation PromoteBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
+    bulkPromoteJobs(input: { queueId: $queueId, jobIds: $jobIds }) {
+        status {
+            id
+            success
+            reason
+        }
+    }
+}

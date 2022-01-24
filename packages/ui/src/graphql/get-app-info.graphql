@@ -1,0 +1,9 @@
+query GetAppInfo {
+    appInfo {
+        env
+        title
+        version
+        brand
+        author
+    }
+}

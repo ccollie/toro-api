@@ -1,0 +1,18 @@
+export const defaultColorScheme = [
+  '#0f83ab',
+  '#faa43a',
+  '#ff4e4e',
+  '#53cfc9',
+  '#a2d925',
+  '#decf3f',
+  '#734fe9',
+  '#cd82ad',
+  '#006d92',
+  '#de7c00',
+  '#f33232',
+  '#3f9a80',
+  '#53c200',
+  '#d7af00',
+  '#4c26c9',
+  '#d44d99',
+];

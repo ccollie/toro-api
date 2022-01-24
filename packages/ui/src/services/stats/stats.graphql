@@ -1,0 +1,93 @@
+fragment Meter on Meter {
+  count
+  meanRate
+  m1Rate
+  m5Rate
+  m15Rate
+}
+
+fragment StatsSnapshot on StatsSnapshot {
+  count
+  failed
+  completed
+  startTime
+  endTime
+  stddev
+  mean
+  min
+  max
+  median
+  p90
+  p95
+  p99
+  p995
+  meanRate
+  m1Rate
+  m5Rate
+  m15Rate
+}
+
+query getAvailableMetrics {
+  availableMetrics {
+    key
+    description
+    unit
+    category
+    isPolling
+    valueType
+    category
+  }
+}
+
+query getAvailableAggregates {
+  aggregates {
+    type
+    isWindowed
+    description
+  }
+}
+
+query GetStatsSpan($id: ID!, $input: StatsSpanInput!) {
+  queue(id: $id) {
+    statsDateRange(input: $input) {
+      startTime,
+      endTime
+    }
+  }
+}
+
+query GetQueueStats($id: ID!, $input: StatsQueryInput!) {
+  queue(id: $id) {
+    stats(input: $input) {
+      ...StatsSnapshot
+    }
+  }
+}
+
+query GetQueueStatsLatest($id: ID!, $input: StatsLatestInput!) {
+  queue(id: $id) {
+    lastStatsSnapshot(input: $input) {
+      ...StatsSnapshot
+    }
+  }
+}
+
+query GetHostStatsLatest($id: ID!, $input: StatsLatestInput!) {
+  host(id: $id) {
+    lastStatsSnapshot(input: $input) {
+      ...StatsSnapshot
+    }
+  }
+}
+
+subscription QueueStatsUpdated($input: StatsUpdatedSubscriptionFilter!) {
+  onQueueStatsUpdated(input: $input) {
+    ...StatsSnapshot
+  }
+}
+
+subscription HostStatsUpdated($input: StatsUpdatedSubscriptionFilter!) {
+  onHostStatsUpdated(input: $input) {
+    ...StatsSnapshot
+  }
+}

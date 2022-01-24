@@ -1,0 +1,154 @@
+:root {
+    --menu-width: 260px;
+    --header-height: 80px;
+    --rounded-box: 1rem;        /* border-radius for cards and other big elements */
+    --rounded-btn: 0.5rem;      /* border-radius for buttons and similar elements */
+    --rounded-badge: 1.9rem;    /* border-radius for badge and other small elements */
+
+    --animation-btn: 0.25s;     /* bounce animation time for button */
+    --animation-input: 0.2s;     /* bounce animation time for checkbox, toggle, etc */
+
+    --padding-card: 2rem;       /* default card-body padding */
+
+    --btn-text-case: uppercase; /* default text case for buttons */
+    --navbar-padding: 0.5rem;    /* default padding for navbar */
+    --border-btn: 1px;          /* default border size for button */
+}
+
+body {
+    background: #f5f8fa;
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 400;
+    line-height: 1.25em;
+    margin: 0;
+    font-size: 16px;
+    color: #454b52;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#root {
+    height: inherit;
+}
+
+small {
+    font-size: 0.833em;
+    opacity: 0.85;
+}
+
+main {
+    min-height: 100%;
+}
+
+main > div {
+    padding: 2rem;
+}
+
+button {
+    font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 500;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+article,
+li {
+    margin: 0;
+    line-height: 1.5em;
+}
+
+
+.divider {
+    display: flex;
+    align-items: center;
+    height: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.divider-vertical {
+    height: auto;
+    margin: 0 1rem;
+    width: 1rem;
+    flex-direction: column;
+    align-self: stretch;
+}
+
+.text-2xs {
+    font-size: .7rem;
+}
+
+.rounded-box {
+    border-radius: var(--rounded-box, 1rem);
+}
+.rounded-t-box {
+    border-top-left-radius: var(--rounded-box, 1rem);
+    border-top-right-radius: var(--rounded-box, 1rem);
+}
+.rounded-b-box {
+    border-bottom-left-radius: var(--rounded-box, 1rem);
+    border-bottom-right-radius: var(--rounded-box, 1rem);
+}
+.rounded-btn {
+    border-radius: var(--rounded-btn, 0.5rem);
+}
+.rounded-badge {
+    border-radius: var(--rounded-badge, 1.9rem);
+}
+
+
+[type="checkbox"] {
+    box-sizing: border-box;
+    padding: 0;
+}
+
+.checkbox {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+    display: inline-block;
+    vertical-align: middle;
+    background-origin: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    flex-shrink: 0;
+    color: currentColor;
+    background-color: #fff;
+    border-color: #e2e8f0;
+    border-width: 1px;
+    border-radius: 0.25rem;
+    height: 1.2em;
+    width: 1.2em;
+}
+
+.checkbox:checked {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M5.707 7.293a1 1 0 0 0-1.414 1.414l2 2a1 1 0 0 0 1.414 0l4-4a1 1 0 0 0-1.414-1.414L7 8.586 5.707 7.293z'/%3e%3c/svg%3e");
+    border-color: transparent;
+    background-color: currentColor;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+}

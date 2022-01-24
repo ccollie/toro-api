@@ -1,0 +1,178 @@
+fragment JobCounts on Queue {
+  jobCounts {
+    active
+    failed
+    paused
+    completed
+    delayed
+    waiting
+  }
+}
+
+fragment Queue on Queue {
+  id
+  name
+  host
+  hostId
+  prefix
+  isPaused
+  isReadonly
+  ...JobCounts
+  repeatableJobCount
+  workerCount
+}
+
+fragment QueueWorkers on Queue {
+  workers {
+    id
+    name
+    addr
+    age
+    started
+    idle
+    role
+    db
+    omem
+  }
+}
+
+query GetQueueById($id: ID!) {
+  queue(id: $id) {
+    ...Queue
+  }
+}
+
+mutation PauseQueue($id: ID!) {
+  pauseQueue(id: $id) {
+    isPaused
+  }
+}
+
+mutation ResumeQueue($id: ID!) {
+  resumeQueue(id: $id) {
+    isPaused
+  }
+}
+
+mutation DeleteQueue($id: ID!, $checkActivity: Boolean = false) {
+  deleteQueue(id: $id, options: { checkActivity: $checkActivity }) {
+    deletedKeys
+  }
+}
+
+mutation CleanQueue($id: ID! $grace: Duration!, $limit: Int, $status: JobStatus) {
+  cleanQueue(input: { id: $id, grace: $grace, limit: $limit, status: $status }) {
+    count
+  }
+}
+
+mutation DrainQueue($id: ID!, $delayed: Boolean) {
+  drainQueue(id: $id, delayed: $delayed) {
+    queue {
+      ...Queue
+    }
+  }
+}
+
+query GetQueueJobCounts($id: ID!) {
+  queue(id: $id) {
+    id
+    ...JobCounts
+  }
+}
+
+query GetQueueWorkers($id: ID!) {
+  queue(id: $id) {
+    id
+    workers {
+      id
+      name
+      addr
+      age
+      started
+      idle
+      role
+      db
+      omem
+    }
+  }
+}
+
+query GetJobSchemas($queueId: ID!) {
+  queue(id: $queueId) {
+    jobSchemas {
+      jobName
+      schema
+      defaultOpts
+    }
+  }
+}
+
+query GetJobSchema($queueId: ID!, $jobName: String!) {
+  queueJobSchema(input: { queueId: $queueId, jobName: $jobName}) {
+    jobName,
+    schema
+    defaultOpts
+  }
+}
+
+mutation SetJobSchema($queueId: ID!, $jobName: String!, $schema: JSONSchema!,  $defaultOpts: JobOptionsInput) {
+  setJobSchema(input: { queueId: $queueId, jobName: $jobName, schema: $schema, defaultOpts: $defaultOpts }) {
+    jobName
+    schema
+    defaultOpts
+  }
+}
+
+mutation DeleteJobSchema($queueId: ID!, $jobName: String!) {
+  deleteJobSchema(input: { queueId: $queueId, jobName: $jobName }) {
+    jobName
+  }
+}
+
+
+query InferJobSchema($queueId: ID!, $jobName: String!) {
+  inferJobSchema(input: { queueId: $queueId, jobName: $jobName}) {
+    jobName,
+    schema
+    defaultOpts
+  }
+}
+
+query GetJobOptionsSchema {
+  jobOptionsSchema
+}
+
+query GetQueueJobsNames($id: ID!) {
+  queue(id: $id) {
+    jobNames
+  }
+}
+
+query GetPageQueueStats($id: ID!, $range: String!, $granularity: StatsGranularity! ) {
+  queue(id: $id) {
+    id
+    name
+    hostId
+    prefix
+    isPaused
+    jobNames
+    workerCount
+    throughput {
+      m1Rate
+      m5Rate
+      m15Rate
+    }
+    errorRate {
+      m1Rate
+      m5Rate
+      m15Rate
+    }
+    stats(input: { range: $range, granularity: $granularity }) {
+      ...StatsSnapshot
+    }
+    statsAggregate(input: { range: $range, granularity: $granularity }) {
+      ...StatsSnapshot
+    }
+  }
+}
