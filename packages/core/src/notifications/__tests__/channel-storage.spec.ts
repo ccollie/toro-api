@@ -1,5 +1,5 @@
 import { RedisClient } from 'bullmq';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import pSettle from 'p-settle';
 import type {
   ChannelConfig,

@@ -1,11 +1,11 @@
-import React from "react";
+import React from 'react';
 
 function SubText(str: string, size: number, className: string) {
-  const words = str.split(" ");
+  const words = str.split(' ');
   const style = {
-    fontSize: "50%"
+    fontSize: '50%'
   };
-  let dy = "15%";
+  let dy = '15%';
   return words.map(w => {
     const c = [];
     c.push(
@@ -19,7 +19,7 @@ function SubText(str: string, size: number, className: string) {
         {w}
       </tspan>
     );
-    dy = "10%";
+    dy = '10%';
     return c;
   });
 }
@@ -55,7 +55,7 @@ export default function InnerText(props: InnerTextProps) {
     fontSize: `${size / 5}px`
   };
   const style1 = {
-    fontSize: "90%"
+    fontSize: '90%'
   };
   const subText = SubText(newData[active % length].name, size, className);
   return (

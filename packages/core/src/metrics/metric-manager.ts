@@ -1,5 +1,5 @@
 import { badRequest, notFound } from '@hapi/boom';
-import { isEmpty, isNil, isNumber, isString } from 'lodash';
+import { isEmpty, isNil, isNumber, isString, parseBool } from '@alpen/shared';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
 
@@ -13,7 +13,6 @@ import { MetricsListener, MetricsUpdatedPayload } from './metrics-listener';
 import { QueueListener } from '../queues';
 import { UnsubscribeFn } from 'emittery';
 import { Pipeline } from 'ioredis';
-import { parseBool } from '@alpen/shared';
 import { Timespan } from '../types';
 import { TimeseriesDataPoint } from '../stats';
 

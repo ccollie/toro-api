@@ -1,4 +1,4 @@
-import { sample } from 'lodash';
+import { sample } from '@alpen/shared';
 
 const VERBS = [
   'vaporized',

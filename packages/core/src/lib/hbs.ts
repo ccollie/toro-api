@@ -5,12 +5,12 @@ import prettyMilliseconds from 'pretty-ms';
 import { markdownToHtml } from './markdown';
 import {
   capitalize,
-  isEmpty,
-  isString,
-  isRegExp,
   lowerCase,
   get,
-} from 'lodash';
+  isEmpty,
+  isString,
+  isRegExp
+} from '@alpen/shared';
 import formatDate from 'date-fns/format';
 import toDate from 'date-fns/toDate';
 import utils from 'handlebars-utils';

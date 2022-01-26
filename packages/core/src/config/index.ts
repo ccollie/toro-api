@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
-import { get as lget, set as lset, isString, isObject } from 'lodash';
+import { get as lget, isString, isObject } from '@alpen/shared';
+import { set as lset } from 'lodash';
 import { packageInfo } from '../packageInfo';
 import { AppInfo } from '../types';
 

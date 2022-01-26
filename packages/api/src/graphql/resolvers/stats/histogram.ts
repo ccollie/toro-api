@@ -7,7 +7,7 @@ import {
   HistogramOptions,
   StatsMetricType,
 } from '@alpen/core';
-import isNumber from 'lodash/isNumber';
+import { isNumber } from '@alpen/shared';
 import { GraphQLEnumType } from 'graphql';
 import { StatsMetricsTypeEnum } from '../../scalars';
 import { schemaComposer } from 'graphql-compose';

@@ -1,18 +1,17 @@
 import {
   DiscoverQueuesDocument,
-  GetHostChannelsDocument,
   GetHostQueuesDocument,
   GetHostsAndQueuesDocument,
   GetRedisStatsDocument,
+  GetRedisStatsQuery,
+  RedisInfo,
   RegisterQueueDocument,
 } from '@/types';
 import type {
   DiscoverQueuesPayload,
-  NotificationChannel,
   Queue,
   QueueHost,
   RegisterQueueMutation,
-  RedisStatsFragment,
 } from '@/types';
 import { getApolloClient } from '@/services/apollo-client';
 import { ApolloError, FetchResult } from '@apollo/client';
@@ -34,26 +33,11 @@ export function getHostQueues(hostId: QueueHost['id']): Promise<Queue[]> {
     });
 }
 
-export function getHostChannels(hostId: QueueHost['id']): Promise<NotificationChannel[]> {
-  const client = getApolloClient();
-  return client
-    .query({
-      query: GetHostChannelsDocument,
-      variables: {
-        hostId,
-      },
-    })
-    .then((result) => {
-      if (result.error) throw result.error;
-      return (result.data?.host?.channels ?? []) as NotificationChannel[];
-    });
-}
-
 export function registerQueue(
   hostId: QueueHost['id'],
   prefix: string,
   name: string,
-  mustExist = true
+  mustExist = true,
 ): Promise<Queue> {
   return client
     .mutate({
@@ -85,7 +69,7 @@ export function registerQueue(
 export function discoverQueues(
   hostId: QueueHost['id'],
   prefix?: string,
-  unregisteredOnly?: boolean
+  unregisteredOnly?: boolean,
 ): Promise<DiscoverQueuesPayload[]> {
   return client
     .query({
@@ -114,14 +98,14 @@ export function getHostData(): Promise<QueueHost[]> {
     });
 }
 
-export function getRedisInfo(): Promise<RedisStatsFragment> {
+export function getRedisInfo(): Promise<RedisInfo> {
   const client = getApolloClient();
   return client
-    .query({
+    .query<GetRedisStatsQuery>({
       query: GetRedisStatsDocument,
     })
     .then((result) => {
       if (result.error) throw result.error;
-      return result.data?.host?.redis as RedisStatsFragment;
+      return result.data?.host?.redis as RedisInfo;
     });
 }

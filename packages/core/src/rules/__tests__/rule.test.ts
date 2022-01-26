@@ -1,6 +1,6 @@
 'use strict';
 import { randomString } from '@alpen/shared';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { Rule } from '../';
 import {
   ChangeAggregationType,

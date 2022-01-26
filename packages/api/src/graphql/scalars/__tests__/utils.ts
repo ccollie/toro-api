@@ -1,6 +1,6 @@
 import { graphql, GraphQLSchema, Source } from 'graphql';
 import { GraphQLError } from 'graphql/error/GraphQLError';
-import { get } from 'lodash';
+import { get } from '@alpen/shared';
 
 export interface Result<TData = Record<string, any>> {
   errors?: ReadonlyArray<GraphQLError>;

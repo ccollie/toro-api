@@ -1,5 +1,5 @@
 import { GraphQLScalarType, Kind } from 'graphql';
-import { isString, isBoolean } from 'lodash';
+import { isString, isBoolean } from '@alpen/shared';
 import { safeParse } from '@alpen/shared';
 
 function isBool(value): boolean {

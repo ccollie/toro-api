@@ -38,9 +38,7 @@
     "compile": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "types": "tsc --declaration --emitDeclarationOnly",
-    "replace-paths": "tsc-alias -p tsconfig.build.json",
-    "gen-schema": "node -r ts-node/register ./scripts/gen-sdl.ts",
-    "gen-types": "yarn run gen-schema && npx graphql-codegen --config ../api/gql-codegen.yml"
+    "replace-paths": "tsc-alias -p tsconfig.build.json"
   },
   "dependencies": {
     "@alpen/core": "^0.0.2",
@@ -62,7 +60,7 @@
     "graphql-scalars": "^1.14.1",
     "graphql-subscriptions": "^2.0.0",
     "node-error-formatter": "^1.0.4",
-    "pino": "^7.6.3"
+    "pino": "^7.6.4"
   },
   "peerDependencies": {
     "@types/node": "*",
@@ -70,11 +68,6 @@
   },
   "devDependencies": {
     "@envelop/types": "^1.5.1",
-    "@graphql-codegen/add": "^3.1.1",
-    "@graphql-codegen/cli": "^2.3.1",
-    "@graphql-codegen/typescript": "^2.4.2",
-    "@graphql-codegen/typescript-operations": "^2.2.2",
-    "@graphql-codegen/typescript-resolvers": "^2.4.3",
     "@types/node": "^16.11.11",
     "jest": "^27.4.7",
     "tsc-alias": "^1.5.0",

@@ -1,4 +1,3 @@
-import { isString } from 'lodash';
 import { MetricTypeName, MetricTypes } from './types';
 import { Predicate } from '../types';
 
@@ -7,7 +6,7 @@ export function createJobNameFilter(
 ): Predicate<string> {
   if (!jobNames) {
     return () => true;
-  } else if (isString(jobNames)) {
+  } else if (typeof (jobNames) === 'string') {
     return (name: string) => name === jobNames;
   } else if (jobNames.length === 0) {
     return () => true;

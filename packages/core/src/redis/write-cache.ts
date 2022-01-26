@@ -1,5 +1,5 @@
 import IORedis, { Pipeline } from 'ioredis';
-import { isObject, isEmpty } from 'lodash';
+import { isObject, isEmpty } from '@alpen/shared';
 
 import { logger } from '../logger';
 import { LockManager } from './lock-manager';

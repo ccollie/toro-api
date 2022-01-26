@@ -1,6 +1,6 @@
 /* global test, expect */
 import {advanceBy, clear} from 'jest-date-mock';
-import {random} from 'lodash';
+import { random } from '@alpen/shared';
 import pMap from 'p-map';
 import {
   DefaultRateMetricOptions,

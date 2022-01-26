@@ -1,5 +1,5 @@
 import { LatencyMetric, SumAggregator, AggregatorTypes } from '../../';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { validateCounts } from './helpers';
 
 describe('SumAggregator', () => {

@@ -8,10 +8,9 @@ import { ScriptFilteredJobsResult, Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
 import { getMultipleJobsById } from './queue';
 import { getJobFiltersKey } from '../keys';
-import { parse as parseExpression } from '@alpen/shared';
-import { isEmpty, isObject, uniq } from 'lodash';
+import { parse as parseExpression, safeParse } from '@alpen/shared';
+import { isEmpty, isObject, uniq } from '@alpen/shared';
 import { getConfigNumeric } from '../lib/config-utils';
-import { safeParse } from '@alpen/shared';
 import { compileExpression, ExpressionMeta, getExpressionHash } from '../lib/expr-utils';
 
 // cache to save expression parsing overhead

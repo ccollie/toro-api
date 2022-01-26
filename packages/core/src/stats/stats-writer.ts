@@ -9,7 +9,7 @@ import { StatsClient, StatsClientArgs } from './stats-client';
 import { QueueStats } from './queue-stats';
 import { TimeSeries } from '../commands';
 import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
-import { isNil, random } from 'lodash';
+import { isNil, random } from '@alpen/shared';
 import { systemClock } from '../lib';
 import { StatisticalSnapshot } from './timer';
 

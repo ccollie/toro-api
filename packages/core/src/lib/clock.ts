@@ -1,7 +1,6 @@
 // A clock that gets its value from a stream id if its less than
 // the current time or the current time otherwise
-
-import { isDate } from 'lodash';
+import { isDate } from '@alpen/shared';
 
 export interface Clock {
   //set(val);

@@ -1,5 +1,5 @@
 import { TimeTicker, ManualClock } from 'packages/core/src/lib/index';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 
 describe('TimeTicker', () => {
   it('should construct a valid instance', () => {

@@ -1,6 +1,7 @@
 import {EZContext} from 'graphql-ez';
 import ms from 'ms';
-import { throttle, isEmpty } from 'lodash';
+import { throttle } from 'lodash';
+import { isEmpty } from '@alpen/shared';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
 import { FieldConfig } from '../../index';

@@ -2,7 +2,7 @@ import { ChangeConditionEvaluator, getAggregationFunction } from '../change-cond
 import { getRandomIntArray } from '../../__tests__/factories';
 import { BaseMetric, LatencyMetric } from '../../metrics';
 import { ManualClock } from '../../lib';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import ms from 'ms';
 import {
   ChangeConditionOptions,

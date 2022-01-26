@@ -2,7 +2,7 @@ import got, { Got } from 'got';
 import { badRequest } from '@hapi/boom';
 import { createDebug, validateUrl } from './index';
 import { packageInfo } from '../packageInfo';
-import { isEmpty } from 'lodash';
+import { isEmpty } from '@alpen/shared';
 import { compile, MapperDelegate } from './object-mapper';
 import { logger } from '../logger';
 import { URLSearchParams } from 'url';

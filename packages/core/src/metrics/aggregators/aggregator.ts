@@ -1,5 +1,5 @@
 import * as boom from '@hapi/boom';
-import { isEqual } from 'lodash';
+import { isEqual } from '@alpen/shared';
 import { ObjectSchema } from 'joi';
 import { AggregatorTypes, SerializedAggregator } from '../types';
 import { aggregatorTypeNameMap, getMetricTypeName } from './utils';

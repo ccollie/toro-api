@@ -1,4 +1,4 @@
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { createJobEvent } from '../../__tests__/factories';
 import { BaseMetric, Events } from '../';
 import { QueueBasedMetric } from '../../metrics';

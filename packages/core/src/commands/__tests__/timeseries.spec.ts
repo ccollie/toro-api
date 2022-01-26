@@ -1,6 +1,6 @@
 import { clearDb, createClient } from '../../__tests__/factories';
 import { parseMessageResponse } from '../../redis';
-import { sample, random, isEmpty } from 'lodash';
+import { sample, random, isEmpty } from '@alpen/shared';
 import { nanoid } from 'nanoid';
 import pAll from 'p-all';
 import { getUniqueId } from '../../ids';

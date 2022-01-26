@@ -3,7 +3,7 @@ import { diff, hashObject, isFinishedStatus } from '@alpen/shared';
 import { GraphQLFieldResolver } from 'graphql';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
-import { isEmpty, isNumber } from 'lodash';
+import { isEmpty, isNumber } from '@alpen/shared';
 import LRUCache from 'lru-cache';
 import ms from 'ms';
 import { createSharedSubscriptionResolver } from '../../../pubsub';

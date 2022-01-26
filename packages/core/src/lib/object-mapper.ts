@@ -1,5 +1,6 @@
 import { compile as hbCompile } from 'handlebars';
-import { get, set, isFunction } from 'lodash';
+import { get, isFunction } from '@alpen/shared';
+import { set } from 'lodash';
 
 const QuotedStringRE = /^"(?:[^"\\]|\\.)*"$/;
 const MustacheRE = /{{[{]?(.*?)[}]?}}/;

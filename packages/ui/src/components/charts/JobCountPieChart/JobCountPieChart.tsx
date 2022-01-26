@@ -1,8 +1,8 @@
 import { DataItem } from 'src/components/charts/common/models';
-import { JobStatus } from 'src/types';
+import type { JobStatus } from '@/types';
 import { arePropsEqual, Colors, PieChartDataProps } from './utils';
 import React, { useEffect, useState } from 'react';
-import DonutChart from "../Donut";
+import DonutChart from '../Donut';
 import { AdvancedLegend, AdvancedLegendProps } from '../AdvancedLegend/Legend';
 
 type TData = {
@@ -14,7 +14,6 @@ type TData = {
 interface TProps extends PieChartDataProps {
   legend?: 'advanced' | undefined;
 }
-
 
 interface LegendProps extends AdvancedLegendProps {
   data: TData[];
@@ -35,7 +34,7 @@ function Legend( { colors, data, ...props }: LegendProps ) {
 
   return (
     <AdvancedLegend colors={colors} data={legendData} {...props}/>
-  )
+  );
 }
 
 export const JobCountsPieChart: React.FC<TProps> = (props) => {
@@ -88,17 +87,15 @@ export const JobCountsPieChart: React.FC<TProps> = (props) => {
         colors={colors}
         onHover={(i: number) => {
           if (i>=0) {
-            console.log("Selected ", data[i].name)
+            console.log('Selected ', data[i].name);
           } else {
-            console.log("Mouse left donut")
+            console.log('Mouse left donut');
           }
         }}
-        innerRadius={0.5}
-        outerRadius={0.8}
         activeOffset={0.3}
       />
       </div>
-    )
+    );
   }
 
   return (

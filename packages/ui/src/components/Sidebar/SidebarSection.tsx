@@ -1,6 +1,6 @@
 import React, { ReactNode, useCallback } from 'react';
 import { Link, useMatchRoute, useNavigate } from 'react-location';
-import { useDisclosure } from 'src/hooks';
+import { useDisclosure } from '@/hooks';
 import SidebarLinkGroup from './SidebarLinkGroup';
 
 type ClickHandler = () => void;
@@ -26,8 +26,8 @@ export const SidebarNavLink: React.FC<SidebarLinkProps> = (props) => {
         {content}
       </span>
     </Link>
-  )
-}
+  );
+};
 
 interface SidebarSimpleItemProps {
   title: ReactNode;
@@ -59,8 +59,8 @@ export const SidebarLink: React.FC<SidebarSimpleItemProps> = (props) => {
         </div>
       </Link>
     </li>
-  )
-}
+  );
+};
 
 interface SidebarSectionProps {
   title: string;
@@ -74,7 +74,7 @@ interface SidebarSectionProps {
 export const SidebarSection: React.FC<SidebarSectionProps> = (props) => {
   const matchRoute = useMatchRoute();
   const navigate = useNavigate();
-  const href = props.href ?? '#'
+  const href = props.href ?? '#';
   const isActive = !!matchRoute( { to: href } );
   const { isSidebarExpanded, setSidebarExpanded, title, items = [] } = props;
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: isActive });
@@ -83,7 +83,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = (props) => {
 
   const clickHandler = useCallback(() => {
     if (isSidebarExpanded) {
-      onClick?.()
+      onClick?.();
     } else {
       setSidebarExpanded(true);
     }
@@ -107,7 +107,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = (props) => {
         <path className={`fill-current text-gray-700 ${isActive && '!text-indigo-600'}`} d="M13 15L0 7v9c0 .355.189.685.496.864L13 24v-9z" />
         <path className={`fill-current text-gray-600 ${isActive && 'text-indigo-500'}`} d="M13 15.047V24l10.573-7.181A.999.999 0 0024 16V8l-11 7.047z" />
       </svg>
-    )
+    );
   }
 
   function Content(): JSX.Element {
@@ -115,7 +115,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = (props) => {
     if (!items.length) {
       return <li className="mt-1">
         {props.children}
-      </li>
+      </li>;
     }
     return (
       <>
@@ -125,7 +125,7 @@ export const SidebarSection: React.FC<SidebarSectionProps> = (props) => {
           </li>
         ))}
       </>
-    )
+    );
   }
 
   return (

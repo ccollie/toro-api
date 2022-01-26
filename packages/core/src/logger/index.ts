@@ -4,7 +4,6 @@ import { isDevelopment, isTest, isProduction } from '../config';
 // https://github.com/redwoodjs/redwood/blob/main/packages/api/src/logger/index.ts
 import type P from 'pino';
 import pino from 'pino';
-import * as prettyPrint from 'pino-pretty';
 
 /**
  * Types from Pino
@@ -14,36 +13,12 @@ export type Logger = P.Logger;
 export type DestinationStream = P.DestinationStream;
 export type LevelWithSilent = P.LevelWithSilent;
 export type LoggerOptions = P.LoggerOptions;
-export type PrettyOptions = prettyPrint.PrettyOptions;
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';
 
 type LogDefinition = {
   level: LogLevel;
   emit: 'stdout' | 'event';
 };
-
-
-
-/**
- * Determines if logs should be prettified.
- *
- * Typically if logging to a transport stream or in production
- * logs will not be prettified.
- *
- * In fact, the pino developers note:
- * "We recommend against using pino-pretty in production,
- * and highly recommend installing pino-pretty as a development dependency."
- * See: https://github.com/pinojs/pino-pretty#programmatic-integration
- *
- * One exception to this rule may be Netlify functions logging.
- * Its function logging output readability can benefit from pretty-printing.
- */
-export const isPretty = isDevelopment;
-
-/**
- * Defines the necessary pretty printing dependency
- */
-export const prettifier = prettyPrint;
 
 /*
  * List of keys to redact from log
@@ -122,32 +97,11 @@ export const logLevel: LevelWithSilent | string = (() => {
 })();
 
 /**
- * Defines default options when pretty printing.
- * These can be overridden individually without losing other defaults.
- *
- * Defaults are:
- *
- * - Colorize output when pretty printing
- * - Ignore certain event attributes like hostname and pid for cleaner log statements
- * - Prefix the log output with log level
- * - Use a shorted log message that omits server name
- * - Humanize time in GMT
- * */
-export const defaultPrettyPrintOptions: PrettyOptions = {
-  colorize: true,
-  ignore: 'hostname,pid',
-  levelFirst: true,
-  messageFormat: false,
-  translateTime: true,
-};
-
-/**
  * Defines an opinionated base logger configuration that defines
  * how to log and what to ignore.
  *
  * @default logger options are:
  *
- * - Colorize output when pretty printing
  * - Ignore certain event attributes like hostname and pid for cleaner log statements
  * - Prefix the log output with log level
  * - Use a shorted log message that omits server name
@@ -168,14 +122,9 @@ export const defaultPrettyPrintOptions: PrettyOptions = {
  *      remove (Boolean): Optional. Instead of censoring the value, remove both the key
  *      and the value. Default: false
  *
- * Pretty Printing Defaults defined in defaultPrettyPrintOptions
- *
  * @see {@link https://github.com/pinojs/pino/blob/master/docs/api.md}
- * @see {@link https://github.com/pinojs/pino-pretty}
  */
 export const defaultLoggerOptions: LoggerOptions = {
-  prettyPrint: isPretty && defaultPrettyPrintOptions,
-  prettifier: isPretty && prettifier,
   level: logLevel,
   redact: redactionsList,
 };
@@ -223,32 +172,13 @@ export const createLogger = ({
   const isStream = hasDestination && !isFile;
   const stream = destination;
 
-  // override, but retain default pretty print options
-  if (isPretty && options && options.prettyPrint) {
-    const prettyOptions = {
-      prettyPrint: {
-        ...(defaultLoggerOptions.prettyPrint as PrettyOptions),
-        ...(options.prettyPrint as PrettyOptions),
-      },
-    };
-
-    delete options.prettyPrint;
-
-    options = {
-      ...defaultLoggerOptions,
-      ...prettyOptions,
-      ...options,
-    };
-  } else {
-    options = { ...defaultLoggerOptions, ...options };
-  }
+  options = { ...defaultLoggerOptions, ...options };
 
   if (showConfig) {
     console.log('Logger Configuration');
     console.log(`isProduction: ${isProduction}`);
     console.log(`isDevelopment: ${isDevelopment}`);
     console.log(`isTest: ${isTest}`);
-    console.log(`isPretty: ${isPretty}`);
     console.log(`isFile: ${isFile}`);
     console.log(`isStream: ${isStream}`);
     console.log(`logLevel: ${logLevel}`);
@@ -269,12 +199,6 @@ export const createLogger = ({
     if (isStream && isDevelopment && !isTest) {
       console.warn(
         'Logs will be sent to the transport stream in the current development environment.',
-      );
-    }
-
-    if (isStream && options.prettyPrint) {
-      console.warn(
-        'Logs sent to the transport stream are being prettified. This format may be incompatible.',
       );
     }
 

@@ -1,6 +1,6 @@
 import { Events } from './constants';
 import { JobFinishedEventData } from '../queues';
-import { round } from 'lodash';
+import { round } from '@alpen/shared';
 import { MetricTypes, MetricValueType, QueueMetricOptions } from './types';
 import { QueueCounterBasedMetric } from './counterBasedMetric';
 
@@ -39,7 +39,11 @@ export class ErrorPercentageMetric extends QueueCounterBasedMetric {
   }
 
   get errorPercentage(): number {
-    return this.completed ? round(this._failures / this.completed, 2) * 100 : 0;
+    if (this.completed > 0) {
+      const value = this._failures / this.completed;
+      return round(value, 2) * 100;
+    }
+    return 0;
   }
 
   static get key(): MetricTypes {

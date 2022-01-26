@@ -7,8 +7,8 @@ export const validateUrl = (s: string): boolean => {
   }
 };
 
-// eslint-disable-next-line max-len
 const tester =
+  // eslint-disable-next-line max-len
   /^[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~](\.?[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$/;
 // Thanks to:
 // http://fightingforalostcause.net/misc/2006/compare-email-regex.php

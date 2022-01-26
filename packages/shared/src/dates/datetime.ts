@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
-import { isDate, isNil } from 'lodash';
-import { isNumber } from '../utils';
+import { isDate, isNil, isValidDate } from '../lib/nodash';
+import { isPossiblyNumber } from '../lib/utils';
 import ms from 'ms';
 
 import {
@@ -53,15 +53,12 @@ export declare type DateLike = Date | number;
 
 // https://github.com/date-fns/date-fns/blob/master/docs/unicodeTokens.md
 const DATE_FORMATS = [
-  "yyyy-MM-dd'T'HH:mm:ss",
-  "yyyy-MM-dd'T'HH:mm:ss.SSS",
-  "yyyy-MM-dd'T'HH:mm",
+  'yyyy-MM-dd\'T\'HH:mm:ss',
+  'yyyy-MM-dd\'T\'HH:mm:ss.SSS',
+  'yyyy-MM-dd\'T\'HH:mm',
   'yyyy-MM-dd',
 ];
 
-export function isValidDate(obj: unknown): boolean {
-  return obj instanceof Date && !isNaN(obj.getTime());
-}
 
 export function normalizeUnit(str: string = null): string {
   const type = (str || 'ms').toLowerCase();
@@ -214,7 +211,7 @@ export function endOf(date: DateLike, unit: string): Date {
 }
 
 export function parseDate(date, defaultVal: DateLike): Date {
-  if (isNumber(date)) {
+  if (isPossiblyNumber(date)) {
     date = parseInt(date);
     return toDate(date);
   }
@@ -233,7 +230,7 @@ export function parseTimestamp(date, defaultVal: number = undefined): number {
   if (isNil(date)) {
     return defaultVal;
   }
-  if (isNumber(date)) {
+  if (isPossiblyNumber(date)) {
     return parseInt(date);
   }
   if (isDate(date)) {
@@ -262,7 +259,7 @@ export function parseDuration(
     }
     return undefined; // ?? NaN
   }
-  if (isNumber(value)) {
+  if (isPossiblyNumber(value)) {
     return parseInt(value);
   }
 
@@ -407,14 +404,14 @@ export function parseRange(expr: string, reference?: Date | number): Timespan {
 
     if (relativePart === 'this') {
       // handle cases like "this_week"
-      if (!isNumber(durationSpec[0])) {
+      if (!isPossiblyNumber(durationSpec[0])) {
         const unit = normalizeUnit(durationSpec);
         return getRange(unit);
       }
       raiseError();
     } else {
       // handle cases like "last_week"
-      if (!isNumber(durationSpec[0])) {
+      if (!isPossiblyNumber(durationSpec[0])) {
         const unit = normalizeUnit(durationSpec);
         return getPrevRange(unit);
       }

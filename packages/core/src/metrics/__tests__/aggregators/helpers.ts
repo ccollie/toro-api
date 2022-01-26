@@ -1,4 +1,4 @@
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { SlidingTimeWindowAggregator } from '../../';
 
 export function validateCounts(instance: SlidingTimeWindowAggregator): void {

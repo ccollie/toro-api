@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { get } from 'lodash';
+import { get } from '@alpen/shared';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
 import { JobCountStates } from '@alpen/core';

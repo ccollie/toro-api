@@ -12,7 +12,7 @@ import {
   getRuleStateKey,
 } from '../keys';
 import { systemClock } from '../lib/clock';
-import { has, isObject } from 'lodash';
+import { has, isObject } from '@alpen/shared';
 import { Rule } from '../rules/rule';
 import { ErrorStatus, RuleAlert } from '../types';
 import { parseObjectResponse } from '../redis';

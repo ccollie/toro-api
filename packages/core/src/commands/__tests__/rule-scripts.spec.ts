@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { nanoid } from 'nanoid';
 import {
   clearDb,

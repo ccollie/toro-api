@@ -1,10 +1,9 @@
 import * as boom from '@hapi/boom';
 import fnv from 'fnv-plus';
-import { isEmpty } from 'lodash';
 import { JobsOptions, Queue } from 'bullmq';
 import { ValidateFunction } from 'ajv';
 import { JobOptionsSchema } from './job-options-schema';
-import { hashObject, objToString, safeParse } from '@alpen/shared';
+import { hashObject, objToString, safeParse, isEmpty } from '@alpen/shared';
 import toJsonSchema from 'to-json-schema';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';

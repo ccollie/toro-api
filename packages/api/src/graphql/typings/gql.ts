@@ -1,6 +1,6 @@
 /* eslint-disable */
 export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
+export type InputMaybe<T> = T | null;
 export type Exact<T extends { [key: string]: unknown }> = {
   [K in keyof T]: T[K];
 };
@@ -19,19 +19,19 @@ export type Scalars = {
   Float: number;
   Date: any;
   /** An ISO date-time string, such as 2007-12-03T10:15:30Z. Also handles Elastic compatible date-math expr:  https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math. */
-  DateTime: Date;
+  DateTime: number;
   /** Specifies a duration in milliseconds - either as an int or a string specification e.g. "2 min", "3 hr" */
-  Duration: any;
+  Duration: string | number;
   /** A field whose value conforms to the standard internet email address format as specified in RFC822: https://www.w3.org/Protocols/rfc822/. */
   EmailAddress: string;
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: any;
   /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSONObject: { [key: string]: any };
+  JSONObject: { [key: string]: unknown };
   /** The `JSONSchema` scalar type represents JSONSchema values as specified by https://json-schema.org/draft/2019-09/json-schema-validation.html. */
-  JSONSchema: { [key: string]: any };
+  JSONSchema: { [key: string]: unknown };
   /** Job process. Either a number (percentage) or user specified data */
-  JobProgress: string | number | Record<string, any>;
+  JobProgress: string | number | Record<string, unknown>;
   /** Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action */
   JobRemoveOption: boolean | number;
   /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
@@ -1115,7 +1115,7 @@ export type MoveJobToCompletedResult = {
 export type MoveJobToDelayedInput = {
   /** The amount of time to delay execution (in ms) */
   delay?: InputMaybe<Scalars['Duration']>;
-  jobId: Scalars['String'];
+  jobId: Scalars['ID'];
   queueId: Scalars['ID'];
 };
 
@@ -1128,8 +1128,8 @@ export type MoveJobToDelayedResult = {
 
 export type MoveJobToFailedInput = {
   failedReason?: InputMaybe<Scalars['String']>;
-  jobId: Scalars['String'];
-  queueId: Scalars['String'];
+  jobId: Scalars['ID'];
+  queueId: Scalars['ID'];
 };
 
 export type MoveoJobToFailedResult = {

@@ -1,7 +1,7 @@
-import React from "react";
+import React from 'react';
 import { ArcDataItem, OnHoverCallback } from './types';
-import Arcs, { DEFAULT_COLORS } from "./Arcs";
-import InnerText from "./InnerText";
+import Arcs, { DEFAULT_COLORS } from './Arcs';
+import InnerText from './InnerText';
 
 interface DonutProps {
   title?: string;
@@ -10,7 +10,7 @@ interface DonutProps {
   data: ArcDataItem[];
   active?: number;
   onHover?: OnHoverCallback;
-  colors?: string[],
+  colors?: string[];
   innerRadius?: number;
   outerRadius?: number;
   activeOffset?: number;
@@ -19,9 +19,9 @@ interface DonutProps {
 
 export default function Donut(props: DonutProps) {
   const {
-    title = "Values",
+    title = 'Values',
     size = 500,
-    className = "donut-chart",
+    className = 'donut-chart',
     data,
     colors = DEFAULT_COLORS,
     innerRadius = 0.65,
@@ -31,7 +31,7 @@ export default function Donut(props: DonutProps) {
     active = -1
   } = props;
   const newData =
-    data ? data : [{ name: "invalid-values", value: 100 }];
+    data ? data : [{ name: 'invalid-values', value: 100 }];
   return (
     <svg
       className={className}

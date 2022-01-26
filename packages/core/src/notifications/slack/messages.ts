@@ -1,6 +1,5 @@
-import { DateLike } from '@alpen/shared';
+import { DateLike, isEmpty } from '@alpen/shared';
 import toDate from 'date-fns/toDate';
-import { isEmpty } from 'lodash';
 import { systemClock } from '../../lib';
 import { NotificationContext, RuleEventsEnum } from '../../types';
 import { getTitle } from '../utils';

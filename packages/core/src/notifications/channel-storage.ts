@@ -1,5 +1,5 @@
 import * as boom from '@hapi/boom';
-import { isEmpty, isFunction, isObject } from 'lodash';
+import { isEmpty, isFunction, isObject } from '@alpen/shared';
 import { getUniqueId, systemClock } from '../lib';
 import { NotificationChannelProps } from '../types';
 import { Channel } from './channel';

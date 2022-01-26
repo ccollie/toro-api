@@ -1,5 +1,5 @@
 import Boom from '@hapi/boom';
-import { get, isEmpty } from 'lodash';
+import { get, isEmpty } from '@alpen/shared';
 import errorFormatter from 'node-error-formatter';
 
 const isProduction = process.env.NODE_ENV === 'production';

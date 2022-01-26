@@ -1,5 +1,5 @@
 /* global test, expect */
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { systemClock, ManualClock } from '../../../src/lib';
 import { SlidingTimeWindow } from '../../../src/stats';
 

@@ -1,4 +1,4 @@
-import { isObject } from 'lodash';
+import { isObject } from '@alpen/shared';
 import { delay } from '../../lib';
 import { clearDb, TEST_DB } from '../../__tests__/factories';
 import { RedisStreamAggregator } from '../stream-aggregator';

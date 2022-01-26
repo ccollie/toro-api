@@ -1,6 +1,6 @@
 import { exec } from './utils';
 import { GraphQLInt, GraphQLObjectType, GraphQLSchema } from 'graphql';
-import { get } from 'lodash';
+import { get } from '@alpen/shared';
 
 import { GraphQLJobFilterQuery } from '../';
 

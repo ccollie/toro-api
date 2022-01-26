@@ -1,4 +1,4 @@
-import { get } from 'lodash';
+import { get } from '@alpen/shared';
 import { FieldConfig } from '../../utils';
 import { HostManager } from '@alpen/core';
 

@@ -1,8 +1,7 @@
 import { badImplementation } from '@hapi/boom';
 import { getValue } from '../config';
 import querystring from 'querystring';
-import { isEmpty } from 'lodash';
-import { interpolate } from '@alpen/shared';
+import { interpolate, isEmpty } from '@alpen/shared';
 
 function getUri(name: string, data: Record<string, any>, options = {}): string {
   const envVar = `${name.toUpperCase()}_URI_TEMPLATE`;

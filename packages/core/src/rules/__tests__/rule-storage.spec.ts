@@ -1,5 +1,5 @@
 import { Queue, RedisClient } from 'bullmq';
-import { random, sortBy } from 'lodash';
+import { random } from '@alpen/shared';
 import pAll from 'p-all';
 import pSettle from 'p-settle';
 import { Rule, RuleStorage } from '../';
@@ -22,6 +22,10 @@ import { getUniqueId } from '../../ids';
 import { getQueueBusKey } from '../../keys';
 import { delay } from '../../lib';
 import { EventBus, RedisStreamAggregator } from '../../redis';
+
+function idComparator(a: RuleAlert, b: RuleAlert) {
+  return a.id.localeCompare(b.id);
+}
 
 describe('RuleStorage', () => {
   // jest.setTimeout(5000);
@@ -332,7 +336,9 @@ describe('RuleStorage', () => {
 
     describe('.getRuleAlerts', () => {
       function sortList(items: RuleAlert[]): RuleAlert[] {
-        return sortBy(items, 'id');
+        const sorted = [...items];
+        sorted.sort(idComparator);
+        return sorted;
       }
 
       async function addAlerts(

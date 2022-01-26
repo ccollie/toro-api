@@ -1,7 +1,7 @@
 import { parseBool, parseTimestamp } from '@alpen/shared';
 import * as boom from '@hapi/boom';
 import { Queue, RedisClient } from 'bullmq';
-import { isEmpty, isFunction, isNumber, isObject, isString } from 'lodash';
+import { isEmpty, isFunction, isNumber, isObject, isString } from '@alpen/shared';
 import {
   AlertData,
   PossibleTimestamp,

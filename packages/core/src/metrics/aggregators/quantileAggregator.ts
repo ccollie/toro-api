@@ -6,10 +6,9 @@ import {
   SerializedAggregator,
   SlidingWindowOptions,
 } from '../types';
-import { round } from 'lodash';
 import { DDSketch } from '@datadog/sketches-js';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
-import { ordinal } from '@alpen/shared';
+import { ordinal, round } from '@alpen/shared';
 import { getMetricTypeName } from './utils';
 
 function quantileToString(q: number): string {

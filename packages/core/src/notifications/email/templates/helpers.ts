@@ -1,5 +1,6 @@
 import { humanize, titleCase } from '../../utils';
-import { chunk, isNumber, isObject, keys as _keys } from 'lodash';
+import { chunk, isNumber, isObject } from '@alpen/shared';
+import { keys as _keys } from 'lodash';
 import utils from 'handlebars-utils';
 import * as handlebars from 'handlebars';
 

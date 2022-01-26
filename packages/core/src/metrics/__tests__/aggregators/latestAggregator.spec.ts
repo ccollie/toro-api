@@ -3,7 +3,7 @@ import {
   LatencyMetric,
   AggregatorTypes,
 } from '../../';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 
 describe('LatestAggregator', () => {
   describe('static properties', () => {

@@ -1,5 +1,5 @@
-import { isEmpty, uniq } from 'lodash';
-import { Job, Queue, RedisClient } from 'bullmq';
+import { isEmpty, uniq } from '@alpen/shared';
+import { Job, JobState, JobType, Queue, RedisClient } from 'bullmq';
 import { getQueueConfig } from '../hosts/host-config';
 import { deleteByPattern, normalizePrefixGlob, scanKeys } from '../redis';
 import { systemClock } from '../lib';
@@ -10,20 +10,19 @@ import {
   validateBySchema,
   validateJobData,
 } from './job-schemas';
-import { JobCountStates, JobCreationOptions, JobStatus } from '../types/queues';
+import { JobCreationOptions, JobStatus } from '../types/queues';
 import { Pipeline } from 'ioredis';
 import { logger } from '../logger';
 import { Scripts } from '../commands';
 import { StatsGranularity } from '../stats';
 import { JobMemoryLoaderKey, JobMemoryLoaderResult, loaders } from '../loaders';
 
-export const JOB_STATES: JobStatus[] = [
+export const JOB_STATES: JobState[] = [
   'completed',
   'failed',
   'delayed',
   'active',
   'waiting',
-  'paused',
   'waiting-children',
 ];
 
@@ -66,7 +65,7 @@ export async function getMultipleJobsById(
 
 export async function getJobCounts(
   queue: Queue,
-  states?: string[],
+  states?: JobType[],
 ): Promise<Record<string, number>> {
   states = (!states || states.length) === 0 ? JOB_STATES : states;
   let result = await queue.getJobCounts(...states);
@@ -274,7 +273,7 @@ export async function getPipelinePaused(
 
 export async function getJobCountByType(
   queue: Queue,
-  ...states: JobCountStates[]
+  ...states: JobState[]
 ): Promise<number> {
   const key = {
     queue,

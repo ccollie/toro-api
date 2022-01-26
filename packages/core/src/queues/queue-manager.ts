@@ -1,7 +1,7 @@
 import {  badRequest, notFound } from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
-import { Job, Queue } from 'bullmq';
+import { Job, type JobState, Queue } from 'bullmq';
 import { StatsClient } from '../stats/stats-client';
 import { StatsListener } from '../stats/stats-listener';
 import { Rule, RuleManager } from '../rules';
@@ -11,7 +11,7 @@ import { QueueListener } from './queue-listener';
 import { deleteAllQueueData, getJobTypes, getMultipleJobsById } from './queue';
 import { HostManager, QueueConfig } from '../hosts';
 import { Clock, getQueueUri } from '../lib';
-import { JobStatus, RepeatableJob } from '../types/queues';
+import type { JobStatus, RepeatableJob } from '../types/queues';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../keys';
 import { MetricManager, BaseMetric } from '../metrics';
@@ -19,7 +19,7 @@ import { getConfigDuration } from '../lib/config-utils';
 import { logger } from '../logger';
 import { convertWorker, QueueWorker } from './queue-worker';
 
-const ALL_STATUSES: JobStatus[] = ['completed', 'waiting', 'active', 'failed'];
+const ALL_STATUSES: JobState[] = ['completed', 'waiting', 'active', 'failed'];
 
 export function getCronDescription(cron: string | number): string {
   function fromNumber(value: number): string {
@@ -366,7 +366,7 @@ export class QueueManager {
    * @returns {Promise} A promise that resolves to an array of Jobs
    */
   async getJobs(
-    state: JobStatus,
+    state: JobState,
     offset = 0,
     limit = 25,
     asc?: boolean,
@@ -399,7 +399,7 @@ export class QueueManager {
   }
 
   async getJobCounts(
-    states: JobStatus[] = ALL_STATUSES,
+    states: JobState[] = ALL_STATUSES,
   ): Promise<Record<JobStatus, number>> {
     let result = await this.queue.getJobCounts(...states);
     if (!result) result = {};

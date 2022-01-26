@@ -1,4 +1,4 @@
-import { round } from 'lodash';
+import { round } from '@alpen/shared';
 import {
   BaseMetric,
   ErrorPercentageMetric,

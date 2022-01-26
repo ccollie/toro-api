@@ -1,6 +1,6 @@
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
-import { isString } from 'lodash';
+import { isString } from '@alpen/shared';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig, QueueTC } from '../../index';
 import { Job, Queue } from 'bullmq';

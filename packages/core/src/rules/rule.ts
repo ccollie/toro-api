@@ -1,13 +1,9 @@
+import { isNil, isString, parseTimestamp } from '@alpen/shared';
 import * as boom from '@hapi/boom';
-import { clone, isNil, isString } from 'lodash';
-import { parseTimestamp } from '@alpen/shared';
+import { clone } from 'lodash';
 import { systemClock } from '../lib';
-import {
-  ruleAlertOptionsSchema,
-  ruleConditionSchema,
-  ruleConfigSchema,
-} from './schemas';
 import { RuleAlertOptions, RuleCondition, RuleConfigOptions, RuleState, Severity } from '../types';
+import { ruleAlertOptionsSchema, ruleConditionSchema, ruleConfigSchema } from './schemas';
 
 // todo: tags, copy ctor
 

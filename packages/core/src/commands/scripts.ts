@@ -1,6 +1,6 @@
 import ms from 'ms';
 import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
-import { isEmpty } from 'lodash';
+import { isEmpty } from '@alpen/shared';
 import { pack } from 'msgpackr';
 import { translateReplyError } from '../redis';
 import { JobFinishedState, JobStatus } from '../types';

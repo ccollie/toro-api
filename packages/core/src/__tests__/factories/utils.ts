@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 
 export function randomString(length = 10): string {
   return randomBytes(10).toString('hex');

@@ -1,5 +1,5 @@
 import {Job, Queue} from 'bullmq';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { getUniqueId } from 'packages/core/src/ids';
 import {
   CurrentWaitingCountMetric,
@@ -8,8 +8,8 @@ import {
   MetricTypes,
   MetricValueType
 } from '../';
-import {clearDb, createQueue} from '../../__tests__/factories';
-import {MetricTestHelper} from './metricTestHelper';
+import { clearDb, createQueue } from '../../__tests__/factories';
+import { MetricTestHelper } from './metricTestHelper';
 
 describe('CurrentWaitingCountMetric', () => {
   describe('static properties', () => {

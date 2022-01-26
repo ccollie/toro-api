@@ -1,5 +1,5 @@
 import { getTimestampFromId, getUniqueId } from '../../ids/index';
-import { uniq } from 'lodash';
+import { uniq } from '@alpen/shared';
 
 describe('ids', () => {
   describe('getUniqueId()', () => {

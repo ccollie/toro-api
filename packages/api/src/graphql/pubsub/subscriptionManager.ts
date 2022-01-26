@@ -1,4 +1,4 @@
-import { isNil, isString } from 'lodash';
+import { isNil, isString } from '@alpen/shared';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 import { RefCountCache, withCancel, withFilter } from '@alpen/core';
 import { isPromise } from '@alpen/shared';

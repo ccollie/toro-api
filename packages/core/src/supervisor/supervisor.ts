@@ -1,7 +1,7 @@
 import { parseDuration } from '@alpen/shared';
 import { badRequest, notFound } from '@hapi/boom';
 import { Queue } from 'bullmq';
-import { isNil, isString } from 'lodash';
+import { isNil, isString } from '@alpen/shared';
 import ms from 'ms';
 import pMap from 'p-map';
 import pSettle from 'p-settle';

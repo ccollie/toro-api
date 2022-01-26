@@ -10,7 +10,8 @@ import {
 } from './slack.types';
 import toDate from 'date-fns/toDate';
 import { humanize, titleCase } from '../utils';
-import { flatten, isObject, map } from 'lodash';
+import { isObject, flatten } from '@alpen/shared';
+import { map } from 'lodash';
 import slackifyMarkdown from 'slackify-markdown';
 
 /**

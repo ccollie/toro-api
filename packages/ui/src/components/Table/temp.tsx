@@ -7,12 +7,6 @@ export const useStyles = createStyles((theme: Theme) => ({
       border: '1px solid rgba(224, 224, 224, 1)',
       width: '100%',
     },
-    tableHead: {
-      textAlign: 'left',
-      textTransform: 'uppercase',
-      bottomBorderWidth: '1px',
-      backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[1],
-    },
     tableHeadRow: {
       backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[1],
       color: theme.colorScheme === 'dark' ? theme.white : theme.black,

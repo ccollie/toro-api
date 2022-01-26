@@ -35,6 +35,7 @@
       "@alpen/fastify": ["packages/fastify/src/index.ts"],
       "@alpen/hapi": ["packages/hapi/src/index.ts"],
       "@alpen/koa": ["packages/koa/src/index.ts"],
+      "@alpen/shared/lib": ["./packages/shared/src/lib/index.ts"],
       "@alpen/shared/*": ["./packages/shared/src/*"],
       "@alpen/demo-base": ["examples/base/src/index.ts"],
       "@alpen/demo-base/*": ["examples/base/src/*/index.ts"],

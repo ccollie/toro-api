@@ -1,5 +1,5 @@
 import { getOrderNumber, getRandomString } from '../utils';
-import { random as getRandomInt, sample } from 'lodash';
+import { random as getRandomInt, sample } from '@alpen/shared';
 import { Job, Queue } from 'bullmq';
 const STAGES = ['download', 'transcode', 'metadata', 'upload'];
 

@@ -1,13 +1,13 @@
 import type { HostQueuesFilter, Queue, SortOrderEnum, JobStatus } from './generated';
 
 export const STATUSES = {
-  latest: "latest",
-  active: "active",
-  waiting: "waiting",
-  completed: "completed",
-  failed: "failed",
-  delayed: "delayed",
-  paused: "paused"
+  latest: 'latest',
+  active: 'active',
+  waiting: 'waiting',
+  completed: 'completed',
+  failed: 'failed',
+  delayed: 'delayed',
+  paused: 'paused'
 } as const;
 
 // https://stackoverflow.com/questions/56841134/use-typescript-enum-values-to-create-new-type

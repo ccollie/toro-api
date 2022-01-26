@@ -1,8 +1,7 @@
 import boom from '@hapi/boom';
 import { GraphQLScalarType, Kind, print } from 'graphql';
 import { validateFilterExpression } from '@alpen/core';
-import { safeParse } from '@alpen/shared';
-import isObject from 'lodash/isObject';
+import { isObject, safeParse } from '@alpen/shared';
 
 function validate(query) {
   try {

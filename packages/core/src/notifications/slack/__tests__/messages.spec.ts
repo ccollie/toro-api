@@ -1,7 +1,7 @@
 import { NotificationContext } from '../../../types';
 import { getMessage } from '../messages';
 import { createNotificationContext } from '../../__tests__/helpers';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import ms from 'ms';
 import { nanoid } from 'nanoid';
 import {

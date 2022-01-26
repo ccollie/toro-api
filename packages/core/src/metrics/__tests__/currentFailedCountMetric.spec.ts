@@ -9,7 +9,7 @@ import {
 import { clearDb, createQueue, createWorker } from '../../__tests__/factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 
 describe('CurrentFailedCountMetric', () => {
   describe('static properties', () => {

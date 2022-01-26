@@ -2,10 +2,6 @@ import type { JobCounts, JobStatus } from 'src/types';
 
 export type OnPieClickCallback = (status: JobStatus, value?: number) => void;
 
-export type JobCountsHash = {
-  [key in JobStatus]: number;
-};
-
 export type PieChartDataProps = {
   height?: number;
   title?: string;
@@ -21,6 +17,7 @@ export const Colors: Record<JobStatus, string> = {
   paused: 'hsl(345, 70%, 50%)',
   delayed: 'hsl(292, 70%, 50%)',
   unknown: 'hsl(0,7%,67%)',
+  // eslint-disable-next-line camelcase
   waiting_children: 'hsl(191,70%,50%)', // not used currently
 };
 

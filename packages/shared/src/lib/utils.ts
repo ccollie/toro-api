@@ -1,29 +1,5 @@
 import crypto from 'crypto';
-import { get, isFunction, isObject } from 'lodash';
-
-export function hash(data: any, algorithm = 'sha1'): string {
-  return crypto.createHash(algorithm).update(data).digest('hex');
-}
-
-export function objToString(hash: Record<string, any>): string {
-  if (!isObject(hash)) {
-    return `${hash}`;
-  }
-  const keys = Object.keys(hash).sort();
-  const parts = keys.map((key) => {
-    const val = hash[key];
-    return key + ':' + (typeof val === 'object' ? objToString(val) : '' + val);
-  });
-  return parts.join('');
-}
-
-export function hashObject(
-  obj: Record<string, any>,
-  algorithm = 'sha1',
-): string {
-  const asString = objToString(obj);
-  return hash(asString, algorithm);
-}
+import { get, isFunction, isObject } from './nodash';
 
 export function safeParse(item: string): any {
   if (typeof item !== 'string' || !item.length) {
@@ -65,7 +41,7 @@ export function parseBool(val: unknown, defaultVal?: boolean): boolean {
 export const isFinishedStatus = (state: string): boolean =>
   ['completed', 'failed', 'removed'].includes(state);
 
-export function isNumber(num: string | number): boolean {
+export function isPossiblyNumber(num: string | number): boolean {
   if (typeof num === 'number') {
     return num - num === 0;
   }
@@ -73,10 +49,6 @@ export function isNumber(num: string | number): boolean {
     return Number.isFinite ? Number.isFinite(+num) : isFinite(+num);
   }
   return false;
-}
-
-export function isPromise(obj: any): obj is Promise<any> {
-  return !!obj && (isObject(obj) || isFunction(obj)) && isFunction(obj['then']);
 }
 
 export function titleCase(str = ''): string {

@@ -12,7 +12,7 @@ import Emittery from 'emittery';
 import pSettle from 'p-settle';
 import pAll from 'p-all';
 import pMap from 'p-map';
-import { sortBy, uniqBy } from 'lodash';
+import { uniqBy } from '@alpen/shared';
 import { ensureScriptsLoaded } from '../commands';
 import type { JobCounts, JobStatus } from '../types';
 import { QueueManager } from '../queues/queue-manager';
@@ -273,7 +273,8 @@ export class HostManager {
 
   getQueues(): Queue[] {
     const queues = this.queueManagers.map((mgr) => mgr.queue);
-    return sortBy(queues, ['prefix', 'name']);
+    queues.sort(queueComparator);
+    return queues;
   }
 
   getChannels(): Promise<Channel[]> {
@@ -500,4 +501,11 @@ export class HostManager {
     }
     return this.flowProducer;
   }
+}
+
+
+function queueComparator(a: Queue, b: Queue): number {
+  const prefixCompare = (a.opts.prefix ?? '').localeCompare(b.opts.prefix ?? '');
+  if (prefixCompare !== 0) return prefixCompare;
+  return a.name.localeCompare(b.name);
 }

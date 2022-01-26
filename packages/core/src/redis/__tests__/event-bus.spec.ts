@@ -3,7 +3,7 @@ import { getUniqueId } from '../../ids';
 import { EventBus } from '../event-bus';
 import { RedisStreamAggregator } from '../stream-aggregator';
 import pAll from 'p-all';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { delay } from '../../lib';
 
 import {

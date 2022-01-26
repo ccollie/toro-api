@@ -1,10 +1,18 @@
 /* eslint-disable */
-import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+import type { DocumentNode } from 'graphql';
+import * as Apollo from '@apollo/client';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = T | null;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type Exact<T extends { [key: string]: unknown }> = {
+  [K in keyof T]: T[K];
+};
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {
+  [SubKey in K]?: Maybe<T[SubKey]>;
+};
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {
+  [SubKey in K]: Maybe<T[SubKey]>;
+};
+const defaultOptions = {} as const;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -12,7 +20,7 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  Date: any;
+  Date: unknown;
   /** An ISO date-time string, such as 2007-12-03T10:15:30Z. Also handles Elastic compatible date-math expr:  https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math. */
   DateTime: number;
   /** Specifies a duration in milliseconds - either as an int or a string specification e.g. "2 min", "3 hr" */
@@ -20,13 +28,13 @@ export type Scalars = {
   /** A field whose value conforms to the standard internet email address format as specified in RFC822: https://www.w3.org/Protocols/rfc822/. */
   EmailAddress: string;
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSON: any;
+  JSON: unknown;
   /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSONObject: { [key: string]: any };
+  JSONObject: { [key: string]: unknown };
   /** The `JSONSchema` scalar type represents JSONSchema values as specified by https://json-schema.org/draft/2019-09/json-schema-validation.html. */
-  JSONSchema: { [key: string]: any };
+  JSONSchema: { [key: string]: unknown };
   /** Job process. Either a number (percentage) or user specified data */
-  JobProgress: string | number | Record<string, any>;
+  JobProgress: string | number | Record<string, unknown>;
   /** Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action */
   JobRemoveOption: boolean | number;
   /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
@@ -62,24 +70,26 @@ export type AggregateInfo = {
   type: AggregateTypeEnum;
 };
 
-export enum AggregateTypeEnum {
-  Ewma = 'Ewma',
-  Identity = 'Identity',
-  Latest = 'Latest',
-  Max = 'Max',
-  Mean = 'Mean',
-  Min = 'Min',
-  None = 'None',
-  P75 = 'P75',
-  P90 = 'P90',
-  P95 = 'P95',
-  P99 = 'P99',
-  P995 = 'P995',
-  Quantile = 'Quantile',
-  StdDev = 'StdDev',
-  Sum = 'Sum',
-}
+export const AggregateTypeEnum = {
+  Ewma: 'Ewma',
+  Identity: 'Identity',
+  Latest: 'Latest',
+  Max: 'Max',
+  Mean: 'Mean',
+  Min: 'Min',
+  None: 'None',
+  P75: 'P75',
+  P90: 'P90',
+  P95: 'P95',
+  P99: 'P99',
+  P995: 'P995',
+  Quantile: 'Quantile',
+  StdDev: 'StdDev',
+  Sum: 'Sum',
+} as const;
 
+export type AggregateTypeEnum =
+  typeof AggregateTypeEnum[keyof typeof AggregateTypeEnum];
 export type Aggregator = {
   __typename?: 'Aggregator';
   description: Scalars['String'];
@@ -128,33 +138,18 @@ export type BulkStatusItem = {
   success: Scalars['Boolean'];
 };
 
-export enum ChangeAggregation {
-  Avg = 'AVG',
-  Max = 'MAX',
-  Min = 'MIN',
-  P90 = 'P90',
-  P95 = 'P95',
-  P99 = 'P99',
-  Sum = 'SUM',
-}
+export const ChangeAggregation = {
+  Avg: 'AVG',
+  Max: 'MAX',
+  Min: 'MIN',
+  P90: 'P90',
+  P95: 'P95',
+  P99: 'P99',
+  Sum: 'SUM',
+} as const;
 
-/** A condition based on a simple threshold condition */
-export type ChangeCondition = RuleConditionInterface & {
-  __typename?: 'ChangeCondition';
-  aggregationType: ChangeAggregation;
-  changeType: ConditionChangeType;
-  /** The value needed to trigger an error notification */
-  errorThreshold: Scalars['Float'];
-  /** The comparison operator */
-  operator: RuleOperator;
-  /** Lookback period (ms). How far back are we going to compare eg 1 hour means we're comparing now vs 1 hour ago */
-  timeShift: Scalars['Duration'];
-  /** The value needed to trigger an warning notification */
-  warningThreshold?: Maybe<Scalars['Float']>;
-  /** The sliding window for metric measurement */
-  windowSize: Scalars['Duration'];
-};
-
+export type ChangeAggregation =
+  typeof ChangeAggregation[keyof typeof ChangeAggregation];
 export type ChangeConditionInput = {
   aggregationType: ChangeAggregation;
   changeType: ConditionChangeType;
@@ -176,27 +171,6 @@ export type ChangeJobDelayInput = {
   queueId: Scalars['String'];
 };
 
-/** The state resulting from evaluation a Change rule condition */
-export type ChangeRuleEvaluationState = RuleEvaluationState & {
-  __typename?: 'ChangeRuleEvaluationState';
-  aggregation: ChangeAggregation;
-  changeType: ConditionChangeType;
-  /** The rule operator */
-  comparator: RuleOperator;
-  errorLevel: ErrorLevel;
-  /** The error threshold of the rule */
-  errorThreshold: Scalars['Float'];
-  /** The type of rule */
-  ruleType: RuleType;
-  timeShift: Scalars['Duration'];
-  unit: Scalars['String'];
-  /** The value which triggered the alert */
-  value: Scalars['Float'];
-  /** The warning threshold of the rule */
-  warningThreshold?: Maybe<Scalars['Float']>;
-  windowSize: Scalars['Duration'];
-};
-
 export type ClearRuleAlertsResult = {
   __typename?: 'ClearRuleAlertsResult';
   /** The count of deleted alerts */
@@ -209,11 +183,13 @@ export type ClesrRuleAlertsInput = {
   ruleId: Scalars['ID'];
 };
 
-export enum ConditionChangeType {
-  Change = 'CHANGE',
-  Pct = 'PCT',
-}
+export const ConditionChangeType = {
+  Change: 'CHANGE',
+  Pct: 'PCT',
+} as const;
 
+export type ConditionChangeType =
+  typeof ConditionChangeType[keyof typeof ConditionChangeType];
 export type CreateBulkJobsResult = {
   __typename?: 'CreateBulkJobsResult';
   jobs: Array<Maybe<Job>>;
@@ -479,12 +455,13 @@ export type EnableNotificationChannelResult = {
   updated: Scalars['Boolean'];
 };
 
-export enum ErrorLevel {
-  Error = 'ERROR',
-  None = 'NONE',
-  Warning = 'WARNING',
-}
+export const ErrorLevel = {
+  Error: 'ERROR',
+  None: 'NONE',
+  Warning: 'WARNING',
+} as const;
 
+export type ErrorLevel = typeof ErrorLevel[keyof typeof ErrorLevel];
 /** Values needed to create a FlowJob */
 export type FlowJobInput = {
   children?: InputMaybe<Array<FlowJobInput>>;
@@ -570,15 +547,17 @@ export type HistogramBinOptionsInput = {
 };
 
 /** The method used to calculate the optimal bin width (and consequently number of bins) for a histogram */
-export enum HistogramBinningMethod {
+export const HistogramBinningMethod = {
   /** Maximum of the ‘Sturges’ and ‘Freedman’ estimators. Provides good all around performance. */
-  Auto = 'Auto',
+  Auto: 'Auto',
   /** Calculate the number of histogram bins based on Freedman-Diaconis method */
-  Freedman = 'Freedman',
+  Freedman: 'Freedman',
   /** Calculate the number of bins based on the Sturges method */
-  Sturges = 'Sturges',
-}
+  Sturges: 'Sturges',
+} as const;
 
+export type HistogramBinningMethod =
+  typeof HistogramBinningMethod[keyof typeof HistogramBinningMethod];
 /** Records histogram binning data */
 export type HistogramInput = {
   /** The minimum date to consider */
@@ -621,11 +600,12 @@ export type HostQueuesFilter = {
   statuses?: InputMaybe<Array<QueueFilterStatus>>;
 };
 
-export enum HttpMethodEnum {
-  Get = 'GET',
-  Post = 'POST',
-}
+export const HttpMethodEnum = {
+  Get: 'GET',
+  Post: 'POST',
+} as const;
 
+export type HttpMethodEnum = typeof HttpMethodEnum[keyof typeof HttpMethodEnum];
 export type InferJobSchemaInput = {
   jobName?: InputMaybe<Scalars['String']>;
   queueId: Scalars['ID'];
@@ -932,17 +912,18 @@ export type JobStatsInterface = {
   startTime: Scalars['Date'];
 };
 
-export enum JobStatus {
-  Active = 'active',
-  Completed = 'completed',
-  Delayed = 'delayed',
-  Failed = 'failed',
-  Paused = 'paused',
-  Unknown = 'unknown',
-  Waiting = 'waiting',
-  WaitingChildren = 'waiting_children',
-}
+export const JobStatus = {
+  Active: 'active',
+  Completed: 'completed',
+  Delayed: 'delayed',
+  Failed: 'failed',
+  Paused: 'paused',
+  Unknown: 'unknown',
+  Waiting: 'waiting',
+  WaitingChildren: 'waiting_children',
+} as const;
 
+export type JobStatus = typeof JobStatus[keyof typeof JobStatus];
 export type JobUpdateDelta = {
   __typename?: 'JobUpdateDelta';
   delta: Scalars['JSONObject'];
@@ -1087,12 +1068,13 @@ export type MetricSummaryStatsArgs = {
   input: MetricDataInput;
 };
 
-export enum MetricCategory {
-  Host = 'Host',
-  Queue = 'Queue',
-  Redis = 'Redis',
-}
+export const MetricCategory = {
+  Host: 'Host',
+  Queue: 'Queue',
+  Redis: 'Redis',
+} as const;
 
+export type MetricCategory = typeof MetricCategory[keyof typeof MetricCategory];
 export type MetricDataInput = {
   end: Scalars['Date'];
   outlierFilter?: InputMaybe<OutlierFilterInput>;
@@ -1146,39 +1128,42 @@ export type MetricPercentileDistributionInput = {
   to: Scalars['Date'];
 };
 
-export enum MetricType {
-  ActiveJobs = 'ActiveJobs',
-  Apdex = 'Apdex',
-  Completed = 'Completed',
-  CompletedRate = 'CompletedRate',
-  ConnectedClients = 'ConnectedClients',
-  ConsecutiveFailures = 'ConsecutiveFailures',
-  CurrentCompletedCount = 'CurrentCompletedCount',
-  CurrentFailedCount = 'CurrentFailedCount',
-  DelayedJobs = 'DelayedJobs',
-  ErrorPercentage = 'ErrorPercentage',
-  ErrorRate = 'ErrorRate',
-  Failures = 'Failures',
-  Finished = 'Finished',
-  FragmentationRatio = 'FragmentationRatio',
-  InstantaneousOps = 'InstantaneousOps',
-  JobRate = 'JobRate',
-  Latency = 'Latency',
-  None = 'None',
-  PeakMemory = 'PeakMemory',
-  PendingCount = 'PendingCount',
-  UsedMemory = 'UsedMemory',
-  WaitTime = 'WaitTime',
-  Waiting = 'Waiting',
-  WaitingChildren = 'WaitingChildren',
-}
+export const MetricType = {
+  ActiveJobs: 'ActiveJobs',
+  Apdex: 'Apdex',
+  Completed: 'Completed',
+  CompletedRate: 'CompletedRate',
+  ConnectedClients: 'ConnectedClients',
+  ConsecutiveFailures: 'ConsecutiveFailures',
+  CurrentCompletedCount: 'CurrentCompletedCount',
+  CurrentFailedCount: 'CurrentFailedCount',
+  DelayedJobs: 'DelayedJobs',
+  ErrorPercentage: 'ErrorPercentage',
+  ErrorRate: 'ErrorRate',
+  Failures: 'Failures',
+  Finished: 'Finished',
+  FragmentationRatio: 'FragmentationRatio',
+  InstantaneousOps: 'InstantaneousOps',
+  JobRate: 'JobRate',
+  Latency: 'Latency',
+  None: 'None',
+  PeakMemory: 'PeakMemory',
+  PendingCount: 'PendingCount',
+  UsedMemory: 'UsedMemory',
+  WaitTime: 'WaitTime',
+  Waiting: 'Waiting',
+  WaitingChildren: 'WaitingChildren',
+} as const;
 
-export enum MetricValueType {
-  Count = 'Count',
-  Gauge = 'Gauge',
-  Rate = 'Rate',
-}
+export type MetricType = typeof MetricType[keyof typeof MetricType];
+export const MetricValueType = {
+  Count: 'Count',
+  Gauge: 'Gauge',
+  Rate: 'Rate',
+} as const;
 
+export type MetricValueType =
+  typeof MetricValueType[keyof typeof MetricValueType];
 /** Compute a frequency distribution of a range of metric data. */
 export type MetricsHistogramInput = {
   /** The minimum date to consider */
@@ -1716,37 +1701,22 @@ export type OnRuleAlertPayload = {
 };
 
 /** Method used for outlier detection */
-export enum OutlierDetectionMethod {
+export const OutlierDetectionMethod = {
   /** Detect outliers based on the Inter Quartile Range. */
-  Iqr = 'IQR',
+  Iqr: 'IQR',
   /** Detect outliers based on Iglewicz and Hoaglin (Mean Absolute Deviation). */
-  Mad = 'MAD',
+  Mad: 'MAD',
   /** Detect outliers based on deviations from the mean. */
-  Sigma = 'Sigma',
-}
+  Sigma: 'Sigma',
+} as const;
 
+export type OutlierDetectionMethod =
+  typeof OutlierDetectionMethod[keyof typeof OutlierDetectionMethod];
 /** Input parameters for outlier filtering */
 export type OutlierFilterInput = {
   method: OutlierDetectionMethod;
   /** Optional detection threshold */
   threshold?: InputMaybe<Scalars['Float']>;
-};
-
-/** A condition based on deviations from a rolling average */
-export type PeakCondition = RuleConditionInterface & {
-  __typename?: 'PeakCondition';
-  /** Signal if peak is above the threshold, below the threshold or either */
-  direction: PeakSignalDirection;
-  /** Standard deviations at which to trigger an error notification. */
-  errorThreshold: Scalars['Float'];
-  /** the influence (between 0 and 1) of new signals on the mean and standard deviation where 1 is normal influence, 0.5 is half */
-  influence?: Maybe<Scalars['Float']>;
-  /** The lag of the moving window (in milliseconds).  For example, a lag of 5000 will use the last 5 seconds of observationsto smooth the data. */
-  lag?: Maybe<Scalars['Duration']>;
-  /** The comparison operator */
-  operator: RuleOperator;
-  /** Standard deviations at which to trigger an warning notification. */
-  warningThreshold?: Maybe<Scalars['Float']>;
 };
 
 export type PeakConditionInput = {
@@ -1764,31 +1734,14 @@ export type PeakConditionInput = {
   warningThreshold?: InputMaybe<Scalars['Float']>;
 };
 
-/** The state resulting from evaluation a Peak rule condition */
-export type PeakRuleEvaluationState = RuleEvaluationState & {
-  __typename?: 'PeakRuleEvaluationState';
-  /** The rule operator */
-  comparator: RuleOperator;
-  direction: PeakSignalDirection;
-  errorLevel: ErrorLevel;
-  /** The error threshold of the rule */
-  errorThreshold: Scalars['Float'];
-  /** The type of rule */
-  ruleType: RuleType;
-  signal: Scalars['Int'];
-  unit: Scalars['String'];
-  /** The value which triggered the alert */
-  value: Scalars['Float'];
-  /** The warning threshold of the rule */
-  warningThreshold?: Maybe<Scalars['Float']>;
-};
+export const PeakSignalDirection = {
+  Above: 'ABOVE',
+  Below: 'BELOW',
+  Both: 'BOTH',
+} as const;
 
-export enum PeakSignalDirection {
-  Above = 'ABOVE',
-  Below = 'BELOW',
-  Both = 'BOTH',
-}
-
+export type PeakSignalDirection =
+  typeof PeakSignalDirection[keyof typeof PeakSignalDirection];
 export type PercentileCount = {
   __typename?: 'PercentileCount';
   count: Scalars['Int'];
@@ -2100,7 +2053,7 @@ export type QueueWorkersArgs = {
 };
 
 export type QueueCleanInput = {
-  /** Grace period interval (ms). Jobs older this this will be removed.  */
+  /** Grace period interval (ms). Jobs older this this will be removed. */
   grace?: InputMaybe<Scalars['Duration']>;
   id: Scalars['ID'];
   /** limit Maximum amount of jobs to clean per call. If not provided will clean all matching jobs. */
@@ -2119,13 +2072,15 @@ export type QueueCleanResult = {
   jobIds?: Maybe<Array<Scalars['ID']>>;
 };
 
-export enum QueueFilterStatus {
-  Active = 'Active',
-  Inactive = 'Inactive',
-  Paused = 'Paused',
-  Running = 'Running',
-}
+export const QueueFilterStatus = {
+  Active: 'Active',
+  Inactive: 'Inactive',
+  Paused: 'Paused',
+  Running: 'Running',
+} as const;
 
+export type QueueFilterStatus =
+  typeof QueueFilterStatus[keyof typeof QueueFilterStatus];
 export type QueueHost = {
   __typename?: 'QueueHost';
   /** Returns the number of alerts raised across all the queues associated with this host */
@@ -2488,12 +2443,14 @@ export type RuleAlertsInput = {
   start?: InputMaybe<Scalars['Int']>;
 };
 
-export enum RuleCircuitState {
-  Closed = 'CLOSED',
-  HalfOpen = 'HALF_OPEN',
-  Open = 'OPEN',
-}
+export const RuleCircuitState = {
+  Closed: 'CLOSED',
+  HalfOpen: 'HALF_OPEN',
+  Open: 'OPEN',
+} as const;
 
+export type RuleCircuitState =
+  typeof RuleCircuitState[keyof typeof RuleCircuitState];
 export type RuleConditionInput = {
   changeCondition?: InputMaybe<ChangeConditionInput>;
   peakCondition?: InputMaybe<PeakConditionInput>;
@@ -2527,22 +2484,24 @@ export type RuleEvaluationState = {
   warningThreshold?: Maybe<Scalars['Float']>;
 };
 
-export enum RuleOperator {
-  Eq = 'EQ',
-  Gt = 'GT',
-  Gte = 'GTE',
-  Lt = 'LT',
-  Lte = 'LTE',
-  Ne = 'NE',
-}
+export const RuleOperator = {
+  Eq: 'EQ',
+  Gt: 'GT',
+  Gte: 'GTE',
+  Lt: 'LT',
+  Lte: 'LTE',
+  Ne: 'NE',
+} as const;
 
-export enum RuleState {
-  Error = 'ERROR',
-  Muted = 'MUTED',
-  Normal = 'NORMAL',
-  Warning = 'WARNING',
-}
+export type RuleOperator = typeof RuleOperator[keyof typeof RuleOperator];
+export const RuleState = {
+  Error: 'ERROR',
+  Muted: 'MUTED',
+  Normal: 'NORMAL',
+  Warning: 'WARNING',
+} as const;
 
+export type RuleState = typeof RuleState[keyof typeof RuleState];
 /** Real time status of a Rule */
 export type RuleStatus = {
   __typename?: 'RuleStatus';
@@ -2564,12 +2523,13 @@ export type RuleStatus = {
   totalFailures: Scalars['Int'];
 };
 
-export enum RuleType {
-  Change = 'CHANGE',
-  Peak = 'PEAK',
-  Threshold = 'THRESHOLD',
-}
+export const RuleType = {
+  Change: 'CHANGE',
+  Peak: 'PEAK',
+  Threshold: 'THRESHOLD',
+} as const;
 
+export type RuleType = typeof RuleType[keyof typeof RuleType];
 /** Information needed to update a rule */
 export type RuleUpdateInput = {
   /** Notification channel ids */
@@ -2597,13 +2557,14 @@ export type RuleUpdateInput = {
   severity?: InputMaybe<Severity>;
 };
 
-export enum Severity {
-  Critical = 'CRITICAL',
-  Error = 'ERROR',
-  Info = 'INFO',
-  Warning = 'WARNING',
-}
+export const Severity = {
+  Critical: 'CRITICAL',
+  Error: 'ERROR',
+  Info: 'INFO',
+  Warning: 'WARNING',
+} as const;
 
+export type Severity = typeof Severity[keyof typeof Severity];
 /** A channel which sends notifications through slack */
 export type SlackNotificationChannel = NotificationChannel & {
   __typename?: 'SlackNotificationChannel';
@@ -2646,19 +2607,22 @@ export type SlackNotificationChannelUpdate = {
   webhook: Scalars['URL'];
 };
 
-export enum SortOrderEnum {
-  Asc = 'ASC',
-  Desc = 'DESC',
-}
+export const SortOrderEnum = {
+  Asc: 'ASC',
+  Desc: 'DESC',
+} as const;
 
-export enum StatsGranularity {
-  Day = 'Day',
-  Hour = 'Hour',
-  Minute = 'Minute',
-  Month = 'Month',
-  Week = 'Week',
-}
+export type SortOrderEnum = typeof SortOrderEnum[keyof typeof SortOrderEnum];
+export const StatsGranularity = {
+  Day: 'Day',
+  Hour: 'Hour',
+  Minute: 'Minute',
+  Month: 'Month',
+  Week: 'Week',
+} as const;
 
+export type StatsGranularity =
+  typeof StatsGranularity[keyof typeof StatsGranularity];
 /** Queue stats filter to getting latest snapshot. */
 export type StatsLatestInput = {
   /** Stats snapshot granularity */
@@ -2669,11 +2633,13 @@ export type StatsLatestInput = {
   metric?: InputMaybe<StatsMetricType>;
 };
 
-export enum StatsMetricType {
-  Latency = 'Latency',
-  Wait = 'Wait',
-}
+export const StatsMetricType = {
+  Latency: 'Latency',
+  Wait: 'Wait',
+} as const;
 
+export type StatsMetricType =
+  typeof StatsMetricType[keyof typeof StatsMetricType];
 /** Queue stats filter. */
 export type StatsQueryInput = {
   /** Stats snapshot granularity */
@@ -2934,17 +2900,6 @@ export type SummaryStatistics = {
   variance: Scalars['Float'];
 };
 
-/** A condition based on a simple threshold condition */
-export type ThresholdCondition = RuleConditionInterface & {
-  __typename?: 'ThresholdCondition';
-  /** The value needed to trigger an error notification */
-  errorThreshold: Scalars['Float'];
-  /** The comparison operator */
-  operator: RuleOperator;
-  /** The value needed to trigger an warning notification */
-  warningThreshold?: Maybe<Scalars['Float']>;
-};
-
 export type ThresholdConditionInput = {
   /** The value needed to trigger an error notification */
   errorThreshold: Scalars['Float'];
@@ -2952,23 +2907,6 @@ export type ThresholdConditionInput = {
   operator: RuleOperator;
   /** The value needed to trigger an warning notification */
   warningThreshold?: InputMaybe<Scalars['Float']>;
-};
-
-/** The state resulting from evaluation off a rule condition */
-export type ThresholdRuleEvaluationState = RuleEvaluationState & {
-  __typename?: 'ThresholdRuleEvaluationState';
-  /** The rule operator */
-  comparator: RuleOperator;
-  errorLevel: ErrorLevel;
-  /** The error threshold of the rule */
-  errorThreshold: Scalars['Float'];
-  /** The type of rule */
-  ruleType: RuleType;
-  unit: Scalars['String'];
-  /** The value which triggered the alert */
-  value: Scalars['Float'];
-  /** The warning threshold of the rule */
-  warningThreshold?: Maybe<Scalars['Float']>;
 };
 
 export type TimeSpan = {
@@ -3116,107 +3054,6 @@ export type WebhookNotificationChannelUpdate = {
   url: Scalars['URL'];
 };
 
-export type RuleAlertOptionsFragment = {
-  __typename?: 'RuleAlertOptions';
-  triggerDelay?: string | number | null;
-  failureThreshold?: number | null;
-  successThreshold?: number | null;
-  maxAlertsPerEvent?: number | null;
-  alertOnReset?: boolean | null;
-  recoveryWindow?: string | number | null;
-  notifyInterval?: string | number | null;
-};
-
-export type RuleFragment = {
-  __typename?: 'Rule';
-  id: string;
-  name: string;
-  description?: string | null;
-  createdAt: any;
-  updatedAt: any;
-  state?: RuleState | null;
-  payload?: { [key: string]: any } | null;
-  isActive: boolean;
-  message?: string | null;
-  alertCount: number;
-  metric?: {
-    __typename?: 'Metric';
-    id: string;
-    isActive: boolean;
-    name: string;
-    options: { [key: string]: any };
-  } | null;
-  condition:
-    | {
-        __typename?: 'ChangeCondition';
-        changeType: ConditionChangeType;
-        errorThreshold: number;
-        warningThreshold?: number | null;
-        operator: RuleOperator;
-        windowSize: string | number;
-        timeShift: string | number;
-        aggregationType: ChangeAggregation;
-      }
-    | {
-        __typename?: 'PeakCondition';
-        errorThreshold: number;
-        warningThreshold?: number | null;
-        influence?: number | null;
-        lag?: string | number | null;
-        direction: PeakSignalDirection;
-      }
-    | {
-        __typename?: 'ThresholdCondition';
-        errorThreshold: number;
-        warningThreshold?: number | null;
-        operator: RuleOperator;
-      };
-  channels: Array<
-    | {
-        __typename?: 'MailNotificationChannel';
-        recipients: Array<string | null>;
-        id: string;
-        type: string;
-        name: string;
-        enabled: boolean;
-      }
-    | {
-        __typename?: 'SlackNotificationChannel';
-        webhook: string;
-        channel?: string | null;
-        token?: string | null;
-        id: string;
-        type: string;
-        name: string;
-        enabled: boolean;
-      }
-    | {
-        __typename?: 'WebhookNotificationChannel';
-        url: string;
-        method?: HttpMethodEnum | null;
-        headers?: { [key: string]: any } | null;
-        timeout?: string | number | null;
-        retry?: number | null;
-        followRedirect?: boolean | null;
-        httpSuccessCodes?: Array<number> | null;
-        id: string;
-        type: string;
-        name: string;
-        enabled: boolean;
-      }
-  >;
-  options?: {
-    __typename?: 'RuleAlertOptions';
-    triggerDelay?: string | number | null;
-    failureThreshold?: number | null;
-    successThreshold?: number | null;
-    maxAlertsPerEvent?: number | null;
-    alertOnReset?: boolean | null;
-    recoveryWindow?: string | number | null;
-    notifyInterval?: string | number | null;
-  } | null;
-};
-
 export type GetAppInfoQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetAppInfoQuery = {
@@ -3229,296 +3066,6 @@ export type GetAppInfoQuery = {
     brand?: string | null;
     author?: string | null;
   };
-};
-
-type NotificationChannel_MailNotificationChannel_Fragment = {
-  __typename?: 'MailNotificationChannel';
-  recipients: Array<string | null>;
-  id: string;
-  type: string;
-  name: string;
-  enabled: boolean;
-};
-
-type NotificationChannel_SlackNotificationChannel_Fragment = {
-  __typename?: 'SlackNotificationChannel';
-  webhook: string;
-  channel?: string | null;
-  token?: string | null;
-  id: string;
-  type: string;
-  name: string;
-  enabled: boolean;
-};
-
-type NotificationChannel_WebhookNotificationChannel_Fragment = {
-  __typename?: 'WebhookNotificationChannel';
-  url: string;
-  method?: HttpMethodEnum | null;
-  headers?: { [key: string]: any } | null;
-  timeout?: string | number | null;
-  retry?: number | null;
-  followRedirect?: boolean | null;
-  httpSuccessCodes?: Array<number> | null;
-  id: string;
-  type: string;
-  name: string;
-  enabled: boolean;
-};
-
-export type NotificationChannelFragment =
-  | NotificationChannel_MailNotificationChannel_Fragment
-  | NotificationChannel_SlackNotificationChannel_Fragment
-  | NotificationChannel_WebhookNotificationChannel_Fragment;
-
-export type GetHostChannelsQueryVariables = Exact<{
-  hostId: Scalars['ID'];
-}>;
-
-export type GetHostChannelsQuery = {
-  __typename?: 'Query';
-  host?: {
-    __typename?: 'QueueHost';
-    channels: Array<
-      | {
-          __typename?: 'MailNotificationChannel';
-          recipients: Array<string | null>;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'SlackNotificationChannel';
-          webhook: string;
-          channel?: string | null;
-          token?: string | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'WebhookNotificationChannel';
-          url: string;
-          method?: HttpMethodEnum | null;
-          headers?: { [key: string]: any } | null;
-          timeout?: string | number | null;
-          retry?: number | null;
-          followRedirect?: boolean | null;
-          httpSuccessCodes?: Array<number> | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-    >;
-  } | null;
-};
-
-export type GetRuleByIdQueryVariables = Exact<{
-  queueId: Scalars['ID'];
-  ruleId: Scalars['ID'];
-}>;
-
-export type GetRuleByIdQuery = {
-  __typename?: 'Query';
-  rule?: {
-    __typename?: 'Rule';
-    id: string;
-    name: string;
-    description?: string | null;
-    createdAt: any;
-    updatedAt: any;
-    state?: RuleState | null;
-    payload?: { [key: string]: any } | null;
-    isActive: boolean;
-    message?: string | null;
-    alertCount: number;
-    metric?: {
-      __typename?: 'Metric';
-      id: string;
-      isActive: boolean;
-      name: string;
-      options: { [key: string]: any };
-    } | null;
-    condition:
-      | {
-          __typename?: 'ChangeCondition';
-          changeType: ConditionChangeType;
-          errorThreshold: number;
-          warningThreshold?: number | null;
-          operator: RuleOperator;
-          windowSize: string | number;
-          timeShift: string | number;
-          aggregationType: ChangeAggregation;
-        }
-      | {
-          __typename?: 'PeakCondition';
-          errorThreshold: number;
-          warningThreshold?: number | null;
-          influence?: number | null;
-          lag?: string | number | null;
-          direction: PeakSignalDirection;
-        }
-      | {
-          __typename?: 'ThresholdCondition';
-          errorThreshold: number;
-          warningThreshold?: number | null;
-          operator: RuleOperator;
-        };
-    channels: Array<
-      | {
-          __typename?: 'MailNotificationChannel';
-          recipients: Array<string | null>;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'SlackNotificationChannel';
-          webhook: string;
-          channel?: string | null;
-          token?: string | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'WebhookNotificationChannel';
-          url: string;
-          method?: HttpMethodEnum | null;
-          headers?: { [key: string]: any } | null;
-          timeout?: string | number | null;
-          retry?: number | null;
-          followRedirect?: boolean | null;
-          httpSuccessCodes?: Array<number> | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-    >;
-    options?: {
-      __typename?: 'RuleAlertOptions';
-      triggerDelay?: string | number | null;
-      failureThreshold?: number | null;
-      successThreshold?: number | null;
-      maxAlertsPerEvent?: number | null;
-      alertOnReset?: boolean | null;
-      recoveryWindow?: string | number | null;
-      notifyInterval?: string | number | null;
-    } | null;
-  } | null;
-};
-
-export type CreateRuleMutationVariables = Exact<{
-  input: CreateRuleInput;
-}>;
-
-export type CreateRuleMutation = {
-  __typename?: 'Mutation';
-  createRule: {
-    __typename?: 'Rule';
-    id: string;
-    name: string;
-    description?: string | null;
-    createdAt: any;
-    updatedAt: any;
-    state?: RuleState | null;
-    payload?: { [key: string]: any } | null;
-    isActive: boolean;
-    message?: string | null;
-    alertCount: number;
-    metric?: {
-      __typename?: 'Metric';
-      id: string;
-      isActive: boolean;
-      name: string;
-      options: { [key: string]: any };
-    } | null;
-    condition:
-      | {
-          __typename?: 'ChangeCondition';
-          changeType: ConditionChangeType;
-          errorThreshold: number;
-          warningThreshold?: number | null;
-          operator: RuleOperator;
-          windowSize: string | number;
-          timeShift: string | number;
-          aggregationType: ChangeAggregation;
-        }
-      | {
-          __typename?: 'PeakCondition';
-          errorThreshold: number;
-          warningThreshold?: number | null;
-          influence?: number | null;
-          lag?: string | number | null;
-          direction: PeakSignalDirection;
-        }
-      | {
-          __typename?: 'ThresholdCondition';
-          errorThreshold: number;
-          warningThreshold?: number | null;
-          operator: RuleOperator;
-        };
-    channels: Array<
-      | {
-          __typename?: 'MailNotificationChannel';
-          recipients: Array<string | null>;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'SlackNotificationChannel';
-          webhook: string;
-          channel?: string | null;
-          token?: string | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'WebhookNotificationChannel';
-          url: string;
-          method?: HttpMethodEnum | null;
-          headers?: { [key: string]: any } | null;
-          timeout?: string | number | null;
-          retry?: number | null;
-          followRedirect?: boolean | null;
-          httpSuccessCodes?: Array<number> | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-    >;
-    options?: {
-      __typename?: 'RuleAlertOptions';
-      triggerDelay?: string | number | null;
-      failureThreshold?: number | null;
-      successThreshold?: number | null;
-      maxAlertsPerEvent?: number | null;
-      alertOnReset?: boolean | null;
-      recoveryWindow?: string | number | null;
-      notifyInterval?: string | number | null;
-    } | null;
-  };
-};
-
-export type DeleteRuleMutationVariables = Exact<{
-  queueId: Scalars['ID'];
-  ruleId: Scalars['ID'];
-}>;
-
-export type DeleteRuleMutation = {
-  __typename?: 'Mutation';
-  deleteRule: { __typename?: 'DeleteRuleResult'; isDeleted: boolean };
 };
 
 export type HostsPageDataQueryVariables = Exact<{
@@ -3580,8 +3127,8 @@ export type HostsPageDataQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -3601,8 +3148,8 @@ export type HostsPageDataQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -3622,8 +3169,8 @@ export type HostsPageDataQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -3700,8 +3247,8 @@ export type HostOverviewQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -3721,8 +3268,8 @@ export type HostOverviewQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -3742,8 +3289,8 @@ export type HostOverviewQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -3818,85 +3365,6 @@ export type HostsAndQueuesQuery = {
   }>;
 };
 
-export type RedisStatsFragment = {
-  __typename?: 'RedisInfo';
-  redis_version: string;
-  uptime_in_seconds: number;
-  uptime_in_days: number;
-  connected_clients: number;
-  blocked_clients: number;
-  total_system_memory: number;
-  used_memory: number;
-  used_memory_peak: number;
-  used_memory_lua: number;
-  used_cpu_sys: number;
-  maxmemory: number;
-  number_of_cached_scripts: number;
-  instantaneous_ops_per_sec: number;
-  mem_fragmentation_ratio?: number | null;
-  role: string;
-};
-
-export type HostFragment = {
-  __typename?: 'QueueHost';
-  id: string;
-  name: string;
-  description?: string | null;
-  uri: string;
-  redis: {
-    __typename?: 'RedisInfo';
-    redis_version: string;
-    uptime_in_seconds: number;
-    uptime_in_days: number;
-    connected_clients: number;
-    blocked_clients: number;
-    total_system_memory: number;
-    used_memory: number;
-    used_memory_peak: number;
-    used_memory_lua: number;
-    used_cpu_sys: number;
-    maxmemory: number;
-    number_of_cached_scripts: number;
-    instantaneous_ops_per_sec: number;
-    mem_fragmentation_ratio?: number | null;
-    role: string;
-  };
-  channels: Array<
-    | {
-        __typename?: 'MailNotificationChannel';
-        recipients: Array<string | null>;
-        id: string;
-        type: string;
-        name: string;
-        enabled: boolean;
-      }
-    | {
-        __typename?: 'SlackNotificationChannel';
-        webhook: string;
-        channel?: string | null;
-        token?: string | null;
-        id: string;
-        type: string;
-        name: string;
-        enabled: boolean;
-      }
-    | {
-        __typename?: 'WebhookNotificationChannel';
-        url: string;
-        method?: HttpMethodEnum | null;
-        headers?: { [key: string]: any } | null;
-        timeout?: string | number | null;
-        retry?: number | null;
-        followRedirect?: boolean | null;
-        httpSuccessCodes?: Array<number> | null;
-        id: string;
-        type: string;
-        name: string;
-        enabled: boolean;
-      }
-  >;
-};
-
 export type GetAllHostsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetAllHostsQuery = {
@@ -3925,40 +3393,6 @@ export type GetAllHostsQuery = {
       mem_fragmentation_ratio?: number | null;
       role: string;
     };
-    channels: Array<
-      | {
-          __typename?: 'MailNotificationChannel';
-          recipients: Array<string | null>;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'SlackNotificationChannel';
-          webhook: string;
-          channel?: string | null;
-          token?: string | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'WebhookNotificationChannel';
-          url: string;
-          method?: HttpMethodEnum | null;
-          headers?: { [key: string]: any } | null;
-          timeout?: string | number | null;
-          retry?: number | null;
-          followRedirect?: boolean | null;
-          httpSuccessCodes?: Array<number> | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-    >;
   }>;
 };
 
@@ -4044,40 +3478,6 @@ export type GetHostByIdQuery = {
       mem_fragmentation_ratio?: number | null;
       role: string;
     };
-    channels: Array<
-      | {
-          __typename?: 'MailNotificationChannel';
-          recipients: Array<string | null>;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'SlackNotificationChannel';
-          webhook: string;
-          channel?: string | null;
-          token?: string | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-      | {
-          __typename?: 'WebhookNotificationChannel';
-          url: string;
-          method?: HttpMethodEnum | null;
-          headers?: { [key: string]: any } | null;
-          timeout?: string | number | null;
-          retry?: number | null;
-          followRedirect?: boolean | null;
-          httpSuccessCodes?: Array<number> | null;
-          id: string;
-          type: string;
-          name: string;
-          enabled: boolean;
-        }
-    >;
   } | null;
 };
 
@@ -4190,6 +3590,15 @@ export type HostQueuesQuery = {
       isPaused: boolean;
       workerCount: number;
       ruleAlertCount: number;
+      jobCounts: {
+        __typename?: 'JobCounts';
+        active?: number | null;
+        failed?: number | null;
+        paused?: number | null;
+        completed?: number | null;
+        delayed?: number | null;
+        waiting?: number | null;
+      };
       throughput: {
         __typename?: 'Meter';
         count: number;
@@ -4209,8 +3618,8 @@ export type HostQueuesQuery = {
         count: number;
         failed: number;
         completed: number;
-        startTime: any;
-        endTime: any;
+        startTime: unknown;
+        endTime: unknown;
         stddev: number;
         mean: number;
         min: number;
@@ -4230,8 +3639,8 @@ export type HostQueuesQuery = {
         count: number;
         failed: number;
         completed: number;
-        startTime: any;
-        endTime: any;
+        startTime: unknown;
+        endTime: unknown;
         stddev: number;
         mean: number;
         min: number;
@@ -4251,8 +3660,8 @@ export type HostQueuesQuery = {
         count: number;
         failed: number;
         completed: number;
-        startTime: any;
-        endTime: any;
+        startTime: unknown;
+        endTime: unknown;
         stddev: number;
         mean: number;
         min: number;
@@ -4267,15 +3676,6 @@ export type HostQueuesQuery = {
         m5Rate: number;
         m15Rate: number;
       } | null;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
     }>;
   } | null;
 };
@@ -4320,7 +3720,11 @@ export type DiscoverQueuesQuery = {
   __typename?: 'Query';
   host?: {
     __typename?: 'QueueHost';
-    discoverQueues: Array<{ __typename?: 'DiscoverQueuesPayload'; name: string; prefix: string }>;
+    discoverQueues: Array<{
+      __typename?: 'DiscoverQueuesPayload';
+      name: string;
+      prefix: string;
+    }>;
   } | null;
 };
 
@@ -4369,99 +3773,6 @@ export type UnregisterQueueMutation = {
   };
 };
 
-export type JobRepeatOptionsFragment = {
-  __typename?: 'JobRepeatOptions';
-  cron?: string | null;
-  tz?: string | null;
-  startDate?: any | null;
-  endDate?: any | null;
-  limit?: number | null;
-  every?: string | null;
-  jobId?: string | null;
-  count?: number | null;
-};
-
-export type JobOptionsFragment = {
-  __typename?: 'JobOptions';
-  timestamp?: any | null;
-  priority?: number | null;
-  delay?: number | null;
-  attempts?: number | null;
-  backoff?: any | null;
-  lifo?: boolean | null;
-  timeout?: number | null;
-  jobId?: string | null;
-  removeOnComplete?: boolean | number | null;
-  removeOnFail?: boolean | number | null;
-  stackTraceLimit?: number | null;
-  repeat?: {
-    __typename?: 'JobRepeatOptions';
-    cron?: string | null;
-    tz?: string | null;
-    startDate?: any | null;
-    endDate?: any | null;
-    limit?: number | null;
-    every?: string | null;
-    jobId?: string | null;
-    count?: number | null;
-  } | null;
-};
-
-export type JobFragment = {
-  __typename?: 'Job';
-  id: string;
-  queueId: string;
-  timestamp: any;
-  state: JobStatus;
-  name: string;
-  data: { [key: string]: any };
-  delay: number;
-  progress?: string | number | Record<string, any> | null;
-  attemptsMade: number;
-  processedOn?: any | null;
-  finishedOn?: any | null;
-  failedReason?: any | null;
-  stacktrace: Array<string>;
-  returnvalue?: any | null;
-  opts: {
-    __typename?: 'JobOptions';
-    timestamp?: any | null;
-    priority?: number | null;
-    delay?: number | null;
-    attempts?: number | null;
-    backoff?: any | null;
-    lifo?: boolean | null;
-    timeout?: number | null;
-    jobId?: string | null;
-    removeOnComplete?: boolean | number | null;
-    removeOnFail?: boolean | number | null;
-    stackTraceLimit?: number | null;
-    repeat?: {
-      __typename?: 'JobRepeatOptions';
-      cron?: string | null;
-      tz?: string | null;
-      startDate?: any | null;
-      endDate?: any | null;
-      limit?: number | null;
-      every?: string | null;
-      jobId?: string | null;
-      count?: number | null;
-    } | null;
-  };
-};
-
-export type RepeatableJobFragment = {
-  __typename?: 'RepeatableJob';
-  key: string;
-  id?: string | null;
-  name?: string | null;
-  endDate?: any | null;
-  tz?: string | null;
-  cron?: string | null;
-  next?: any | null;
-  descr?: string | null;
-};
-
 export type GetJobsByFilterQueryVariables = Exact<{
   id: Scalars['ID'];
   status?: InputMaybe<JobStatus>;
@@ -4484,25 +3795,25 @@ export type GetJobsByFilterQuery = {
         __typename?: 'Job';
         id: string;
         queueId: string;
-        timestamp: any;
+        timestamp: unknown;
         state: JobStatus;
         name: string;
-        data: { [key: string]: any };
+        data: { [key: string]: unknown };
         delay: number;
-        progress?: string | number | Record<string, any> | null;
+        progress?: string | number | Record<string, unknown> | null;
         attemptsMade: number;
-        processedOn?: any | null;
-        finishedOn?: any | null;
-        failedReason?: any | null;
+        processedOn?: unknown | null;
+        finishedOn?: unknown | null;
+        failedReason?: unknown | null;
         stacktrace: Array<string>;
-        returnvalue?: any | null;
+        returnvalue?: unknown | null;
         opts: {
           __typename?: 'JobOptions';
-          timestamp?: any | null;
+          timestamp?: unknown | null;
           priority?: number | null;
           delay?: number | null;
           attempts?: number | null;
-          backoff?: any | null;
+          backoff?: unknown | null;
           lifo?: boolean | null;
           timeout?: number | null;
           jobId?: string | null;
@@ -4513,8 +3824,8 @@ export type GetJobsByFilterQuery = {
             __typename?: 'JobRepeatOptions';
             cron?: string | null;
             tz?: string | null;
-            startDate?: any | null;
-            endDate?: any | null;
+            startDate?: unknown | null;
+            endDate?: unknown | null;
             limit?: number | null;
             every?: string | null;
             jobId?: string | null;
@@ -4549,7 +3860,7 @@ export type GetJobFiltersQuery = {
       id: string;
       name: string;
       expression: string;
-      createdAt?: any | null;
+      createdAt?: unknown | null;
     }>;
   } | null;
 };
@@ -4565,7 +3876,7 @@ export type CreateJobFilterMutation = {
     id: string;
     name: string;
     expression: string;
-    createdAt?: any | null;
+    createdAt?: unknown | null;
   };
 };
 
@@ -4583,7 +3894,7 @@ export type UpdateJobFilterMutation = {
       id: string;
       name: string;
       expression: string;
-      createdAt?: any | null;
+      createdAt?: unknown | null;
     } | null;
   };
 };
@@ -4635,25 +3946,25 @@ export type GetQueueJobsQuery = {
       __typename?: 'Job';
       id: string;
       queueId: string;
-      timestamp: any;
+      timestamp: unknown;
       state: JobStatus;
       name: string;
-      data: { [key: string]: any };
+      data: { [key: string]: unknown };
       delay: number;
-      progress?: string | number | Record<string, any> | null;
+      progress?: string | number | Record<string, unknown> | null;
       attemptsMade: number;
-      processedOn?: any | null;
-      finishedOn?: any | null;
-      failedReason?: any | null;
+      processedOn?: unknown | null;
+      finishedOn?: unknown | null;
+      failedReason?: unknown | null;
       stacktrace: Array<string>;
-      returnvalue?: any | null;
+      returnvalue?: unknown | null;
       opts: {
         __typename?: 'JobOptions';
-        timestamp?: any | null;
+        timestamp?: unknown | null;
         priority?: number | null;
         delay?: number | null;
         attempts?: number | null;
-        backoff?: any | null;
+        backoff?: unknown | null;
         lifo?: boolean | null;
         timeout?: number | null;
         jobId?: string | null;
@@ -4664,8 +3975,8 @@ export type GetQueueJobsQuery = {
           __typename?: 'JobRepeatOptions';
           cron?: string | null;
           tz?: string | null;
-          startDate?: any | null;
-          endDate?: any | null;
+          startDate?: unknown | null;
+          endDate?: unknown | null;
           limit?: number | null;
           every?: string | null;
           jobId?: string | null;
@@ -4703,10 +4014,10 @@ export type GetRepeatableJobsQuery = {
       key: string;
       id?: string | null;
       name?: string | null;
-      endDate?: any | null;
+      endDate?: unknown | null;
       tz?: string | null;
       cron?: string | null;
-      next?: any | null;
+      next?: unknown | null;
       descr?: string | null;
     }>;
   } | null;
@@ -4723,25 +4034,25 @@ export type GetJobByIdQuery = {
     __typename?: 'Job';
     id: string;
     queueId: string;
-    timestamp: any;
+    timestamp: unknown;
     state: JobStatus;
     name: string;
-    data: { [key: string]: any };
+    data: { [key: string]: unknown };
     delay: number;
-    progress?: string | number | Record<string, any> | null;
+    progress?: string | number | Record<string, unknown> | null;
     attemptsMade: number;
-    processedOn?: any | null;
-    finishedOn?: any | null;
-    failedReason?: any | null;
+    processedOn?: unknown | null;
+    finishedOn?: unknown | null;
+    failedReason?: unknown | null;
     stacktrace: Array<string>;
-    returnvalue?: any | null;
+    returnvalue?: unknown | null;
     opts: {
       __typename?: 'JobOptions';
-      timestamp?: any | null;
+      timestamp?: unknown | null;
       priority?: number | null;
       delay?: number | null;
       attempts?: number | null;
-      backoff?: any | null;
+      backoff?: unknown | null;
       lifo?: boolean | null;
       timeout?: number | null;
       jobId?: string | null;
@@ -4752,8 +4063,8 @@ export type GetJobByIdQuery = {
         __typename?: 'JobRepeatOptions';
         cron?: string | null;
         tz?: string | null;
-        startDate?: any | null;
-        endDate?: any | null;
+        startDate?: unknown | null;
+        endDate?: unknown | null;
         limit?: number | null;
         every?: string | null;
         jobId?: string | null;
@@ -4791,25 +4102,25 @@ export type CreateJobMutation = {
     __typename?: 'Job';
     id: string;
     queueId: string;
-    timestamp: any;
+    timestamp: unknown;
     state: JobStatus;
     name: string;
-    data: { [key: string]: any };
+    data: { [key: string]: unknown };
     delay: number;
-    progress?: string | number | Record<string, any> | null;
+    progress?: string | number | Record<string, unknown> | null;
     attemptsMade: number;
-    processedOn?: any | null;
-    finishedOn?: any | null;
-    failedReason?: any | null;
+    processedOn?: unknown | null;
+    finishedOn?: unknown | null;
+    failedReason?: unknown | null;
     stacktrace: Array<string>;
-    returnvalue?: any | null;
+    returnvalue?: unknown | null;
     opts: {
       __typename?: 'JobOptions';
-      timestamp?: any | null;
+      timestamp?: unknown | null;
       priority?: number | null;
       delay?: number | null;
       attempts?: number | null;
-      backoff?: any | null;
+      backoff?: unknown | null;
       lifo?: boolean | null;
       timeout?: number | null;
       jobId?: string | null;
@@ -4820,8 +4131,8 @@ export type CreateJobMutation = {
         __typename?: 'JobRepeatOptions';
         cron?: string | null;
         tz?: string | null;
-        startDate?: any | null;
-        endDate?: any | null;
+        startDate?: unknown | null;
+        endDate?: unknown | null;
         limit?: number | null;
         every?: string | null;
         jobId?: string | null;
@@ -4838,7 +4149,10 @@ export type DeleteJobMutationVariables = Exact<{
 
 export type DeleteJobMutation = {
   __typename?: 'Mutation';
-  deleteJob: { __typename?: 'DeleteJobPayload'; job: { __typename?: 'Job'; id: string } };
+  deleteJob: {
+    __typename?: 'DeleteJobPayload';
+    job: { __typename?: 'Job'; id: string };
+  };
 };
 
 export type DiscardJobMutationVariables = Exact<{
@@ -4887,7 +4201,10 @@ export type DeleteRepeatableJobByKeyMutationVariables = Exact<{
 
 export type DeleteRepeatableJobByKeyMutation = {
   __typename?: 'Mutation';
-  deleteRepeatableJobByKey: { __typename?: 'DeleteRepeatableJobByKeyResult'; key: string };
+  deleteRepeatableJobByKey: {
+    __typename?: 'DeleteRepeatableJobByKeyResult';
+    key: string;
+  };
 };
 
 export type DeleteBulkJobsMutationVariables = Exact<{
@@ -4968,57 +4285,6 @@ export type PromoteBulkJobsMutation = {
       reason?: string | null;
     } | null>;
   } | null;
-};
-
-export type JobCountsFragment = {
-  __typename?: 'Queue';
-  jobCounts: {
-    __typename?: 'JobCounts';
-    active?: number | null;
-    failed?: number | null;
-    paused?: number | null;
-    completed?: number | null;
-    delayed?: number | null;
-    waiting?: number | null;
-  };
-};
-
-export type QueueFragment = {
-  __typename?: 'Queue';
-  id: string;
-  name: string;
-  host: string;
-  hostId: string;
-  prefix: string;
-  isPaused: boolean;
-  isReadonly: boolean;
-  repeatableJobCount: number;
-  workerCount: number;
-  jobCounts: {
-    __typename?: 'JobCounts';
-    active?: number | null;
-    failed?: number | null;
-    paused?: number | null;
-    completed?: number | null;
-    delayed?: number | null;
-    waiting?: number | null;
-  };
-};
-
-export type QueueWorkersFragment = {
-  __typename?: 'Queue';
-  workers: Array<{
-    __typename?: 'QueueWorker';
-    id?: string | null;
-    name?: string | null;
-    addr: string;
-    age: number;
-    started?: number | null;
-    idle: number;
-    role?: string | null;
-    db: number;
-    omem: number;
-  }>;
 };
 
 export type GetQueueByIdQueryVariables = Exact<{
@@ -5158,8 +4424,8 @@ export type GetJobSchemasQuery = {
     jobSchemas: Array<{
       __typename?: 'JobSchema';
       jobName: string;
-      schema?: { [key: string]: any } | null;
-      defaultOpts?: { [key: string]: any } | null;
+      schema?: { [key: string]: unknown } | null;
+      defaultOpts?: { [key: string]: unknown } | null;
     }>;
   } | null;
 };
@@ -5174,8 +4440,8 @@ export type GetJobSchemaQuery = {
   queueJobSchema?: {
     __typename?: 'JobSchema';
     jobName: string;
-    schema?: { [key: string]: any } | null;
-    defaultOpts?: { [key: string]: any } | null;
+    schema?: { [key: string]: unknown } | null;
+    defaultOpts?: { [key: string]: unknown } | null;
   } | null;
 };
 
@@ -5191,8 +4457,8 @@ export type SetJobSchemaMutation = {
   setJobSchema: {
     __typename?: 'JobSchema';
     jobName: string;
-    schema?: { [key: string]: any } | null;
-    defaultOpts?: { [key: string]: any } | null;
+    schema?: { [key: string]: unknown } | null;
+    defaultOpts?: { [key: string]: unknown } | null;
   };
 };
 
@@ -5216,8 +4482,8 @@ export type InferJobSchemaQuery = {
   inferJobSchema?: {
     __typename?: 'JobSchema';
     jobName: string;
-    schema?: { [key: string]: any } | null;
-    defaultOpts?: { [key: string]: any } | null;
+    schema?: { [key: string]: unknown } | null;
+    defaultOpts?: { [key: string]: unknown } | null;
   } | null;
 };
 
@@ -5225,7 +4491,7 @@ export type GetJobOptionsSchemaQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetJobOptionsSchemaQuery = {
   __typename?: 'Query';
-  jobOptionsSchema: { [key: string]: any };
+  jobOptionsSchema: { [key: string]: unknown };
 };
 
 export type GetQueueJobsNamesQueryVariables = Exact<{
@@ -5254,15 +4520,25 @@ export type GetPageQueueStatsQuery = {
     isPaused: boolean;
     jobNames: Array<string>;
     workerCount: number;
-    throughput: { __typename?: 'Meter'; m1Rate: number; m5Rate: number; m15Rate: number };
-    errorRate: { __typename?: 'Meter'; m1Rate: number; m5Rate: number; m15Rate: number };
+    throughput: {
+      __typename?: 'Meter';
+      m1Rate: number;
+      m5Rate: number;
+      m15Rate: number;
+    };
+    errorRate: {
+      __typename?: 'Meter';
+      m1Rate: number;
+      m5Rate: number;
+      m15Rate: number;
+    };
     stats: Array<{
       __typename?: 'StatsSnapshot';
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -5282,8 +4558,8 @@ export type GetPageQueueStatsQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -5301,37 +4577,6 @@ export type GetPageQueueStatsQuery = {
   } | null;
 };
 
-export type MeterFragment = {
-  __typename?: 'Meter';
-  count: number;
-  meanRate: number;
-  m1Rate: number;
-  m5Rate: number;
-  m15Rate: number;
-};
-
-export type StatsSnapshotFragment = {
-  __typename?: 'StatsSnapshot';
-  count: number;
-  failed: number;
-  completed: number;
-  startTime: any;
-  endTime: any;
-  stddev: number;
-  mean: number;
-  min: number;
-  max: number;
-  median: number;
-  p90: number;
-  p95: number;
-  p99: number;
-  p995: number;
-  meanRate: number;
-  m1Rate: number;
-  m5Rate: number;
-  m15Rate: number;
-};
-
 export type GetAvailableMetricsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetAvailableMetricsQuery = {
@@ -5347,7 +4592,9 @@ export type GetAvailableMetricsQuery = {
   }>;
 };
 
-export type GetAvailableAggregatesQueryVariables = Exact<{ [key: string]: never }>;
+export type GetAvailableAggregatesQueryVariables = Exact<{
+  [key: string]: never;
+}>;
 
 export type GetAvailableAggregatesQuery = {
   __typename?: 'Query';
@@ -5368,7 +4615,11 @@ export type GetStatsSpanQuery = {
   __typename?: 'Query';
   queue?: {
     __typename?: 'Queue';
-    statsDateRange?: { __typename?: 'TimeSpan'; startTime: number; endTime: number } | null;
+    statsDateRange?: {
+      __typename?: 'TimeSpan';
+      startTime: number;
+      endTime: number;
+    } | null;
   } | null;
 };
 
@@ -5386,8 +4637,8 @@ export type GetQueueStatsQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -5419,8 +4670,8 @@ export type GetQueueStatsLatestQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -5452,8 +4703,8 @@ export type GetHostStatsLatestQuery = {
       count: number;
       failed: number;
       completed: number;
-      startTime: any;
-      endTime: any;
+      startTime: unknown;
+      endTime: unknown;
       stddev: number;
       mean: number;
       min: number;
@@ -5482,8 +4733,8 @@ export type QueueStatsUpdatedSubscription = {
     count: number;
     failed: number;
     completed: number;
-    startTime: any;
-    endTime: any;
+    startTime: unknown;
+    endTime: unknown;
     stddev: number;
     mean: number;
     min: number;
@@ -5511,8 +4762,8 @@ export type HostStatsUpdatedSubscription = {
     count: number;
     failed: number;
     completed: number;
-    startTime: any;
-    endTime: any;
+    startTime: unknown;
+    endTime: unknown;
     stddev: number;
     mean: number;
     min: number;
@@ -5529,219 +4780,16 @@ export type HostStatsUpdatedSubscription = {
   };
 };
 
-export const NotificationChannelFragmentDoc = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'NotificationChannel' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'NotificationChannel' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'enabled' } },
-          {
-            kind: 'InlineFragment',
-            typeCondition: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'MailNotificationChannel' },
-            },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'recipients' } }],
-            },
-          },
-          {
-            kind: 'InlineFragment',
-            typeCondition: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'SlackNotificationChannel' },
-            },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'webhook' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'channel' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'token' } },
-              ],
-            },
-          },
-          {
-            kind: 'InlineFragment',
-            typeCondition: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'WebhookNotificationChannel' },
-            },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'url' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'method' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'headers' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'retry' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'followRedirect' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'httpSuccessCodes' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<NotificationChannelFragment, unknown>;
-export const RuleAlertOptionsFragmentDoc = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'RuleAlertOptions' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'RuleAlertOptions' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'triggerDelay' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failureThreshold' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'successThreshold' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'maxAlertsPerEvent' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'alertOnReset' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'recoveryWindow' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'notifyInterval' } },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<RuleAlertOptionsFragment, unknown>;
-export const RuleFragmentDoc = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'Rule' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Rule' } },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'metric' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
-              ],
-            },
-          },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'condition' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                {
-                  kind: 'InlineFragment',
-                  typeCondition: {
-                    kind: 'NamedType',
-                    name: { kind: 'Name', value: 'ThresholdCondition' },
-                  },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'errorThreshold' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'warningThreshold' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'operator' } },
-                    ],
-                  },
-                },
-                {
-                  kind: 'InlineFragment',
-                  typeCondition: {
-                    kind: 'NamedType',
-                    name: { kind: 'Name', value: 'PeakCondition' },
-                  },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'errorThreshold' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'warningThreshold' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'influence' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'lag' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'direction' } },
-                    ],
-                  },
-                },
-                {
-                  kind: 'InlineFragment',
-                  typeCondition: {
-                    kind: 'NamedType',
-                    name: { kind: 'Name', value: 'ChangeCondition' },
-                  },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'changeType' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'errorThreshold' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'warningThreshold' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'operator' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'windowSize' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'timeShift' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'aggregationType' } },
-                    ],
-                  },
-                },
-              ],
-            },
-          },
-          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'payload' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'channels' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'NotificationChannel' } },
-              ],
-            },
-          },
-          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'message' } },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'options' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RuleAlertOptions' } },
-              ],
-            },
-          },
-          { kind: 'Field', name: { kind: 'Name', value: 'alertCount' } },
-        ],
-      },
-    },
-    ...NotificationChannelFragmentDoc.definitions,
-    ...RuleAlertOptionsFragmentDoc.definitions,
-  ],
-} as unknown as DocumentNode<RuleFragment, unknown>;
 export const RedisStatsFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'RedisStats' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'RedisInfo' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5750,28 +4798,43 @@ export const RedisStatsFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
           { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
           { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'total_system_memory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'number_of_cached_scripts' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'instantaneous_ops_per_sec' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mem_fragmentation_ratio' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<RedisStatsFragment, unknown>;
+} as unknown as DocumentNode;
 export const HostFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'Host' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'QueueHost' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'QueueHost' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5784,33 +4847,69 @@ export const HostFragmentDoc = {
             name: { kind: 'Name', value: 'redis' },
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'RedisStats' } }],
-            },
-          },
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'channels' },
-            selectionSet: {
-              kind: 'SelectionSet',
               selections: [
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'NotificationChannel' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'RedisStats' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...RedisStatsFragmentDoc.definitions,
-    ...NotificationChannelFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<HostFragment, unknown>;
+} as unknown as DocumentNode;
 export const JobRepeatOptionsFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'JobRepeatOptions' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'JobRepeatOptions' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5826,14 +4925,17 @@ export const JobRepeatOptionsFragmentDoc = {
       },
     },
   ],
-} as unknown as DocumentNode<JobRepeatOptionsFragment, unknown>;
+} as unknown as DocumentNode;
 export const JobOptionsFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'JobOptions' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'JobOptions' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5847,7 +4949,10 @@ export const JobOptionsFragmentDoc = {
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobRepeatOptions' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
               ],
             },
           },
@@ -5861,16 +4966,39 @@ export const JobOptionsFragmentDoc = {
         ],
       },
     },
-    ...JobRepeatOptionsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<JobOptionsFragment, unknown>;
+} as unknown as DocumentNode;
 export const JobFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'Job' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Job' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5885,7 +5013,12 @@ export const JobFragmentDoc = {
             name: { kind: 'Name', value: 'opts' },
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobOptions' } }],
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
             },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
@@ -5899,16 +5032,76 @@ export const JobFragmentDoc = {
         ],
       },
     },
-    ...JobOptionsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<JobFragment, unknown>;
+} as unknown as DocumentNode;
 export const RepeatableJobFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'RepeatableJob' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'RepeatableJob' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RepeatableJob' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5924,14 +5117,17 @@ export const RepeatableJobFragmentDoc = {
       },
     },
   ],
-} as unknown as DocumentNode<RepeatableJobFragment, unknown>;
+} as unknown as DocumentNode;
 export const JobCountsFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'JobCounts' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Queue' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5954,14 +5150,17 @@ export const JobCountsFragmentDoc = {
       },
     },
   ],
-} as unknown as DocumentNode<JobCountsFragment, unknown>;
+} as unknown as DocumentNode;
 export const QueueFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'Queue' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Queue' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -5972,22 +5171,58 @@ export const QueueFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
           { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
           { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
-          { kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobCounts' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'repeatableJobCount' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
         ],
       },
     },
-    ...JobCountsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<QueueFragment, unknown>;
+} as unknown as DocumentNode;
 export const QueueWorkersFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'QueueWorkers' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Queue' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -6013,14 +5248,17 @@ export const QueueWorkersFragmentDoc = {
       },
     },
   ],
-} as unknown as DocumentNode<QueueWorkersFragment, unknown>;
+} as unknown as DocumentNode;
 export const MeterFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'Meter' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'Meter' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Meter' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -6033,14 +5271,17 @@ export const MeterFragmentDoc = {
       },
     },
   ],
-} as unknown as DocumentNode<MeterFragment, unknown>;
+} as unknown as DocumentNode;
 export const StatsSnapshotFragmentDoc = {
   kind: 'Document',
   definitions: [
     {
       kind: 'FragmentDefinition',
       name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsSnapshot' } },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -6066,7 +5307,7 @@ export const StatsSnapshotFragmentDoc = {
       },
     },
   ],
-} as unknown as DocumentNode<StatsSnapshotFragment, unknown>;
+} as unknown as DocumentNode;
 export const GetAppInfoDocument = {
   kind: 'Document',
   definitions: [
@@ -6095,219 +5336,58 @@ export const GetAppInfoDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetAppInfoQuery, GetAppInfoQueryVariables>;
-export const GetHostChannelsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'getHostChannels' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'host' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'channels' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'NotificationChannel' },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
-    ...NotificationChannelFragmentDoc.definitions,
-  ],
-} as unknown as DocumentNode<GetHostChannelsQuery, GetHostChannelsQueryVariables>;
-export const GetRuleByIdDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'GetRuleById' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'ruleId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'rule' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'queueId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'ruleId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'ruleId' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Rule' } }],
-            },
-          },
-        ],
-      },
-    },
-    ...RuleFragmentDoc.definitions,
-  ],
-} as unknown as DocumentNode<GetRuleByIdQuery, GetRuleByIdQueryVariables>;
-export const CreateRuleDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'CreateRule' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateRuleInput' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'createRule' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Rule' } }],
-            },
-          },
-        ],
-      },
-    },
-    ...RuleFragmentDoc.definitions,
-  ],
-} as unknown as DocumentNode<CreateRuleMutation, CreateRuleMutationVariables>;
-export const DeleteRuleDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'DeleteRule' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'ruleId' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'deleteRule' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: {
-                  kind: 'ObjectValue',
-                  fields: [
-                    {
-                      kind: 'ObjectField',
-                      name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
-                    },
-                    {
-                      kind: 'ObjectField',
-                      name: { kind: 'Name', value: 'ruleId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'ruleId' } },
-                    },
-                  ],
-                },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'isDeleted' } }],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<DeleteRuleMutation, DeleteRuleMutationVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetAppInfoQuery__
+ *
+ * To run a query within a React component, call `useGetAppInfoQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAppInfoQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAppInfoQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAppInfoQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetAppInfoQuery,
+    GetAppInfoQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetAppInfoQuery, GetAppInfoQueryVariables>(
+    GetAppInfoDocument,
+    options,
+  );
+}
+export function useGetAppInfoLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetAppInfoQuery,
+    GetAppInfoQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetAppInfoQuery, GetAppInfoQueryVariables>(
+    GetAppInfoDocument,
+    options,
+  );
+}
+export type GetAppInfoQueryHookResult = ReturnType<typeof useGetAppInfoQuery>;
+export type GetAppInfoLazyQueryHookResult = ReturnType<
+  typeof useGetAppInfoLazyQuery
+>;
+export type GetAppInfoQueryResult = Apollo.QueryResult<
+  GetAppInfoQuery,
+  GetAppInfoQueryVariables
+>;
+export function refetchGetAppInfoQuery(variables?: GetAppInfoQueryVariables) {
+  return { query: GetAppInfoDocument, variables: variables };
+}
 export const HostsPageDataDocument = {
   kind: 'Document',
   definitions: [
@@ -6318,18 +5398,30 @@ export const HostsPageDataDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'range' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'granularity' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'granularity' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsGranularity' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsGranularity' },
+            },
           },
           defaultValue: { kind: 'EnumValue', value: 'Minute' },
         },
@@ -6351,7 +5443,10 @@ export const HostsPageDataDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RedisStats' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'RedisStats' },
+                      },
                     ],
                   },
                 },
@@ -6361,12 +5456,30 @@ export const HostsPageDataDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'active' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'active' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'failed' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'paused' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'completed' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'delayed' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'waiting' },
+                      },
                     ],
                   },
                 },
@@ -6383,7 +5496,10 @@ export const HostsPageDataDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6401,9 +5517,18 @@ export const HostsPageDataDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm1Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm5Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm15Rate' },
+                      },
                     ],
                   },
                 },
@@ -6422,7 +5547,10 @@ export const HostsPageDataDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6440,9 +5568,18 @@ export const HostsPageDataDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm1Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm5Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm15Rate' },
+                      },
                     ],
                   },
                 },
@@ -6459,7 +5596,10 @@ export const HostsPageDataDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6476,7 +5616,10 @@ export const HostsPageDataDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -6493,7 +5636,10 @@ export const HostsPageDataDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6510,7 +5656,10 @@ export const HostsPageDataDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -6539,7 +5688,10 @@ export const HostsPageDataDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -6549,10 +5701,136 @@ export const HostsPageDataDocument = {
         ],
       },
     },
-    ...RedisStatsFragmentDoc.definitions,
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<HostsPageDataQuery, HostsPageDataQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useHostsPageDataQuery__
+ *
+ * To run a query within a React component, call `useHostsPageDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHostsPageDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHostsPageDataQuery({
+ *   variables: {
+ *      range: // value for 'range'
+ *      granularity: // value for 'granularity'
+ *   },
+ * });
+ */
+export function useHostsPageDataQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    HostsPageDataQuery,
+    HostsPageDataQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<HostsPageDataQuery, HostsPageDataQueryVariables>(
+    HostsPageDataDocument,
+    options,
+  );
+}
+export function useHostsPageDataLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    HostsPageDataQuery,
+    HostsPageDataQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<HostsPageDataQuery, HostsPageDataQueryVariables>(
+    HostsPageDataDocument,
+    options,
+  );
+}
+export type HostsPageDataQueryHookResult = ReturnType<
+  typeof useHostsPageDataQuery
+>;
+export type HostsPageDataLazyQueryHookResult = ReturnType<
+  typeof useHostsPageDataLazyQuery
+>;
+export type HostsPageDataQueryResult = Apollo.QueryResult<
+  HostsPageDataQuery,
+  HostsPageDataQueryVariables
+>;
+export function refetchHostsPageDataQuery(
+  variables: HostsPageDataQueryVariables,
+) {
+  return { query: HostsPageDataDocument, variables: variables };
+}
 export const HostOverviewDocument = {
   kind: 'Document',
   definitions: [
@@ -6571,18 +5849,30 @@ export const HostOverviewDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'range' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'granularity' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'granularity' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsGranularity' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsGranularity' },
+            },
           },
           defaultValue: { kind: 'EnumValue', value: 'Minute' },
         },
@@ -6597,7 +5887,10 @@ export const HostOverviewDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -6610,7 +5903,10 @@ export const HostOverviewDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RedisStats' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'RedisStats' },
+                      },
                     ],
                   },
                 },
@@ -6620,12 +5916,30 @@ export const HostOverviewDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'active' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'active' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'failed' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'paused' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'completed' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'delayed' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'waiting' },
+                      },
                     ],
                   },
                 },
@@ -6642,7 +5956,10 @@ export const HostOverviewDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6660,9 +5977,18 @@ export const HostOverviewDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm1Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm5Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm15Rate' },
+                      },
                     ],
                   },
                 },
@@ -6681,7 +6007,10 @@ export const HostOverviewDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6699,9 +6028,18 @@ export const HostOverviewDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm1Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm5Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm15Rate' },
+                      },
                     ],
                   },
                 },
@@ -6718,7 +6056,10 @@ export const HostOverviewDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6735,7 +6076,10 @@ export const HostOverviewDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -6752,7 +6096,10 @@ export const HostOverviewDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -6769,7 +6116,10 @@ export const HostOverviewDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -6798,7 +6148,10 @@ export const HostOverviewDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -6808,10 +6161,137 @@ export const HostOverviewDocument = {
         ],
       },
     },
-    ...RedisStatsFragmentDoc.definitions,
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<HostOverviewQuery, HostOverviewQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useHostOverviewQuery__
+ *
+ * To run a query within a React component, call `useHostOverviewQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHostOverviewQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHostOverviewQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      range: // value for 'range'
+ *      granularity: // value for 'granularity'
+ *   },
+ * });
+ */
+export function useHostOverviewQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    HostOverviewQuery,
+    HostOverviewQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<HostOverviewQuery, HostOverviewQueryVariables>(
+    HostOverviewDocument,
+    options,
+  );
+}
+export function useHostOverviewLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    HostOverviewQuery,
+    HostOverviewQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<HostOverviewQuery, HostOverviewQueryVariables>(
+    HostOverviewDocument,
+    options,
+  );
+}
+export type HostOverviewQueryHookResult = ReturnType<
+  typeof useHostOverviewQuery
+>;
+export type HostOverviewLazyQueryHookResult = ReturnType<
+  typeof useHostOverviewLazyQuery
+>;
+export type HostOverviewQueryResult = Apollo.QueryResult<
+  HostOverviewQuery,
+  HostOverviewQueryVariables
+>;
+export function refetchHostOverviewQuery(
+  variables: HostOverviewQueryVariables,
+) {
+  return { query: HostOverviewDocument, variables: variables };
+}
 export const HostWorkersDocument = {
   kind: 'Document',
   definitions: [
@@ -6839,7 +6319,10 @@ export const HostWorkersDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -6856,7 +6339,10 @@ export const HostWorkersDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'age' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'idle' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'started' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'started' },
+                      },
                       { kind: 'Field', name: { kind: 'Name', value: 'db' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'role' } },
                     ],
@@ -6870,7 +6356,59 @@ export const HostWorkersDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<HostWorkersQuery, HostWorkersQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useHostWorkersQuery__
+ *
+ * To run a query within a React component, call `useHostWorkersQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHostWorkersQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHostWorkersQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useHostWorkersQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    HostWorkersQuery,
+    HostWorkersQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<HostWorkersQuery, HostWorkersQueryVariables>(
+    HostWorkersDocument,
+    options,
+  );
+}
+export function useHostWorkersLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    HostWorkersQuery,
+    HostWorkersQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<HostWorkersQuery, HostWorkersQueryVariables>(
+    HostWorkersDocument,
+    options,
+  );
+}
+export type HostWorkersQueryHookResult = ReturnType<typeof useHostWorkersQuery>;
+export type HostWorkersLazyQueryHookResult = ReturnType<
+  typeof useHostWorkersLazyQuery
+>;
+export type HostWorkersQueryResult = Apollo.QueryResult<
+  HostWorkersQuery,
+  HostWorkersQueryVariables
+>;
+export function refetchHostWorkersQuery(variables: HostWorkersQueryVariables) {
+  return { query: HostWorkersDocument, variables: variables };
+}
 export const HostsAndQueuesDocument = {
   kind: 'Document',
   definitions: [
@@ -6897,7 +6435,10 @@ export const HostsAndQueuesDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Queue' },
+                      },
                     ],
                   },
                 },
@@ -6907,9 +6448,120 @@ export const HostsAndQueuesDocument = {
         ],
       },
     },
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<HostsAndQueuesQuery, HostsAndQueuesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useHostsAndQueuesQuery__
+ *
+ * To run a query within a React component, call `useHostsAndQueuesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHostsAndQueuesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHostsAndQueuesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useHostsAndQueuesQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    HostsAndQueuesQuery,
+    HostsAndQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<HostsAndQueuesQuery, HostsAndQueuesQueryVariables>(
+    HostsAndQueuesDocument,
+    options,
+  );
+}
+export function useHostsAndQueuesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    HostsAndQueuesQuery,
+    HostsAndQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<HostsAndQueuesQuery, HostsAndQueuesQueryVariables>(
+    HostsAndQueuesDocument,
+    options,
+  );
+}
+export type HostsAndQueuesQueryHookResult = ReturnType<
+  typeof useHostsAndQueuesQuery
+>;
+export type HostsAndQueuesLazyQueryHookResult = ReturnType<
+  typeof useHostsAndQueuesLazyQuery
+>;
+export type HostsAndQueuesQueryResult = Apollo.QueryResult<
+  HostsAndQueuesQuery,
+  HostsAndQueuesQueryVariables
+>;
+export function refetchHostsAndQueuesQuery(
+  variables?: HostsAndQueuesQueryVariables,
+) {
+  return { query: HostsAndQueuesDocument, variables: variables };
+}
 export const GetAllHostsDocument = {
   kind: 'Document',
   definitions: [
@@ -6925,15 +6577,140 @@ export const GetAllHostsDocument = {
             name: { kind: 'Name', value: 'hosts' },
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Host' } }],
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Host' },
+                },
+              ],
             },
           },
         ],
       },
     },
-    ...HostFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Host' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'QueueHost' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uri' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'redis' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'RedisStats' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetAllHostsQuery, GetAllHostsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetAllHostsQuery__
+ *
+ * To run a query within a React component, call `useGetAllHostsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAllHostsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAllHostsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAllHostsQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetAllHostsQuery,
+    GetAllHostsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetAllHostsQuery, GetAllHostsQueryVariables>(
+    GetAllHostsDocument,
+    options,
+  );
+}
+export function useGetAllHostsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetAllHostsQuery,
+    GetAllHostsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetAllHostsQuery, GetAllHostsQueryVariables>(
+    GetAllHostsDocument,
+    options,
+  );
+}
+export type GetAllHostsQueryHookResult = ReturnType<typeof useGetAllHostsQuery>;
+export type GetAllHostsLazyQueryHookResult = ReturnType<
+  typeof useGetAllHostsLazyQuery
+>;
+export type GetAllHostsQueryResult = Apollo.QueryResult<
+  GetAllHostsQuery,
+  GetAllHostsQueryVariables
+>;
+export function refetchGetAllHostsQuery(variables?: GetAllHostsQueryVariables) {
+  return { query: GetAllHostsDocument, variables: variables };
+}
 export const GetHostsAndQueuesDocument = {
   kind: 'Document',
   definitions: [
@@ -6960,7 +6737,10 @@ export const GetHostsAndQueuesDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RedisStats' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'RedisStats' },
+                      },
                     ],
                   },
                 },
@@ -6970,7 +6750,10 @@ export const GetHostsAndQueuesDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Queue' },
+                      },
                     ],
                   },
                 },
@@ -6980,10 +6763,160 @@ export const GetHostsAndQueuesDocument = {
         ],
       },
     },
-    ...RedisStatsFragmentDoc.definitions,
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetHostsAndQueuesQuery, GetHostsAndQueuesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetHostsAndQueuesQuery__
+ *
+ * To run a query within a React component, call `useGetHostsAndQueuesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetHostsAndQueuesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetHostsAndQueuesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetHostsAndQueuesQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetHostsAndQueuesQuery,
+    GetHostsAndQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetHostsAndQueuesQuery,
+    GetHostsAndQueuesQueryVariables
+  >(GetHostsAndQueuesDocument, options);
+}
+export function useGetHostsAndQueuesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetHostsAndQueuesQuery,
+    GetHostsAndQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetHostsAndQueuesQuery,
+    GetHostsAndQueuesQueryVariables
+  >(GetHostsAndQueuesDocument, options);
+}
+export type GetHostsAndQueuesQueryHookResult = ReturnType<
+  typeof useGetHostsAndQueuesQuery
+>;
+export type GetHostsAndQueuesLazyQueryHookResult = ReturnType<
+  typeof useGetHostsAndQueuesLazyQuery
+>;
+export type GetHostsAndQueuesQueryResult = Apollo.QueryResult<
+  GetHostsAndQueuesQuery,
+  GetHostsAndQueuesQueryVariables
+>;
+export function refetchGetHostsAndQueuesQuery(
+  variables?: GetHostsAndQueuesQueryVariables,
+) {
+  return { query: GetHostsAndQueuesDocument, variables: variables };
+}
 export const GetHostByIdDocument = {
   kind: 'Document',
   definitions: [
@@ -7011,20 +6944,149 @@ export const GetHostByIdDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Host' } }],
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Host' },
+                },
+              ],
             },
           },
         ],
       },
     },
-    ...HostFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Host' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'QueueHost' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uri' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'redis' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'RedisStats' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetHostByIdQuery, GetHostByIdQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetHostByIdQuery__
+ *
+ * To run a query within a React component, call `useGetHostByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetHostByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetHostByIdQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetHostByIdQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetHostByIdQuery,
+    GetHostByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetHostByIdQuery, GetHostByIdQueryVariables>(
+    GetHostByIdDocument,
+    options,
+  );
+}
+export function useGetHostByIdLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetHostByIdQuery,
+    GetHostByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetHostByIdQuery, GetHostByIdQueryVariables>(
+    GetHostByIdDocument,
+    options,
+  );
+}
+export type GetHostByIdQueryHookResult = ReturnType<typeof useGetHostByIdQuery>;
+export type GetHostByIdLazyQueryHookResult = ReturnType<
+  typeof useGetHostByIdLazyQuery
+>;
+export type GetHostByIdQueryResult = Apollo.QueryResult<
+  GetHostByIdQuery,
+  GetHostByIdQueryVariables
+>;
+export function refetchGetHostByIdQuery(variables: GetHostByIdQueryVariables) {
+  return { query: GetHostByIdDocument, variables: variables };
+}
 export const GetHostByIdFullDocument = {
   kind: 'Document',
   definitions: [
@@ -7052,7 +7114,10 @@ export const GetHostByIdFullDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -7068,7 +7133,10 @@ export const GetHostByIdFullDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RedisStats' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'RedisStats' },
+                      },
                     ],
                   },
                 },
@@ -7078,7 +7146,10 @@ export const GetHostByIdFullDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Queue' },
+                      },
                     ],
                   },
                 },
@@ -7088,10 +7159,161 @@ export const GetHostByIdFullDocument = {
         ],
       },
     },
-    ...RedisStatsFragmentDoc.definitions,
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetHostByIdFullQuery, GetHostByIdFullQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetHostByIdFullQuery__
+ *
+ * To run a query within a React component, call `useGetHostByIdFullQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetHostByIdFullQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetHostByIdFullQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetHostByIdFullQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetHostByIdFullQuery,
+    GetHostByIdFullQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetHostByIdFullQuery, GetHostByIdFullQueryVariables>(
+    GetHostByIdFullDocument,
+    options,
+  );
+}
+export function useGetHostByIdFullLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetHostByIdFullQuery,
+    GetHostByIdFullQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetHostByIdFullQuery,
+    GetHostByIdFullQueryVariables
+  >(GetHostByIdFullDocument, options);
+}
+export type GetHostByIdFullQueryHookResult = ReturnType<
+  typeof useGetHostByIdFullQuery
+>;
+export type GetHostByIdFullLazyQueryHookResult = ReturnType<
+  typeof useGetHostByIdFullLazyQuery
+>;
+export type GetHostByIdFullQueryResult = Apollo.QueryResult<
+  GetHostByIdFullQuery,
+  GetHostByIdFullQueryVariables
+>;
+export function refetchGetHostByIdFullQuery(
+  variables: GetHostByIdFullQueryVariables,
+) {
+  return { query: GetHostByIdFullDocument, variables: variables };
+}
 export const GetHostQueuesDocument = {
   kind: 'Document',
   definitions: [
@@ -7119,7 +7341,10 @@ export const GetHostQueuesDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -7134,7 +7359,10 @@ export const GetHostQueuesDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Queue' },
+                      },
                     ],
                   },
                 },
@@ -7144,9 +7372,121 @@ export const GetHostQueuesDocument = {
         ],
       },
     },
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetHostQueuesQuery, GetHostQueuesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetHostQueuesQuery__
+ *
+ * To run a query within a React component, call `useGetHostQueuesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetHostQueuesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetHostQueuesQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetHostQueuesQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetHostQueuesQuery,
+    GetHostQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetHostQueuesQuery, GetHostQueuesQueryVariables>(
+    GetHostQueuesDocument,
+    options,
+  );
+}
+export function useGetHostQueuesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetHostQueuesQuery,
+    GetHostQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetHostQueuesQuery, GetHostQueuesQueryVariables>(
+    GetHostQueuesDocument,
+    options,
+  );
+}
+export type GetHostQueuesQueryHookResult = ReturnType<
+  typeof useGetHostQueuesQuery
+>;
+export type GetHostQueuesLazyQueryHookResult = ReturnType<
+  typeof useGetHostQueuesLazyQuery
+>;
+export type GetHostQueuesQueryResult = Apollo.QueryResult<
+  GetHostQueuesQuery,
+  GetHostQueuesQueryVariables
+>;
+export function refetchGetHostQueuesQuery(
+  variables: GetHostQueuesQueryVariables,
+) {
+  return { query: GetHostQueuesDocument, variables: variables };
+}
 export const HostQueuesDocument = {
   kind: 'Document',
   definitions: [
@@ -7165,16 +7505,28 @@ export const HostQueuesDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'range' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'HostQueuesFilter' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'filter' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'HostQueuesFilter' },
+          },
         },
       ],
       selectionSet: {
@@ -7187,7 +7539,10 @@ export const HostQueuesDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -7203,7 +7558,10 @@ export const HostQueuesDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'filter' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'filter' },
+                      },
                     },
                   ],
                   selectionSet: {
@@ -7211,19 +7569,40 @@ export const HostQueuesDocument = {
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobCounts' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'isPaused' },
+                      },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'JobCounts' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'workerCount' },
+                      },
                       {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'throughput' },
                         selectionSet: {
                           kind: 'SelectionSet',
                           selections: [
-                            { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'count' },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'm1Rate' },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'm5Rate' },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'm15Rate' },
+                            },
                           ],
                         },
                       },
@@ -7233,15 +7612,33 @@ export const HostQueuesDocument = {
                         selectionSet: {
                           kind: 'SelectionSet',
                           selections: [
-                            { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                            { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'count' },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'm1Rate' },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'm5Rate' },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'm15Rate' },
+                            },
                           ],
                         },
                       },
-                      { kind: 'Field', name: { kind: 'Name', value: 'ruleAlertCount' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'ruleAlertCount' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'workerCount' },
+                      },
                       {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'stats' },
@@ -7354,10 +7751,121 @@ export const HostQueuesDocument = {
         ],
       },
     },
-    ...JobCountsFragmentDoc.definitions,
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<HostQueuesQuery, HostQueuesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useHostQueuesQuery__
+ *
+ * To run a query within a React component, call `useHostQueuesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHostQueuesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHostQueuesQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      range: // value for 'range'
+ *      filter: // value for 'filter'
+ *   },
+ * });
+ */
+export function useHostQueuesQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    HostQueuesQuery,
+    HostQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<HostQueuesQuery, HostQueuesQueryVariables>(
+    HostQueuesDocument,
+    options,
+  );
+}
+export function useHostQueuesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    HostQueuesQuery,
+    HostQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<HostQueuesQuery, HostQueuesQueryVariables>(
+    HostQueuesDocument,
+    options,
+  );
+}
+export type HostQueuesQueryHookResult = ReturnType<typeof useHostQueuesQuery>;
+export type HostQueuesLazyQueryHookResult = ReturnType<
+  typeof useHostQueuesLazyQuery
+>;
+export type HostQueuesQueryResult = Apollo.QueryResult<
+  HostQueuesQuery,
+  HostQueuesQueryVariables
+>;
+export function refetchHostQueuesQuery(variables: HostQueuesQueryVariables) {
+  return { query: HostQueuesDocument, variables: variables };
+}
 export const GetRedisStatsDocument = {
   kind: 'Document',
   definitions: [
@@ -7368,7 +7876,10 @@ export const GetRedisStatsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'hostId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -7385,7 +7896,10 @@ export const GetRedisStatsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'hostId' },
+                },
               },
             ],
             selectionSet: {
@@ -7398,7 +7912,10 @@ export const GetRedisStatsDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RedisStats' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'RedisStats' },
+                      },
                     ],
                   },
                 },
@@ -7408,9 +7925,104 @@ export const GetRedisStatsDocument = {
         ],
       },
     },
-    ...RedisStatsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RedisStats' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RedisInfo' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_version' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_seconds' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'uptime_in_days' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'connected_clients' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'blocked_clients' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'number_of_cached_scripts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'instantaneous_ops_per_sec' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetRedisStatsQuery, GetRedisStatsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetRedisStatsQuery__
+ *
+ * To run a query within a React component, call `useGetRedisStatsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetRedisStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetRedisStatsQuery({
+ *   variables: {
+ *      hostId: // value for 'hostId'
+ *   },
+ * });
+ */
+export function useGetRedisStatsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetRedisStatsQuery,
+    GetRedisStatsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetRedisStatsQuery, GetRedisStatsQueryVariables>(
+    GetRedisStatsDocument,
+    options,
+  );
+}
+export function useGetRedisStatsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetRedisStatsQuery,
+    GetRedisStatsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetRedisStatsQuery, GetRedisStatsQueryVariables>(
+    GetRedisStatsDocument,
+    options,
+  );
+}
+export type GetRedisStatsQueryHookResult = ReturnType<
+  typeof useGetRedisStatsQuery
+>;
+export type GetRedisStatsLazyQueryHookResult = ReturnType<
+  typeof useGetRedisStatsLazyQuery
+>;
+export type GetRedisStatsQueryResult = Apollo.QueryResult<
+  GetRedisStatsQuery,
+  GetRedisStatsQueryVariables
+>;
+export function refetchGetRedisStatsQuery(
+  variables: GetRedisStatsQueryVariables,
+) {
+  return { query: GetRedisStatsDocument, variables: variables };
+}
 export const DiscoverQueuesDocument = {
   kind: 'Document',
   definitions: [
@@ -7421,7 +8033,10 @@ export const DiscoverQueuesDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'hostId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -7429,12 +8044,18 @@ export const DiscoverQueuesDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'prefix' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'prefix' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'unregisteredOnly' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'unregisteredOnly' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
         },
       ],
@@ -7448,7 +8069,10 @@ export const DiscoverQueuesDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'hostId' },
+                },
               },
             ],
             selectionSet: {
@@ -7461,7 +8085,10 @@ export const DiscoverQueuesDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'prefix' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'prefix' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'prefix' },
+                      },
                     },
                     {
                       kind: 'Argument',
@@ -7476,7 +8103,10 @@ export const DiscoverQueuesDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'prefix' },
+                      },
                     ],
                   },
                 },
@@ -7487,7 +8117,65 @@ export const DiscoverQueuesDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<DiscoverQueuesQuery, DiscoverQueuesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useDiscoverQueuesQuery__
+ *
+ * To run a query within a React component, call `useDiscoverQueuesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useDiscoverQueuesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useDiscoverQueuesQuery({
+ *   variables: {
+ *      hostId: // value for 'hostId'
+ *      prefix: // value for 'prefix'
+ *      unregisteredOnly: // value for 'unregisteredOnly'
+ *   },
+ * });
+ */
+export function useDiscoverQueuesQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    DiscoverQueuesQuery,
+    DiscoverQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<DiscoverQueuesQuery, DiscoverQueuesQueryVariables>(
+    DiscoverQueuesDocument,
+    options,
+  );
+}
+export function useDiscoverQueuesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    DiscoverQueuesQuery,
+    DiscoverQueuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<DiscoverQueuesQuery, DiscoverQueuesQueryVariables>(
+    DiscoverQueuesDocument,
+    options,
+  );
+}
+export type DiscoverQueuesQueryHookResult = ReturnType<
+  typeof useDiscoverQueuesQuery
+>;
+export type DiscoverQueuesLazyQueryHookResult = ReturnType<
+  typeof useDiscoverQueuesLazyQuery
+>;
+export type DiscoverQueuesQueryResult = Apollo.QueryResult<
+  DiscoverQueuesQuery,
+  DiscoverQueuesQueryVariables
+>;
+export function refetchDiscoverQueuesQuery(
+  variables: DiscoverQueuesQueryVariables,
+) {
+  return { query: DiscoverQueuesDocument, variables: variables };
+}
 export const RegisterQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -7498,7 +8186,10 @@ export const RegisterQueueDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'hostId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -7509,17 +8200,26 @@ export const RegisterQueueDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'prefix' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'prefix' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'checkExists' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'checkExists' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
           defaultValue: { kind: 'BooleanValue', value: false },
         },
@@ -7540,22 +8240,34 @@ export const RegisterQueueDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'hostId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'hostId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'hostId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'name' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'name' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'name' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'prefix' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'prefix' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'prefix' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'checkExists' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'checkExists' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'checkExists' },
+                      },
                     },
                   ],
                 },
@@ -7565,16 +8277,121 @@ export const RegisterQueueDocument = {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: '__typename' } },
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Queue' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<RegisterQueueMutation, RegisterQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type RegisterQueueMutationFn = Apollo.MutationFunction<
+  RegisterQueueMutation,
+  RegisterQueueMutationVariables
+>;
+
+/**
+ * __useRegisterQueueMutation__
+ *
+ * To run a mutation, you first call `useRegisterQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRegisterQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [registerQueueMutation, { data, loading, error }] = useRegisterQueueMutation({
+ *   variables: {
+ *      hostId: // value for 'hostId'
+ *      name: // value for 'name'
+ *      prefix: // value for 'prefix'
+ *      checkExists: // value for 'checkExists'
+ *   },
+ * });
+ */
+export function useRegisterQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    RegisterQueueMutation,
+    RegisterQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    RegisterQueueMutation,
+    RegisterQueueMutationVariables
+  >(RegisterQueueDocument, options);
+}
+export type RegisterQueueMutationHookResult = ReturnType<
+  typeof useRegisterQueueMutation
+>;
+export type RegisterQueueMutationResult =
+  Apollo.MutationResult<RegisterQueueMutation>;
+export type RegisterQueueMutationOptions = Apollo.BaseMutationOptions<
+  RegisterQueueMutation,
+  RegisterQueueMutationVariables
+>;
 export const UnregisterQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -7585,7 +8402,10 @@ export const UnregisterQueueDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -7602,7 +8422,10 @@ export const UnregisterQueueDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
               },
             ],
             selectionSet: {
@@ -7613,7 +8436,9 @@ export const UnregisterQueueDocument = {
                   name: { kind: 'Name', value: 'host' },
                   selectionSet: {
                     kind: 'SelectionSet',
-                    selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    ],
                   },
                 },
                 { kind: 'Field', name: { kind: 'Name', value: 'isRemoved' } },
@@ -7624,7 +8449,50 @@ export const UnregisterQueueDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<UnregisterQueueMutation, UnregisterQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type UnregisterQueueMutationFn = Apollo.MutationFunction<
+  UnregisterQueueMutation,
+  UnregisterQueueMutationVariables
+>;
+
+/**
+ * __useUnregisterQueueMutation__
+ *
+ * To run a mutation, you first call `useUnregisterQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUnregisterQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [unregisterQueueMutation, { data, loading, error }] = useUnregisterQueueMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *   },
+ * });
+ */
+export function useUnregisterQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    UnregisterQueueMutation,
+    UnregisterQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    UnregisterQueueMutation,
+    UnregisterQueueMutationVariables
+  >(UnregisterQueueDocument, options);
+}
+export type UnregisterQueueMutationHookResult = ReturnType<
+  typeof useUnregisterQueueMutation
+>;
+export type UnregisterQueueMutationResult =
+  Apollo.MutationResult<UnregisterQueueMutation>;
+export type UnregisterQueueMutationOptions = Apollo.BaseMutationOptions<
+  UnregisterQueueMutation,
+  UnregisterQueueMutationVariables
+>;
 export const GetJobsByFilterDocument = {
   kind: 'Document',
   definitions: [
@@ -7643,22 +8511,37 @@ export const GetJobsByFilterDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'JobStatus' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'status' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobStatus' },
+          },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'cursor' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'cursor' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'criteria' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'criteria' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'count' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'count' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
           defaultValue: { kind: 'IntValue', value: '10' },
         },
@@ -7673,7 +8556,10 @@ export const GetJobsByFilterDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -7693,22 +8579,34 @@ export const GetJobsByFilterDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'cursor' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'cursor' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'cursor' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'count' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'count' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'count' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'status' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'status' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'criteria' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'criteria' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'criteria' },
+                            },
                           },
                         ],
                       },
@@ -7717,33 +8615,229 @@ export const GetJobsByFilterDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'cursor' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'cursor' },
+                      },
                       { kind: 'Field', name: { kind: 'Name', value: 'total' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'current' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'current' },
+                      },
                       {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'jobs' },
                         selectionSet: {
                           kind: 'SelectionSet',
                           selections: [
-                            { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Job' } },
+                            {
+                              kind: 'FragmentSpread',
+                              name: { kind: 'Name', value: 'Job' },
+                            },
                           ],
                         },
                       },
                     ],
                   },
                 },
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobCounts' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobCounts' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...JobFragmentDoc.definitions,
-    ...JobCountsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetJobsByFilterQuery, GetJobsByFilterQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobsByFilterQuery__
+ *
+ * To run a query within a React component, call `useGetJobsByFilterQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobsByFilterQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobsByFilterQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      status: // value for 'status'
+ *      cursor: // value for 'cursor'
+ *      criteria: // value for 'criteria'
+ *      count: // value for 'count'
+ *   },
+ * });
+ */
+export function useGetJobsByFilterQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobsByFilterQuery,
+    GetJobsByFilterQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobsByFilterQuery, GetJobsByFilterQueryVariables>(
+    GetJobsByFilterDocument,
+    options,
+  );
+}
+export function useGetJobsByFilterLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobsByFilterQuery,
+    GetJobsByFilterQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetJobsByFilterQuery,
+    GetJobsByFilterQueryVariables
+  >(GetJobsByFilterDocument, options);
+}
+export type GetJobsByFilterQueryHookResult = ReturnType<
+  typeof useGetJobsByFilterQuery
+>;
+export type GetJobsByFilterLazyQueryHookResult = ReturnType<
+  typeof useGetJobsByFilterLazyQuery
+>;
+export type GetJobsByFilterQueryResult = Apollo.QueryResult<
+  GetJobsByFilterQuery,
+  GetJobsByFilterQueryVariables
+>;
+export function refetchGetJobsByFilterQuery(
+  variables: GetJobsByFilterQueryVariables,
+) {
+  return { query: GetJobsByFilterDocument, variables: variables };
+}
 export const GetJobFiltersDocument = {
   kind: 'Document',
   definitions: [
@@ -7754,7 +8848,10 @@ export const GetJobFiltersDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -7782,7 +8879,10 @@ export const GetJobFiltersDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
               },
             ],
             selectionSet: {
@@ -7795,7 +8895,10 @@ export const GetJobFiltersDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'ids' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'ids' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'ids' },
+                      },
                     },
                   ],
                   selectionSet: {
@@ -7803,8 +8906,14 @@ export const GetJobFiltersDocument = {
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'expression' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'expression' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'createdAt' },
+                      },
                     ],
                   },
                 },
@@ -7815,7 +8924,64 @@ export const GetJobFiltersDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetJobFiltersQuery, GetJobFiltersQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobFiltersQuery__
+ *
+ * To run a query within a React component, call `useGetJobFiltersQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobFiltersQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobFiltersQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      ids: // value for 'ids'
+ *   },
+ * });
+ */
+export function useGetJobFiltersQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobFiltersQuery,
+    GetJobFiltersQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobFiltersQuery, GetJobFiltersQueryVariables>(
+    GetJobFiltersDocument,
+    options,
+  );
+}
+export function useGetJobFiltersLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobFiltersQuery,
+    GetJobFiltersQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobFiltersQuery, GetJobFiltersQueryVariables>(
+    GetJobFiltersDocument,
+    options,
+  );
+}
+export type GetJobFiltersQueryHookResult = ReturnType<
+  typeof useGetJobFiltersQuery
+>;
+export type GetJobFiltersLazyQueryHookResult = ReturnType<
+  typeof useGetJobFiltersLazyQuery
+>;
+export type GetJobFiltersQueryResult = Apollo.QueryResult<
+  GetJobFiltersQuery,
+  GetJobFiltersQueryVariables
+>;
+export function refetchGetJobFiltersQuery(
+  variables: GetJobFiltersQueryVariables,
+) {
+  return { query: GetJobFiltersDocument, variables: variables };
+}
 export const CreateJobFilterDocument = {
   kind: 'Document',
   definitions: [
@@ -7826,10 +8992,16 @@ export const CreateJobFilterDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CreateJobFilterInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'CreateJobFilterInput' },
+            },
           },
         },
       ],
@@ -7843,7 +9015,10 @@ export const CreateJobFilterDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
               },
             ],
             selectionSet: {
@@ -7860,7 +9035,50 @@ export const CreateJobFilterDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<CreateJobFilterMutation, CreateJobFilterMutationVariables>;
+} as unknown as DocumentNode;
+export type CreateJobFilterMutationFn = Apollo.MutationFunction<
+  CreateJobFilterMutation,
+  CreateJobFilterMutationVariables
+>;
+
+/**
+ * __useCreateJobFilterMutation__
+ *
+ * To run a mutation, you first call `useCreateJobFilterMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateJobFilterMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createJobFilterMutation, { data, loading, error }] = useCreateJobFilterMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateJobFilterMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    CreateJobFilterMutation,
+    CreateJobFilterMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    CreateJobFilterMutation,
+    CreateJobFilterMutationVariables
+  >(CreateJobFilterDocument, options);
+}
+export type CreateJobFilterMutationHookResult = ReturnType<
+  typeof useCreateJobFilterMutation
+>;
+export type CreateJobFilterMutationResult =
+  Apollo.MutationResult<CreateJobFilterMutation>;
+export type CreateJobFilterMutationOptions = Apollo.BaseMutationOptions<
+  CreateJobFilterMutation,
+  CreateJobFilterMutationVariables
+>;
 export const UpdateJobFilterDocument = {
   kind: 'Document',
   definitions: [
@@ -7871,10 +9089,16 @@ export const UpdateJobFilterDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'UpdateJobFilterInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'UpdateJobFilterInput' },
+            },
           },
         },
       ],
@@ -7888,7 +9112,10 @@ export const UpdateJobFilterDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
               },
             ],
             selectionSet: {
@@ -7902,8 +9129,14 @@ export const UpdateJobFilterDocument = {
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'expression' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'expression' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'createdAt' },
+                      },
                     ],
                   },
                 },
@@ -7915,7 +9148,50 @@ export const UpdateJobFilterDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<UpdateJobFilterMutation, UpdateJobFilterMutationVariables>;
+} as unknown as DocumentNode;
+export type UpdateJobFilterMutationFn = Apollo.MutationFunction<
+  UpdateJobFilterMutation,
+  UpdateJobFilterMutationVariables
+>;
+
+/**
+ * __useUpdateJobFilterMutation__
+ *
+ * To run a mutation, you first call `useUpdateJobFilterMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateJobFilterMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateJobFilterMutation, { data, loading, error }] = useUpdateJobFilterMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateJobFilterMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    UpdateJobFilterMutation,
+    UpdateJobFilterMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    UpdateJobFilterMutation,
+    UpdateJobFilterMutationVariables
+  >(UpdateJobFilterDocument, options);
+}
+export type UpdateJobFilterMutationHookResult = ReturnType<
+  typeof useUpdateJobFilterMutation
+>;
+export type UpdateJobFilterMutationResult =
+  Apollo.MutationResult<UpdateJobFilterMutation>;
+export type UpdateJobFilterMutationOptions = Apollo.BaseMutationOptions<
+  UpdateJobFilterMutation,
+  UpdateJobFilterMutationVariables
+>;
 export const DeleteJobFilterDocument = {
   kind: 'Document',
   definitions: [
@@ -7926,10 +9202,16 @@ export const DeleteJobFilterDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DeleteJobFilterInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'DeleteJobFilterInput' },
+            },
           },
         },
       ],
@@ -7943,19 +9225,67 @@ export const DeleteJobFilterDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'isDeleted' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'isDeleted' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<DeleteJobFilterMutation, DeleteJobFilterMutationVariables>;
+} as unknown as DocumentNode;
+export type DeleteJobFilterMutationFn = Apollo.MutationFunction<
+  DeleteJobFilterMutation,
+  DeleteJobFilterMutationVariables
+>;
+
+/**
+ * __useDeleteJobFilterMutation__
+ *
+ * To run a mutation, you first call `useDeleteJobFilterMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteJobFilterMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteJobFilterMutation, { data, loading, error }] = useDeleteJobFilterMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteJobFilterMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteJobFilterMutation,
+    DeleteJobFilterMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    DeleteJobFilterMutation,
+    DeleteJobFilterMutationVariables
+  >(DeleteJobFilterDocument, options);
+}
+export type DeleteJobFilterMutationHookResult = ReturnType<
+  typeof useDeleteJobFilterMutation
+>;
+export type DeleteJobFilterMutationResult =
+  Apollo.MutationResult<DeleteJobFilterMutation>;
+export type DeleteJobFilterMutationOptions = Apollo.BaseMutationOptions<
+  DeleteJobFilterMutation,
+  DeleteJobFilterMutationVariables
+>;
 export const GetQueueJobCountsDocument = {
   kind: 'Document',
   definitions: [
@@ -7983,23 +9313,112 @@ export const GetQueueJobCountsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobCounts' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobCounts' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...JobCountsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetQueueJobCountsQuery, GetQueueJobCountsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueJobCountsQuery__
+ *
+ * To run a query within a React component, call `useGetQueueJobCountsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueJobCountsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueJobCountsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetQueueJobCountsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueJobCountsQuery,
+    GetQueueJobCountsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetQueueJobCountsQuery,
+    GetQueueJobCountsQueryVariables
+  >(GetQueueJobCountsDocument, options);
+}
+export function useGetQueueJobCountsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueJobCountsQuery,
+    GetQueueJobCountsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetQueueJobCountsQuery,
+    GetQueueJobCountsQueryVariables
+  >(GetQueueJobCountsDocument, options);
+}
+export type GetQueueJobCountsQueryHookResult = ReturnType<
+  typeof useGetQueueJobCountsQuery
+>;
+export type GetQueueJobCountsLazyQueryHookResult = ReturnType<
+  typeof useGetQueueJobCountsLazyQuery
+>;
+export type GetQueueJobCountsQueryResult = Apollo.QueryResult<
+  GetQueueJobCountsQuery,
+  GetQueueJobCountsQueryVariables
+>;
+export function refetchGetQueueJobCountsQuery(
+  variables: GetQueueJobCountsQueryVariables,
+) {
+  return { query: GetQueueJobCountsDocument, variables: variables };
+}
 export const GetQueueJobsDocument = {
   kind: 'Document',
   definitions: [
@@ -8018,25 +9437,43 @@ export const GetQueueJobsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'offset' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'offset' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
           defaultValue: { kind: 'IntValue', value: '0' },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'limit' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
           defaultValue: { kind: 'IntValue', value: '10' },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'JobStatus' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'status' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobStatus' },
+          },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sortOrder' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'SortOrderEnum' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'sortOrder' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'SortOrderEnum' },
+          },
         },
       ],
       selectionSet: {
@@ -8049,7 +9486,10 @@ export const GetQueueJobsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -8069,22 +9509,34 @@ export const GetQueueJobsDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'offset' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'offset' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'offset' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'limit' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'limit' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'status' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'status' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'sortOrder' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'sortOrder' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'sortOrder' },
+                            },
                           },
                         ],
                       },
@@ -8092,20 +9544,212 @@ export const GetQueueJobsDocument = {
                   ],
                   selectionSet: {
                     kind: 'SelectionSet',
-                    selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Job' } }],
+                    selections: [
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Job' },
+                      },
+                    ],
                   },
                 },
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'JobCounts' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobCounts' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...JobFragmentDoc.definitions,
-    ...JobCountsFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetQueueJobsQuery, GetQueueJobsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueJobsQuery__
+ *
+ * To run a query within a React component, call `useGetQueueJobsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueJobsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueJobsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      offset: // value for 'offset'
+ *      limit: // value for 'limit'
+ *      status: // value for 'status'
+ *      sortOrder: // value for 'sortOrder'
+ *   },
+ * });
+ */
+export function useGetQueueJobsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueJobsQuery,
+    GetQueueJobsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetQueueJobsQuery, GetQueueJobsQueryVariables>(
+    GetQueueJobsDocument,
+    options,
+  );
+}
+export function useGetQueueJobsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueJobsQuery,
+    GetQueueJobsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetQueueJobsQuery, GetQueueJobsQueryVariables>(
+    GetQueueJobsDocument,
+    options,
+  );
+}
+export type GetQueueJobsQueryHookResult = ReturnType<
+  typeof useGetQueueJobsQuery
+>;
+export type GetQueueJobsLazyQueryHookResult = ReturnType<
+  typeof useGetQueueJobsLazyQuery
+>;
+export type GetQueueJobsQueryResult = Apollo.QueryResult<
+  GetQueueJobsQuery,
+  GetQueueJobsQueryVariables
+>;
+export function refetchGetQueueJobsQuery(
+  variables: GetQueueJobsQueryVariables,
+) {
+  return { query: GetQueueJobsDocument, variables: variables };
+}
 export const GetRepeatableJobsDocument = {
   kind: 'Document',
   definitions: [
@@ -8124,20 +9768,32 @@ export const GetRepeatableJobsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'offset' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'offset' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
           defaultValue: { kind: 'IntValue', value: '0' },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'limit' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
           defaultValue: { kind: 'IntValue', value: '10' },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'sortOrder' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'SortOrderEnum' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'sortOrder' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'SortOrderEnum' },
+          },
         },
       ],
       selectionSet: {
@@ -8150,7 +9806,10 @@ export const GetRepeatableJobsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -8170,17 +9829,26 @@ export const GetRepeatableJobsDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'offset' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'offset' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'offset' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'limit' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'limit' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'order' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'sortOrder' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'sortOrder' },
+                            },
                           },
                         ],
                       },
@@ -8189,20 +9857,105 @@ export const GetRepeatableJobsDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'RepeatableJob' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'RepeatableJob' },
+                      },
                     ],
                   },
                 },
-                { kind: 'Field', name: { kind: 'Name', value: 'repeatableJobCount' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'repeatableJobCount' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...RepeatableJobFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'RepeatableJob' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'RepeatableJob' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'key' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'next' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'descr' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetRepeatableJobsQuery, GetRepeatableJobsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetRepeatableJobsQuery__
+ *
+ * To run a query within a React component, call `useGetRepeatableJobsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetRepeatableJobsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetRepeatableJobsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      offset: // value for 'offset'
+ *      limit: // value for 'limit'
+ *      sortOrder: // value for 'sortOrder'
+ *   },
+ * });
+ */
+export function useGetRepeatableJobsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetRepeatableJobsQuery,
+    GetRepeatableJobsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetRepeatableJobsQuery,
+    GetRepeatableJobsQueryVariables
+  >(GetRepeatableJobsDocument, options);
+}
+export function useGetRepeatableJobsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetRepeatableJobsQuery,
+    GetRepeatableJobsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetRepeatableJobsQuery,
+    GetRepeatableJobsQueryVariables
+  >(GetRepeatableJobsDocument, options);
+}
+export type GetRepeatableJobsQueryHookResult = ReturnType<
+  typeof useGetRepeatableJobsQuery
+>;
+export type GetRepeatableJobsLazyQueryHookResult = ReturnType<
+  typeof useGetRepeatableJobsLazyQuery
+>;
+export type GetRepeatableJobsQueryResult = Apollo.QueryResult<
+  GetRepeatableJobsQuery,
+  GetRepeatableJobsQueryVariables
+>;
+export function refetchGetRepeatableJobsQuery(
+  variables: GetRepeatableJobsQueryVariables,
+) {
+  return { query: GetRepeatableJobsDocument, variables: variables };
+}
 export const GetJobByIdDocument = {
   kind: 'Document',
   definitions: [
@@ -8213,7 +9966,10 @@ export const GetJobByIdDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8238,25 +9994,186 @@ export const GetJobByIdDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'queueId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
               },
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Job' } }],
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Job' },
+                },
+              ],
             },
           },
         ],
       },
     },
-    ...JobFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetJobByIdQuery, GetJobByIdQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobByIdQuery__
+ *
+ * To run a query within a React component, call `useGetJobByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobByIdQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetJobByIdQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobByIdQuery,
+    GetJobByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobByIdQuery, GetJobByIdQueryVariables>(
+    GetJobByIdDocument,
+    options,
+  );
+}
+export function useGetJobByIdLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobByIdQuery,
+    GetJobByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobByIdQuery, GetJobByIdQueryVariables>(
+    GetJobByIdDocument,
+    options,
+  );
+}
+export type GetJobByIdQueryHookResult = ReturnType<typeof useGetJobByIdQuery>;
+export type GetJobByIdLazyQueryHookResult = ReturnType<
+  typeof useGetJobByIdLazyQuery
+>;
+export type GetJobByIdQueryResult = Apollo.QueryResult<
+  GetJobByIdQuery,
+  GetJobByIdQueryVariables
+>;
+export function refetchGetJobByIdQuery(variables: GetJobByIdQueryVariables) {
+  return { query: GetJobByIdDocument, variables: variables };
+}
 export const GetJobLogsDocument = {
   kind: 'Document',
   definitions: [
@@ -8267,7 +10184,10 @@ export const GetJobLogsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8283,7 +10203,10 @@ export const GetJobLogsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'start' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'start' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
           defaultValue: { kind: 'IntValue', value: '0' },
         },
@@ -8304,12 +10227,18 @@ export const GetJobLogsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'queueId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
               },
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -8322,12 +10251,18 @@ export const GetJobLogsDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'start' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'start' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'start' },
+                      },
                     },
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'end' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'end' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'end' },
+                      },
                     },
                   ],
                   selectionSet: {
@@ -8345,7 +10280,62 @@ export const GetJobLogsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetJobLogsQuery, GetJobLogsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobLogsQuery__
+ *
+ * To run a query within a React component, call `useGetJobLogsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobLogsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobLogsQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      id: // value for 'id'
+ *      start: // value for 'start'
+ *      end: // value for 'end'
+ *   },
+ * });
+ */
+export function useGetJobLogsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobLogsQuery,
+    GetJobLogsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobLogsQuery, GetJobLogsQueryVariables>(
+    GetJobLogsDocument,
+    options,
+  );
+}
+export function useGetJobLogsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobLogsQuery,
+    GetJobLogsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobLogsQuery, GetJobLogsQueryVariables>(
+    GetJobLogsDocument,
+    options,
+  );
+}
+export type GetJobLogsQueryHookResult = ReturnType<typeof useGetJobLogsQuery>;
+export type GetJobLogsLazyQueryHookResult = ReturnType<
+  typeof useGetJobLogsLazyQuery
+>;
+export type GetJobLogsQueryResult = Apollo.QueryResult<
+  GetJobLogsQuery,
+  GetJobLogsQueryVariables
+>;
+export function refetchGetJobLogsQuery(variables: GetJobLogsQueryVariables) {
+  return { query: GetJobLogsDocument, variables: variables };
+}
 export const CreateJobDocument = {
   kind: 'Document',
   definitions: [
@@ -8356,7 +10346,10 @@ export const CreateJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8364,21 +10357,36 @@ export const CreateJobDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobName' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'data' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'JSONObject' } },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JSONObject' },
+          },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'options' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'JobOptionsInput' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'options' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobOptionsInput' },
+          },
         },
       ],
       selectionSet: {
@@ -8397,22 +10405,34 @@ export const CreateJobDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobName' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobName' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'data' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'data' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'data' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'options' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'options' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'options' },
+                      },
                     },
                   ],
                 },
@@ -8420,15 +10440,162 @@ export const CreateJobDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Job' } }],
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Job' },
+                },
+              ],
             },
           },
         ],
       },
     },
-    ...JobFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<CreateJobMutation, CreateJobMutationVariables>;
+} as unknown as DocumentNode;
+export type CreateJobMutationFn = Apollo.MutationFunction<
+  CreateJobMutation,
+  CreateJobMutationVariables
+>;
+
+/**
+ * __useCreateJobMutation__
+ *
+ * To run a mutation, you first call `useCreateJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createJobMutation, { data, loading, error }] = useCreateJobMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobName: // value for 'jobName'
+ *      data: // value for 'data'
+ *      options: // value for 'options'
+ *   },
+ * });
+ */
+export function useCreateJobMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    CreateJobMutation,
+    CreateJobMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<CreateJobMutation, CreateJobMutationVariables>(
+    CreateJobDocument,
+    options,
+  );
+}
+export type CreateJobMutationHookResult = ReturnType<
+  typeof useCreateJobMutation
+>;
+export type CreateJobMutationResult = Apollo.MutationResult<CreateJobMutation>;
+export type CreateJobMutationOptions = Apollo.BaseMutationOptions<
+  CreateJobMutation,
+  CreateJobMutationVariables
+>;
 export const DeleteJobDocument = {
   kind: 'Document',
   definitions: [
@@ -8439,7 +10606,10 @@ export const DeleteJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8447,7 +10617,10 @@ export const DeleteJobDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8470,12 +10643,18 @@ export const DeleteJobDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
                     },
                   ],
                 },
@@ -8489,7 +10668,9 @@ export const DeleteJobDocument = {
                   name: { kind: 'Name', value: 'job' },
                   selectionSet: {
                     kind: 'SelectionSet',
-                    selections: [{ kind: 'Field', name: { kind: 'Name', value: 'id' } }],
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                    ],
                   },
                 },
               ],
@@ -8499,7 +10680,50 @@ export const DeleteJobDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<DeleteJobMutation, DeleteJobMutationVariables>;
+} as unknown as DocumentNode;
+export type DeleteJobMutationFn = Apollo.MutationFunction<
+  DeleteJobMutation,
+  DeleteJobMutationVariables
+>;
+
+/**
+ * __useDeleteJobMutation__
+ *
+ * To run a mutation, you first call `useDeleteJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteJobMutation, { data, loading, error }] = useDeleteJobMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useDeleteJobMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteJobMutation,
+    DeleteJobMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<DeleteJobMutation, DeleteJobMutationVariables>(
+    DeleteJobDocument,
+    options,
+  );
+}
+export type DeleteJobMutationHookResult = ReturnType<
+  typeof useDeleteJobMutation
+>;
+export type DeleteJobMutationResult = Apollo.MutationResult<DeleteJobMutation>;
+export type DeleteJobMutationOptions = Apollo.BaseMutationOptions<
+  DeleteJobMutation,
+  DeleteJobMutationVariables
+>;
 export const DiscardJobDocument = {
   kind: 'Document',
   definitions: [
@@ -8510,7 +10734,10 @@ export const DiscardJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8518,7 +10745,10 @@ export const DiscardJobDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8541,12 +10771,18 @@ export const DiscardJobDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
                     },
                   ],
                 },
@@ -8573,7 +10809,51 @@ export const DiscardJobDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<DiscardJobMutation, DiscardJobMutationVariables>;
+} as unknown as DocumentNode;
+export type DiscardJobMutationFn = Apollo.MutationFunction<
+  DiscardJobMutation,
+  DiscardJobMutationVariables
+>;
+
+/**
+ * __useDiscardJobMutation__
+ *
+ * To run a mutation, you first call `useDiscardJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDiscardJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [discardJobMutation, { data, loading, error }] = useDiscardJobMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useDiscardJobMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DiscardJobMutation,
+    DiscardJobMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<DiscardJobMutation, DiscardJobMutationVariables>(
+    DiscardJobDocument,
+    options,
+  );
+}
+export type DiscardJobMutationHookResult = ReturnType<
+  typeof useDiscardJobMutation
+>;
+export type DiscardJobMutationResult =
+  Apollo.MutationResult<DiscardJobMutation>;
+export type DiscardJobMutationOptions = Apollo.BaseMutationOptions<
+  DiscardJobMutation,
+  DiscardJobMutationVariables
+>;
 export const MoveJobToCompletedDocument = {
   kind: 'Document',
   definitions: [
@@ -8584,7 +10864,10 @@ export const MoveJobToCompletedDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8592,7 +10875,10 @@ export const MoveJobToCompletedDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8615,12 +10901,18 @@ export const MoveJobToCompletedDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
                     },
                   ],
                 },
@@ -8647,7 +10939,51 @@ export const MoveJobToCompletedDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<MoveJobToCompletedMutation, MoveJobToCompletedMutationVariables>;
+} as unknown as DocumentNode;
+export type MoveJobToCompletedMutationFn = Apollo.MutationFunction<
+  MoveJobToCompletedMutation,
+  MoveJobToCompletedMutationVariables
+>;
+
+/**
+ * __useMoveJobToCompletedMutation__
+ *
+ * To run a mutation, you first call `useMoveJobToCompletedMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useMoveJobToCompletedMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [moveJobToCompletedMutation, { data, loading, error }] = useMoveJobToCompletedMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useMoveJobToCompletedMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    MoveJobToCompletedMutation,
+    MoveJobToCompletedMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    MoveJobToCompletedMutation,
+    MoveJobToCompletedMutationVariables
+  >(MoveJobToCompletedDocument, options);
+}
+export type MoveJobToCompletedMutationHookResult = ReturnType<
+  typeof useMoveJobToCompletedMutation
+>;
+export type MoveJobToCompletedMutationResult =
+  Apollo.MutationResult<MoveJobToCompletedMutation>;
+export type MoveJobToCompletedMutationOptions = Apollo.BaseMutationOptions<
+  MoveJobToCompletedMutation,
+  MoveJobToCompletedMutationVariables
+>;
 export const MoveJobToFailedDocument = {
   kind: 'Document',
   definitions: [
@@ -8658,7 +10994,10 @@ export const MoveJobToFailedDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8666,7 +11005,10 @@ export const MoveJobToFailedDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8689,12 +11031,18 @@ export const MoveJobToFailedDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
                     },
                   ],
                 },
@@ -8721,7 +11069,51 @@ export const MoveJobToFailedDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<MoveJobToFailedMutation, MoveJobToFailedMutationVariables>;
+} as unknown as DocumentNode;
+export type MoveJobToFailedMutationFn = Apollo.MutationFunction<
+  MoveJobToFailedMutation,
+  MoveJobToFailedMutationVariables
+>;
+
+/**
+ * __useMoveJobToFailedMutation__
+ *
+ * To run a mutation, you first call `useMoveJobToFailedMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useMoveJobToFailedMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [moveJobToFailedMutation, { data, loading, error }] = useMoveJobToFailedMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useMoveJobToFailedMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    MoveJobToFailedMutation,
+    MoveJobToFailedMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    MoveJobToFailedMutation,
+    MoveJobToFailedMutationVariables
+  >(MoveJobToFailedDocument, options);
+}
+export type MoveJobToFailedMutationHookResult = ReturnType<
+  typeof useMoveJobToFailedMutation
+>;
+export type MoveJobToFailedMutationResult =
+  Apollo.MutationResult<MoveJobToFailedMutation>;
+export type MoveJobToFailedMutationOptions = Apollo.BaseMutationOptions<
+  MoveJobToFailedMutation,
+  MoveJobToFailedMutationVariables
+>;
 export const DeleteRepeatableJobByKeyDocument = {
   kind: 'Document',
   definitions: [
@@ -8732,7 +11124,10 @@ export const DeleteRepeatableJobByKeyDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8743,7 +11138,10 @@ export const DeleteRepeatableJobByKeyDocument = {
           variable: { kind: 'Variable', name: { kind: 'Name', value: 'key' } },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
       ],
@@ -8763,12 +11161,18 @@ export const DeleteRepeatableJobByKeyDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'key' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'key' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'key' },
+                      },
                     },
                   ],
                 },
@@ -8776,17 +11180,61 @@ export const DeleteRepeatableJobByKeyDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'key' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'key' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<
+} as unknown as DocumentNode;
+export type DeleteRepeatableJobByKeyMutationFn = Apollo.MutationFunction<
   DeleteRepeatableJobByKeyMutation,
   DeleteRepeatableJobByKeyMutationVariables
 >;
+
+/**
+ * __useDeleteRepeatableJobByKeyMutation__
+ *
+ * To run a mutation, you first call `useDeleteRepeatableJobByKeyMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteRepeatableJobByKeyMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteRepeatableJobByKeyMutation, { data, loading, error }] = useDeleteRepeatableJobByKeyMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      key: // value for 'key'
+ *   },
+ * });
+ */
+export function useDeleteRepeatableJobByKeyMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteRepeatableJobByKeyMutation,
+    DeleteRepeatableJobByKeyMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    DeleteRepeatableJobByKeyMutation,
+    DeleteRepeatableJobByKeyMutationVariables
+  >(DeleteRepeatableJobByKeyDocument, options);
+}
+export type DeleteRepeatableJobByKeyMutationHookResult = ReturnType<
+  typeof useDeleteRepeatableJobByKeyMutation
+>;
+export type DeleteRepeatableJobByKeyMutationResult =
+  Apollo.MutationResult<DeleteRepeatableJobByKeyMutation>;
+export type DeleteRepeatableJobByKeyMutationOptions =
+  Apollo.BaseMutationOptions<
+    DeleteRepeatableJobByKeyMutation,
+    DeleteRepeatableJobByKeyMutationVariables
+  >;
 export const DeleteBulkJobsDocument = {
   kind: 'Document',
   definitions: [
@@ -8797,7 +11245,10 @@ export const DeleteBulkJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8805,14 +11256,20 @@ export const DeleteBulkJobsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobIds' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobIds' },
+          },
           type: {
             kind: 'NonNullType',
             type: {
               kind: 'ListType',
               type: {
                 kind: 'NonNullType',
-                type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+                type: {
+                  kind: 'NamedType',
+                  name: { kind: 'Name', value: 'ID' },
+                },
               },
             },
           },
@@ -8834,12 +11291,18 @@ export const DeleteBulkJobsDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobIds' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobIds' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobIds' },
+                      },
                     },
                   ],
                 },
@@ -8855,8 +11318,14 @@ export const DeleteBulkJobsDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'success' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'success' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'reason' },
+                      },
                     ],
                   },
                 },
@@ -8867,7 +11336,51 @@ export const DeleteBulkJobsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<DeleteBulkJobsMutation, DeleteBulkJobsMutationVariables>;
+} as unknown as DocumentNode;
+export type DeleteBulkJobsMutationFn = Apollo.MutationFunction<
+  DeleteBulkJobsMutation,
+  DeleteBulkJobsMutationVariables
+>;
+
+/**
+ * __useDeleteBulkJobsMutation__
+ *
+ * To run a mutation, you first call `useDeleteBulkJobsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteBulkJobsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteBulkJobsMutation, { data, loading, error }] = useDeleteBulkJobsMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobIds: // value for 'jobIds'
+ *   },
+ * });
+ */
+export function useDeleteBulkJobsMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteBulkJobsMutation,
+    DeleteBulkJobsMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    DeleteBulkJobsMutation,
+    DeleteBulkJobsMutationVariables
+  >(DeleteBulkJobsDocument, options);
+}
+export type DeleteBulkJobsMutationHookResult = ReturnType<
+  typeof useDeleteBulkJobsMutation
+>;
+export type DeleteBulkJobsMutationResult =
+  Apollo.MutationResult<DeleteBulkJobsMutation>;
+export type DeleteBulkJobsMutationOptions = Apollo.BaseMutationOptions<
+  DeleteBulkJobsMutation,
+  DeleteBulkJobsMutationVariables
+>;
 export const RetryJobDocument = {
   kind: 'Document',
   definitions: [
@@ -8878,7 +11391,10 @@ export const RetryJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8886,7 +11402,10 @@ export const RetryJobDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8909,12 +11428,18 @@ export const RetryJobDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
                     },
                   ],
                 },
@@ -8941,7 +11466,48 @@ export const RetryJobDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<RetryJobMutation, RetryJobMutationVariables>;
+} as unknown as DocumentNode;
+export type RetryJobMutationFn = Apollo.MutationFunction<
+  RetryJobMutation,
+  RetryJobMutationVariables
+>;
+
+/**
+ * __useRetryJobMutation__
+ *
+ * To run a mutation, you first call `useRetryJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRetryJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [retryJobMutation, { data, loading, error }] = useRetryJobMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function useRetryJobMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    RetryJobMutation,
+    RetryJobMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<RetryJobMutation, RetryJobMutationVariables>(
+    RetryJobDocument,
+    options,
+  );
+}
+export type RetryJobMutationHookResult = ReturnType<typeof useRetryJobMutation>;
+export type RetryJobMutationResult = Apollo.MutationResult<RetryJobMutation>;
+export type RetryJobMutationOptions = Apollo.BaseMutationOptions<
+  RetryJobMutation,
+  RetryJobMutationVariables
+>;
 export const RetryBulkJobsDocument = {
   kind: 'Document',
   definitions: [
@@ -8952,7 +11518,10 @@ export const RetryBulkJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -8960,14 +11529,20 @@ export const RetryBulkJobsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobIds' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobIds' },
+          },
           type: {
             kind: 'NonNullType',
             type: {
               kind: 'ListType',
               type: {
                 kind: 'NonNullType',
-                type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+                type: {
+                  kind: 'NamedType',
+                  name: { kind: 'Name', value: 'ID' },
+                },
               },
             },
           },
@@ -8989,12 +11564,18 @@ export const RetryBulkJobsDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobIds' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobIds' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobIds' },
+                      },
                     },
                   ],
                 },
@@ -9010,8 +11591,14 @@ export const RetryBulkJobsDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'success' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'success' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'reason' },
+                      },
                     ],
                   },
                 },
@@ -9022,7 +11609,51 @@ export const RetryBulkJobsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<RetryBulkJobsMutation, RetryBulkJobsMutationVariables>;
+} as unknown as DocumentNode;
+export type RetryBulkJobsMutationFn = Apollo.MutationFunction<
+  RetryBulkJobsMutation,
+  RetryBulkJobsMutationVariables
+>;
+
+/**
+ * __useRetryBulkJobsMutation__
+ *
+ * To run a mutation, you first call `useRetryBulkJobsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRetryBulkJobsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [retryBulkJobsMutation, { data, loading, error }] = useRetryBulkJobsMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobIds: // value for 'jobIds'
+ *   },
+ * });
+ */
+export function useRetryBulkJobsMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    RetryBulkJobsMutation,
+    RetryBulkJobsMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    RetryBulkJobsMutation,
+    RetryBulkJobsMutationVariables
+  >(RetryBulkJobsDocument, options);
+}
+export type RetryBulkJobsMutationHookResult = ReturnType<
+  typeof useRetryBulkJobsMutation
+>;
+export type RetryBulkJobsMutationResult =
+  Apollo.MutationResult<RetryBulkJobsMutation>;
+export type RetryBulkJobsMutationOptions = Apollo.BaseMutationOptions<
+  RetryBulkJobsMutation,
+  RetryBulkJobsMutationVariables
+>;
 export const PromoteJobDocument = {
   kind: 'Document',
   definitions: [
@@ -9033,7 +11664,10 @@ export const PromoteJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9041,7 +11675,10 @@ export const PromoteJobDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9064,12 +11701,18 @@ export const PromoteJobDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
                     },
                   ],
                 },
@@ -9096,7 +11739,51 @@ export const PromoteJobDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<PromoteJobMutation, PromoteJobMutationVariables>;
+} as unknown as DocumentNode;
+export type PromoteJobMutationFn = Apollo.MutationFunction<
+  PromoteJobMutation,
+  PromoteJobMutationVariables
+>;
+
+/**
+ * __usePromoteJobMutation__
+ *
+ * To run a mutation, you first call `usePromoteJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `usePromoteJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [promoteJobMutation, { data, loading, error }] = usePromoteJobMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *   },
+ * });
+ */
+export function usePromoteJobMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    PromoteJobMutation,
+    PromoteJobMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<PromoteJobMutation, PromoteJobMutationVariables>(
+    PromoteJobDocument,
+    options,
+  );
+}
+export type PromoteJobMutationHookResult = ReturnType<
+  typeof usePromoteJobMutation
+>;
+export type PromoteJobMutationResult =
+  Apollo.MutationResult<PromoteJobMutation>;
+export type PromoteJobMutationOptions = Apollo.BaseMutationOptions<
+  PromoteJobMutation,
+  PromoteJobMutationVariables
+>;
 export const PromoteBulkJobsDocument = {
   kind: 'Document',
   definitions: [
@@ -9107,7 +11794,10 @@ export const PromoteBulkJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9115,14 +11805,20 @@ export const PromoteBulkJobsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobIds' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobIds' },
+          },
           type: {
             kind: 'NonNullType',
             type: {
               kind: 'ListType',
               type: {
                 kind: 'NonNullType',
-                type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+                type: {
+                  kind: 'NamedType',
+                  name: { kind: 'Name', value: 'ID' },
+                },
               },
             },
           },
@@ -9144,12 +11840,18 @@ export const PromoteBulkJobsDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobIds' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobIds' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobIds' },
+                      },
                     },
                   ],
                 },
@@ -9165,8 +11867,14 @@ export const PromoteBulkJobsDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'success' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'success' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'reason' },
+                      },
                     ],
                   },
                 },
@@ -9177,7 +11885,51 @@ export const PromoteBulkJobsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<PromoteBulkJobsMutation, PromoteBulkJobsMutationVariables>;
+} as unknown as DocumentNode;
+export type PromoteBulkJobsMutationFn = Apollo.MutationFunction<
+  PromoteBulkJobsMutation,
+  PromoteBulkJobsMutationVariables
+>;
+
+/**
+ * __usePromoteBulkJobsMutation__
+ *
+ * To run a mutation, you first call `usePromoteBulkJobsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `usePromoteBulkJobsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [promoteBulkJobsMutation, { data, loading, error }] = usePromoteBulkJobsMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobIds: // value for 'jobIds'
+ *   },
+ * });
+ */
+export function usePromoteBulkJobsMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    PromoteBulkJobsMutation,
+    PromoteBulkJobsMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    PromoteBulkJobsMutation,
+    PromoteBulkJobsMutationVariables
+  >(PromoteBulkJobsDocument, options);
+}
+export type PromoteBulkJobsMutationHookResult = ReturnType<
+  typeof usePromoteBulkJobsMutation
+>;
+export type PromoteBulkJobsMutationResult =
+  Apollo.MutationResult<PromoteBulkJobsMutation>;
+export type PromoteBulkJobsMutationOptions = Apollo.BaseMutationOptions<
+  PromoteBulkJobsMutation,
+  PromoteBulkJobsMutationVariables
+>;
 export const GetQueueByIdDocument = {
   kind: 'Document',
   definitions: [
@@ -9205,20 +11957,140 @@ export const GetQueueByIdDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } }],
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Queue' },
+                },
+              ],
             },
           },
         ],
       },
     },
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetQueueByIdQuery, GetQueueByIdQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueByIdQuery__
+ *
+ * To run a query within a React component, call `useGetQueueByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueByIdQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetQueueByIdQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueByIdQuery,
+    GetQueueByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetQueueByIdQuery, GetQueueByIdQueryVariables>(
+    GetQueueByIdDocument,
+    options,
+  );
+}
+export function useGetQueueByIdLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueByIdQuery,
+    GetQueueByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetQueueByIdQuery, GetQueueByIdQueryVariables>(
+    GetQueueByIdDocument,
+    options,
+  );
+}
+export type GetQueueByIdQueryHookResult = ReturnType<
+  typeof useGetQueueByIdQuery
+>;
+export type GetQueueByIdLazyQueryHookResult = ReturnType<
+  typeof useGetQueueByIdLazyQuery
+>;
+export type GetQueueByIdQueryResult = Apollo.QueryResult<
+  GetQueueByIdQuery,
+  GetQueueByIdQueryVariables
+>;
+export function refetchGetQueueByIdQuery(
+  variables: GetQueueByIdQueryVariables,
+) {
+  return { query: GetQueueByIdDocument, variables: variables };
+}
 export const PauseQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -9246,19 +12118,67 @@ export const PauseQueueDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'isPaused' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<PauseQueueMutation, PauseQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type PauseQueueMutationFn = Apollo.MutationFunction<
+  PauseQueueMutation,
+  PauseQueueMutationVariables
+>;
+
+/**
+ * __usePauseQueueMutation__
+ *
+ * To run a mutation, you first call `usePauseQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `usePauseQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [pauseQueueMutation, { data, loading, error }] = usePauseQueueMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function usePauseQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    PauseQueueMutation,
+    PauseQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<PauseQueueMutation, PauseQueueMutationVariables>(
+    PauseQueueDocument,
+    options,
+  );
+}
+export type PauseQueueMutationHookResult = ReturnType<
+  typeof usePauseQueueMutation
+>;
+export type PauseQueueMutationResult =
+  Apollo.MutationResult<PauseQueueMutation>;
+export type PauseQueueMutationOptions = Apollo.BaseMutationOptions<
+  PauseQueueMutation,
+  PauseQueueMutationVariables
+>;
 export const ResumeQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -9286,19 +12206,67 @@ export const ResumeQueueDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'isPaused' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<ResumeQueueMutation, ResumeQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type ResumeQueueMutationFn = Apollo.MutationFunction<
+  ResumeQueueMutation,
+  ResumeQueueMutationVariables
+>;
+
+/**
+ * __useResumeQueueMutation__
+ *
+ * To run a mutation, you first call `useResumeQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useResumeQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [resumeQueueMutation, { data, loading, error }] = useResumeQueueMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useResumeQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    ResumeQueueMutation,
+    ResumeQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<ResumeQueueMutation, ResumeQueueMutationVariables>(
+    ResumeQueueDocument,
+    options,
+  );
+}
+export type ResumeQueueMutationHookResult = ReturnType<
+  typeof useResumeQueueMutation
+>;
+export type ResumeQueueMutationResult =
+  Apollo.MutationResult<ResumeQueueMutation>;
+export type ResumeQueueMutationOptions = Apollo.BaseMutationOptions<
+  ResumeQueueMutation,
+  ResumeQueueMutationVariables
+>;
 export const DeleteQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -9317,7 +12285,10 @@ export const DeleteQueueDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'checkActivity' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'checkActivity' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
           defaultValue: { kind: 'BooleanValue', value: false },
         },
@@ -9332,7 +12303,10 @@ export const DeleteQueueDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
               {
                 kind: 'Argument',
@@ -9343,7 +12317,10 @@ export const DeleteQueueDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'checkActivity' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'checkActivity' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'checkActivity' },
+                      },
                     },
                   ],
                 },
@@ -9351,14 +12328,60 @@ export const DeleteQueueDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'deletedKeys' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'deletedKeys' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<DeleteQueueMutation, DeleteQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type DeleteQueueMutationFn = Apollo.MutationFunction<
+  DeleteQueueMutation,
+  DeleteQueueMutationVariables
+>;
+
+/**
+ * __useDeleteQueueMutation__
+ *
+ * To run a mutation, you first call `useDeleteQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteQueueMutation, { data, loading, error }] = useDeleteQueueMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      checkActivity: // value for 'checkActivity'
+ *   },
+ * });
+ */
+export function useDeleteQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteQueueMutation,
+    DeleteQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<DeleteQueueMutation, DeleteQueueMutationVariables>(
+    DeleteQueueDocument,
+    options,
+  );
+}
+export type DeleteQueueMutationHookResult = ReturnType<
+  typeof useDeleteQueueMutation
+>;
+export type DeleteQueueMutationResult =
+  Apollo.MutationResult<DeleteQueueMutation>;
+export type DeleteQueueMutationOptions = Apollo.BaseMutationOptions<
+  DeleteQueueMutation,
+  DeleteQueueMutationVariables
+>;
 export const CleanQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -9377,21 +12400,36 @@ export const CleanQueueDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'grace' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'grace' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Duration' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'Duration' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'limit' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'JobStatus' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'status' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobStatus' },
+          },
         },
       ],
       selectionSet: {
@@ -9410,22 +12448,34 @@ export const CleanQueueDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'id' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'id' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'grace' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'grace' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'grace' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'limit' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'limit' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'status' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'status' },
+                      },
                     },
                   ],
                 },
@@ -9433,14 +12483,62 @@ export const CleanQueueDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'count' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<CleanQueueMutation, CleanQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type CleanQueueMutationFn = Apollo.MutationFunction<
+  CleanQueueMutation,
+  CleanQueueMutationVariables
+>;
+
+/**
+ * __useCleanQueueMutation__
+ *
+ * To run a mutation, you first call `useCleanQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCleanQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [cleanQueueMutation, { data, loading, error }] = useCleanQueueMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      grace: // value for 'grace'
+ *      limit: // value for 'limit'
+ *      status: // value for 'status'
+ *   },
+ * });
+ */
+export function useCleanQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    CleanQueueMutation,
+    CleanQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<CleanQueueMutation, CleanQueueMutationVariables>(
+    CleanQueueDocument,
+    options,
+  );
+}
+export type CleanQueueMutationHookResult = ReturnType<
+  typeof useCleanQueueMutation
+>;
+export type CleanQueueMutationResult =
+  Apollo.MutationResult<CleanQueueMutation>;
+export type CleanQueueMutationOptions = Apollo.BaseMutationOptions<
+  CleanQueueMutation,
+  CleanQueueMutationVariables
+>;
 export const DrainQueueDocument = {
   kind: 'Document',
   definitions: [
@@ -9459,7 +12557,10 @@ export const DrainQueueDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'delayed' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'delayed' },
+          },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
         },
       ],
@@ -9473,12 +12574,18 @@ export const DrainQueueDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'delayed' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'delayed' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'delayed' },
+                },
               },
             ],
             selectionSet: {
@@ -9490,7 +12597,10 @@ export const DrainQueueDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'Queue' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Queue' },
+                      },
                     ],
                   },
                 },
@@ -9500,9 +12610,109 @@ export const DrainQueueDocument = {
         ],
       },
     },
-    ...QueueFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobCounts' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'jobCounts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'active' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'paused' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'delayed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'waiting' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Queue' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Queue' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'host' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'hostId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'prefix' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isReadonly' } },
+          {
+            kind: 'FragmentSpread',
+            name: { kind: 'Name', value: 'JobCounts' },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeatableJobCount' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<DrainQueueMutation, DrainQueueMutationVariables>;
+} as unknown as DocumentNode;
+export type DrainQueueMutationFn = Apollo.MutationFunction<
+  DrainQueueMutation,
+  DrainQueueMutationVariables
+>;
+
+/**
+ * __useDrainQueueMutation__
+ *
+ * To run a mutation, you first call `useDrainQueueMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDrainQueueMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [drainQueueMutation, { data, loading, error }] = useDrainQueueMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      delayed: // value for 'delayed'
+ *   },
+ * });
+ */
+export function useDrainQueueMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DrainQueueMutation,
+    DrainQueueMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<DrainQueueMutation, DrainQueueMutationVariables>(
+    DrainQueueDocument,
+    options,
+  );
+}
+export type DrainQueueMutationHookResult = ReturnType<
+  typeof useDrainQueueMutation
+>;
+export type DrainQueueMutationResult =
+  Apollo.MutationResult<DrainQueueMutation>;
+export type DrainQueueMutationOptions = Apollo.BaseMutationOptions<
+  DrainQueueMutation,
+  DrainQueueMutationVariables
+>;
 export const GetQueueWorkersDocument = {
   kind: 'Document',
   definitions: [
@@ -9530,7 +12740,10 @@ export const GetQueueWorkersDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -9547,7 +12760,10 @@ export const GetQueueWorkersDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'addr' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'age' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'started' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'started' },
+                      },
                       { kind: 'Field', name: { kind: 'Name', value: 'idle' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'role' } },
                       { kind: 'Field', name: { kind: 'Name', value: 'db' } },
@@ -9562,7 +12778,63 @@ export const GetQueueWorkersDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetQueueWorkersQuery, GetQueueWorkersQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueWorkersQuery__
+ *
+ * To run a query within a React component, call `useGetQueueWorkersQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueWorkersQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueWorkersQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetQueueWorkersQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueWorkersQuery,
+    GetQueueWorkersQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetQueueWorkersQuery, GetQueueWorkersQueryVariables>(
+    GetQueueWorkersDocument,
+    options,
+  );
+}
+export function useGetQueueWorkersLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueWorkersQuery,
+    GetQueueWorkersQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetQueueWorkersQuery,
+    GetQueueWorkersQueryVariables
+  >(GetQueueWorkersDocument, options);
+}
+export type GetQueueWorkersQueryHookResult = ReturnType<
+  typeof useGetQueueWorkersQuery
+>;
+export type GetQueueWorkersLazyQueryHookResult = ReturnType<
+  typeof useGetQueueWorkersLazyQuery
+>;
+export type GetQueueWorkersQueryResult = Apollo.QueryResult<
+  GetQueueWorkersQuery,
+  GetQueueWorkersQueryVariables
+>;
+export function refetchGetQueueWorkersQuery(
+  variables: GetQueueWorkersQueryVariables,
+) {
+  return { query: GetQueueWorkersDocument, variables: variables };
+}
 export const GetJobSchemasDocument = {
   kind: 'Document',
   definitions: [
@@ -9573,7 +12845,10 @@ export const GetJobSchemasDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9590,7 +12865,10 @@ export const GetJobSchemasDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
               },
             ],
             selectionSet: {
@@ -9602,9 +12880,18 @@ export const GetJobSchemasDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'jobName' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'schema' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'defaultOpts' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'jobName' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'schema' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'defaultOpts' },
+                      },
                     ],
                   },
                 },
@@ -9615,7 +12902,63 @@ export const GetJobSchemasDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetJobSchemasQuery, GetJobSchemasQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobSchemasQuery__
+ *
+ * To run a query within a React component, call `useGetJobSchemasQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobSchemasQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobSchemasQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *   },
+ * });
+ */
+export function useGetJobSchemasQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobSchemasQuery,
+    GetJobSchemasQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobSchemasQuery, GetJobSchemasQueryVariables>(
+    GetJobSchemasDocument,
+    options,
+  );
+}
+export function useGetJobSchemasLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobSchemasQuery,
+    GetJobSchemasQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobSchemasQuery, GetJobSchemasQueryVariables>(
+    GetJobSchemasDocument,
+    options,
+  );
+}
+export type GetJobSchemasQueryHookResult = ReturnType<
+  typeof useGetJobSchemasQuery
+>;
+export type GetJobSchemasLazyQueryHookResult = ReturnType<
+  typeof useGetJobSchemasLazyQuery
+>;
+export type GetJobSchemasQueryResult = Apollo.QueryResult<
+  GetJobSchemasQuery,
+  GetJobSchemasQueryVariables
+>;
+export function refetchGetJobSchemasQuery(
+  variables: GetJobSchemasQueryVariables,
+) {
+  return { query: GetJobSchemasDocument, variables: variables };
+}
 export const GetJobSchemaDocument = {
   kind: 'Document',
   definitions: [
@@ -9626,7 +12969,10 @@ export const GetJobSchemaDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9634,10 +12980,16 @@ export const GetJobSchemaDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobName' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
       ],
@@ -9657,12 +13009,18 @@ export const GetJobSchemaDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobName' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobName' },
+                      },
                     },
                   ],
                 },
@@ -9681,7 +13039,64 @@ export const GetJobSchemaDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetJobSchemaQuery, GetJobSchemaQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobSchemaQuery__
+ *
+ * To run a query within a React component, call `useGetJobSchemaQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobSchemaQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobSchemaQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobName: // value for 'jobName'
+ *   },
+ * });
+ */
+export function useGetJobSchemaQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobSchemaQuery,
+    GetJobSchemaQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobSchemaQuery, GetJobSchemaQueryVariables>(
+    GetJobSchemaDocument,
+    options,
+  );
+}
+export function useGetJobSchemaLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobSchemaQuery,
+    GetJobSchemaQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobSchemaQuery, GetJobSchemaQueryVariables>(
+    GetJobSchemaDocument,
+    options,
+  );
+}
+export type GetJobSchemaQueryHookResult = ReturnType<
+  typeof useGetJobSchemaQuery
+>;
+export type GetJobSchemaLazyQueryHookResult = ReturnType<
+  typeof useGetJobSchemaLazyQuery
+>;
+export type GetJobSchemaQueryResult = Apollo.QueryResult<
+  GetJobSchemaQuery,
+  GetJobSchemaQueryVariables
+>;
+export function refetchGetJobSchemaQuery(
+  variables: GetJobSchemaQueryVariables,
+) {
+  return { query: GetJobSchemaDocument, variables: variables };
+}
 export const SetJobSchemaDocument = {
   kind: 'Document',
   definitions: [
@@ -9692,7 +13107,10 @@ export const SetJobSchemaDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9700,24 +13118,42 @@ export const SetJobSchemaDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobName' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'schema' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'schema' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'JSONSchema' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'JSONSchema' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'defaultOpts' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'JobOptionsInput' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'defaultOpts' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobOptionsInput' },
+          },
         },
       ],
       selectionSet: {
@@ -9736,22 +13172,34 @@ export const SetJobSchemaDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobName' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobName' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'schema' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'schema' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'schema' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'defaultOpts' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'defaultOpts' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'defaultOpts' },
+                      },
                     },
                   ],
                 },
@@ -9770,7 +13218,53 @@ export const SetJobSchemaDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<SetJobSchemaMutation, SetJobSchemaMutationVariables>;
+} as unknown as DocumentNode;
+export type SetJobSchemaMutationFn = Apollo.MutationFunction<
+  SetJobSchemaMutation,
+  SetJobSchemaMutationVariables
+>;
+
+/**
+ * __useSetJobSchemaMutation__
+ *
+ * To run a mutation, you first call `useSetJobSchemaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetJobSchemaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setJobSchemaMutation, { data, loading, error }] = useSetJobSchemaMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobName: // value for 'jobName'
+ *      schema: // value for 'schema'
+ *      defaultOpts: // value for 'defaultOpts'
+ *   },
+ * });
+ */
+export function useSetJobSchemaMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    SetJobSchemaMutation,
+    SetJobSchemaMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    SetJobSchemaMutation,
+    SetJobSchemaMutationVariables
+  >(SetJobSchemaDocument, options);
+}
+export type SetJobSchemaMutationHookResult = ReturnType<
+  typeof useSetJobSchemaMutation
+>;
+export type SetJobSchemaMutationResult =
+  Apollo.MutationResult<SetJobSchemaMutation>;
+export type SetJobSchemaMutationOptions = Apollo.BaseMutationOptions<
+  SetJobSchemaMutation,
+  SetJobSchemaMutationVariables
+>;
 export const DeleteJobSchemaDocument = {
   kind: 'Document',
   definitions: [
@@ -9781,7 +13275,10 @@ export const DeleteJobSchemaDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9789,10 +13286,16 @@ export const DeleteJobSchemaDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobName' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
       ],
@@ -9812,12 +13315,18 @@ export const DeleteJobSchemaDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobName' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobName' },
+                      },
                     },
                   ],
                 },
@@ -9825,14 +13334,60 @@ export const DeleteJobSchemaDocument = {
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'jobName' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'jobName' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<DeleteJobSchemaMutation, DeleteJobSchemaMutationVariables>;
+} as unknown as DocumentNode;
+export type DeleteJobSchemaMutationFn = Apollo.MutationFunction<
+  DeleteJobSchemaMutation,
+  DeleteJobSchemaMutationVariables
+>;
+
+/**
+ * __useDeleteJobSchemaMutation__
+ *
+ * To run a mutation, you first call `useDeleteJobSchemaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteJobSchemaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteJobSchemaMutation, { data, loading, error }] = useDeleteJobSchemaMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobName: // value for 'jobName'
+ *   },
+ * });
+ */
+export function useDeleteJobSchemaMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteJobSchemaMutation,
+    DeleteJobSchemaMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    DeleteJobSchemaMutation,
+    DeleteJobSchemaMutationVariables
+  >(DeleteJobSchemaDocument, options);
+}
+export type DeleteJobSchemaMutationHookResult = ReturnType<
+  typeof useDeleteJobSchemaMutation
+>;
+export type DeleteJobSchemaMutationResult =
+  Apollo.MutationResult<DeleteJobSchemaMutation>;
+export type DeleteJobSchemaMutationOptions = Apollo.BaseMutationOptions<
+  DeleteJobSchemaMutation,
+  DeleteJobSchemaMutationVariables
+>;
 export const InferJobSchemaDocument = {
   kind: 'Document',
   definitions: [
@@ -9843,7 +13398,10 @@ export const InferJobSchemaDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9851,10 +13409,16 @@ export const InferJobSchemaDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobName' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
       ],
@@ -9874,12 +13438,18 @@ export const InferJobSchemaDocument = {
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'queueId' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'queueId' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
                     },
                     {
                       kind: 'ObjectField',
                       name: { kind: 'Name', value: 'jobName' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'jobName' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobName' },
+                      },
                     },
                   ],
                 },
@@ -9898,7 +13468,64 @@ export const InferJobSchemaDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<InferJobSchemaQuery, InferJobSchemaQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useInferJobSchemaQuery__
+ *
+ * To run a query within a React component, call `useInferJobSchemaQuery` and pass it any options that fit your needs.
+ * When your component renders, `useInferJobSchemaQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useInferJobSchemaQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobName: // value for 'jobName'
+ *   },
+ * });
+ */
+export function useInferJobSchemaQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    InferJobSchemaQuery,
+    InferJobSchemaQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<InferJobSchemaQuery, InferJobSchemaQueryVariables>(
+    InferJobSchemaDocument,
+    options,
+  );
+}
+export function useInferJobSchemaLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    InferJobSchemaQuery,
+    InferJobSchemaQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<InferJobSchemaQuery, InferJobSchemaQueryVariables>(
+    InferJobSchemaDocument,
+    options,
+  );
+}
+export type InferJobSchemaQueryHookResult = ReturnType<
+  typeof useInferJobSchemaQuery
+>;
+export type InferJobSchemaLazyQueryHookResult = ReturnType<
+  typeof useInferJobSchemaLazyQuery
+>;
+export type InferJobSchemaQueryResult = Apollo.QueryResult<
+  InferJobSchemaQuery,
+  InferJobSchemaQueryVariables
+>;
+export function refetchInferJobSchemaQuery(
+  variables: InferJobSchemaQueryVariables,
+) {
+  return { query: InferJobSchemaDocument, variables: variables };
+}
 export const GetJobOptionsSchemaDocument = {
   kind: 'Document',
   definitions: [
@@ -9908,11 +13535,68 @@ export const GetJobOptionsSchemaDocument = {
       name: { kind: 'Name', value: 'GetJobOptionsSchema' },
       selectionSet: {
         kind: 'SelectionSet',
-        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'jobOptionsSchema' } }],
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'jobOptionsSchema' } },
+        ],
       },
     },
   ],
-} as unknown as DocumentNode<GetJobOptionsSchemaQuery, GetJobOptionsSchemaQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobOptionsSchemaQuery__
+ *
+ * To run a query within a React component, call `useGetJobOptionsSchemaQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobOptionsSchemaQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobOptionsSchemaQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetJobOptionsSchemaQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetJobOptionsSchemaQuery,
+    GetJobOptionsSchemaQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetJobOptionsSchemaQuery,
+    GetJobOptionsSchemaQueryVariables
+  >(GetJobOptionsSchemaDocument, options);
+}
+export function useGetJobOptionsSchemaLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobOptionsSchemaQuery,
+    GetJobOptionsSchemaQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetJobOptionsSchemaQuery,
+    GetJobOptionsSchemaQueryVariables
+  >(GetJobOptionsSchemaDocument, options);
+}
+export type GetJobOptionsSchemaQueryHookResult = ReturnType<
+  typeof useGetJobOptionsSchemaQuery
+>;
+export type GetJobOptionsSchemaLazyQueryHookResult = ReturnType<
+  typeof useGetJobOptionsSchemaLazyQuery
+>;
+export type GetJobOptionsSchemaQueryResult = Apollo.QueryResult<
+  GetJobOptionsSchemaQuery,
+  GetJobOptionsSchemaQueryVariables
+>;
+export function refetchGetJobOptionsSchemaQuery(
+  variables?: GetJobOptionsSchemaQueryVariables,
+) {
+  return { query: GetJobOptionsSchemaDocument, variables: variables };
+}
 export const GetQueueJobsNamesDocument = {
   kind: 'Document',
   definitions: [
@@ -9940,19 +13624,80 @@ export const GetQueueJobsNamesDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
-              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'jobNames' } }],
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'jobNames' } },
+              ],
             },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<GetQueueJobsNamesQuery, GetQueueJobsNamesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueJobsNamesQuery__
+ *
+ * To run a query within a React component, call `useGetQueueJobsNamesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueJobsNamesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueJobsNamesQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetQueueJobsNamesQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueJobsNamesQuery,
+    GetQueueJobsNamesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetQueueJobsNamesQuery,
+    GetQueueJobsNamesQueryVariables
+  >(GetQueueJobsNamesDocument, options);
+}
+export function useGetQueueJobsNamesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueJobsNamesQuery,
+    GetQueueJobsNamesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetQueueJobsNamesQuery,
+    GetQueueJobsNamesQueryVariables
+  >(GetQueueJobsNamesDocument, options);
+}
+export type GetQueueJobsNamesQueryHookResult = ReturnType<
+  typeof useGetQueueJobsNamesQuery
+>;
+export type GetQueueJobsNamesLazyQueryHookResult = ReturnType<
+  typeof useGetQueueJobsNamesLazyQuery
+>;
+export type GetQueueJobsNamesQueryResult = Apollo.QueryResult<
+  GetQueueJobsNamesQuery,
+  GetQueueJobsNamesQueryVariables
+>;
+export function refetchGetQueueJobsNamesQuery(
+  variables: GetQueueJobsNamesQueryVariables,
+) {
+  return { query: GetQueueJobsNamesDocument, variables: variables };
+}
 export const GetPageQueueStatsDocument = {
   kind: 'Document',
   definitions: [
@@ -9971,18 +13716,30 @@ export const GetPageQueueStatsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'range' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
           },
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'granularity' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'granularity' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsGranularity' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsGranularity' },
+            },
           },
         },
       ],
@@ -9996,7 +13753,10 @@ export const GetPageQueueStatsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -10015,9 +13775,18 @@ export const GetPageQueueStatsDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm1Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm5Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm15Rate' },
+                      },
                     ],
                   },
                 },
@@ -10027,9 +13796,18 @@ export const GetPageQueueStatsDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm1Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm5Rate' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'm15Rate' },
+                      },
                     ],
                   },
                 },
@@ -10046,7 +13824,10 @@ export const GetPageQueueStatsDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -10063,7 +13844,10 @@ export const GetPageQueueStatsDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -10080,7 +13864,10 @@ export const GetPageQueueStatsDocument = {
                           {
                             kind: 'ObjectField',
                             name: { kind: 'Name', value: 'range' },
-                            value: { kind: 'Variable', name: { kind: 'Name', value: 'range' } },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'range' },
+                            },
                           },
                           {
                             kind: 'ObjectField',
@@ -10097,7 +13884,10 @@ export const GetPageQueueStatsDocument = {
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -10107,9 +13897,97 @@ export const GetPageQueueStatsDocument = {
         ],
       },
     },
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetPageQueueStatsQuery, GetPageQueueStatsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetPageQueueStatsQuery__
+ *
+ * To run a query within a React component, call `useGetPageQueueStatsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetPageQueueStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetPageQueueStatsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      range: // value for 'range'
+ *      granularity: // value for 'granularity'
+ *   },
+ * });
+ */
+export function useGetPageQueueStatsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetPageQueueStatsQuery,
+    GetPageQueueStatsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetPageQueueStatsQuery,
+    GetPageQueueStatsQueryVariables
+  >(GetPageQueueStatsDocument, options);
+}
+export function useGetPageQueueStatsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetPageQueueStatsQuery,
+    GetPageQueueStatsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetPageQueueStatsQuery,
+    GetPageQueueStatsQueryVariables
+  >(GetPageQueueStatsDocument, options);
+}
+export type GetPageQueueStatsQueryHookResult = ReturnType<
+  typeof useGetPageQueueStatsQuery
+>;
+export type GetPageQueueStatsLazyQueryHookResult = ReturnType<
+  typeof useGetPageQueueStatsLazyQuery
+>;
+export type GetPageQueueStatsQueryResult = Apollo.QueryResult<
+  GetPageQueueStatsQuery,
+  GetPageQueueStatsQueryVariables
+>;
+export function refetchGetPageQueueStatsQuery(
+  variables: GetPageQueueStatsQueryVariables,
+) {
+  return { query: GetPageQueueStatsDocument, variables: variables };
+}
 export const GetAvailableMetricsDocument = {
   kind: 'Document',
   definitions: [
@@ -10140,7 +14018,62 @@ export const GetAvailableMetricsDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetAvailableMetricsQuery, GetAvailableMetricsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetAvailableMetricsQuery__
+ *
+ * To run a query within a React component, call `useGetAvailableMetricsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAvailableMetricsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAvailableMetricsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAvailableMetricsQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >(GetAvailableMetricsDocument, options);
+}
+export function useGetAvailableMetricsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >(GetAvailableMetricsDocument, options);
+}
+export type GetAvailableMetricsQueryHookResult = ReturnType<
+  typeof useGetAvailableMetricsQuery
+>;
+export type GetAvailableMetricsLazyQueryHookResult = ReturnType<
+  typeof useGetAvailableMetricsLazyQuery
+>;
+export type GetAvailableMetricsQueryResult = Apollo.QueryResult<
+  GetAvailableMetricsQuery,
+  GetAvailableMetricsQueryVariables
+>;
+export function refetchGetAvailableMetricsQuery(
+  variables?: GetAvailableMetricsQueryVariables,
+) {
+  return { query: GetAvailableMetricsDocument, variables: variables };
+}
 export const GetAvailableAggregatesDocument = {
   kind: 'Document',
   definitions: [
@@ -10167,7 +14100,62 @@ export const GetAvailableAggregatesDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetAvailableAggregatesQuery, GetAvailableAggregatesQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetAvailableAggregatesQuery__
+ *
+ * To run a query within a React component, call `useGetAvailableAggregatesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAvailableAggregatesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAvailableAggregatesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAvailableAggregatesQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >(GetAvailableAggregatesDocument, options);
+}
+export function useGetAvailableAggregatesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >(GetAvailableAggregatesDocument, options);
+}
+export type GetAvailableAggregatesQueryHookResult = ReturnType<
+  typeof useGetAvailableAggregatesQuery
+>;
+export type GetAvailableAggregatesLazyQueryHookResult = ReturnType<
+  typeof useGetAvailableAggregatesLazyQuery
+>;
+export type GetAvailableAggregatesQueryResult = Apollo.QueryResult<
+  GetAvailableAggregatesQuery,
+  GetAvailableAggregatesQueryVariables
+>;
+export function refetchGetAvailableAggregatesQuery(
+  variables?: GetAvailableAggregatesQueryVariables,
+) {
+  return { query: GetAvailableAggregatesDocument, variables: variables };
+}
 export const GetStatsSpanDocument = {
   kind: 'Document',
   definitions: [
@@ -10186,10 +14174,16 @@ export const GetStatsSpanDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsSpanInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsSpanInput' },
+            },
           },
         },
       ],
@@ -10203,7 +14197,10 @@ export const GetStatsSpanDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -10216,14 +14213,23 @@ export const GetStatsSpanDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'input' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'input' },
+                      },
                     },
                   ],
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'startTime' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'endTime' },
+                      },
                     ],
                   },
                 },
@@ -10234,7 +14240,64 @@ export const GetStatsSpanDocument = {
       },
     },
   ],
-} as unknown as DocumentNode<GetStatsSpanQuery, GetStatsSpanQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetStatsSpanQuery__
+ *
+ * To run a query within a React component, call `useGetStatsSpanQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetStatsSpanQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetStatsSpanQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useGetStatsSpanQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetStatsSpanQuery,
+    GetStatsSpanQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetStatsSpanQuery, GetStatsSpanQueryVariables>(
+    GetStatsSpanDocument,
+    options,
+  );
+}
+export function useGetStatsSpanLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetStatsSpanQuery,
+    GetStatsSpanQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetStatsSpanQuery, GetStatsSpanQueryVariables>(
+    GetStatsSpanDocument,
+    options,
+  );
+}
+export type GetStatsSpanQueryHookResult = ReturnType<
+  typeof useGetStatsSpanQuery
+>;
+export type GetStatsSpanLazyQueryHookResult = ReturnType<
+  typeof useGetStatsSpanLazyQuery
+>;
+export type GetStatsSpanQueryResult = Apollo.QueryResult<
+  GetStatsSpanQuery,
+  GetStatsSpanQueryVariables
+>;
+export function refetchGetStatsSpanQuery(
+  variables: GetStatsSpanQueryVariables,
+) {
+  return { query: GetStatsSpanDocument, variables: variables };
+}
 export const GetQueueStatsDocument = {
   kind: 'Document',
   definitions: [
@@ -10253,10 +14316,16 @@ export const GetQueueStatsDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsQueryInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsQueryInput' },
+            },
           },
         },
       ],
@@ -10270,7 +14339,10 @@ export const GetQueueStatsDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -10283,13 +14355,19 @@ export const GetQueueStatsDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'input' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'input' },
+                      },
                     },
                   ],
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -10299,9 +14377,96 @@ export const GetQueueStatsDocument = {
         ],
       },
     },
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetQueueStatsQuery, GetQueueStatsQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueStatsQuery__
+ *
+ * To run a query within a React component, call `useGetQueueStatsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueStatsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueStatsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useGetQueueStatsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueStatsQuery,
+    GetQueueStatsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetQueueStatsQuery, GetQueueStatsQueryVariables>(
+    GetQueueStatsDocument,
+    options,
+  );
+}
+export function useGetQueueStatsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueStatsQuery,
+    GetQueueStatsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetQueueStatsQuery, GetQueueStatsQueryVariables>(
+    GetQueueStatsDocument,
+    options,
+  );
+}
+export type GetQueueStatsQueryHookResult = ReturnType<
+  typeof useGetQueueStatsQuery
+>;
+export type GetQueueStatsLazyQueryHookResult = ReturnType<
+  typeof useGetQueueStatsLazyQuery
+>;
+export type GetQueueStatsQueryResult = Apollo.QueryResult<
+  GetQueueStatsQuery,
+  GetQueueStatsQueryVariables
+>;
+export function refetchGetQueueStatsQuery(
+  variables: GetQueueStatsQueryVariables,
+) {
+  return { query: GetQueueStatsDocument, variables: variables };
+}
 export const GetQueueStatsLatestDocument = {
   kind: 'Document',
   definitions: [
@@ -10320,10 +14485,16 @@ export const GetQueueStatsLatestDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsLatestInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsLatestInput' },
+            },
           },
         },
       ],
@@ -10337,7 +14508,10 @@ export const GetQueueStatsLatestDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -10350,13 +14524,19 @@ export const GetQueueStatsLatestDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'input' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'input' },
+                      },
                     },
                   ],
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -10366,9 +14546,96 @@ export const GetQueueStatsLatestDocument = {
         ],
       },
     },
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetQueueStatsLatestQuery, GetQueueStatsLatestQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueStatsLatestQuery__
+ *
+ * To run a query within a React component, call `useGetQueueStatsLatestQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueStatsLatestQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueStatsLatestQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useGetQueueStatsLatestQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueStatsLatestQuery,
+    GetQueueStatsLatestQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetQueueStatsLatestQuery,
+    GetQueueStatsLatestQueryVariables
+  >(GetQueueStatsLatestDocument, options);
+}
+export function useGetQueueStatsLatestLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueStatsLatestQuery,
+    GetQueueStatsLatestQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetQueueStatsLatestQuery,
+    GetQueueStatsLatestQueryVariables
+  >(GetQueueStatsLatestDocument, options);
+}
+export type GetQueueStatsLatestQueryHookResult = ReturnType<
+  typeof useGetQueueStatsLatestQuery
+>;
+export type GetQueueStatsLatestLazyQueryHookResult = ReturnType<
+  typeof useGetQueueStatsLatestLazyQuery
+>;
+export type GetQueueStatsLatestQueryResult = Apollo.QueryResult<
+  GetQueueStatsLatestQuery,
+  GetQueueStatsLatestQueryVariables
+>;
+export function refetchGetQueueStatsLatestQuery(
+  variables: GetQueueStatsLatestQueryVariables,
+) {
+  return { query: GetQueueStatsLatestDocument, variables: variables };
+}
 export const GetHostStatsLatestDocument = {
   kind: 'Document',
   definitions: [
@@ -10387,10 +14654,16 @@ export const GetHostStatsLatestDocument = {
         },
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'StatsLatestInput' } },
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'StatsLatestInput' },
+            },
           },
         },
       ],
@@ -10404,7 +14677,10 @@ export const GetHostStatsLatestDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'id' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
               },
             ],
             selectionSet: {
@@ -10417,13 +14693,19 @@ export const GetHostStatsLatestDocument = {
                     {
                       kind: 'Argument',
                       name: { kind: 'Name', value: 'input' },
-                      value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'input' },
+                      },
                     },
                   ],
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
-                      { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'StatsSnapshot' },
+                      },
                     ],
                   },
                 },
@@ -10433,9 +14715,96 @@ export const GetHostStatsLatestDocument = {
         ],
       },
     },
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<GetHostStatsLatestQuery, GetHostStatsLatestQueryVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useGetHostStatsLatestQuery__
+ *
+ * To run a query within a React component, call `useGetHostStatsLatestQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetHostStatsLatestQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetHostStatsLatestQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useGetHostStatsLatestQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetHostStatsLatestQuery,
+    GetHostStatsLatestQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetHostStatsLatestQuery,
+    GetHostStatsLatestQueryVariables
+  >(GetHostStatsLatestDocument, options);
+}
+export function useGetHostStatsLatestLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetHostStatsLatestQuery,
+    GetHostStatsLatestQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetHostStatsLatestQuery,
+    GetHostStatsLatestQueryVariables
+  >(GetHostStatsLatestDocument, options);
+}
+export type GetHostStatsLatestQueryHookResult = ReturnType<
+  typeof useGetHostStatsLatestQuery
+>;
+export type GetHostStatsLatestLazyQueryHookResult = ReturnType<
+  typeof useGetHostStatsLatestLazyQuery
+>;
+export type GetHostStatsLatestQueryResult = Apollo.QueryResult<
+  GetHostStatsLatestQuery,
+  GetHostStatsLatestQueryVariables
+>;
+export function refetchGetHostStatsLatestQuery(
+  variables: GetHostStatsLatestQueryVariables,
+) {
+  return { query: GetHostStatsLatestDocument, variables: variables };
+}
 export const QueueStatsUpdatedDocument = {
   kind: 'Document',
   definitions: [
@@ -10446,7 +14815,10 @@ export const QueueStatsUpdatedDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
             type: {
@@ -10466,22 +14838,92 @@ export const QueueStatsUpdatedDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'StatsSnapshot' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<QueueStatsUpdatedSubscription, QueueStatsUpdatedSubscriptionVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useQueueStatsUpdatedSubscription__
+ *
+ * To run a query within a React component, call `useQueueStatsUpdatedSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useQueueStatsUpdatedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useQueueStatsUpdatedSubscription({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useQueueStatsUpdatedSubscription(
+  baseOptions: Apollo.SubscriptionHookOptions<
+    QueueStatsUpdatedSubscription,
+    QueueStatsUpdatedSubscriptionVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSubscription<
+    QueueStatsUpdatedSubscription,
+    QueueStatsUpdatedSubscriptionVariables
+  >(QueueStatsUpdatedDocument, options);
+}
+export type QueueStatsUpdatedSubscriptionHookResult = ReturnType<
+  typeof useQueueStatsUpdatedSubscription
+>;
+export type QueueStatsUpdatedSubscriptionResult =
+  Apollo.SubscriptionResult<QueueStatsUpdatedSubscription>;
 export const HostStatsUpdatedDocument = {
   kind: 'Document',
   definitions: [
@@ -10492,7 +14934,10 @@ export const HostStatsUpdatedDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
           type: {
             kind: 'NonNullType',
             type: {
@@ -10512,19 +14957,89 @@ export const HostStatsUpdatedDocument = {
               {
                 kind: 'Argument',
                 name: { kind: 'Name', value: 'input' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'input' } },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
-                { kind: 'FragmentSpread', name: { kind: 'Name', value: 'StatsSnapshot' } },
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'StatsSnapshot' },
+                },
               ],
             },
           },
         ],
       },
     },
-    ...StatsSnapshotFragmentDoc.definitions,
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'StatsSnapshot' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'StatsSnapshot' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
+        ],
+      },
+    },
   ],
-} as unknown as DocumentNode<HostStatsUpdatedSubscription, HostStatsUpdatedSubscriptionVariables>;
+} as unknown as DocumentNode;
+
+/**
+ * __useHostStatsUpdatedSubscription__
+ *
+ * To run a query within a React component, call `useHostStatsUpdatedSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useHostStatsUpdatedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHostStatsUpdatedSubscription({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useHostStatsUpdatedSubscription(
+  baseOptions: Apollo.SubscriptionHookOptions<
+    HostStatsUpdatedSubscription,
+    HostStatsUpdatedSubscriptionVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useSubscription<
+    HostStatsUpdatedSubscription,
+    HostStatsUpdatedSubscriptionVariables
+  >(HostStatsUpdatedDocument, options);
+}
+export type HostStatsUpdatedSubscriptionHookResult = ReturnType<
+  typeof useHostStatsUpdatedSubscription
+>;
+export type HostStatsUpdatedSubscriptionResult =
+  Apollo.SubscriptionResult<HostStatsUpdatedSubscription>;

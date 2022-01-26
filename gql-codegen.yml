@@ -1,0 +1,57 @@
+overwrite: true
+schema: './schema.graphql'
+config:
+  maybeValue: T | null
+  defaultScalarType: unknown
+  useTypeImports: true
+  flattenGeneratedTypes: true
+  scalars:
+    DateTime: "number"
+    Duration: "string | number"
+    JSONObject: "{ [key: string]: unknown }"
+    JSONSchema: "{ [key: string]: unknown }"
+    JobRemoveOption: "boolean | number"
+    JobProgress: "string | number | Record<string, unknown>"
+    Timestamp: "number"
+    EmailAddress: "string"
+    URL: "string"
+generates:
+  ./packages/api/src/graphql/typings/gql.ts:
+    plugins:
+      - add:
+          content:
+            - /* eslint-disable */
+      - 'typescript'
+      - 'typescript-operations'
+    config:
+      skipTypename: true
+      useIndexSignature: true
+      defaultMapper: Partial<{T}>
+      defaultScalarType: any
+    hooks:
+      afterOneFileWrite:
+        - prettier --write
+  ./packages/ui/src/types/generated.ts:
+    documents: ./packages/ui/src/**/*.graphql
+    config:
+      omitOperationSuffix: false
+      flattenGeneratedTypes: true
+      exportFragmentSpreadSubTypes: true
+      inlineFragmentTypes: "combine"
+      withComponent: false
+      withHooks: true
+      enumsAsConst: true
+      withRefetchFn: true
+      gqlImport: graphql.macro#gql
+      documentNode: "documentNode"
+      noGraphQLTag: true
+    plugins:
+      - add:
+          content:
+            - /* eslint-disable */
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
+    hooks:
+      afterOneFileWrite:
+        - prettier --write

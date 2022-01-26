@@ -1,5 +1,5 @@
 import ms from 'ms';
-import { round } from 'lodash';
+import { round } from '@alpen/shared';
 import {
   sleep,
   getRandDistArray,

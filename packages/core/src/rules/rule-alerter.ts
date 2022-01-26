@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { compile, TemplateDelegate } from 'handlebars';
-import { round } from 'lodash';
+import { round } from '@alpen/shared';
 import ms from 'ms';
 import {
   AlertData,

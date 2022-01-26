@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { DateLike } from '@alpen/shared';
+import { DateLike, isEmpty } from '@alpen/shared';
 import { getHostStatsKey, getQueueMetaKey, getStatsKey } from '../keys';
 import { StatsGranularity, StatsMetricType, StatsRateType } from './types';
 import { Pipeline } from 'ioredis';
@@ -10,7 +10,6 @@ import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
 import { aggregateSnapshots, getRetention, aggregateMeter } from './utils';
 import { WriteCache } from '../redis';
-import { isEmpty } from 'lodash';
 import { MeterSummary } from './meter';
 import { Timespan } from '../types';
 import { StatisticalSnapshot } from './timer';

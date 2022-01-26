@@ -3,7 +3,9 @@ import type {
   DeleteJobSchemaMutation,
   DeleteQueueMutation,
   DrainQueueMutation,
+  GetHostsAndQueuesQuery,
   GetJobSchemaQuery,
+  GetQueueByIdQuery,
   InferJobSchemaQuery,
   JobOptionsInput,
   JobSchema,
@@ -11,7 +13,7 @@ import type {
   Queue,
   ResumeQueueMutation,
   SetJobSchemaMutation,
-  UnregisterQueueMutation
+  UnregisterQueueMutation,
 } from '@/types';
 import {
   CleanQueueDocument,
@@ -25,7 +27,6 @@ import {
   InferJobSchemaDocument,
   JobStatus,
   PauseQueueDocument,
-  QueueFragmentDoc,
   ResumeQueueDocument,
   SetJobSchemaDocument,
   UnregisterQueueDocument,
@@ -53,18 +54,10 @@ export function updateCached<T>(
   };
 
   if (queue) {
-    const cacheId = cache.identify({ __typename: 'Queue', id });
     cache.writeQuery({
       query: GetQueueByIdDocument,
       variables: { id },
       data,
-    });
-    cache.writeFragment({
-      id: cacheId,
-      fragment: QueueFragmentDoc,
-      fragmentName: 'Queue',
-      data,
-      broadcast: true,
     });
   }
 }
@@ -75,7 +68,7 @@ export function removeQueueFromCache<T = any>(
 ): void {
   let hostId: string | null = null;
   try {
-    const data = cache.readQuery({
+    const data = cache.readQuery<GetQueueByIdQuery>({
       query: GetQueueByIdDocument,
       variables: { id: queueId },
     });
@@ -107,7 +100,7 @@ export function removeQueueFromCache<T = any>(
 export function addQueueToCache(cache: ApolloCache<any>, queue: Queue): void {
   // We use an update function here to write the
   // new value of the query.
-  const existingItems = cache.readQuery({
+  const existingItems = cache.readQuery<GetHostsAndQueuesQuery>({
     query: GetHostsAndQueuesDocument,
   });
 

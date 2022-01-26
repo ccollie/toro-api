@@ -3,7 +3,7 @@ import {
   MinAggregator,
   AggregatorTypes,
 } from '../../';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { validateCounts } from './helpers';
 
 describe('MinAggregator', () => {

@@ -3,7 +3,7 @@ import DataLoader from 'dataloader';
 import { Queue, Job } from 'bullmq';
 import { jobLocatorCacheFn } from './utils';
 import { systemClock } from '../lib';
-import { isEmpty } from 'lodash';
+import { isEmpty } from '@alpen/shared';
 import { JobByIdLoaderKey } from './types';
 
 async function getQueueJobsById(

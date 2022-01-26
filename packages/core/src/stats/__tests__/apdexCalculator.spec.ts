@@ -1,4 +1,4 @@
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import unirand from 'unirand';
 import { ApdexCalculator } from '../';
 

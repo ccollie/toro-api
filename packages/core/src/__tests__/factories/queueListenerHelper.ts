@@ -1,4 +1,5 @@
-import { isNumber, random, defaultsDeep } from 'lodash';
+import { isNumber, random } from '@alpen/shared';
+import { defaultsDeep } from 'lodash';
 import { ManualClock } from '../../lib';
 import { Events } from '../../metrics';
 import { nanoid } from 'nanoid';

@@ -38,7 +38,7 @@ function WorkerRow({
 
   return (
     <TableRow
-      className={`border-b ${s.tr}`}
+      className={`${s.tr}`}
       onClick={handleClick}
     >
       <TableCell align="center" className="p-3">
@@ -67,13 +67,13 @@ export const Workers = (props: WorkersProps) => {
         striped={true}
         className={`space-y-6 ${s.table}`}
       >
-        <TableHead className="bg-gray-800 text-gray-500">
+        <TableHead>
           <TableRow>
-            <TableCell className="p-3">Id</TableCell>
+            <TableCell align="left" className="p-3">Id</TableCell>
             <TableCell className="p-3 text-left">Name</TableCell>
             <TableCell className="p-3 text-left">Address</TableCell>
             <TableCell className="p-3 text-left">Created</TableCell>
-            <TableCell className="p-3 text-left">Idle</TableCell>
+            <TableCell align="center" className="p-3">Idle</TableCell>
           </TableRow>
         </TableHead>
         {workers.length === 0 && !loading ? (

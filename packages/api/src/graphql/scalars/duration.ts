@@ -1,5 +1,4 @@
 import { GraphQLScalarType, Kind } from 'graphql';
-import { isNumber } from 'lodash';
 import { parseDuration } from '@alpen/shared';
 
 export const Duration = new GraphQLScalarType({
@@ -13,7 +12,7 @@ export const Duration = new GraphQLScalarType({
   },
   serialize(value): number {
     // value sent to the client
-    if (isNumber(value)) {
+    if (typeof value === 'number') {
       return value;
     }
     return parseDuration(value);

@@ -3,9 +3,8 @@ import { RedisStreamAggregator, SubscriberInfo } from './stream-aggregator';
 import { Pipeline } from 'ioredis';
 import { IteratorOptions, createAsyncIterator, nanoid } from '../lib';
 import { RedisClient } from 'bullmq';
-import { safeParse } from '@alpen/shared';
+import { safeParse, isEmpty } from '@alpen/shared';
 import { parseObjectResponse, toKeyValueList } from './utils';
-import { isEmpty } from 'lodash';
 
 const SENDER_ID_KEY = '__sid';
 const EVENT_KEY = '__evt';// __evt

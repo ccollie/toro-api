@@ -6,7 +6,7 @@ import { Group, Tooltip } from '@mantine/core';
 import { format, isToday } from 'date-fns';
 import React, { Fragment, useMemo, useState } from 'react';
 import type { Job, JobFragment } from 'src/types';
-import {  JobProgress, RelativeDateFormat } from 'src/components';
+import { JobProgress, RelativeDateFormat } from 'src/components';
 import JobId from '../JobId';
 import JobActions from '../JobActions';
 import { formatDuration, parseDate, relativeFormat } from '@/lib/dates';
@@ -24,13 +24,13 @@ const FIELDS: Record<JobStatus, string[]> = {
   ],
   [JobStatus.Completed]: [
     'id',
-    'attemptsMade',
     'name',
     'finishedOn',
     'timestamp',
     'wait',
     'processedOn',
     'runtime',
+    'attemptsMade',
     'actions',
   ],
   [JobStatus.Delayed]: [
@@ -89,7 +89,7 @@ const JobDate = ({ value }: { value: number | string }) => {
   );
 };
 
-const Duration = ({ job }: { job: Job | JobFragment }) => {
+const Duration = ({ job, showIcon = true }: { job: Job | JobFragment; showIcon?: boolean }) => {
   const duration = getJobDuration(job);
   if (!duration) {
     return null;
@@ -97,7 +97,7 @@ const Duration = ({ job }: { job: Job | JobFragment }) => {
 
   return (
     <Fragment>
-      <ClockIcon /> {formatDuration(duration)}
+      {showIcon && <ClockIcon style={{ display: 'inline-block' }}/>} {formatDuration(duration)}
     </Fragment>
   );
 };
@@ -247,10 +247,9 @@ export function getColumns(
     {
       title: 'Attempts',
       dataIndex: 'attemptsMade',
-      width: '42px',
+      width: '38px',
       align: 'center',
       key: 'attemptsMade',
-      responsive: ['md'],
       render: (job: JobFragment) => <Attempts job={job} />,
     },
     {

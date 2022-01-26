@@ -1,3 +1,4 @@
+import type { JobState } from 'bullmq';
 import { PollingMetric } from './baseMetric';
 import { MetricsListener } from './metrics-listener';
 import {
@@ -16,10 +17,10 @@ import type { JobStatus } from '../types';
  * current values from the queue.
  */
 export class JobSpotCountMetric extends PollingMetric {
-  private readonly _statuses: JobStatus[];
+  private readonly _statuses: JobState[];
 
   // public only for testing
-  constructor(props: MetricOptions, statuses: JobStatus[]) {
+  constructor(props: MetricOptions, statuses: JobState[]) {
     super(props);
     this._statuses = statuses;
   }
@@ -85,7 +86,7 @@ export class CurrentWaitingCountMetric extends JobSpotCountMetric {
  */
 export class WaitingChildrenCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
-    super(options, ['waiting', 'paused']);
+    super(options, ['waiting-children']);
   }
 
   static get key(): MetricTypes {
@@ -156,7 +157,7 @@ export class PendingCountMetric extends JobSpotCountMetric {
   constructor(props: MetricOptions) {
     super(props, [
       'waiting',
-      'paused',
+    //  'paused',   // todo: uncomment this when paused is supported
       'delayed',
     ]);
   }

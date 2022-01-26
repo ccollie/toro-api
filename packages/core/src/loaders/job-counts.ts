@@ -1,16 +1,16 @@
-import { Queue } from 'bullmq';
+import { Queue, JobType } from 'bullmq';
 import { Pipeline } from 'ioredis';
 import DataLoader from 'dataloader';
 import { aggregateQueuesByClient } from './utils';
 import pMap from 'p-map';
-import { JobCounts, JobCountStates } from '../types/queues';
+import { JobCounts } from '../types/queues';
 import { getAccessor } from './accessors';
 
-const DefaultTypes: JobCountStates[] = ['delayed', 'paused', 'waiting'];
+const DefaultTypes: JobType[] = ['delayed', 'paused', 'waiting'];
 
 export interface JobCountsLoaderKey {
   queue: Queue;
-  types?: JobCountStates[];
+  types?: JobType[];
 }
 
 interface QueueJobCountsMeta {
@@ -104,7 +104,7 @@ async function getJobCountsBatch(
           const item = res[index++];
           const [error, amt] = item;
           // todo: throw on error
-          counts[type as JobCountStates] = amt || 0;
+          counts[type as JobType] = amt || 0;
         });
         result[meta.index] = counts as JobCounts;
       });

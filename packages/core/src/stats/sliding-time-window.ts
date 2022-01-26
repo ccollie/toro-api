@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { isFunction } from 'lodash';
+import { isFunction } from '@alpen/shared';
 import { calculateInterval } from './utils';
 import { UnsubscribeFn } from 'emittery';
 import { ChunkedAssociativeArray, Clock, TimeTicker } from '../lib';

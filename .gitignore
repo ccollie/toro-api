@@ -69,3 +69,6 @@ node_modules/
 # Yarn Integrity file
 .yarn-integrity
 /__tests__/**/__snapshots__/
+
+# generated file
+./schema.graphql

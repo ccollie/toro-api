@@ -36,9 +36,6 @@ fragment Host on QueueHost {
     redis {
         ...RedisStats
     }
-    channels {
-        ...NotificationChannel
-    }
 }
 
 query GetAllHosts {

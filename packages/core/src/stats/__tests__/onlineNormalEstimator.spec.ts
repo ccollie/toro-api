@@ -1,4 +1,4 @@
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { OnlineNormalEstimator } from '../online-normal-estimator';
 
 function randomArray(length: number) {

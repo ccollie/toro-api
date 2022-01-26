@@ -1,7 +1,7 @@
 import { PubSubEngine } from 'graphql-subscriptions';
 import { RedisPubSub } from 'graphql-redis-subscriptions';
 import { RedisClient } from 'bullmq';
-import { isNil, isString } from 'lodash';
+import { isNil, isString } from '@alpen/shared';
 import IORedis, { RedisOptions } from 'ioredis';
 
 export type ConnectionOptions = string | RedisOptions;

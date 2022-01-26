@@ -1,10 +1,9 @@
 import { badRequest } from '@hapi/boom';
 import { toKeyValueList, parseXinfoResponse, RedisStreamItem } from './utils';
 import { toDate } from 'date-fns';
-import { isDate } from 'lodash';
 import IORedis from 'ioredis';
 import { RedisClient } from 'bullmq';
-import { isNumber } from '@alpen/shared';
+import { isNumber, isDate } from '@alpen/shared';
 
 const deserializerMap = new Map();
 const deserializerCache = new Map();

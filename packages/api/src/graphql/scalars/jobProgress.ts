@@ -1,5 +1,5 @@
 import { GraphQLScalarType, Kind } from 'graphql';
-import { isObject, isString } from 'lodash';
+import { isObject, isString } from '@alpen/shared';
 import { safeParse } from '@alpen/shared';
 
 export const JobProgress = new GraphQLScalarType({

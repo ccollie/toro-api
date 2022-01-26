@@ -1,6 +1,6 @@
 import { badRequest } from '@hapi/boom';
 import { default as got } from 'got';
-import { isEmpty, isObject } from 'lodash';
+import { isEmpty, isObject } from '@alpen/shared';
 import { packageInfo } from '../packageInfo';
 
 const defaultOptions = {

@@ -1,7 +1,7 @@
 import { ConnectionOptions } from 'bullmq';
 import { getValue } from '../config';
 import * as Joi from 'joi';
-import { isString } from 'lodash';
+import { isString } from '@alpen/shared';
 import { parseRedisURI } from '../redis/utils';
 import fnv from 'fnv-plus';
 import { ConnectionOptionsSchema } from '../validation';

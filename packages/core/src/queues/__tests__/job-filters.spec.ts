@@ -12,7 +12,11 @@ import {
 import { JobFilter } from '../../types';
 
 import { getJobFiltersKey } from '../../keys';
-import { sampleSize, sortBy } from 'lodash';
+import { sampleSize } from '@alpen/shared';
+
+function idComparator(a: JobFilter, b: JobFilter) {
+  return a.id.localeCompare(b.id);
+}
 
 describe('Job Filters', function () {
   let queue, queueName, client;
@@ -115,24 +119,22 @@ describe('Job Filters', function () {
       filters = await pMap(FilterNames, (name) =>
         addJobFilter(queue, name, 'completed', SAMPLE_EXPR),
       );
-      filters = sortBy(filters, 'id');
+      filters.sort(idComparator);
     }
 
     it('it can get multiple filters at once', async () => {
       await createFilters();
-      const keys = await client.hkeys(getKey());
+      const keys = (await client.hkeys(getKey())) as string[];
       const subset = sampleSize(keys, 3);
-      const actual = sortBy(await getJobFilters(queue, subset), 'id');
-      const expected = sortBy(
-        filters.filter((x) => subset.includes(x.id)),
-        'id',
-      );
+      const actual = (await getJobFilters(queue, subset)).sort(idComparator);
+      const expected =
+        filters.filter((x) => subset.includes(x.id)).sort(idComparator);
       expect(actual).toEqual(expected);
     });
 
     it('it gets all filters if no ids are specified', async () => {
       await createFilters();
-      const actual = sortBy(await getJobFilters(queue), 'id');
+      const actual = (await getJobFilters(queue)).sort(idComparator);
       expect(actual).toStrictEqual(filters);
     });
   });

@@ -8,7 +8,7 @@ import {
   QuantileAggregator,
 } from '../../aggregators';
 
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { DDSketch } from '@datadog/sketches-js';
 import { validateCounts } from './helpers';
 

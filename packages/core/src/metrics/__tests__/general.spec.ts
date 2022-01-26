@@ -14,7 +14,7 @@ import {
   RateMetric,
 } from '../';
 import type { RateMetricOptions } from '../';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { systemClock, delay } from '../../lib';
 import { nanoid } from 'nanoid';
 import { getStaticProp } from '@alpen/shared';

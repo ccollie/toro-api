@@ -1,4 +1,4 @@
-import { sample } from 'lodash';
+import { sample } from '@alpen/shared';
 import { Job, Queue } from 'bullmq';
 const log = console.log.bind(console);
 

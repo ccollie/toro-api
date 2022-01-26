@@ -1,4 +1,5 @@
-import { groupBy, sample } from 'lodash';
+import { groupBy } from 'lodash';
+import { sample } from '@alpen/shared';
 import { createClient } from '../../__tests__/factories';
 import { deleteAllQueueData, discoverQueues } from '../../queues';
 import { Queue } from 'bullmq';

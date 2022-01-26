@@ -1,5 +1,5 @@
 import { LatencyMetric, StandardDeviationAggregator } from '../../';
-import { random } from 'lodash';
+import { random } from '@alpen/shared';
 import { OnlineNormalEstimator } from '../../../stats/online-normal-estimator';
 import { AggregatorTypes } from '../../types';
 import { validateCounts } from './helpers';

@@ -1,7 +1,7 @@
 import IORedis, { Pipeline, RedisOptions } from 'ioredis';
 import { parseURL } from 'ioredis/built/utils';
-import { isObject, chunk, isNil, isString } from 'lodash';
-import { isValidDate, isNumber, hashObject, safeParse } from '@alpen/shared';
+import { isObject, isNil, isString, isPossiblyNumber, chunk } from '@alpen/shared';
+import { isValidDate, hashObject, safeParse } from '@alpen/shared';
 import { RedisClient, ConnectionOptions, isRedisInstance, scriptLoader } from 'bullmq';
 import { ScriptError } from './script-error';
 import { logger } from '../logger';
@@ -410,7 +410,7 @@ export async function getRedisInfo(client: RedisClient): Promise<RedisMetrics> {
   return metrics.reduce((acc, metric) => {
     if (redisInfo[metric]) {
       const value = redisInfo[metric];
-      acc[metric] = isNumber(value) ? parseFloat(value) : value;
+      acc[metric] = isPossiblyNumber(value) ? parseFloat(value) : value;
     }
 
     return acc;
