@@ -3339,6 +3339,7 @@ export type HostQueuesQuery = {
         id: string;
         name: string;
         isPaused: boolean;
+        isReadonly: boolean;
         workerCount: number;
         ruleAlertCount: number;
         throughput: {
@@ -6984,6 +6985,10 @@ export const HostQueuesDocument = {
                       {
                         kind: 'Field',
                         name: { kind: 'Name', value: 'isPaused' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'isReadonly' },
                       },
                       {
                         kind: 'FragmentSpread',

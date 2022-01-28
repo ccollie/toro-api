@@ -24,7 +24,9 @@
     "typecheck": "tsc --no-emit",
     "build:core": "yarn workspace @alpen/shared build && yarn workspace @alpen/core build && yarn workspace @alpen/api build",
     "gen-schema": "node -r ts-node/register ./scripts/gen-schema.ts",
-    "generate": "graphql-codegen --config ./gql-codegen.yml",
+    "generate": "yarn run generate:server && yarn run generate:client",
+    "generate:client": "graphql-codegen --config ./gql-codegen-client.yml",
+    "generate:server": "graphql-codegen --config ./gql-codegen-server.yml",
     "generate:full": "yarn run gen-schema && yarn run generate"
   },
   "devDependencies": {

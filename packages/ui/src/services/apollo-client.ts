@@ -10,18 +10,27 @@ import {
   StoreObject,
 } from '@apollo/client';
 import { apiUrl } from '../config';
-import type { Job, Metric, NotificationChannel, Queue, QueueWorker, RepeatableJob, Rule, StatsSnapshot } from '@/types';
+import type {
+  Job,
+  Metric,
+  Queue,
+  QueueWorker,
+  RepeatableJob,
+  StatsSnapshot,
+} from '@/types';
 import { SafeReadonly } from '@apollo/client/cache/core/types/common';
 
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
 const isServer = typeof window === 'undefined';
 
-function mergeArrayByField<T extends StoreObject | Reference>(field = 'id'): FieldMergeFunction<T[]> {
+function mergeArrayByField<T extends StoreObject | Reference>(
+  field = 'id',
+): FieldMergeFunction<T[]> {
   return (
     existing: SafeReadonly<T[]> | undefined,
     incoming: SafeReadonly<T[]>,
-    { readField, mergeObjects }
+    { readField, mergeObjects },
   ): SafeReadonly<T[]> => {
     const merged: any[] = existing ? existing.slice(0) : [];
     const idToIndex: Record<string, number> = Object.create(null);
@@ -86,9 +95,6 @@ const typePolicies = {
   QueueHost: {
     merge: true,
     fields: {
-      channels: {
-        merge: mergeArrayByField<NotificationChannel>(),
-      },
       histogram: {
         merge: true,
       },
@@ -133,12 +139,6 @@ const typePolicies = {
       repeatableJobs: {
         merge: mergeArrayByField<RepeatableJob>('key'),
       },
-      rule: {
-        merge: mergeArrayByField<Rule>(),
-      },
-      stats: {
-        merge: mergeArrayByField<StatsSnapshot>('startTime'),
-      },
       statsAggregate: {
         merge: true,
       },
@@ -164,9 +164,21 @@ function createApolloClient(): ApolloClient<NormalizedCacheObject> {
     cache: new InMemoryCache({
       typePolicies,
       possibleTypes: {
-        NotificationChannel: ['MailNotificationChannel', 'SlackNotificationChannel', 'WebhookNotificationChannel'],
-        RuleCondition: ['ChangeCondition', 'PeakCondition', 'ThresholdCondition'],
-        RuleEvaluationState: ['ChangeRuleEvaluationState', 'PeakRuleEvaluationState', 'ThresholdRuleEvaluationState'],
+        NotificationChannel: [
+          'MailNotificationChannel',
+          'SlackNotificationChannel',
+          'WebhookNotificationChannel',
+        ],
+        RuleCondition: [
+          'ChangeCondition',
+          'PeakCondition',
+          'ThresholdCondition',
+        ],
+        RuleEvaluationState: [
+          'ChangeRuleEvaluationState',
+          'PeakRuleEvaluationState',
+          'ThresholdRuleEvaluationState',
+        ],
       },
     }),
     link: new HttpLink({
