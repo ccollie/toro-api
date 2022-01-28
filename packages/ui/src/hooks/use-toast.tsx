@@ -1,9 +1,16 @@
 import { NotificationProps } from '@mantine/notifications/lib/types';
-import { CheckIcon, Cross1Icon, ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons';
+import {
+  CheckIcon,
+  Cross1Icon,
+  ExclamationTriangleIcon,
+  InfoCircledIcon,
+} from '@radix-ui/react-icons';
 import React from 'react';
 import { useNotifications } from '@mantine/notifications';
 
-export type ToastContent = React.ReactNode | ((props: NotificationProps) => React.ReactNode);
+export type ToastContent =
+  | React.ReactNode
+  | ((props: NotificationProps) => React.ReactNode);
 
 export const useToast = () => {
   const { showNotification, hideNotification } = useNotifications();
@@ -12,7 +19,10 @@ export const useToast = () => {
     return showNotification(options);
   }
 
-  function success(content: ToastContent, options?: Partial<NotificationProps>): string  {
+  function success(
+    content: ToastContent,
+    options?: Partial<NotificationProps>,
+  ): string {
     return showNotification({
       color: 'teal',
       icon: <CheckIcon />,
@@ -21,7 +31,10 @@ export const useToast = () => {
     });
   }
 
-  function error(content: ToastContent, options?: Partial<NotificationProps>): string {
+  function error(
+    content: ToastContent,
+    options?: Partial<NotificationProps>,
+  ): string {
     return showNotification({
       color: 'red',
       icon: <Cross1Icon />,
@@ -31,7 +44,10 @@ export const useToast = () => {
     });
   }
 
-  function info(content: ToastContent, options?: Partial<NotificationProps>): string {
+  function info(
+    content: ToastContent,
+    options?: Partial<NotificationProps>,
+  ): string {
     return showNotification({
       color: 'blue',
       icon: <InfoCircledIcon />,
@@ -40,7 +56,10 @@ export const useToast = () => {
     });
   }
 
-  function warn(content: ToastContent, options?: Partial<NotificationProps>): string {
+  function warn(
+    content: ToastContent,
+    options?: Partial<NotificationProps>,
+  ): string {
     return showNotification({
       color: 'yellow',
       icon: <ExclamationTriangleIcon />,
@@ -55,8 +74,6 @@ export const useToast = () => {
     error,
     info,
     warn,
-    dismiss: hideNotification
+    dismiss: hideNotification,
   };
 };
-
-

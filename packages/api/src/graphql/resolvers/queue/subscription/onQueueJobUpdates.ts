@@ -1,5 +1,5 @@
 import { createJobNameFilter, JOB_STATES, JobStatus } from '@alpen/core';
-import { diff, hashObject, isFinishedStatus } from '@alpen/shared';
+import { diff, hashObject } from '@alpen/shared';
 import { GraphQLFieldResolver } from 'graphql';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
@@ -8,6 +8,10 @@ import LRUCache from 'lru-cache';
 import ms from 'ms';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { FieldConfig, JobStatusEnumType } from '../../index';
+
+function isFinishedStatus(status: string): boolean {
+  return status === 'completed' || status === 'failed';
+}
 
 const EVENT_NAMES = JOB_STATES.map((name) => `job.${name}`)
   .concat('job.removed')

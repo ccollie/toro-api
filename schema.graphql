@@ -1,0 +1,3008 @@
+type Query {
+  """Get the list of aggregate types available for metrics"""
+  aggregates: [AggregateInfo]!
+
+  """Get general app info"""
+  appInfo: AppInfo!
+
+  """Get a queue by id"""
+  queue(id: ID!): Queue
+  job(queueId: ID!, id: ID!): Job!
+
+  """Validate job data against a schema previously defined on a queue"""
+  validateJobData(input: ValidateJobDataInput!): ValidateJobDataResult!
+
+  """Validate BullMQ job options structure"""
+  validateJobOptions(input: JobOptionsInput!): ValidateJobOptionsResult!
+
+  """Find a queue by name"""
+  findQueue(hostName: String!, prefix: String, queueName: String!): Queue
+
+  """Load a flow"""
+  flow(input: FlowNodeGetInput!): JobNode
+  getJobs(input: GetJobsInput): [Job!]!
+  getJobsById(input: GetJobsByIdInput): [Job!]!
+
+  """Get a Host by id"""
+  host(id: ID!): QueueHost
+
+  """Get the list of hosts managed by the server instance"""
+  hosts: [QueueHost!]!
+
+  """Get a Host by name"""
+  hostByName(name: String!): QueueHost
+
+  """Get a queue Metric by id"""
+  metric(queueId: ID!, metricId: ID!): Metric
+  notificationChannel(hostId: ID!, id: ID!): NotificationChannel
+
+  """Get the list of available metric types"""
+  availableMetrics: [MetricInfo!]!
+
+  """Get a queue JobFilter by id"""
+  queueJobFilter(input: QueueJobFilterInput): JobFilter
+
+  """Returns the JSON Schema for the BullMq JobOptions type"""
+  jobOptionsSchema: JSONSchema!
+  rule(queueId: ID!, ruleId: ID!): Rule
+  ruleAlert(queueId: ID!, ruleId: ID!, alertId: ID!): RuleAlert
+
+  """Get a JSONSchema document previously set for a job name on a queue"""
+  queueJobSchema(input: QueueJobSchemaInput): JobSchema
+
+  """Returns the JSON Schema for the BullMq BulkJobOptions type"""
+  bulkJobOptionsSchema: JSONSchema!
+
+  """Infer a JSONSchema from completed jobs in a queue"""
+  inferJobSchema(input: InferJobSchemaInput): JobSchema
+  findJobs(input: FindJobsInput!): [Job!]!
+}
+
+type Mutation {
+  """Delete a queue metric"""
+  deleteMetric(input: DeleteMetricInput!): DeleteMetricResult!
+
+  """Create a queue metric"""
+  createMetric(input: CreateMetricInput!): Metric!
+  refreshMetricData(input: RefreshMetricDataInput!): [RefreshMetricDataResult]!
+
+  """Update a job metric"""
+  updateMetric(input: MetricInput!): Metric!
+  createFlow(input: CreateFlowInput): JobNode!
+
+  """Add a mail notification channel"""
+  createMailNotificationChannel(input: CreateMailNotificationChannelInput!): MailNotificationChannel!
+
+  """Create a slack notification channel"""
+  createSlackNotificationChannel(input: SlackNotificationChannelAddInput!): SlackNotificationChannel!
+
+  """Add a webhook notification channel"""
+  createWebhookNotificationChannel(input: CreateWebhookNotificationChannelInput!): WebhookNotificationChannel!
+  enableNotificationChannel(hostId: ID!, channelId: ID!): EnableNotificationChannelResult!
+  disableNotificationChannel(hostId: ID!, channelId: ID!): DisableNotificationChannelResult!
+  deleteNotificationChannel(hostId: ID!, channelId: ID!): DeleteNotificationChannelResult!
+  updateMailNotificationChannel(input: UpdateMailNotificationChannelInput!): MailNotificationChannel!
+  updateSlackNotificationChannel(input: UpdateSlackNotificationChannelInput!): SlackNotificationChannel!
+  updateWebhookNotificationChannel(input: UpdateWebhookNotificationChannelInput!): WebhookNotificationChannel!
+  createJob(input: CreateJobInput): Job!
+  bulkCreateJobs(queueId: String!, jobs: [BulkJobItemInput]!): CreateBulkJobsResult
+  createRepeatableJobByCron(input: CreateRepeatableJobByCronInput!): CreateRepeatableJobByCronResult!
+  createRepeatableJob(input: JobAddEveryInput): JobAddEveryPayload!
+  discardJob(input: JobLocatorInput!): DiscardJobResult!
+  promoteJob(input: JobLocatorInput!): PromoteJobResult!
+  deleteJob(input: JobLocatorInput!): DeleteJobPayload!
+
+  """Bulk deletes a list of jobs by id"""
+  bulkDeleteJobs(input: BulkJobActionInput!): BulkJobActionPayload
+  retryJob(input: JobLocatorInput!): RetryJobResult!
+  updateJob(input: UpdateJobInput!): UpdateJobResult!
+  addJobLog(queueId: String!, id: String!, row: String!): AddJobLogResult!
+  moveJobToCompleted(input: JobLocatorInput!): MoveJobToCompletedResult!
+
+  """Moves job from active to delayed."""
+  moveJobToDelayed(input: MoveJobToDelayedInput): MoveJobToDelayedResult!
+  moveJobToFailed(input: MoveJobToFailedInput): MoveoJobToFailedResult!
+
+  """Bulk promotes a list of jobs by id"""
+  bulkPromoteJobs(input: BulkJobActionInput!): BulkJobActionPayload
+
+  """Bulk retries a list of jobs by id"""
+  bulkRetryJobs(input: BulkJobActionInput!): BulkJobActionPayload
+  deleteRepeatableJobByKey(input: DeleteRepeatableJobByKeyInput!): DeleteRepeatableJobByKeyResult!
+  deleteRepeatableJob(id: ID!, jobName: String, repeat: DeleteRepeatableJobOptions!): DeleteRepeatableResult!
+  changeJobDelay(input: ChangeJobDelayInput): Job!
+
+  """
+  Remove all jobs created outside of a grace interval in milliseconds. You can clean the jobs with the following states: COMPLETED, wait (typo for WAITING), isActive, DELAYED, and FAILED.
+  """
+  cleanQueue(input: QueueCleanInput!): QueueCleanResult!
+
+  """
+  Drains the queue, i.e., removes all jobs that are waiting or delayed, but not active, completed or failed.
+  """
+  drainQueue(id: ID!, delayed: Boolean = false): DrainQueueResult!
+
+  """
+  Pause the queue.
+  
+  A PAUSED queue will not process new jobs until resumed, but current jobs being processed will continue until they are finalized.
+  """
+  pauseQueue(id: ID!): Queue!
+
+  """Resume a queue after being PAUSED."""
+  resumeQueue(id: ID!): Queue!
+  deleteQueue(id: ID!, options: DeleteQueueOptions): DeleteQueueDeleteResult!
+
+  """Start tracking a queue"""
+  registerQueue(input: RegisterQueueInput): Queue!
+
+  """Stop tracking a queue"""
+  unregisterQueue(id: ID!): UnregisterQueueResult!
+
+  """Add a named job filter"""
+  createJobFilter(input: CreateJobFilterInput!): JobFilter!
+
+  """Associate a JSON schema with a job name on a queue"""
+  setJobSchema(input: JobSchemaInput!): JobSchema!
+
+  """Delete a schema associated with a job name on a queue"""
+  deleteJobSchema(input: DeleteJobSchemaInput!): DeleteJobSchemaResult!
+
+  """Delete a job filter"""
+  deleteJobFilter(input: DeleteJobFilterInput!): DeleteJobFilterResult!
+
+  """Update a job filter"""
+  updateJobFilter(input: UpdateJobFilterInput!): UpdateJobFilterResult!
+
+  """Delete all stats associated with a queue"""
+  deleteQueueStats(input: DeleteQueueStatsInput!): DeleteQueueStatsResult!
+
+  """Incrementally delete jobs filtered by query criteria"""
+  deleteJobsByFilter(filter: DeleteJobsByFilterInput!): DeleteJobsByFilterPayload!
+
+  """Removes all alerts associated with a rule"""
+  clearRuleAlerts(input: ClesrRuleAlertsInput!): ClearRuleAlertsResult!
+
+  """Delete a rule alert"""
+  DeleteRuleAlert(input: DeleteRuleAlertInput!): DeleteRuleAlertResult!
+
+  """Create a rule for a queue"""
+  createRule(input: CreateRuleInput!): Rule!
+
+  """Update a rule"""
+  updateRule(input: RuleUpdateInput!): Rule!
+
+  """Delete a rule"""
+  deleteRule(input: DeleteRuleInput!): DeleteRuleResult!
+
+  """Removes all alerts associated with a rule"""
+  activateRule(input: ActivateRuleInput!): ActivateRuleResult!
+
+  """Delete a rule alert"""
+  markRuleAlertAsRead(input: MarkRuleAlertAsReadInput!): MarkRuleAlertAsReadResult!
+}
+
+type Subscription {
+  onNotificationChannelCreated(
+    """The host to monitor"""
+    hostId: String!
+  ): OnNotificationChannelCreatedPayload!
+  onNotificationChannelDeleted(
+    """The host to monitor"""
+    hostId: String!
+  ): OnNotificationChannelDeletedPayload!
+
+  """Subscribe for updates in host statistical snapshots"""
+  onHostStatsUpdated(input: StatsUpdatedSubscriptionFilter!): StatsSnapshot!
+  onJobAdded(queueId: ID!): OnJobAddedPayload!
+  onJobUpdated(queueId: String!, jobId: String!): OnJobUpdatedPayload!
+  onJobProgress(queueId: String!, jobId: String!): OnJobProgressPayload!
+  onJobRemoved(queueId: String!, jobId: String!): OnJobRemovedPayload!
+  onJobLogAdded(queueId: String!, jobId: String!): OnJobLogAddedPayload!
+
+  """Returns job active events"""
+  obJobActive(queueId: String!, jobId: String!): OnJobStateChangePayload
+
+  """Returns job failed events"""
+  obJobFailed(queueId: String!, jobId: String!): OnJobStateChangePayload
+
+  """Returns job completed events"""
+  obJobCompleted(queueId: String!, jobId: String!): OnJobStateChangePayload
+  onJobDelayed(prefix: String! = "bull", queueId: ID!): OnJobDelayedPayload!
+  onQueuePaused(queueId: String!): OnQueuePausedPayload!
+  onQueueResumed(queueId: ID!): OnQueueResumedPayload!
+  onQueueDeleted(
+    """The host to monitor"""
+    hostId: String!
+  ): OnQueueDeletedPayload!
+  onQueueWorkersChanged(queueId: String!): OnQueueWorkersChangedPayload!
+  onQueueStateChanged(queueId: String!): OnQueueStateChangedPayload!
+  onQueueJobCountsChanged(queueId: String!): OnQueueJobCountsChangedPayload!
+  onQueueJobUpdates(input: QueueJobUpdatesFilterInput!): OnQueueJobUpdatesPayload!
+
+  """Subscribe for updates in queue statistical snapshots"""
+  onQueueStatsUpdated(input: StatsUpdatedSubscriptionFilter!): StatsSnapshot!
+  onQueueRegistered(
+    """The host to monitor"""
+    hostId: String!
+  ): OnQueueRegisteredPayload!
+  onQueueUnregistered(
+    """The host to monitor"""
+    hostId: String!
+  ): OnQueueUnregisteredPayload!
+
+  """Returns an updated count of workers assigned to a queue"""
+  onQueueWorkersCountChanged(queueId: String!): OnQueueWorkersCountPayload!
+  onQueueMetricValueUpdated(queueId: String!, metricId: String!): OnQueueMetricValueUpdated!
+  onRuleAlert(queueId: ID!, ruleIds: [String!]): OnRuleAlertPayload!
+}
+
+"""The `Boolean` scalar type represents `true` or `false`."""
+scalar Boolean
+
+scalar Date
+
+"""
+An ISO date-time string, such as 2007-12-03T10:15:30Z. Also handles Elastic compatible date-math expr:  https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math.
+"""
+scalar DateTime
+
+"""
+Specifies a duration in milliseconds - either as an int or a string specification e.g. "2 min", "3 hr"
+"""
+scalar Duration
+
+"""
+A field whose value conforms to the standard internet email address format as specified in RFC822: https://www.w3.org/Protocols/rfc822/.
+"""
+scalar EmailAddress @specifiedBy(url: "https://www.w3.org/Protocols/rfc822/")
+
+"""
+The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](https://en.wikipedia.org/wiki/IEEE_floating_point).
+"""
+scalar Float
+
+"""
+The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
+"""
+scalar ID
+
+"""
+The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
+"""
+scalar Int
+
+"""Job process. Either a number (percentage) or user specified data"""
+scalar JobProgress
+
+"""
+Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action
+"""
+scalar JobRemoveOption
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
+"""
+The `JSONSchema` scalar type represents JSONSchema values as specified by https://json-schema.org/draft/2019-09/json-schema-validation.html.
+"""
+scalar JSONSchema
+
+"""
+The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
+"""
+scalar String
+
+"""
+The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch.
+"""
+scalar Timestamp
+
+"""
+A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt.
+"""
+scalar URL
+
+enum AggregateTypeEnum {
+  None
+  Identity
+  Ewma
+  Latest
+  Min
+  Max
+  Mean
+  Sum
+  StdDev
+  Quantile
+  P75
+  P90
+  P95
+  P99
+  P995
+}
+
+enum ChangeAggregation {
+  MAX
+  MIN
+  AVG
+  SUM
+  P90
+  P95
+  P99
+}
+
+enum ConditionChangeType {
+  CHANGE
+  PCT
+}
+
+enum ErrorLevel {
+  NONE
+  WARNING
+  ERROR
+}
+
+"""
+The method used to calculate the optimal bin width (and consequently number of bins) for a histogram
+"""
+enum HistogramBinningMethod {
+  """
+  Maximum of the ‘Sturges’ and ‘Freedman’ estimators. Provides good all around performance.
+  """
+  Auto
+
+  """Calculate the number of bins based on the Sturges method"""
+  Sturges
+
+  """
+  Calculate the number of histogram bins based on Freedman-Diaconis method
+  """
+  Freedman
+}
+
+enum HttpMethodEnum {
+  GET
+  POST
+}
+
+enum JobStatus {
+  completed
+  waiting
+  active
+  delayed
+  failed
+  paused
+  waiting_children
+}
+
+enum MetricCategory {
+  Queue
+  Host
+  Redis
+}
+
+enum MetricType {
+  None
+  Apdex
+  ActiveJobs
+  ConnectedClients
+  ConsecutiveFailures
+  Completed
+  CompletedRate
+  CurrentCompletedCount
+  CurrentFailedCount
+  DelayedJobs
+  ErrorRate
+  ErrorPercentage
+  Failures
+  Finished
+  FragmentationRatio
+  InstantaneousOps
+  JobRate
+  Latency
+  PeakMemory
+  PendingCount
+  UsedMemory
+  Waiting
+  WaitingChildren
+  WaitTime
+}
+
+enum MetricValueType {
+  Count
+  Gauge
+  Rate
+}
+
+"""Method used for outlier detection"""
+enum OutlierDetectionMethod {
+  """Detect outliers based on deviations from the mean."""
+  Sigma
+
+  """Detect outliers based on the Inter Quartile Range."""
+  IQR
+
+  """
+  Detect outliers based on Iglewicz and Hoaglin (Mean Absolute Deviation).
+  """
+  MAD
+}
+
+enum PeakSignalDirection {
+  ABOVE
+  BELOW
+  BOTH
+}
+
+enum QueueFilterStatus {
+  Active
+  Inactive
+  Paused
+  Running
+}
+
+enum RuleCircuitState {
+  CLOSED
+  OPEN
+  HALF_OPEN
+}
+
+enum RuleOperator {
+  EQ
+  NE
+  GT
+  LT
+  GTE
+  LTE
+}
+
+enum RuleState {
+  NORMAL
+  WARNING
+  ERROR
+  MUTED
+}
+
+enum RuleType {
+  THRESHOLD
+  PEAK
+  CHANGE
+}
+
+enum Severity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum SortOrderEnum {
+  ASC
+  DESC
+}
+
+enum StatsGranularity {
+  Minute
+  Hour
+  Day
+  Week
+  Month
+}
+
+enum StatsMetricType {
+  Latency
+  Wait
+}
+
+"""Base implementation for job stats information."""
+interface JobStatsInterface {
+  """The sample size"""
+  count: Int!
+
+  """The number of failed jobs in the sample interval"""
+  failed: Int!
+
+  """The number of completed jobs in the sample interval"""
+  completed: Int!
+
+  """The start of the interval"""
+  startTime: Date!
+
+  """The end of the interval"""
+  endTime: Date!
+}
+
+"""
+NotificationChannels provide a consistent ways for users to be notified about incidents.
+"""
+interface NotificationChannel {
+  id: ID!
+
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """Timestamp of channel creation"""
+  createdAt: Date
+
+  """Timestamp of last channel update"""
+  updatedAt: Date
+}
+
+"""Describes a queue condition were monitoring."""
+interface RuleConditionInterface {
+  """The value needed to trigger an error notification"""
+  errorThreshold: Float!
+
+  """The value needed to trigger an warning notification"""
+  warningThreshold: Float
+
+  """The comparison operator"""
+  operator: RuleOperator!
+}
+
+"""Describes the state value from a rule evaluation."""
+interface RuleEvaluationState {
+  """The type of rule"""
+  ruleType: RuleType!
+  errorLevel: ErrorLevel!
+
+  """The error threshold of the rule"""
+  errorThreshold: Float!
+
+  """The warning threshold of the rule"""
+  warningThreshold: Float
+
+  """The value which triggered the alert"""
+  value: Float!
+
+  """The rule operator"""
+  comparator: RuleOperator!
+  unit: String!
+}
+
+"""A data point representing the value of a metric in a time series."""
+interface TimeseriesDataPointInterface {
+  """The timestamp of when the event occurred"""
+  ts: Timestamp!
+
+  """The value at the given timestamp"""
+  value: Float!
+}
+
+type ActivateRuleResult {
+  isActive: Boolean!
+  rule: Rule!
+}
+
+type AddJobLogResult {
+  """The job id"""
+  id: String!
+
+  """The number of log entries after adding"""
+  count: Int!
+  state: JobStatus
+}
+
+type AggregateInfo {
+  type: AggregateTypeEnum!
+  description: String!
+  isWindowed: Boolean!
+}
+
+type Aggregator {
+  type: AggregateTypeEnum!
+  options: JSONObject
+  description: String!
+}
+
+type AppInfo {
+  """The server environment (development, production, etc)"""
+  env: String!
+
+  """The app title"""
+  title: String!
+  brand: String
+
+  """The core version"""
+  version: String!
+  author: String
+}
+
+type BulkJobActionPayload {
+  queue: Queue!
+  status: [BulkStatusItem]!
+}
+
+type BulkStatusItem {
+  id: ID!
+  success: Boolean!
+  reason: String
+}
+
+type ClearRuleAlertsResult {
+  """The count of deleted alerts"""
+  deletedItems: Int!
+  rule: Rule!
+}
+
+type CreateBulkJobsResult {
+  jobs: [Job]!
+}
+
+type CreateRepeatableJobByCronResult {
+  job: Job
+}
+
+type DeleteJobFilterResult {
+  filterId: String!
+  queue: Queue!
+  isDeleted: Boolean!
+}
+
+type DeleteJobPayload {
+  queue: Queue!
+  job: Job!
+}
+
+type DeleteJobsByFilterPayload {
+  cursor: Int
+
+  """The total number of jobs to be removed"""
+  total: Int!
+
+  """The number of jobs removed this iteration"""
+  removed: Int!
+}
+
+type DeleteJobSchemaResult {
+  jobName: String!
+  queue: Queue!
+}
+
+type DeleteMetricResult {
+  queue: Queue!
+  isDeleted: Boolean!
+}
+
+type DeleteNotificationChannelResult {
+  hostId: ID!
+  channelId: ID!
+  deleted: Boolean!
+}
+
+type DeleteQueueDeleteResult {
+  """The id of the deleted queue"""
+  queueId: ID!
+
+  """The name of the deleted queue"""
+  queueName: String!
+
+  """The queue host"""
+  host: QueueHost!
+
+  """The number of keys deleted"""
+  deletedKeys: Int!
+}
+
+type DeleteQueueStatsResult {
+  isDeleted: Boolean!
+  queue: Queue!
+}
+
+type DeleteRepeatableJobByKeyResult {
+  key: String!
+  queue: Queue
+}
+
+type DeleteRepeatableResult {
+  queue: Queue!
+}
+
+type DeleteRuleAlertResult {
+  ruleId: ID!
+  rule: Rule
+  isDeleted: Boolean!
+}
+
+type DeleteRuleResult {
+  ruleId: ID!
+  queueId: ID!
+  isDeleted: Boolean!
+}
+
+type DisableNotificationChannelResult {
+  updated: Boolean!
+}
+
+"""
+Marks a job to not be retried if it fails (even if attempts has been configured)
+"""
+type DiscardJobResult {
+  job: Job!
+}
+
+type DiscoverQueuesPayload {
+  """The queue name"""
+  name: String!
+
+  """The queue prefix"""
+  prefix: String!
+}
+
+type DrainQueueResult {
+  queue: Queue!
+}
+
+type EnableNotificationChannelResult {
+  updated: Boolean!
+}
+
+type HistogramBin {
+  count: Int!
+
+  """Lower bound of the bin"""
+  x0: Float!
+
+  """Upper bound of the bin"""
+  x1: Float!
+}
+
+"""Records histogram binning data"""
+type HistogramPayload {
+  """The total number of values."""
+  total: Int!
+
+  """The minimum value in the data range."""
+  min: Float!
+
+  """The maximum value in the data range."""
+  max: Float!
+
+  """The width of the bins"""
+  width: Float!
+  bins: [HistogramBin]!
+}
+
+type Job {
+  id: ID!
+  name: String!
+  data: JSONObject!
+  progress: JobProgress
+  delay: Int!
+  timestamp: Date!
+  attemptsMade: Int!
+  failedReason: JSON
+  stacktrace: [String!]!
+  returnvalue: JSON
+  finishedOn: Date
+  processedOn: Date
+  opts: JobOptions!
+  state: JobStatus!
+
+  """
+  Returns the fully qualified id of a job, including the queue prefix and queue name
+  """
+  fullId: String!
+  queueId: String!
+  parentKey: String
+  logs(start: Int! = 0, end: Int! = -1): JobLogs!
+
+  """Returns true if this job is either a parent or child node in a flow."""
+  isInFlow: Boolean!
+
+  """returns true if this job is waiting."""
+  isWaiting: Boolean!
+
+  """returns true if this job is waiting for children."""
+  isWaitingChildren: Boolean!
+
+  """
+  Get this jobs children result values as an object indexed by job key, if any.
+  """
+  childrenValues: JSONObject!
+
+  """Returns the parent of a job that is part of a flow"""
+  parent: Job
+
+  """Returns the parent queue of a job that is part of a flow"""
+  parentQueue: Queue
+
+  """Get children job keys if this job is a parent and has children."""
+  dependencies(input: JobDependenciesOptsInput): JobDependenciesPayload!
+
+  """Get children job counts if this job is a parent and has children."""
+  dependenciesCount(input: JobDependenciesCountInput): JobDependenciesCountPayload!
+}
+
+type JobAddEveryPayload {
+  job: Job!
+}
+
+"""The count of jobs according to status"""
+type JobCounts {
+  completed: Int
+  failed: Int
+  delayed: Int
+  active: Int
+  waiting: Int
+  paused: Int
+}
+
+type JobDependenciesCountPayload {
+  processed: Int
+  unprocessed: Int
+}
+
+type JobDependenciesPayload {
+  processed: JSONObject
+  unprocessed: [String!]
+  nextProcessedCursor: Int
+  nextUnprocessedCursor: Int
+}
+
+"""Options for filtering queue jobs"""
+type JobFilter {
+  id: ID!
+
+  """A descriptive name of the filter"""
+  name: String!
+
+  """Optional job status to filter jobs by"""
+  status: JobStatus
+
+  """The job filter query"""
+  expression: String!
+
+  """The date this filter was created"""
+  createdAt: Date
+}
+
+type JobLogs {
+  count: Int!
+  items: [String!]!
+}
+
+type JobMemoryUsagePayload {
+  """The total number of bytes consumed by the sampled jobs"""
+  byteCount: Int!
+
+  """The total number of jobs contributing to the byteCount"""
+  jobCount: Int!
+}
+
+type JobNode {
+  job: Job!
+  children: [Job!]
+}
+
+type JobOptions {
+  timestamp: Date
+
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required.
+  """
+  priority: Int
+
+  """
+  An amount of milliseconds to wait until this job can be processed. 
+  Note that for accurate delays, worker and producers should have their clocks synchronized.
+  """
+  delay: Int
+
+  """The total number of attempts to try the job until it completes."""
+  attempts: Int
+
+  """Backoff setting for automatic retries if the job fails"""
+  backoff: JSON
+
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
+  lifo: Boolean
+
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
+  timeout: Int
+
+  """
+  Override the job ID - by default, the job ID is a unique integer, but you can use this setting to override it. If you use this option, it is up to you to ensure the jobId is unique. If you attempt to add a job with an id that already exists, it will not be added.
+  """
+  jobId: String
+
+  """
+  If true, removes the job when it successfully completes.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the COMPLETED set.
+  """
+  removeOnComplete: JobRemoveOption
+
+  """
+  If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set.
+  """
+  removeOnFail: JobRemoveOption
+
+  """Rate limiter key to use if rate limiter enabled."""
+  rateLimiterKey: String
+
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
+  stackTraceLimit: Int
+  parent: JobParent
+
+  """
+  Limits the size in bytes of the job's data payload (as a JSON serialized string).
+  """
+  sizeLimit: Int
+
+  """Job repeat options"""
+  repeat: JobRepeatOptions
+}
+
+type JobParent {
+  """The id of the job"""
+  id: String!
+
+  """The name of the queue (including prefix) containing the job"""
+  queue: String!
+}
+
+type JobRepeatOptions {
+  tz: String
+  endDate: Date
+  limit: Int
+  count: Int
+  prevMillis: Int
+  jobId: String
+  startDate: Date
+  cron: String
+  every: String
+}
+
+"""Options for validating job data"""
+type JobSchema {
+  jobName: String!
+
+  """The JSON schema associated with the job name"""
+  schema: JSONSchema
+
+  """Default options for jobs off this type created through the API"""
+  defaultOpts: JSONObject
+}
+
+type JobSearchPayload {
+  cursor: String
+  hasNext: Boolean!
+  jobs: [Job!]!
+  total: Int!
+  current: Int!
+}
+
+type JobUpdateDelta {
+  id: String!
+  delta: JSONObject!
+}
+
+"""A channel which sends notifications through email"""
+type MailNotificationChannel implements NotificationChannel {
+  id: ID!
+
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """Timestamp of channel creation"""
+  createdAt: Date
+
+  """Timestamp of last channel update"""
+  updatedAt: Date
+
+  """Emails of notification recipients"""
+  recipients: [EmailAddress]!
+}
+
+type MarkRuleAlertAsReadResult {
+  alert: RuleAlert!
+}
+
+"""
+Records the rate of events over an interval using an exponentially moving average
+"""
+type Meter {
+  """The number of samples."""
+  count: Int!
+
+  """The average rate since the meter was started."""
+  meanRate: Float!
+
+  """The 1 minute average"""
+  m1Rate: Float!
+
+  """The 5 minute average"""
+  m5Rate: Float!
+
+  """The 15 minute average"""
+  m15Rate: Float!
+}
+
+"""Metrics are numeric samples of data collected over time"""
+type Metric {
+  """the id of the metric"""
+  id: ID!
+  type: MetricType!
+
+  """The id of the queue to which the metric belongs"""
+  queueId: ID!
+
+  """The name of the metric"""
+  name: String!
+
+  """Returns the description of the metric"""
+  description: String!
+
+  """The metric sampling interval."""
+  sampleInterval: Int
+
+  """Is the metric active (i.e. is data being collected)."""
+  isActive: Boolean!
+
+  """The metric options"""
+  options: JSONObject!
+  category: MetricCategory!
+  unit: String!
+
+  """The current value of the metric"""
+  currentValue: Float
+
+  """Timestamp of when this metric was created"""
+  createdAt: Date!
+
+  """Timestamp of when this metric was created"""
+  updatedAt: Date!
+  aggregator: Aggregator!
+  data(input: MetricDataInput!): [TimeseriesDataPoint]!
+
+  """
+  Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
+  """
+  outliers(input: MetricDataOutliersInput!): [TimeseriesDataPoint]!
+  histogram(input: MetricsHistogramInput!): HistogramPayload!
+
+  """Compute a percentile distribution."""
+  percentileDistribution(input: MetricPercentileDistributionInput!): PercentileDistribution!
+
+  """Returns simple descriptive statistics from a range of metric data"""
+  summaryStats(input: MetricDataInput!): SummaryStatistics!
+
+  """
+  Returns the timestamps of the first and last data items recorded for the metric
+  """
+  dateRange: TimeSpan
+}
+
+type MetricInfo {
+  key: String!
+  description: String
+  category: MetricCategory!
+  type: MetricType!
+  valueType: MetricValueType!
+  unit: String
+  isPolling: Boolean!
+}
+
+type MoveJobToCompletedResult {
+  queue: Queue!
+  job: Job
+}
+
+type MoveJobToDelayedResult {
+  job: Job!
+  delay: Int!
+
+  """Estimated date/time of execution"""
+  executeAt: Date!
+}
+
+type MoveoJobToFailedResult {
+  job: Job!
+  queue: Queue!
+}
+
+type OnJobAddedPayload {
+  jobId: String!
+  jobName: String!
+  queueId: String!
+  queueName: String!
+}
+
+type OnJobDelayedPayload {
+  job: Job
+  queue: Queue!
+  jobId: String!
+  delay: Int
+}
+
+type OnJobLogAddedPayload {
+  job: Job!
+  queueId: String!
+  jobId: String!
+
+  """The rows added to the job log"""
+  rows: [String!]!
+
+  """The number of log lines after addition"""
+  count: Int!
+}
+
+type OnJobProgressPayload {
+  job: Job!
+  queue: Queue!
+  progress: JobProgress
+}
+
+type OnJobRemovedPayload {
+  queue: Queue!
+  jobId: String!
+}
+
+type OnJobStateChangePayload {
+  job: Job!
+  queue: Queue!
+}
+
+"""Holds the changes to the state of a job"""
+type OnJobUpdatedPayload {
+  """The event which triggered the update"""
+  event: String!
+  timestamp: Date!
+
+  """updates in job state since the last event"""
+  delta: JSONObject
+  job: Job
+
+  """The job's queue"""
+  queue: Queue!
+}
+
+type OnNotificationChannelCreatedPayload {
+  hostId: String!
+  channelId: String!
+  channelName: String!
+  channelType: String!
+}
+
+type OnNotificationChannelDeletedPayload {
+  hostId: String!
+  channelId: String!
+  channelName: String!
+  channelType: String!
+}
+
+type OnQueueDeletedPayload {
+  """The id of the deleted queue"""
+  queueId: String!
+
+  """The name of the deleted queue"""
+  queueName: String!
+
+  """The queue host id"""
+  hostId: String!
+
+  """The number of keys deleted"""
+  deletedKeys: Int!
+}
+
+type OnQueueJobCountsChangedPayload {
+  queueId: String!
+  delta: QueueJobCountDelta
+}
+
+type OnQueueJobUpdatesPayload {
+  queueId: String!
+  changes: [JobUpdateDelta!]!
+}
+
+"""Returns a stream of metric data updates"""
+type OnQueueMetricValueUpdated {
+  queueId: String!
+  value: Float!
+
+  """The timestamp of the time the value was recorded"""
+  ts: Date!
+}
+
+type OnQueuePausedPayload {
+  queueId: String!
+}
+
+type OnQueueRegisteredPayload {
+  hostId: String!
+  queueId: String!
+  queueName: String!
+  prefix: String!
+}
+
+type OnQueueResumedPayload {
+  queueId: String!
+}
+
+type OnQueueStateChangedPayload {
+  queueId: String!
+  queueName: String!
+  state: String!
+}
+
+type OnQueueUnregisteredPayload {
+  hostId: String!
+  queueName: String!
+  queueId: String!
+  prefix: String!
+}
+
+"""Returns the list of added and removed workers related to a queue"""
+type OnQueueWorkersChangedPayload {
+  queueId: String!
+  added: [QueueWorker!]!
+  removed: [QueueWorker!]!
+}
+
+type OnQueueWorkersCountPayload {
+  queueId: String!
+  workersCount: Int!
+}
+
+type OnRuleAlertPayload {
+  alert: RuleAlert!
+}
+
+type PercentileCount {
+  count: Int!
+
+  """The percentile value"""
+  value: Float!
+}
+
+"""Percentile distribution of metric values"""
+type PercentileDistribution {
+  """The total number of values."""
+  totalCount: Int!
+
+  """The minimum value in the data range."""
+  min: Float!
+
+  """The maximum value in the data range."""
+  max: Float!
+  percentiles: [PercentileCount!]!
+}
+
+type PingPayload {
+  latency: Int!
+}
+
+type PromoteJobResult {
+  job: Job!
+  queue: Queue!
+}
+
+type Queue {
+  id: String!
+  prefix: String!
+  name: String!
+
+  """Compute the histogram of job data."""
+  histogram(input: HistogramInput!): HistogramPayload!
+  host: String!
+  hostId: ID!
+  isPaused: Boolean!
+  isReadonly: Boolean!
+  jobCounts: JobCounts!
+  jobNames: [String!]!
+  jobFilters(ids: [ID!]): [JobFilter!]!
+
+  """
+  Get JSONSchema documents and job defaults previously set for a job names on a queue
+  """
+  jobSchemas(jobNames: [String!]): [JobSchema!]!
+
+  """Incrementally iterate over a list of jobs filtered by query criteria"""
+  jobSearch(filter: JobSearchInput!): JobSearchPayload!
+
+  """Fetch jobs based on a previously stored filter"""
+  jobsByFilter(filter: JobsByFilterIdInput!): JobSearchPayload!
+
+  """Get the average runtime duration of completed jobs in the queue"""
+  jobDurationAvg(
+    """Consider only jobs of this type (optional)"""
+    jobName: String
+
+    """An optional upper limit of jobs to use in the average"""
+    limit: Int = 100
+  ): Int!
+
+  """Get the average memory used by jobs in the queue"""
+  jobMemoryAvg(input: JobsMemoryAvgInput): Float!
+
+  """Get the average memory used by jobs in the queue"""
+  jobMemoryUsage(input: JobsMemoryAvgInput): JobMemoryUsagePayload!
+
+  """Gets the last recorded queue stats snapshot for a metric"""
+  lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
+  metrics: [Metric!]!
+  metricCount: Int!
+
+  """Returns the number of jobs waiting to be processed."""
+  pendingJobCount: Int!
+
+  """Compute a percentile distribution."""
+  percentileDistribution(input: PercentileDistributionInput!): PercentileDistribution!
+  repeatableJobs(input: RepeatableJobsInput): [RepeatableJob!]!
+
+  """Returns the number of repeatable jobs"""
+  repeatableJobCount: Int!
+
+  """Returns the count of rule alerts associated with a Queue"""
+  ruleAlertCount: Int!
+
+  """Gets rule alerts associated with the queue"""
+  ruleAlerts(input: QueueRuleAlertsInput): [RuleAlert!]!
+  jobs(input: QueueJobsInput): [Job!]!
+  jobsById(input: QueueJobsByIdInput): [Job!]!
+  rules: [Rule!]!
+
+  """Queries for queue stats snapshots within a range"""
+  stats(input: StatsQueryInput!): [StatsSnapshot!]!
+
+  """Aggregates queue statistics within a range"""
+  statsAggregate(input: StatsQueryInput!): StatsSnapshot
+
+  """Gets the time range of recorded stats for a queue/host"""
+  statsDateRange(input: StatsSpanInput!): TimeSpan
+
+  """
+  Gets the current job Throughput rates based on an exponential moving average
+  """
+  throughput(input: StatsRateQueryInput): Meter!
+
+  """
+  Gets the current job Errors rates based on an exponential moving average
+  """
+  errorRate(input: StatsRateQueryInput): Meter!
+
+  """
+  Gets the current job ErrorPercentage rates based on an exponential moving average
+  """
+  errorPercentageRate(input: StatsRateQueryInput): Meter!
+
+  """Returns the number of jobs waiting to be processed."""
+  waitingCount: Int!
+
+  """Returns the number of child jobs waiting to be processed."""
+  waitingChildrenCount: Int!
+
+  """Get the average time a job spends in the queue before being processed"""
+  waitTimeAvg(
+    """Consider only jobs of this type (optional)"""
+    jobName: String
+
+    """An optional upper limit of jobs to use in the average"""
+    limit: Int = 1000
+  ): Int!
+  workers(limit: Int): [QueueWorker!]!
+  workerCount: Int!
+}
+
+type QueueCleanResult {
+  """The queue id"""
+  id: ID!
+
+  """Returns the number of affected jobs"""
+  count: Int!
+
+  """Returns a list of cleared job ids"""
+  jobIds: [ID!]
+}
+
+type QueueHost {
+  id: ID!
+
+  """
+  Returns the number of alerts raised across all the queues associated with this host
+  """
+  alertCount: Int!
+
+  """Notification channels for alerts"""
+  channels: [NotificationChannel!]!
+
+  """An optional description of the host"""
+  description: String
+
+  """Discover Bull queues on the given host"""
+  discoverQueues(
+    """Optional prefix filter"""
+    prefix: String = "bull*"
+
+    """
+    Return only queues that are not registered. If false it returns all queues in the host instance, whether they are tracked or not
+    """
+    unregisteredOnly: Boolean = true
+  ): [DiscoverQueuesPayload!]!
+
+  """
+  Gets the current job ErrorPercentage rates for a host based on an exponential moving average
+  """
+  errorPercentageRate(input: StatsRateQueryInput): Meter!
+
+  """
+  Gets the current job Errors rates for a host based on an exponential moving average
+  """
+  errorRate(input: StatsRateQueryInput): Meter!
+
+  """Compute the histogram of job data."""
+  histogram(input: HistogramInput!): HistogramPayload!
+
+  """Get job counts for a host"""
+  jobCounts: JobCounts!
+
+  """Gets the last recorded queue stats snapshot for a metric"""
+  lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
+
+  """The name of the host"""
+  name: String!
+
+  """Compute a percentile distribution."""
+  percentileDistribution(input: PercentileDistributionInput!): PercentileDistribution!
+  ping: PingPayload!
+
+  """The queues registered for this host"""
+  queues(filter: HostQueuesFilter): [Queue!]!
+
+  """The count of queues registered for this host"""
+  queueCount: Int!
+  redis: RedisInfo!
+
+  """Queries for queue stats snapshots within a range"""
+  stats(input: StatsQueryInput!): [StatsSnapshot!]!
+
+  """Aggregates queue statistics within a range"""
+  statsAggregate(input: StatsQueryInput!): StatsSnapshot
+
+  """Gets the time range of recorded stats for a queue/host"""
+  statsDateRange(input: StatsSpanInput!): TimeSpan
+
+  """
+  Gets the current job Throughput rates for a host based on an exponential moving average
+  """
+  throughput(input: StatsRateQueryInput): Meter!
+  uri: String!
+
+  """
+  Returns the number of workers associated with managed queues on this host
+  """
+  workerCount: Int!
+  workers(limit: Int): [QueueWorker!]!
+}
+
+type QueueJobCountDelta {
+  completed: Int
+  failed: Int
+  delayed: Int
+  active: Int
+  waiting: Int
+}
+
+type QueueWorker {
+  id: String
+
+  """address of the client"""
+  addr: String!
+  name: String
+
+  """total duration of the connection (in seconds)"""
+  age: Int!
+
+  """Idle time of the connection (in seconds)"""
+  idle: Int!
+
+  """Date/time when the connection started"""
+  started: DateTime
+
+  """the current database number"""
+  db: Int!
+  role: String
+  sub: Int!
+  multi: Int!
+  qbuf: Int!
+  qbufFree: Int!
+  obl: Int!
+  oll: Int!
+  omem: Int!
+}
+
+type RedisInfo {
+  redis_version: String!
+  tcp_port: Int!
+  uptime_in_seconds: Int!
+  uptime_in_days: Int!
+  connected_clients: Int!
+  blocked_clients: Int!
+  total_system_memory: Int!
+  used_memory: Int!
+  used_memory_peak: Int!
+  used_memory_lua: Int!
+  used_cpu_sys: Float!
+  maxmemory: Int!
+  number_of_cached_scripts: Int!
+  instantaneous_ops_per_sec: Int!
+  mem_fragmentation_ratio: Float
+  role: String!
+  os: String!
+}
+
+type RefreshMetricDataResult {
+  metricId: String!
+  metric: Metric!
+  start: Date
+  end: Date
+}
+
+type RepeatableJob {
+  key: String!
+  name: String
+  id: String
+
+  """Date when the repeat job should stop repeating (only with cron)."""
+  endDate: Date
+
+  """The timezone for the job"""
+  tz: String
+  cron: String
+
+  """Human readable description of the cron expression"""
+  descr: String
+  next: Date
+}
+
+type RetryJobResult {
+  job: Job!
+  queue: Queue!
+}
+
+type Rule {
+  """The rule id"""
+  id: ID!
+
+  """The id of the queue to which the rule belongs"""
+  queueId: ID!
+
+  """The names of the rule"""
+  name: String!
+
+  """A helpful description of the rule"""
+  description: String
+  severity: Severity
+
+  """Is this rule active or not"""
+  isActive: Boolean!
+
+  """Optional data passed on to alerts"""
+  payload: JSONObject
+
+  """
+  Optional text for message when an alert is raised. Markdown and handlebars supported
+  """
+  message: String
+
+  """The rule creation timestamp"""
+  createdAt: Date!
+
+  """The timestamp of last update"""
+  updatedAt: Date!
+
+  """The last time the rule was triggered"""
+  lastTriggeredAt: Date
+
+  """The current rule states"""
+  state: RuleState
+  status: RuleStatus!
+
+  """The metric being monitored"""
+  metric: Metric
+  condition: RuleConditionInterface!
+
+  """Rule notification channels"""
+  channels: [NotificationChannel!]!
+
+  """Options controlling the generation of events"""
+  options: RuleAlertOptions
+  alerts(input: RuleAlertsInput): [RuleAlert]!
+
+  """The current count of alerts available for this rule"""
+  alertCount: Int!
+
+  """The total number of failures"""
+  totalFailures: Int!
+}
+
+"""An event recording the occurrence of an rule violation or reset"""
+type RuleAlert {
+  id: ID!
+
+  """The id of the rule that raised this alert"""
+  ruleId: String!
+  status: String!
+  title: String
+  message: String
+
+  """Timestamp of when this alert was raised"""
+  raisedAt: DateTime!
+
+  """Timestamp of when this alert was reset"""
+  resetAt: DateTime
+
+  """The metric value that crossed the threshold."""
+  value: Float!
+
+  """State that triggered alert"""
+  state: RuleEvaluationState!
+
+  """The number of failures before this alert was generated"""
+  failures: Int!
+
+  """Optional rule specific data. Corresponds to Rule.payload"""
+  payload: JSONObject
+
+  """Error level"""
+  errorLevel: ErrorLevel
+
+  """A categorization of the severity of the rule type"""
+  severity: Severity
+
+  """Has the alert been read or not"""
+  isRead: Boolean!
+}
+
+"""Options for raising alerts for a Rule"""
+type RuleAlertOptions {
+  """
+  Wait a certain duration between first encountering a failure and triggering an alert
+  """
+  triggerDelay: Duration
+
+  """The minimum number of violations before an alert can be raised"""
+  failureThreshold: Int
+
+  """
+  Optional number of consecutive successful method executions to close then alert. Default 1
+  """
+  successThreshold: Int
+
+  """
+  The max number of alerts to receive per event trigger in case the condition is met.
+   In this case the "event" is a single period between the rule VIOLATION and RESET states.
+  """
+  maxAlertsPerEvent: Int
+
+  """
+  How long an triggered rule must be without failures before resetting it to NORMAL. In conjunction with "alertOnReset", this can be used to prevent a possible storm of notifications when a rule condition passes and fails in rapid succession ("flapping")
+  """
+  recoveryWindow: Duration
+
+  """If specified, the minimum time between alerts for the same incident"""
+  notifyInterval: Duration
+
+  """
+  Raise an alert after an event trigger when the situation returns to normal
+  """
+  alertOnReset: Boolean
+}
+
+"""Real time status of a Rule"""
+type RuleStatus {
+  """Circuit breaker state."""
+  circuitState: RuleCircuitState
+
+  """The rule state."""
+  state: RuleState
+
+  """The number of failures for the current event (from trigger to close)"""
+  failures: Int!
+
+  """The total number of failures in the lifetime of the rule"""
+  totalFailures: Int!
+
+  """
+  The number of successful rule invocations after an alert has triggered.
+  """
+  successes: Int!
+
+  """
+  The number of alerts raised for the current failure event (between trigger and close)
+  """
+  alertCount: Int!
+
+  """The last time the rule triggered"""
+  lastFailure: Date
+
+  """The last time a notification was sent"""
+  lastNotification: Date
+}
+
+"""A channel which sends notifications through slack"""
+type SlackNotificationChannel implements NotificationChannel {
+  id: ID!
+
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """Timestamp of channel creation"""
+  createdAt: Date
+
+  """Timestamp of last channel update"""
+  updatedAt: Date
+
+  """The slack webhook to post messages to"""
+  webhook: URL!
+
+  """The slack webhook to post messages to"""
+  channel: String
+
+  """A valid slack auth token. Not needed if a webhook is specified"""
+  token: String
+}
+
+"""Queue job stats snapshot."""
+type StatsSnapshot implements JobStatsInterface {
+  """The sample size"""
+  count: Int!
+
+  """The number of failed jobs in the sample interval"""
+  failed: Int!
+
+  """The number of completed jobs in the sample interval"""
+  completed: Int!
+
+  """The start of the interval"""
+  startTime: Date!
+
+  """The end of the interval"""
+  endTime: Date!
+
+  """The average of values during the period"""
+  mean: Float!
+
+  """The standard deviation of the dataset over the sample period"""
+  stddev: Float!
+
+  """The minimum value in the data set"""
+  min: Float!
+
+  """The maximum value in the data set"""
+  max: Float!
+
+  """The median value of the data set"""
+  median: Float!
+
+  """The 25th percentile"""
+  p90: Float!
+
+  """The 95th percentile"""
+  p95: Float!
+
+  """The 99th percentile"""
+  p99: Float!
+
+  """The 99.5th percentile"""
+  p995: Float!
+
+  """
+  The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled,divided by the number of seconds the process has been running), it doesn’t offer a sense of recency.
+  """
+  meanRate: Float!
+
+  """One minute exponentially weighted moving average"""
+  m1Rate: Float!
+
+  """Five minute exponentially weighted moving average"""
+  m5Rate: Float!
+
+  """Fifteen minute exponentially weighted moving average"""
+  m15Rate: Float!
+}
+
+"""Basic descriptive statistics"""
+type SummaryStatistics {
+  """The number of input values included in calculations"""
+  count: Int!
+
+  """The minimum value."""
+  min: Float
+
+  """The maximum value."""
+  max: Float
+
+  """The average value - the sum of all values over the number of values."""
+  mean: Float!
+
+  """
+  The median is the middle number of a list. This is often a good indicator of "the middle" when there are outliers that skew the mean value.
+  """
+  median: Float
+
+  """The variance is the sum of squared deviations from the mean."""
+  variance: Float!
+
+  """
+  The sample variance is the sum of squared deviations from the mean.
+  The sample variance is distinguished from the variance by dividing the sum of squared deviations by (n - 1) instead of n. This corrects the bias in estimating a value from a sample set rather than the full population.
+  """
+  sampleVariance: Float!
+
+  """
+  The standard deviation is the square root of the variance. This is also known as the population standard deviation. It is useful for measuring the amount of variation or dispersion in a set of values.
+  """
+  standardDeviation: Float!
+
+  """The standard deviation is the square root of the sample variance."""
+  sampleStandardDeviation: Float!
+}
+
+type TimeseriesDataPoint implements TimeseriesDataPointInterface {
+  """The timestamp of when the event occurred"""
+  ts: Timestamp!
+
+  """The value at the given timestamp"""
+  value: Float!
+}
+
+type TimeSpan {
+  startTime: DateTime!
+  endTime: DateTime!
+}
+
+type UnregisterQueueResult {
+  host: QueueHost!
+  queue: Queue!
+  isRemoved: Boolean!
+}
+
+type UpdateJobFilterResult {
+  filter: JobFilter
+  isUpdated: Boolean!
+}
+
+type UpdateJobResult {
+  job: Job!
+}
+
+type ValidateJobDataResult {
+  queueId: ID!
+  jobName: String!
+}
+
+type ValidateJobOptionsResult {
+  isValid: Boolean!
+  errors: [String!]!
+}
+
+"""A channel that posts notifications to a webhook"""
+type WebhookNotificationChannel implements NotificationChannel {
+  id: ID!
+
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """Timestamp of channel creation"""
+  createdAt: Date
+
+  """Timestamp of last channel update"""
+  updatedAt: Date
+
+  """Url to send data to"""
+  url: URL!
+
+  """The HTTP method to use"""
+  method: HttpMethodEnum
+
+  """Optional request headers"""
+  headers: JSONObject
+
+  """
+  Milliseconds to wait for the server to end the response before aborting the client. By default, there is no timeout.
+  """
+  timeout: Duration
+
+  """The number of times to retry the client"""
+  retry: Int
+
+  """Defines if redirect responses should be followed automatically."""
+  followRedirect: Boolean
+
+  """
+  Set this to true to allow sending body for the GET method. This option is only meant to interact with non-compliant servers when you have no other choice.
+  """
+  allowGetBody: Boolean
+
+  """Optional success http status codes. Defaults to http codes 200 - 206"""
+  httpSuccessCodes: [Int!]
+}
+
+input ActivateRuleInput {
+  queueId: ID!
+  ruleId: ID!
+}
+
+input AggregatorInput {
+  type: AggregateTypeEnum!
+  options: JSONObject
+}
+
+input BulkJobActionInput {
+  queueId: ID!
+  jobIds: [ID!]!
+}
+
+input BulkJobItemInput {
+  name: String!
+  data: JSONObject!
+  options: JobOptionsInput
+}
+
+input ChangeConditionInput {
+  """The value needed to trigger an error notification"""
+  errorThreshold: Float!
+
+  """The value needed to trigger an warning notification"""
+  warningThreshold: Float
+
+  """The comparison operator"""
+  operator: RuleOperator!
+
+  """The sliding window for metric measurement"""
+  windowSize: Duration!
+
+  """
+  Lookback period (ms). How far back are we going to compare eg 1 hour means we're comparing now vs 1 hour ago
+  """
+  timeShift: Duration!
+  changeType: ConditionChangeType!
+  aggregationType: ChangeAggregation!
+}
+
+input ChangeJobDelayInput {
+  queueId: String!
+  jobId: String!
+  delay: Int!
+}
+
+input ClesrRuleAlertsInput {
+  queueId: ID!
+  ruleId: ID!
+}
+
+input CreateFlowInput {
+  """The host to which to add the flow"""
+  host: String!
+  job: FlowJobInput!
+}
+
+input CreateJobFilterInput {
+  queueId: ID!
+  name: String!
+  status: JobStatus
+  expression: String!
+}
+
+input CreateJobInput {
+  queueId: ID!
+  jobName: String!
+  data: JSONObject
+  options: JobOptionsInput
+}
+
+input CreateMailNotificationChannelInput {
+  hostId: ID!
+  channel: MailNotificationChannelUpdate!
+}
+
+"""Input fields for creating a metric"""
+input CreateMetricInput {
+  type: MetricType!
+
+  """The id of the queue to which the metric belongs"""
+  queueId: ID!
+
+  """The name of the metric"""
+  name: String!
+
+  """A description of the metric being measured."""
+  description: String
+
+  """The metric sampling interval."""
+  sampleInterval: Int
+
+  """Is the metric active (i.e. is data being collected)."""
+  isActive: Boolean!
+
+  """The metric options"""
+  options: JSONObject!
+  aggregator: AggregatorInput
+}
+
+input CreateRepeatableJobByCronInput {
+  queueId: ID!
+  jobName: ID!
+  data: JSONObject
+  options: JobOptionsInput
+}
+
+"""Information required to add or edit a Rule"""
+input CreateRuleInput {
+  """The id of the queue to which the rule belongs"""
+  queueId: ID!
+
+  """The names of the rule"""
+  name: String!
+
+  """A helpful description of the rule"""
+  description: String
+  severity: Severity
+
+  """Is this rule active or not"""
+  isActive: Boolean!
+
+  """Optional data passed on to alerts"""
+  payload: JSONObject
+
+  """
+  Optional text for message when an alert is raised. Markdown and handlebars supported
+  """
+  message: String
+
+  """The id of the metric being monitored"""
+  metricId: String!
+
+  """The rule condition"""
+  condition: RuleConditionInput!
+
+  """Notification channel ids"""
+  channels: [String!]
+
+  """Options controlling the generation of events"""
+  options: RuleAlertOptionsInput
+}
+
+input CreateWebhookNotificationChannelInput {
+  hostId: ID!
+  channel: WebhookNotificationChannelUpdate!
+}
+
+input DeleteJobFilterInput {
+  queueId: ID!
+  filterId: ID!
+}
+
+input DeleteJobsByFilterInput {
+  """Search for jobs having this status"""
+  status: JobStatus = completed
+
+  """The job filter expression"""
+  criteria: String
+
+  """
+  The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null
+  """
+  cursor: Int = null
+
+  """The maximum number of jobs to remove per iteration"""
+  count: Int! = 10
+}
+
+input DeleteJobSchemaInput {
+  queueId: ID!
+  jobName: String!
+}
+
+input DeleteMetricInput {
+  queueId: ID!
+  metricId: ID!
+}
+
+input DeleteQueueOptions {
+  checkExistence: Boolean = true
+  checkActivity: Boolean = true
+}
+
+input DeleteQueueStatsInput {
+  queueId: ID!
+
+  """
+  Optional job name to delete stats for. If omitted, all queue stats are erased
+  """
+  jobName: String
+
+  """
+  Optional stats granularity. If omitted, the entire range of data is deleted
+  """
+  granularity: StatsGranularity
+}
+
+input DeleteRepeatableJobByKeyInput {
+  queueId: ID!
+  key: String!
+}
+
+input DeleteRepeatableJobOptions {
+  tz: String
+  endDate: Date
+  cron: String
+  every: String
+}
+
+input DeleteRuleAlertInput {
+  queueId: ID!
+  ruleId: ID!
+  alertId: ID!
+}
+
+input DeleteRuleInput {
+  queueId: ID!
+  ruleId: ID!
+}
+
+input FindJobsInput {
+  """The id of the desired queue"""
+  queueId: ID!
+  offset: Int = 0
+  limit: Int = 20
+  status: JobStatus = completed
+
+  """
+  A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000)
+  """
+  expression: String!
+}
+
+"""Values needed to create a FlowJob"""
+input FlowJobInput {
+  name: String!
+
+  """Prefix of queue"""
+  prefix: String
+
+  """The queue to create the job in"""
+  queueName: String!
+
+  """Data for the job"""
+  data: JSONObject
+  opts: FlowJobOptionsInput
+  children: [FlowJobInput!]
+}
+
+""""""
+input FlowJobOptionsInput {
+  timestamp: Date
+
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required.
+  """
+  priority: Int
+
+  """
+  An amount of milliseconds to wait until this job can be processed. 
+  Note that for accurate delays, worker and producers should have their clocks synchronized.
+  """
+  delay: Int
+
+  """The total number of attempts to try the job until it completes."""
+  attempts: Int
+
+  """Backoff setting for automatic retries if the job fails"""
+  backoff: JSON
+
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
+  lifo: Boolean
+
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
+  timeout: Int
+
+  """
+  Override the job ID - by default, the job ID is a unique integer, but you can use this setting to override it. If you use this option, it is up to you to ensure the jobId is unique. If you attempt to add a job with an id that already exists, it will not be added.
+  """
+  jobId: String
+
+  """
+  If true, removes the job when it successfully completes.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the COMPLETED set.
+  """
+  removeOnComplete: JobRemoveOption
+
+  """
+  If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set.
+  """
+  removeOnFail: JobRemoveOption
+
+  """Rate limiter key to use if rate limiter enabled."""
+  rateLimiterKey: String
+
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
+  stackTraceLimit: Int
+
+  """
+  Limits the size in bytes of the job's data payload (as a JSON serialized string).
+  """
+  sizeLimit: Int
+  repeat: JobRepeatOptionsCronInput
+}
+
+"""Input type for fetching a flow"""
+input FlowNodeGetInput {
+  """The host to search"""
+  host: String!
+
+  """The queue in which the root is found"""
+  queueName: String!
+
+  """Queue prefix"""
+  prefix: String
+
+  """The id of the job that is the root of the tree or subtree"""
+  id: String!
+
+  """The maximum depth to traverse"""
+  depth: Int = 10
+
+  """The maximum number of children to fetch per level"""
+  maxChildren: Int = 20
+}
+
+input GetJobsByIdInput {
+  queueId: ID!
+  ids: [ID!]!
+}
+
+input GetJobsInput {
+  queueId: ID!
+  offset: Int = 0
+  limit: Int = 10
+  status: JobStatus = completed
+  sortOrder: SortOrderEnum = ASC
+}
+
+"""Options for generating histogram bins"""
+input HistogramBinOptionsInput {
+  """Generate a "nice" bin count"""
+  pretty: Boolean = true
+
+  """Optional number of bins to select."""
+  binCount: Int
+
+  """Method used to compute histogram bin count"""
+  binMethod: HistogramBinningMethod = Auto
+
+  """Optional minimum value to include in counts"""
+  minValue: Float
+
+  """Optional maximum value to include in counts"""
+  maxValue: Float
+}
+
+"""Records histogram binning data"""
+input HistogramInput {
+  """An optional job name to filter on"""
+  jobName: String
+
+  """The metric requested"""
+  metric: StatsMetricType = Latency
+
+  """Stats snapshot granularity"""
+  granularity: StatsGranularity!
+
+  """The minimum date to consider"""
+  from: Date!
+
+  """The maximum date to consider"""
+  to: Date!
+  options: HistogramBinOptionsInput
+}
+
+input HostQueuesFilter {
+  """Regex pattern for queue name matching"""
+  search: String
+
+  """Return Queues with these prefixes"""
+  prefixes: [String!]
+
+  """Statuses to filter on"""
+  statuses: [QueueFilterStatus!]
+
+  """Ids of queues to include"""
+  include: [String!]
+
+  """Ids of queues to exclude"""
+  exclude: [String!]
+}
+
+input InferJobSchemaInput {
+  queueId: ID!
+  jobName: String
+}
+
+input JobAddEveryInput {
+  queueId: ID!
+  jobName: ID!
+  data: JSONObject
+  options: JobOptionsInput
+}
+
+input JobDependenciesCountInput {
+  processed: Boolean
+  unprocessed: Boolean
+}
+
+input JobDependenciesOptsInput {
+  processed: JobDependencyCursorInput
+  unprocessed: JobDependencyCursorInput
+}
+
+input JobDependencyCursorInput {
+  cursor: Int
+  count: Int
+}
+
+input JobLocatorInput {
+  queueId: ID!
+  jobId: ID!
+}
+
+input JobOptionsInput {
+  timestamp: Date
+
+  """
+  Ranges from 1 (highest priority) to MAX_INT  (lowest priority). Note that using priorities has a slight impact on performance, so do not use it if not required.
+  """
+  priority: Int
+
+  """
+  An amount of milliseconds to wait until this job can be processed. 
+  Note that for accurate delays, worker and producers should have their clocks synchronized.
+  """
+  delay: Int
+
+  """The total number of attempts to try the job until it completes."""
+  attempts: Int
+
+  """Backoff setting for automatic retries if the job fails"""
+  backoff: JSON
+
+  """
+  if true, adds the job to the right of the queue instead of the left (default false)
+  """
+  lifo: Boolean
+
+  """
+  The number of milliseconds after which the job should be fail with a timeout error [optional]
+  """
+  timeout: Int
+
+  """
+  Override the job ID - by default, the job ID is a unique integer, but you can use this setting to override it. If you use this option, it is up to you to ensure the jobId is unique. If you attempt to add a job with an id that already exists, it will not be added.
+  """
+  jobId: String
+
+  """
+  If true, removes the job when it successfully completes.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the COMPLETED set.
+  """
+  removeOnComplete: JobRemoveOption
+
+  """
+  If true, removes the job when it fails after all attempts.  A number specify the max amount of jobs to keep.  Default behavior is to keep the job in the FAILED set.
+  """
+  removeOnFail: JobRemoveOption
+
+  """Rate limiter key to use if rate limiter enabled."""
+  rateLimiterKey: String
+
+  """
+  Limits the amount of stack trace lines that will be recorded in the stacktrace.
+  """
+  stackTraceLimit: Int
+  parent: JobParentInput
+
+  """
+  Limits the size in bytes of the job's data payload (as a JSON serialized string).
+  """
+  sizeLimit: Int
+  repeat: JobRepeatOptionsCronInput
+}
+
+input JobParentInput {
+  """The id of the job"""
+  id: String!
+
+  """The name of the queue (including prefix) containing the job"""
+  queue: String!
+}
+
+input JobRepeatOptionsCronInput {
+  tz: String
+  endDate: Date
+  limit: Int
+  count: Int
+  prevMillis: Int
+  jobId: String
+  startDate: Date
+  cron: String!
+}
+
+input JobsByFilterIdInput {
+  """The id of the filter"""
+  filterId: ID!
+
+  """
+  The iterator cursor. Iteration starts when the cursor is set to 0, and terminates when the cursor returned by the server is 0
+  """
+  cursor: Int = 0
+
+  """The maximum number of jobs to return per iteration"""
+  count: Int!
+}
+
+input JobSchemaInput {
+  queueId: ID!
+  jobName: String!
+  schema: JSONSchema!
+  defaultOpts: JobOptionsInput
+}
+
+input JobSearchInput {
+  """Search for jobs having this status"""
+  status: JobStatus = completed
+
+  """The job filter expression"""
+  criteria: String
+
+  """
+  The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null
+  """
+  cursor: String = null
+
+  """The maximum number of jobs to return per iteration"""
+  count: Int! = 10
+}
+
+input JobsMemoryAvgInput {
+  """Job status to consider. Defaults to COMPLETED"""
+  status: JobStatus
+
+  """Consider only jobs of this type (optional)"""
+  jobName: String
+
+  """An optional upper limit of jobs to sample for the average"""
+  limit: Int = 50
+}
+
+input MailNotificationChannelUpdate {
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """Emails of notification recipients"""
+  recipients: [EmailAddress]!
+}
+
+input MarkRuleAlertAsReadInput {
+  queueId: ID!
+  ruleId: ID!
+  alertId: ID!
+  isRead: Boolean!
+}
+
+input MetricDataInput {
+  start: Date!
+  end: Date!
+  outlierFilter: OutlierFilterInput
+}
+
+input MetricDataOutliersInput {
+  start: Date!
+  end: Date!
+  method: OutlierDetectionMethod! = Sigma
+
+  """
+  the threshold for outline detection. Defaults depend on the method of detection
+  """
+  threshold: Float
+}
+
+"""Input fields for updating a metric"""
+input MetricInput {
+  """the id of the metric"""
+  id: ID!
+  type: MetricType!
+
+  """The id of the queue to which the metric belongs"""
+  queueId: ID!
+
+  """The name of the metric"""
+  name: String
+
+  """A description of the metric being measured."""
+  description: String
+
+  """The metric sampling interval."""
+  sampleInterval: Int
+
+  """Is the metric active (i.e. is data being collected)."""
+  isActive: Boolean!
+
+  """The metric options"""
+  options: JSONObject
+  aggregator: AggregatorInput
+}
+
+input MetricPercentileDistributionInput {
+  from: Date!
+  to: Date!
+  outlierFilter: OutlierFilterInput
+
+  """The percentiles to get frequencies for"""
+  percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
+}
+
+"""Compute a frequency distribution of a range of metric data."""
+input MetricsHistogramInput {
+  """The minimum date to consider"""
+  from: Date!
+
+  """The maximum date to consider"""
+  to: Date!
+  options: HistogramBinOptionsInput
+  outlierFilter: OutlierFilterInput
+}
+
+input MoveJobToDelayedInput {
+  queueId: ID!
+  jobId: ID!
+
+  """The amount of time to delay execution (in ms)"""
+  delay: Duration = 60000
+}
+
+input MoveJobToFailedInput {
+  queueId: ID!
+  jobId: ID!
+  failedReason: String
+}
+
+"""Input parameters for outlier filtering"""
+input OutlierFilterInput {
+  method: OutlierDetectionMethod!
+
+  """Optional detection threshold"""
+  threshold: Float
+}
+
+input PeakConditionInput {
+  """Standard deviations at which to trigger an error notification."""
+  errorThreshold: Float!
+
+  """Standard deviations at which to trigger an warning notification."""
+  warningThreshold: Float
+
+  """The comparison operator"""
+  operator: RuleOperator!
+
+  """Signal if peak is above the threshold, below the threshold or either"""
+  direction: PeakSignalDirection!
+
+  """
+  the influence (between 0 and 1) of new signals on the mean and standard deviation where 1 is normal influence, 0.5 is half
+  """
+  influence: Float
+
+  """
+  The lag of the moving window (in milliseconds).  For example, a lag of 5000 will use the last 5 seconds of observationsto smooth the data.
+  """
+  lag: Duration
+}
+
+"""Records histogram binning data"""
+input PercentileDistributionInput {
+  """An optional job name to filter on"""
+  jobName: String
+
+  """The metric requested"""
+  metric: StatsMetricType = Latency
+
+  """Stats snapshot granularity"""
+  granularity: StatsGranularity!
+
+  """An expression specifying the range to query e.g. yesterday, last_7days"""
+  range: String!
+
+  """The percentiles to get frequencies for"""
+  percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
+}
+
+input QueueCleanInput {
+  id: ID!
+
+  """Grace period interval (ms). Jobs older this this will be removed."""
+  grace: Duration = 0
+
+  """Status of the jobs to clean"""
+  status: JobStatus = completed
+
+  """
+  limit Maximum amount of jobs to clean per call. If not provided will clean all matching jobs.
+  """
+  limit: Int = 0
+}
+
+input QueueJobFilterInput {
+  queueId: ID!
+  fieldId: ID!
+}
+
+input QueueJobsByIdInput {
+  ids: [ID!]!
+}
+
+input QueueJobSchemaInput {
+  queueId: ID!
+  jobName: String!
+}
+
+input QueueJobsInput {
+  offset: Int = 0
+  limit: Int = 10
+  status: JobStatus = completed
+  sortOrder: SortOrderEnum = ASC
+}
+
+input QueueJobUpdatesFilterInput {
+  queueId: ID!
+
+  """The job names to filter for"""
+  names: [String!]
+
+  """Only return updates for jobs with these states"""
+  states: [JobStatus]
+}
+
+"""Options for retrieving queue rule alerts"""
+input QueueRuleAlertsInput {
+  """Consider alerts starting on or after this date"""
+  startDate: Date
+
+  """Consider alerts ending on or before this date"""
+  endDate: Date
+
+  """The sort order of the results. Alerts are sorted by creation date."""
+  sortOrder: SortOrderEnum = ASC
+
+  """The maximum number of alerts to return"""
+  limit: Int!
+}
+
+input RefreshMetricDataInput {
+  metricId: String!
+  start: Date
+  end: Date
+
+  """An expression specifying the range to query e.g. yesterday, last_7days"""
+  range: String
+}
+
+input RegisterQueueInput {
+  hostId: ID!
+  prefix: String = "bull"
+
+  """the queue names"""
+  name: String!
+  checkExists: Boolean = true
+  trackMetrics: Boolean = false
+}
+
+input RepeatableJobsInput {
+  offset: Int = 0
+  limit: Int = 20
+  order: SortOrderEnum = DESC
+}
+
+input RuleAlertOptionsInput {
+  """
+  Wait a certain duration between first encountering a failure and triggering an alert
+  """
+  triggerDelay: Duration
+
+  """The minimum number of violations before an alert can be raised"""
+  failureThreshold: Int
+
+  """
+  Optional number of consecutive successful method executions to close then alert. Default 1
+  """
+  successThreshold: Int
+
+  """
+  The max number of alerts to receive per event trigger in case the condition is met.
+   In this case the "event" is a single period between the rule VIOLATION and RESET states.
+  """
+  maxAlertsPerEvent: Int
+
+  """
+  How long an triggered rule must be without failures before resetting it to NORMAL. In conjunction with "alertOnReset", this can be used to prevent a possible storm of notifications when a rule condition passes and fails in rapid succession ("flapping")
+  """
+  recoveryWindow: Duration
+
+  """If specified, the minimum time between alerts for the same incident"""
+  notifyInterval: Duration
+
+  """
+  Raise an alert after an event trigger when the situation returns to normal
+  """
+  alertOnReset: Boolean
+}
+
+input RuleAlertsInput {
+  start: Int = 0
+  end: Int = 10
+  sortOrder: SortOrderEnum = DESC
+}
+
+input RuleConditionInput {
+  type: RuleType!
+  changeCondition: ChangeConditionInput
+  peakCondition: PeakConditionInput
+  thresholdCondition: ThresholdConditionInput
+}
+
+"""Information needed to update a rule"""
+input RuleUpdateInput {
+  """The id of the queue to which the rule belongs"""
+  queueId: ID!
+
+  """The names of the rule"""
+  name: String
+
+  """A helpful description of the rule"""
+  description: String
+  severity: Severity
+
+  """Is this rule active or not"""
+  isActive: Boolean
+
+  """Optional data passed on to alerts"""
+  payload: JSONObject
+
+  """
+  Optional text for message when an alert is raised. Markdown and handlebars supported
+  """
+  message: String
+
+  """The id of the metric being monitored"""
+  metricId: String
+
+  """The rule condition"""
+  condition: RuleConditionInput!
+
+  """Notification channel ids"""
+  channels: [String!]
+
+  """Options controlling the generation of events"""
+  options: RuleAlertOptionsInput
+
+  """The id of the the rule to update"""
+  id: ID!
+}
+
+input SlackNotificationChannelAddInput {
+  hostId: ID!
+  channel: SlackNotificationChannelUpdate!
+}
+
+input SlackNotificationChannelUpdate {
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """The slack webhook to post messages to"""
+  webhook: URL!
+
+  """The slack webhook to post messages to"""
+  channel: String
+
+  """A valid slack auth token. Not needed if a webhook is specified"""
+  token: String
+}
+
+"""Queue stats filter to getting latest snapshot."""
+input StatsLatestInput {
+  """An optional job name to filter on"""
+  jobName: String
+
+  """The metric requested"""
+  metric: StatsMetricType = Latency
+
+  """Stats snapshot granularity"""
+  granularity: StatsGranularity = Minute
+}
+
+"""Queue stats filter."""
+input StatsQueryInput {
+  """An optional job name to filter on"""
+  jobName: String
+
+  """The metric requested"""
+  metric: StatsMetricType = Latency
+
+  """Stats snapshot granularity"""
+  granularity: StatsGranularity!
+
+  """An expression specifying the range to query e.g. yesterday, last_7days"""
+  range: String!
+}
+
+"""Queue stats rates filter."""
+input StatsRateQueryInput {
+  """An optional job name to filter on"""
+  jobName: String
+
+  """Stats snapshot granularity"""
+  granularity: StatsGranularity!
+
+  """An expression specifying the range to query e.g. yesterday, last_7days"""
+  range: String!
+}
+
+input StatsSpanInput {
+  """The host/queue to query"""
+  id: ID!
+  jobName: String
+  granularity: StatsGranularity
+}
+
+"""Filtering options for stats subscriptions."""
+input StatsUpdatedSubscriptionFilter {
+  """The id of the queue or host to subscribe to"""
+  id: ID!
+
+  """An optional job name for filtering"""
+  jobName: String
+
+  """The metric requested"""
+  metric: StatsMetricType
+
+  """Data granularity"""
+  granularity: StatsGranularity
+}
+
+input ThresholdConditionInput {
+  """The value needed to trigger an error notification"""
+  errorThreshold: Float!
+
+  """The value needed to trigger an warning notification"""
+  warningThreshold: Float
+
+  """The comparison operator"""
+  operator: RuleOperator!
+}
+
+input UpdateJobFilterInput {
+  queueId: ID!
+  filterId: ID!
+  name: String
+  status: JobStatus
+  expression: String!
+}
+
+input UpdateJobInput {
+  queueId: String!
+  jobId: String!
+  data: JSONObject!
+}
+
+input UpdateMailNotificationChannelInput {
+  hostId: ID!
+  channel: MailNotificationChannelUpdate!
+}
+
+input UpdateSlackNotificationChannelInput {
+  hostId: ID!
+  channel: SlackNotificationChannelUpdate!
+}
+
+input UpdateWebhookNotificationChannelInput {
+  hostId: ID!
+  channel: WebhookNotificationChannelUpdate!
+}
+
+input ValidateJobDataInput {
+  queueId: ID!
+  jobName: String!
+  data: JSONObject
+  opts: JobOptionsInput
+}
+
+input WebhookNotificationChannelUpdate {
+  """The type of the channel, e.g. slack, email, webhook etc"""
+  type: String!
+
+  """The name of the channel"""
+  name: String!
+
+  """Is the channel enabled ?"""
+  enabled: Boolean!
+
+  """Url to send data to"""
+  url: URL!
+
+  """The HTTP method to use"""
+  method: HttpMethodEnum = POST
+
+  """Optional request headers"""
+  headers: JSONObject
+
+  """
+  Milliseconds to wait for the server to end the response before aborting the client. By default, there is no timeout.
+  """
+  timeout: Duration
+
+  """The number of times to retry the client"""
+  retry: Int
+
+  """Defines if redirect responses should be followed automatically."""
+  followRedirect: Boolean
+
+  """
+  Set this to true to allow sending body for the GET method. This option is only meant to interact with non-compliant servers when you have no other choice.
+  """
+  allowGetBody: Boolean
+
+  """Optional success http status codes. Defaults to http codes 200 - 206"""
+  httpSuccessCodes: [Int!]
+}

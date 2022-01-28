@@ -6,3 +6,4 @@ export * from './job-filters';
 export * from './job';
 export * from './queue';
 export * from './job-options-schema';
+export * from './data-search';

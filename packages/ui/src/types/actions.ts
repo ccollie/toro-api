@@ -2,6 +2,7 @@ import type {
   BulkStatusItem,
   DiscoverQueuesPayload,
   JobCounts,
+  Job,
   JobFragment,
   JobLogs,
   JobSchema,

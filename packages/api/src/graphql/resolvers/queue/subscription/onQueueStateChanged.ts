@@ -1,9 +1,15 @@
 import { EZContext } from 'graphql-ez';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { GraphQLFieldResolver } from 'graphql';
-import { QueueEventsEnum } from '@alpen/core';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
+
+export enum QueueEventsEnum {
+  PAUSED = 'paused',
+  RESUMED = 'resumed',
+  DRAINED = 'drained',
+  CLEANED = 'cleaned',
+}
 
 const EventNames = Object.values(QueueEventsEnum);
 

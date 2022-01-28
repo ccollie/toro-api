@@ -60,7 +60,7 @@ function JobRow(props: JobRowProps) {
         <Cell column={column} job={job} key={column.key} />
       ))}
     </tr>
-  )
+  );
 }
 
 const InnerTableView: React.VFC<TableProps> = (props) => {
@@ -126,7 +126,7 @@ const InnerTableView: React.VFC<TableProps> = (props) => {
       </table>
     </TableWrapper>
   );
-}
+};
 
 export const TableView = React.memo(InnerTableView);
 export default TableView;

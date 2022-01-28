@@ -1,11 +1,12 @@
 import { Queue } from 'bullmq';
-import { JobCounts, JobCountStates } from '@alpen/core';
+import type { JobType } from 'bullmq';
+import { JobCounts } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export async function getJobCounts(
   context: EZContext,
   queue: Queue,
-  ...states: JobCountStates[]
+  ...states: JobType[]
 ): Promise<JobCounts> {
   const key = {
     queue,
@@ -17,7 +18,7 @@ export async function getJobCounts(
 export async function getJobCountByType(
   context: EZContext,
   queue: Queue,
-  ...states: JobCountStates[]
+  ...states: JobType[]
 ): Promise<number> {
   const counts = await getJobCounts(context, queue, ...states);
   return states.reduce((acc, state) => {

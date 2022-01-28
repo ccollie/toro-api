@@ -92,7 +92,7 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
             This action cannot be undone !.
           </Text>
         ),
-        labels: { confirm: 'Delete Job', cancel: "Cancel" },
+        labels: { confirm: 'Delete Job', cancel: 'Cancel' },
         confirmProps: { color: 'red' },
         onClose: () => {
           resolve();
@@ -101,8 +101,8 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
           processItems(action, fn).then(resolve).catch(reject);
         },
       });
-    })
-  }
+    });
+  };
 
   function wrapHandler(action: ActionType, fn: JobHandlerFn) {
     return useCallback(async () => {

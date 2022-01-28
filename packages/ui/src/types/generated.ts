@@ -462,6 +462,16 @@ export const ErrorLevel = {
 } as const;
 
 export type ErrorLevel = typeof ErrorLevel[keyof typeof ErrorLevel];
+export type FindJobsInput = {
+  /** A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000) */
+  expression: Scalars['String'];
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  /** The id of the desired queue */
+  queueId: Scalars['ID'];
+  status?: InputMaybe<JobStatus>;
+};
+
 /** Values needed to create a FlowJob */
 export type FlowJobInput = {
   children?: InputMaybe<Array<FlowJobInput>>;
@@ -521,6 +531,19 @@ export type FlowNodeGetInput = {
   prefix?: InputMaybe<Scalars['String']>;
   /** The queue in which the root is found */
   queueName: Scalars['String'];
+};
+
+export type GetJobsByIdInput = {
+  ids: Array<Scalars['ID']>;
+  queueId: Scalars['ID'];
+};
+
+export type GetJobsInput = {
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  queueId: Scalars['ID'];
+  sortOrder?: InputMaybe<SortOrderEnum>;
+  status?: InputMaybe<JobStatus>;
 };
 
 export type HistogramBin = {
@@ -918,7 +941,6 @@ export const JobStatus = {
   Delayed: 'delayed',
   Failed: 'failed',
   Paused: 'paused',
-  Unknown: 'unknown',
   Waiting: 'waiting',
   WaitingChildren: 'waiting_children',
 } as const;
@@ -1796,10 +1818,13 @@ export type Query = {
   availableMetrics: Array<MetricInfo>;
   /** Returns the JSON Schema for the BullMq BulkJobOptions type */
   bulkJobOptionsSchema: Scalars['JSONSchema'];
+  findJobs: Array<Job>;
   /** Find a queue by name */
   findQueue?: Maybe<Queue>;
   /** Load a flow */
   flow?: Maybe<JobNode>;
+  getJobs: Array<Job>;
+  getJobsById: Array<Job>;
   /** Get a Host by id */
   host?: Maybe<QueueHost>;
   /** Get a Host by name */
@@ -1828,6 +1853,10 @@ export type Query = {
   validateJobOptions: ValidateJobOptionsResult;
 };
 
+export type QueryFindJobsArgs = {
+  input: FindJobsInput;
+};
+
 export type QueryFindQueueArgs = {
   hostName: Scalars['String'];
   prefix?: InputMaybe<Scalars['String']>;
@@ -1836,6 +1865,14 @@ export type QueryFindQueueArgs = {
 
 export type QueryFlowArgs = {
   input: FlowNodeGetInput;
+};
+
+export type QueryGetJobsArgs = {
+  input?: InputMaybe<GetJobsInput>;
+};
+
+export type QueryGetJobsByIdArgs = {
+  input?: InputMaybe<GetJobsByIdInput>;
 };
 
 export type QueryHostArgs = {
@@ -2730,8 +2767,6 @@ export type Subscription = {
   obJobCompleted?: Maybe<OnJobStateChangePayload>;
   /** Returns job failed events */
   obJobFailed?: Maybe<OnJobStateChangePayload>;
-  /** Returns job stalled events */
-  obJobStalled?: Maybe<OnJobStateChangePayload>;
   /** Subscribe for updates in host statistical snapshots */
   onHostStatsUpdated: StatsSnapshot;
   onJobAdded: OnJobAddedPayload;
@@ -2770,11 +2805,6 @@ export type SubscriptionObJobCompletedArgs = {
 };
 
 export type SubscriptionObJobFailedArgs = {
-  jobId: Scalars['String'];
-  queueId: Scalars['String'];
-};
-
-export type SubscriptionObJobStalledArgs = {
   jobId: Scalars['String'];
   queueId: Scalars['String'];
 };
@@ -3081,24 +3111,7 @@ export type HostsPageDataQuery = {
     name: string;
     queueCount: number;
     workerCount: number;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
+    redis: { __typename?: 'RedisInfo' } & RedisStatsFragment;
     jobCounts: {
       __typename?: 'JobCounts';
       active?: number | null;
@@ -3122,69 +3135,13 @@ export type HostsPageDataQuery = {
       m5Rate: number;
       m15Rate: number;
     };
-    stats: Array<{
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    }>;
-    statsAggregate?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
-    lastStatsSnapshot?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
+    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
+    statsAggregate?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
+    lastStatsSnapshot?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
   }>;
 };
 
@@ -3201,24 +3158,7 @@ export type HostOverviewQuery = {
     id: string;
     queueCount: number;
     workerCount: number;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
+    redis: { __typename?: 'RedisInfo' } & RedisStatsFragment;
     jobCounts: {
       __typename?: 'JobCounts';
       active?: number | null;
@@ -3242,69 +3182,13 @@ export type HostOverviewQuery = {
       m5Rate: number;
       m15Rate: number;
     };
-    stats: Array<{
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    }>;
-    statsAggregate?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
-    lastStatsSnapshot?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
+    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
+    statsAggregate?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
+    lastStatsSnapshot?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
   } | null;
 };
 
@@ -3341,59 +3225,43 @@ export type HostsAndQueuesQuery = {
     name: string;
     description?: string | null;
     uri: string;
-    queues: Array<{
-      __typename?: 'Queue';
-      id: string;
-      name: string;
-      host: string;
-      hostId: string;
-      prefix: string;
-      isPaused: boolean;
-      isReadonly: boolean;
-      repeatableJobCount: number;
-      workerCount: number;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
-    }>;
+    queues: Array<{ __typename?: 'Queue' } & QueueFragment>;
   }>;
+};
+
+export type RedisStatsFragment = {
+  __typename?: 'RedisInfo';
+  redis_version: string;
+  uptime_in_seconds: number;
+  uptime_in_days: number;
+  connected_clients: number;
+  blocked_clients: number;
+  total_system_memory: number;
+  used_memory: number;
+  used_memory_peak: number;
+  used_memory_lua: number;
+  used_cpu_sys: number;
+  maxmemory: number;
+  number_of_cached_scripts: number;
+  instantaneous_ops_per_sec: number;
+  mem_fragmentation_ratio?: number | null;
+  role: string;
+};
+
+export type HostFragment = {
+  __typename?: 'QueueHost';
+  id: string;
+  name: string;
+  description?: string | null;
+  uri: string;
+  redis: { __typename?: 'RedisInfo' } & RedisStatsFragment;
 };
 
 export type GetAllHostsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type GetAllHostsQuery = {
   __typename?: 'Query';
-  hosts: Array<{
-    __typename?: 'QueueHost';
-    id: string;
-    name: string;
-    description?: string | null;
-    uri: string;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
-  }>;
+  hosts: Array<{ __typename?: 'QueueHost' } & HostFragment>;
 };
 
 export type GetHostsAndQueuesQueryVariables = Exact<{ [key: string]: never }>;
@@ -3406,45 +3274,8 @@ export type GetHostsAndQueuesQuery = {
     name: string;
     description?: string | null;
     uri: string;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
-    queues: Array<{
-      __typename?: 'Queue';
-      id: string;
-      name: string;
-      host: string;
-      hostId: string;
-      prefix: string;
-      isPaused: boolean;
-      isReadonly: boolean;
-      repeatableJobCount: number;
-      workerCount: number;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
-    }>;
+    redis: { __typename?: 'RedisInfo' } & RedisStatsFragment;
+    queues: Array<{ __typename?: 'Queue' } & QueueFragment>;
   }>;
 };
 
@@ -3454,31 +3285,7 @@ export type GetHostByIdQueryVariables = Exact<{
 
 export type GetHostByIdQuery = {
   __typename?: 'Query';
-  host?: {
-    __typename?: 'QueueHost';
-    id: string;
-    name: string;
-    description?: string | null;
-    uri: string;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
-  } | null;
+  host?: ({ __typename?: 'QueueHost' } & HostFragment) | null;
 };
 
 export type GetHostByIdFullQueryVariables = Exact<{
@@ -3493,45 +3300,8 @@ export type GetHostByIdFullQuery = {
     name: string;
     description?: string | null;
     uri: string;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
-    queues: Array<{
-      __typename?: 'Queue';
-      id: string;
-      name: string;
-      host: string;
-      hostId: string;
-      prefix: string;
-      isPaused: boolean;
-      isReadonly: boolean;
-      repeatableJobCount: number;
-      workerCount: number;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
-    }>;
+    redis: { __typename?: 'RedisInfo' } & RedisStatsFragment;
+    queues: Array<{ __typename?: 'Queue' } & QueueFragment>;
   } | null;
 };
 
@@ -3546,27 +3316,7 @@ export type GetHostQueuesQuery = {
     id: string;
     name: string;
     description?: string | null;
-    queues: Array<{
-      __typename?: 'Queue';
-      id: string;
-      name: string;
-      host: string;
-      hostId: string;
-      prefix: string;
-      isPaused: boolean;
-      isReadonly: boolean;
-      repeatableJobCount: number;
-      workerCount: number;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
-    }>;
+    queues: Array<{ __typename?: 'Queue' } & QueueFragment>;
   } | null;
 };
 
@@ -3583,100 +3333,37 @@ export type HostQueuesQuery = {
     id: string;
     name: string;
     description?: string | null;
-    queues: Array<{
-      __typename?: 'Queue';
-      id: string;
-      name: string;
-      isPaused: boolean;
-      workerCount: number;
-      ruleAlertCount: number;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
-      throughput: {
-        __typename?: 'Meter';
-        count: number;
-        m1Rate: number;
-        m5Rate: number;
-        m15Rate: number;
-      };
-      errorRate: {
-        __typename?: 'Meter';
-        count: number;
-        m1Rate: number;
-        m5Rate: number;
-        m15Rate: number;
-      };
-      stats: Array<{
-        __typename?: 'StatsSnapshot';
-        count: number;
-        failed: number;
-        completed: number;
-        startTime: unknown;
-        endTime: unknown;
-        stddev: number;
-        mean: number;
-        min: number;
-        max: number;
-        median: number;
-        p90: number;
-        p95: number;
-        p99: number;
-        p995: number;
-        meanRate: number;
-        m1Rate: number;
-        m5Rate: number;
-        m15Rate: number;
-      }>;
-      statsAggregate?: {
-        __typename?: 'StatsSnapshot';
-        count: number;
-        failed: number;
-        completed: number;
-        startTime: unknown;
-        endTime: unknown;
-        stddev: number;
-        mean: number;
-        min: number;
-        max: number;
-        median: number;
-        p90: number;
-        p95: number;
-        p99: number;
-        p995: number;
-        meanRate: number;
-        m1Rate: number;
-        m5Rate: number;
-        m15Rate: number;
-      } | null;
-      lastStatsSnapshot?: {
-        __typename?: 'StatsSnapshot';
-        count: number;
-        failed: number;
-        completed: number;
-        startTime: unknown;
-        endTime: unknown;
-        stddev: number;
-        mean: number;
-        min: number;
-        max: number;
-        median: number;
-        p90: number;
-        p95: number;
-        p99: number;
-        p995: number;
-        meanRate: number;
-        m1Rate: number;
-        m5Rate: number;
-        m15Rate: number;
-      } | null;
-    }>;
+    queues: Array<
+      {
+        __typename?: 'Queue';
+        id: string;
+        name: string;
+        isPaused: boolean;
+        workerCount: number;
+        ruleAlertCount: number;
+        throughput: {
+          __typename?: 'Meter';
+          count: number;
+          m1Rate: number;
+          m5Rate: number;
+          m15Rate: number;
+        };
+        errorRate: {
+          __typename?: 'Meter';
+          count: number;
+          m1Rate: number;
+          m5Rate: number;
+          m15Rate: number;
+        };
+        stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
+        statsAggregate?:
+          | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+          | null;
+        lastStatsSnapshot?:
+          | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+          | null;
+      } & JobCountsFragment
+    >;
   } | null;
 };
 
@@ -3689,24 +3376,7 @@ export type GetRedisStatsQuery = {
   host?: {
     __typename?: 'QueueHost';
     id: string;
-    redis: {
-      __typename?: 'RedisInfo';
-      redis_version: string;
-      uptime_in_seconds: number;
-      uptime_in_days: number;
-      connected_clients: number;
-      blocked_clients: number;
-      total_system_memory: number;
-      used_memory: number;
-      used_memory_peak: number;
-      used_memory_lua: number;
-      used_cpu_sys: number;
-      maxmemory: number;
-      number_of_cached_scripts: number;
-      instantaneous_ops_per_sec: number;
-      mem_fragmentation_ratio?: number | null;
-      role: string;
-    };
+    redis: { __typename?: 'RedisInfo' } & RedisStatsFragment;
   } | null;
 };
 
@@ -3737,27 +3407,7 @@ export type RegisterQueueMutationVariables = Exact<{
 
 export type RegisterQueueMutation = {
   __typename?: 'Mutation';
-  registerQueue: {
-    __typename: 'Queue';
-    id: string;
-    name: string;
-    host: string;
-    hostId: string;
-    prefix: string;
-    isPaused: boolean;
-    isReadonly: boolean;
-    repeatableJobCount: number;
-    workerCount: number;
-    jobCounts: {
-      __typename?: 'JobCounts';
-      active?: number | null;
-      failed?: number | null;
-      paused?: number | null;
-      completed?: number | null;
-      delayed?: number | null;
-      waiting?: number | null;
-    };
-  };
+  registerQueue: { __typename: 'Queue' } & QueueFragment;
 };
 
 export type UnregisterQueueMutationVariables = Exact<{
@@ -3773,6 +3423,67 @@ export type UnregisterQueueMutation = {
   };
 };
 
+export type JobRepeatOptionsFragment = {
+  __typename?: 'JobRepeatOptions';
+  cron?: string | null;
+  tz?: string | null;
+  startDate?: unknown | null;
+  endDate?: unknown | null;
+  limit?: number | null;
+  every?: string | null;
+  jobId?: string | null;
+  count?: number | null;
+};
+
+export type JobOptionsFragment = {
+  __typename?: 'JobOptions';
+  timestamp?: unknown | null;
+  priority?: number | null;
+  delay?: number | null;
+  attempts?: number | null;
+  backoff?: unknown | null;
+  lifo?: boolean | null;
+  timeout?: number | null;
+  jobId?: string | null;
+  removeOnComplete?: boolean | number | null;
+  removeOnFail?: boolean | number | null;
+  stackTraceLimit?: number | null;
+  repeat?:
+    | ({ __typename?: 'JobRepeatOptions' } & JobRepeatOptionsFragment)
+    | null;
+};
+
+export type JobFragment = {
+  __typename?: 'Job';
+  id: string;
+  queueId: string;
+  timestamp: unknown;
+  state: JobStatus;
+  name: string;
+  data: { [key: string]: unknown };
+  delay: number;
+  progress?: string | number | Record<string, unknown> | null;
+  attemptsMade: number;
+  processedOn?: unknown | null;
+  finishedOn?: unknown | null;
+  failedReason?: unknown | null;
+  stacktrace: Array<string>;
+  returnvalue?: unknown | null;
+  opts: { __typename?: 'JobOptions' } & JobOptionsFragment;
+};
+
+export type RepeatableJobFragment = {
+  __typename?: 'RepeatableJob';
+  key: string;
+  id?: string | null;
+  name?: string | null;
+  endDate?: unknown | null;
+  tz?: string | null;
+  cron?: string | null;
+  next?: unknown | null;
+  descr?: string | null;
+};
+
 export type GetJobsByFilterQueryVariables = Exact<{
   id: Scalars['ID'];
   status?: InputMaybe<JobStatus>;
@@ -3783,67 +3494,19 @@ export type GetJobsByFilterQueryVariables = Exact<{
 
 export type GetJobsByFilterQuery = {
   __typename?: 'Query';
-  queue?: {
-    __typename?: 'Queue';
-    id: string;
-    jobSearch: {
-      __typename?: 'JobSearchPayload';
-      cursor?: string | null;
-      total: number;
-      current: number;
-      jobs: Array<{
-        __typename?: 'Job';
+  queue?:
+    | ({
+        __typename?: 'Queue';
         id: string;
-        queueId: string;
-        timestamp: unknown;
-        state: JobStatus;
-        name: string;
-        data: { [key: string]: unknown };
-        delay: number;
-        progress?: string | number | Record<string, unknown> | null;
-        attemptsMade: number;
-        processedOn?: unknown | null;
-        finishedOn?: unknown | null;
-        failedReason?: unknown | null;
-        stacktrace: Array<string>;
-        returnvalue?: unknown | null;
-        opts: {
-          __typename?: 'JobOptions';
-          timestamp?: unknown | null;
-          priority?: number | null;
-          delay?: number | null;
-          attempts?: number | null;
-          backoff?: unknown | null;
-          lifo?: boolean | null;
-          timeout?: number | null;
-          jobId?: string | null;
-          removeOnComplete?: boolean | number | null;
-          removeOnFail?: boolean | number | null;
-          stackTraceLimit?: number | null;
-          repeat?: {
-            __typename?: 'JobRepeatOptions';
-            cron?: string | null;
-            tz?: string | null;
-            startDate?: unknown | null;
-            endDate?: unknown | null;
-            limit?: number | null;
-            every?: string | null;
-            jobId?: string | null;
-            count?: number | null;
-          } | null;
+        jobSearch: {
+          __typename?: 'JobSearchPayload';
+          cursor?: string | null;
+          total: number;
+          current: number;
+          jobs: Array<{ __typename?: 'Job' } & JobFragment>;
         };
-      }>;
-    };
-    jobCounts: {
-      __typename?: 'JobCounts';
-      active?: number | null;
-      failed?: number | null;
-      paused?: number | null;
-      completed?: number | null;
-      delayed?: number | null;
-      waiting?: number | null;
-    };
-  } | null;
+      } & JobCountsFragment)
+    | null;
 };
 
 export type GetJobFiltersQueryVariables = Exact<{
@@ -3914,19 +3577,7 @@ export type GetQueueJobCountsQueryVariables = Exact<{
 
 export type GetQueueJobCountsQuery = {
   __typename?: 'Query';
-  queue?: {
-    __typename?: 'Queue';
-    id: string;
-    jobCounts: {
-      __typename?: 'JobCounts';
-      active?: number | null;
-      failed?: number | null;
-      paused?: number | null;
-      completed?: number | null;
-      delayed?: number | null;
-      waiting?: number | null;
-    };
-  } | null;
+  queue?: ({ __typename?: 'Queue'; id: string } & JobCountsFragment) | null;
 };
 
 export type GetQueueJobsQueryVariables = Exact<{
@@ -3939,61 +3590,13 @@ export type GetQueueJobsQueryVariables = Exact<{
 
 export type GetQueueJobsQuery = {
   __typename?: 'Query';
-  queue?: {
-    __typename?: 'Queue';
-    id: string;
-    jobs: Array<{
-      __typename?: 'Job';
-      id: string;
-      queueId: string;
-      timestamp: unknown;
-      state: JobStatus;
-      name: string;
-      data: { [key: string]: unknown };
-      delay: number;
-      progress?: string | number | Record<string, unknown> | null;
-      attemptsMade: number;
-      processedOn?: unknown | null;
-      finishedOn?: unknown | null;
-      failedReason?: unknown | null;
-      stacktrace: Array<string>;
-      returnvalue?: unknown | null;
-      opts: {
-        __typename?: 'JobOptions';
-        timestamp?: unknown | null;
-        priority?: number | null;
-        delay?: number | null;
-        attempts?: number | null;
-        backoff?: unknown | null;
-        lifo?: boolean | null;
-        timeout?: number | null;
-        jobId?: string | null;
-        removeOnComplete?: boolean | number | null;
-        removeOnFail?: boolean | number | null;
-        stackTraceLimit?: number | null;
-        repeat?: {
-          __typename?: 'JobRepeatOptions';
-          cron?: string | null;
-          tz?: string | null;
-          startDate?: unknown | null;
-          endDate?: unknown | null;
-          limit?: number | null;
-          every?: string | null;
-          jobId?: string | null;
-          count?: number | null;
-        } | null;
-      };
-    }>;
-    jobCounts: {
-      __typename?: 'JobCounts';
-      active?: number | null;
-      failed?: number | null;
-      paused?: number | null;
-      completed?: number | null;
-      delayed?: number | null;
-      waiting?: number | null;
-    };
-  } | null;
+  queue?:
+    | ({
+        __typename?: 'Queue';
+        id: string;
+        jobs: Array<{ __typename?: 'Job' } & JobFragment>;
+      } & JobCountsFragment)
+    | null;
 };
 
 export type GetRepeatableJobsQueryVariables = Exact<{
@@ -4009,17 +3612,9 @@ export type GetRepeatableJobsQuery = {
     __typename?: 'Queue';
     id: string;
     repeatableJobCount: number;
-    repeatableJobs: Array<{
-      __typename?: 'RepeatableJob';
-      key: string;
-      id?: string | null;
-      name?: string | null;
-      endDate?: unknown | null;
-      tz?: string | null;
-      cron?: string | null;
-      next?: unknown | null;
-      descr?: string | null;
-    }>;
+    repeatableJobs: Array<
+      { __typename?: 'RepeatableJob' } & RepeatableJobFragment
+    >;
   } | null;
 };
 
@@ -4030,48 +3625,7 @@ export type GetJobByIdQueryVariables = Exact<{
 
 export type GetJobByIdQuery = {
   __typename?: 'Query';
-  job: {
-    __typename?: 'Job';
-    id: string;
-    queueId: string;
-    timestamp: unknown;
-    state: JobStatus;
-    name: string;
-    data: { [key: string]: unknown };
-    delay: number;
-    progress?: string | number | Record<string, unknown> | null;
-    attemptsMade: number;
-    processedOn?: unknown | null;
-    finishedOn?: unknown | null;
-    failedReason?: unknown | null;
-    stacktrace: Array<string>;
-    returnvalue?: unknown | null;
-    opts: {
-      __typename?: 'JobOptions';
-      timestamp?: unknown | null;
-      priority?: number | null;
-      delay?: number | null;
-      attempts?: number | null;
-      backoff?: unknown | null;
-      lifo?: boolean | null;
-      timeout?: number | null;
-      jobId?: string | null;
-      removeOnComplete?: boolean | number | null;
-      removeOnFail?: boolean | number | null;
-      stackTraceLimit?: number | null;
-      repeat?: {
-        __typename?: 'JobRepeatOptions';
-        cron?: string | null;
-        tz?: string | null;
-        startDate?: unknown | null;
-        endDate?: unknown | null;
-        limit?: number | null;
-        every?: string | null;
-        jobId?: string | null;
-        count?: number | null;
-      } | null;
-    };
-  };
+  job: { __typename?: 'Job' } & JobFragment;
 };
 
 export type GetJobLogsQueryVariables = Exact<{
@@ -4098,48 +3652,7 @@ export type CreateJobMutationVariables = Exact<{
 
 export type CreateJobMutation = {
   __typename?: 'Mutation';
-  createJob: {
-    __typename?: 'Job';
-    id: string;
-    queueId: string;
-    timestamp: unknown;
-    state: JobStatus;
-    name: string;
-    data: { [key: string]: unknown };
-    delay: number;
-    progress?: string | number | Record<string, unknown> | null;
-    attemptsMade: number;
-    processedOn?: unknown | null;
-    finishedOn?: unknown | null;
-    failedReason?: unknown | null;
-    stacktrace: Array<string>;
-    returnvalue?: unknown | null;
-    opts: {
-      __typename?: 'JobOptions';
-      timestamp?: unknown | null;
-      priority?: number | null;
-      delay?: number | null;
-      attempts?: number | null;
-      backoff?: unknown | null;
-      lifo?: boolean | null;
-      timeout?: number | null;
-      jobId?: string | null;
-      removeOnComplete?: boolean | number | null;
-      removeOnFail?: boolean | number | null;
-      stackTraceLimit?: number | null;
-      repeat?: {
-        __typename?: 'JobRepeatOptions';
-        cron?: string | null;
-        tz?: string | null;
-        startDate?: unknown | null;
-        endDate?: unknown | null;
-        limit?: number | null;
-        every?: string | null;
-        jobId?: string | null;
-        count?: number | null;
-      } | null;
-    };
-  };
+  createJob: { __typename?: 'Job' } & JobFragment;
 };
 
 export type DeleteJobMutationVariables = Exact<{
@@ -4287,33 +3800,55 @@ export type PromoteBulkJobsMutation = {
   } | null;
 };
 
+export type JobCountsFragment = {
+  __typename?: 'Queue';
+  jobCounts: {
+    __typename?: 'JobCounts';
+    active?: number | null;
+    failed?: number | null;
+    paused?: number | null;
+    completed?: number | null;
+    delayed?: number | null;
+    waiting?: number | null;
+  };
+};
+
+export type QueueFragment = {
+  __typename?: 'Queue';
+  id: string;
+  name: string;
+  host: string;
+  hostId: string;
+  prefix: string;
+  isPaused: boolean;
+  isReadonly: boolean;
+  repeatableJobCount: number;
+  workerCount: number;
+} & JobCountsFragment;
+
+export type QueueWorkersFragment = {
+  __typename?: 'Queue';
+  workers: Array<{
+    __typename?: 'QueueWorker';
+    id?: string | null;
+    name?: string | null;
+    addr: string;
+    age: number;
+    started?: number | null;
+    idle: number;
+    role?: string | null;
+    db: number;
+    omem: number;
+  }>;
+};
+
 export type GetQueueByIdQueryVariables = Exact<{
   id: Scalars['ID'];
 }>;
 
 export type GetQueueByIdQuery = {
   __typename?: 'Query';
-  queue?: {
-    __typename?: 'Queue';
-    id: string;
-    name: string;
-    host: string;
-    hostId: string;
-    prefix: string;
-    isPaused: boolean;
-    isReadonly: boolean;
-    repeatableJobCount: number;
-    workerCount: number;
-    jobCounts: {
-      __typename?: 'JobCounts';
-      active?: number | null;
-      failed?: number | null;
-      paused?: number | null;
-      completed?: number | null;
-      delayed?: number | null;
-      waiting?: number | null;
-    };
-  } | null;
+  queue?: ({ __typename?: 'Queue' } & QueueFragment) | null;
 };
 
 export type PauseQueueMutationVariables = Exact<{
@@ -4365,27 +3900,7 @@ export type DrainQueueMutation = {
   __typename?: 'Mutation';
   drainQueue: {
     __typename?: 'DrainQueueResult';
-    queue: {
-      __typename?: 'Queue';
-      id: string;
-      name: string;
-      host: string;
-      hostId: string;
-      prefix: string;
-      isPaused: boolean;
-      isReadonly: boolean;
-      repeatableJobCount: number;
-      workerCount: number;
-      jobCounts: {
-        __typename?: 'JobCounts';
-        active?: number | null;
-        failed?: number | null;
-        paused?: number | null;
-        completed?: number | null;
-        delayed?: number | null;
-        waiting?: number | null;
-      };
-    };
+    queue: { __typename?: 'Queue' } & QueueFragment;
   };
 };
 
@@ -4532,49 +4047,42 @@ export type GetPageQueueStatsQuery = {
       m5Rate: number;
       m15Rate: number;
     };
-    stats: Array<{
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    }>;
-    statsAggregate?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
+    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
+    statsAggregate?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
   } | null;
+};
+
+export type MeterFragment = {
+  __typename?: 'Meter';
+  count: number;
+  meanRate: number;
+  m1Rate: number;
+  m5Rate: number;
+  m15Rate: number;
+};
+
+export type StatsSnapshotFragment = {
+  __typename?: 'StatsSnapshot';
+  count: number;
+  failed: number;
+  completed: number;
+  startTime: unknown;
+  endTime: unknown;
+  stddev: number;
+  mean: number;
+  min: number;
+  max: number;
+  median: number;
+  p90: number;
+  p95: number;
+  p99: number;
+  p995: number;
+  meanRate: number;
+  m1Rate: number;
+  m5Rate: number;
+  m15Rate: number;
 };
 
 export type GetAvailableMetricsQueryVariables = Exact<{ [key: string]: never }>;
@@ -4632,27 +4140,7 @@ export type GetQueueStatsQuery = {
   __typename?: 'Query';
   queue?: {
     __typename?: 'Queue';
-    stats: Array<{
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    }>;
+    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
   } | null;
 };
 
@@ -4665,27 +4153,9 @@ export type GetQueueStatsLatestQuery = {
   __typename?: 'Query';
   queue?: {
     __typename?: 'Queue';
-    lastStatsSnapshot?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
+    lastStatsSnapshot?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
   } | null;
 };
 
@@ -4698,27 +4168,9 @@ export type GetHostStatsLatestQuery = {
   __typename?: 'Query';
   host?: {
     __typename?: 'QueueHost';
-    lastStatsSnapshot?: {
-      __typename?: 'StatsSnapshot';
-      count: number;
-      failed: number;
-      completed: number;
-      startTime: unknown;
-      endTime: unknown;
-      stddev: number;
-      mean: number;
-      min: number;
-      max: number;
-      median: number;
-      p90: number;
-      p95: number;
-      p99: number;
-      p995: number;
-      meanRate: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    } | null;
+    lastStatsSnapshot?:
+      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
+      | null;
   } | null;
 };
 
@@ -4728,27 +4180,7 @@ export type QueueStatsUpdatedSubscriptionVariables = Exact<{
 
 export type QueueStatsUpdatedSubscription = {
   __typename?: 'Subscription';
-  onQueueStatsUpdated: {
-    __typename?: 'StatsSnapshot';
-    count: number;
-    failed: number;
-    completed: number;
-    startTime: unknown;
-    endTime: unknown;
-    stddev: number;
-    mean: number;
-    min: number;
-    max: number;
-    median: number;
-    p90: number;
-    p95: number;
-    p99: number;
-    p995: number;
-    meanRate: number;
-    m1Rate: number;
-    m5Rate: number;
-    m15Rate: number;
-  };
+  onQueueStatsUpdated: { __typename?: 'StatsSnapshot' } & StatsSnapshotFragment;
 };
 
 export type HostStatsUpdatedSubscriptionVariables = Exact<{
@@ -4757,27 +4189,7 @@ export type HostStatsUpdatedSubscriptionVariables = Exact<{
 
 export type HostStatsUpdatedSubscription = {
   __typename?: 'Subscription';
-  onHostStatsUpdated: {
-    __typename?: 'StatsSnapshot';
-    count: number;
-    failed: number;
-    completed: number;
-    startTime: unknown;
-    endTime: unknown;
-    stddev: number;
-    mean: number;
-    min: number;
-    max: number;
-    median: number;
-    p90: number;
-    p95: number;
-    p99: number;
-    p995: number;
-    meanRate: number;
-    m1Rate: number;
-    m5Rate: number;
-    m15Rate: number;
-  };
+  onHostStatsUpdated: { __typename?: 'StatsSnapshot' } & StatsSnapshotFragment;
 };
 
 export const RedisStatsFragmentDoc = {

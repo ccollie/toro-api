@@ -1,3 +1,4 @@
+import { parseDuration } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, RuleTC, RuleUpdateInputTC } from '../../index';
@@ -57,7 +58,13 @@ export const updateRule: FieldConfig = {
       rule.severity = translateSeverity(input.severity);
     }
     if (input.options !== undefined) {
-      rule.alertOptions = input.options;
+      const { triggerDelay, notifyInterval, recoveryWindow, ...options } = input.options;
+      rule.alertOptions = {
+        ...options,
+        ...(triggerDelay && { triggerDelay: parseDuration(triggerDelay) }),
+        ...(notifyInterval && { notifyInterval: parseDuration(notifyInterval) }),
+        ...(recoveryWindow && { recoveryWindow: parseDuration(recoveryWindow) }),
+      };
     }
     // channels
     return manager.updateRule(rule);

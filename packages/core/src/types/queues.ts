@@ -1,8 +1,7 @@
 // ref: https://github.com/OptimalBits/bull/blob/develop/REFERENCE.md#global-events
 // although this refers to v3, most of it applies to bullmq
-import { Job, JobsOptions, Queue, QueueEventsListener } from 'bullmq';
-
-type QueueEventName = keyof QueueEventsListener;
+import { Job, Queue } from 'bullmq';
+import type { JobsOptions, JobState } from 'bullmq';
 
 export interface JobIdSpec {
   queue: Queue | string;
@@ -25,30 +24,13 @@ export enum QueueEventsEnum {
   CLEANED = 'cleaned',
 }
 
-export type JobStatus =
-  | 'active'
-  | 'waiting'
-  | 'completed'
-  | 'failed'
-  | 'delayed'
+export type JobStatus = JobState
   | 'paused'
-  | 'stalled'
-  | 'waiting-children'
   | 'unknown';
 
 export type JobFinishedState = 'completed' | 'failed';
 
-export type JobCountStates =
-  | 'active'
-  | 'waiting'
-  | 'completed'
-  | 'failed'
-  | 'delayed'
-  | 'paused'
-  | 'stalled'
-  | 'waiting-children';
-
-export type JobCounts = Record<JobCountStates, number>;
+export type JobCounts = Record<JobState, number>;
 
 export interface AppJob {
   id: string;

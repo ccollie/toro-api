@@ -39,7 +39,7 @@ export const useHostQuery = (
     },
   });
 
-  const { clear: clearInterval, reset: resetInterval } = useInterval(
+  const { stop, start } = useInterval(
     refresh,
     pollInterval,
     { immediate: true, cancelOnUnmount: true },
@@ -84,11 +84,6 @@ export const useHostQuery = (
     }
   }, [_data, loading]);
 
-  useEffect(() => {
-    loadFn();
-    return () => clearInterval();
-  }, []);
-
   useEffect(handleSort, [filter.sortBy, filter.sortOrder]);
 
   useEffect(() => {
@@ -98,8 +93,9 @@ export const useHostQuery = (
     const sorted = sortQueues(filter, filtered);
     setFilteredQueues(sorted);
 
-    resetInterval();
-    refresh();
+    stop();
+    (!loading) && refresh();
+    start();
   }, [
     filter.prefixes,
     filter.statuses,

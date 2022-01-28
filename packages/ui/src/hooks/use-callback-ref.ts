@@ -7,7 +7,7 @@ import React, { useLayoutEffect } from 'react';
  *
  * @param fn
  */
-export function useCallbackRef<T extends (...args: any[]) => any>(
+export function useCallbackRef<T extends (...args: any[]) => any | Promise<any>>(
   fn: T | undefined,
 ): T {
   const ref = React.useRef(fn);

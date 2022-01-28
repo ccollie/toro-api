@@ -11,6 +11,6 @@ export const JobStatusEnumType = new GraphQLEnumType({
     paused: { value: 'paused' },
     // eslint-disable-next-line camelcase
     waiting_children: { value: 'waiting-children' },
-    unknown: { value: 'unknown' },
+   // unknown: { value: 'unknown' },
   },
 });

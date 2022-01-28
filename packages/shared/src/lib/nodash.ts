@@ -37,6 +37,14 @@ export const upperCase = (str: string): string => {
   return str.toUpperCase();
 };
 
+export function titleCase(str = ''): string {
+  const elements: string[] = str.toLowerCase().split(' ');
+  for (let i = 0; i < elements.length; i++) {
+    elements[i] = elements[i].charAt(0).toUpperCase() + elements[i].slice(1);
+  }
+  return elements.join(' ');
+}
+
 export const isEmptyArray = (value: unknown) =>
   isArray(value) && value.length === 0;
 
@@ -69,7 +77,7 @@ export const isObject = (value: unknown): value is Dict => {
   );
 };
 
-// WARNING: This is not a drop in replacement solution and
+// WARNING: This is not a drop in replacement solution, and
 // it might not work for some edge cases. Test your code!
 export const has = (obj, path: string): boolean => {
   // Regex explained: https://regexr.com/58j0k

@@ -23,16 +23,13 @@ export const PopConfirm: React.FC<ConfirmProps> = (props) => {
     title = 'Are you sure?',
     isValid = true,
     description = '',
-    trigger
+    trigger,
   } = props;
 
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const {
-    isOpen,
-    onClose
-  } = useDisclosure({ defaultIsOpen: !!props.open });
+  const { isOpen, onClose } = useDisclosure({ defaultIsOpen: !!props.open });
 
   const onConfirm = useCallback(async () => {
     setLoading(true);
@@ -57,23 +54,21 @@ export const PopConfirm: React.FC<ConfirmProps> = (props) => {
   }, [isValid]);
 
   return (
-    <Popover
-      withArrow
-      opened={isOpen}
-      onClose={onClose}
-      target={trigger}
-    >
+    <Popover withArrow opened={isOpen} onClose={onClose} target={trigger}>
       <div>
-        <div><h3>{title}</h3></div>
+        <div>
+          <h3>{title}</h3>
+        </div>
         {!!description && <div className="mt-4 mb-4">{description}</div>}
-        {props.children && (
-          <div className="mb-4">
-            {props.children}
-          </div>
-        )}
+        {props.children && <div className="mb-4">{props.children}</div>}
         <div className={s.actions}>
           <Group position="right" spacing="sm">
-            <Button color="primary" disabled={!validate() || loading} onClick={onConfirm} loading={loading}>
+            <Button
+              color="primary"
+              disabled={!validate() || loading}
+              onClick={onConfirm}
+              loading={loading}
+            >
               {confirmText}
             </Button>
             <Button color="basic" onClick={onCancel}>

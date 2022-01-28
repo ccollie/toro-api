@@ -1,5 +1,5 @@
 // Source: https://github.com/apieceofbart/use-selection-hook
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback, useEffect } from 'react';
 
 export interface Item {
   id: string;
@@ -14,7 +14,7 @@ function useSelection<T extends Item>(
   );
 
   const isSelected = useCallback((item: T | string) => {
-    if (typeof item === "string") {
+    if (typeof item === 'string') {
       return selection.has(item);
     }
     return selection.has(item.id);

@@ -1,16 +1,16 @@
-import { callAllHandlers } from "@/lib/function"
-import * as React from "react"
-import { useControllableProp } from "./use-controllable"
-import { useId } from "./use-id"
-import { useCallbackRef } from "./use-callback-ref"
+import { callAllHandlers } from '@/lib/function';
+import * as React from 'react';
+import { useControllableProp } from './use-controllable';
+import { useId } from './use-id';
+import { useCallbackRef } from './use-callback-ref';
 
 export interface UseDisclosureProps {
-  isOpen?: boolean
-  defaultIsOpen?: boolean
-  onClose?(): void
-  onOpen?(): void
-  onSetOpen?(isOpen: boolean): void
-  id?: string
+  isOpen?: boolean;
+  defaultIsOpen?: boolean;
+  onClose?(): void;
+  onOpen?(): void;
+  onSetOpen?(isOpen: boolean): void;
+  id?: string;
 }
 
 export function useDisclosure(props: UseDisclosureProps = {}) {
@@ -20,43 +20,43 @@ export function useDisclosure(props: UseDisclosureProps = {}) {
     isOpen: isOpenProp,
     onSetOpen: onSetOpenProp,
     id: idProp,
-  } = props
+  } = props;
 
-  const onOpenPropCallbackRef = useCallbackRef(onOpenProp)
-  const onClosePropCallbackRef = useCallbackRef(onCloseProp)
-  const onSetPropCallbackRef = useCallbackRef(onSetOpenProp)
-  const [isOpenState, setIsOpen] = React.useState(props.defaultIsOpen || false)
-  const [isControlled, isOpen] = useControllableProp(isOpenProp, isOpenState)
+  const onOpenPropCallbackRef = useCallbackRef(onOpenProp);
+  const onClosePropCallbackRef = useCallbackRef(onCloseProp);
+  const onSetPropCallbackRef = useCallbackRef(onSetOpenProp);
+  const [isOpenState, setIsOpen] = React.useState(props.defaultIsOpen || false);
+  const [isControlled, isOpen] = useControllableProp(isOpenProp, isOpenState);
 
-  const id = useId(idProp, "disclosure")
+  const id = useId(idProp, 'disclosure');
 
   const onClose = React.useCallback(() => {
     if (!isControlled) {
-      setIsOpen(false)
+      setIsOpen(false);
     }
-    onClosePropCallbackRef?.()
-  }, [isControlled, onClosePropCallbackRef])
+    onClosePropCallbackRef?.();
+  }, [isControlled, onClosePropCallbackRef]);
 
   const onOpen = React.useCallback(() => {
     if (!isControlled) {
-      setIsOpen(true)
+      setIsOpen(true);
     }
-    onOpenPropCallbackRef?.()
-  }, [isControlled, onOpenPropCallbackRef])
+    onOpenPropCallbackRef?.();
+  }, [isControlled, onOpenPropCallbackRef]);
 
   const onToggle = React.useCallback(() => {
-    const action = isOpen ? onClose : onOpen
-    action()
-  }, [isOpen, onOpen, onClose])
+    const action = isOpen ? onClose : onOpen;
+    action();
+  }, [isOpen, onOpen, onClose]);
 
   const onSetOpen = React.useCallback((value: boolean) => {
     if (value !== isOpen) {
       if (!isControlled) {
-        onToggle()
+        onToggle();
       }
       onSetPropCallbackRef?.(value);
     }
-  }, [isOpen, onToggle])
+  }, [isOpen, onToggle]);
 
   return {
     isOpen: !!isOpen,
@@ -67,8 +67,8 @@ export function useDisclosure(props: UseDisclosureProps = {}) {
     isControlled,
     getButtonProps: (props: any = {}) => ({
       ...props,
-      "aria-expanded": "true",
-      "aria-controls": id,
+      'aria-expanded': 'true',
+      'aria-controls': id,
       onClick: callAllHandlers(props.onClick, onToggle),
     }),
     getDisclosureProps: (props: any = {}) => ({
@@ -76,7 +76,7 @@ export function useDisclosure(props: UseDisclosureProps = {}) {
       hidden: !isOpen,
       id,
     }),
-  }
+  };
 }
 
-export type UseDisclosureReturn = ReturnType<typeof useDisclosure>
+export type UseDisclosureReturn = ReturnType<typeof useDisclosure>;

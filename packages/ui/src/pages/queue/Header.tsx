@@ -13,9 +13,8 @@ interface TProps {
 export const Header = ({ queue }: TProps) => {
   const base = `/queues/${queue.id}`;
   return <div>
-
     <Paper id="check" padding="xl" shadow="sm" radius="md"
-         className="md:flex dark:bg-gray-800 mb-5 items-center justify-between px-4 py-6">
+         className="md:flex dark:bg-gray-800 mb-5 items-center justify-between px-4 py-6 sticky top-0">
       <div className="flex items-center text-gray-400">
         <QueueIcon size={36} style={{ display: 'inline-block' }}/>
         <p tabIndex={0} className="focus:outline-none text-gray-600 dark:text-gray-100 text-base ml-3">

@@ -1,3 +1,4 @@
+import { parseDuration } from '@alpen/shared';
 import {
   ChangeAggregation as GQLChangeAggregation,
   ConditionChangeType as GQLChangeType,
@@ -30,25 +31,27 @@ export function convertCondition(input: RuleConditionInput): RuleCondition {
   switch (input.type) {
     case GQLRuleType.Change:
       if (input.changeCondition) {
-        const { operator, changeType, aggregationType, ...rest } =
+        const { operator, changeType, aggregationType, windowSize, timeShift, ...rest } =
           input.changeCondition;
         return {
           type: RuleType.CHANGE,
           changeType: translateChangeType(changeType),
           operator: translateOperator(operator),
           aggregationType: translateAggregation(aggregationType),
-          windowSize: 0,
+          windowSize: parseDuration(windowSize),
+          timeShift: parseDuration(timeShift),
           ...rest,
         };
       }
       break;
     case GQLRuleType.Peak:
       if (input.changeCondition) {
-        const { operator, direction, ...rest } = input.peakCondition;
+        const { operator, direction, lag, ...rest } = input.peakCondition;
         return {
           type: RuleType.PEAK,
           ...rest,
-          direction: translateDirection(direction),
+          lag: parseDuration(lag),
+          direction: translateDirection(direction)
         };
       }
       break;

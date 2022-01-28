@@ -10,4 +10,4 @@ export * from './onJobDelayed';
 export const obJobActive = createStateSubscription('active');
 export const obJobFailed = createStateSubscription('failed');
 export const obJobCompleted = createStateSubscription('completed');
-export const obJobStalled = createStateSubscription('stalled');
+// export const obJobStalled = createStateSubscription('stalled');

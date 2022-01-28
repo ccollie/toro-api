@@ -425,6 +425,16 @@ export enum ErrorLevel {
   Warning = 'WARNING',
 }
 
+export type FindJobsInput = {
+  /** A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000) */
+  expression: Scalars['String'];
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  /** The id of the desired queue */
+  queueId: Scalars['ID'];
+  status?: InputMaybe<JobStatus>;
+};
+
 /** Values needed to create a FlowJob */
 export type FlowJobInput = {
   children?: InputMaybe<Array<FlowJobInput>>;
@@ -484,6 +494,19 @@ export type FlowNodeGetInput = {
   prefix?: InputMaybe<Scalars['String']>;
   /** The queue in which the root is found */
   queueName: Scalars['String'];
+};
+
+export type GetJobsByIdInput = {
+  ids: Array<Scalars['ID']>;
+  queueId: Scalars['ID'];
+};
+
+export type GetJobsInput = {
+  limit?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  queueId: Scalars['ID'];
+  sortOrder?: InputMaybe<SortOrderEnum>;
+  status?: InputMaybe<JobStatus>;
 };
 
 export type HistogramBin = {
@@ -862,7 +885,6 @@ export enum JobStatus {
   Delayed = 'delayed',
   Failed = 'failed',
   Paused = 'paused',
-  Unknown = 'unknown',
   Waiting = 'waiting',
   WaitingChildren = 'waiting_children',
 }
@@ -1695,10 +1717,13 @@ export type Query = {
   availableMetrics: Array<MetricInfo>;
   /** Returns the JSON Schema for the BullMq BulkJobOptions type */
   bulkJobOptionsSchema: Scalars['JSONSchema'];
+  findJobs: Array<Job>;
   /** Find a queue by name */
   findQueue?: Maybe<Queue>;
   /** Load a flow */
   flow?: Maybe<JobNode>;
+  getJobs: Array<Job>;
+  getJobsById: Array<Job>;
   /** Get a Host by id */
   host?: Maybe<QueueHost>;
   /** Get a Host by name */
@@ -1727,6 +1752,10 @@ export type Query = {
   validateJobOptions: ValidateJobOptionsResult;
 };
 
+export type QueryFindJobsArgs = {
+  input: FindJobsInput;
+};
+
 export type QueryFindQueueArgs = {
   hostName: Scalars['String'];
   prefix?: InputMaybe<Scalars['String']>;
@@ -1735,6 +1764,14 @@ export type QueryFindQueueArgs = {
 
 export type QueryFlowArgs = {
   input: FlowNodeGetInput;
+};
+
+export type QueryGetJobsArgs = {
+  input?: InputMaybe<GetJobsInput>;
+};
+
+export type QueryGetJobsByIdArgs = {
+  input?: InputMaybe<GetJobsByIdInput>;
 };
 
 export type QueryHostArgs = {
@@ -2600,8 +2637,6 @@ export type Subscription = {
   obJobCompleted?: Maybe<OnJobStateChangePayload>;
   /** Returns job failed events */
   obJobFailed?: Maybe<OnJobStateChangePayload>;
-  /** Returns job stalled events */
-  obJobStalled?: Maybe<OnJobStateChangePayload>;
   /** Subscribe for updates in host statistical snapshots */
   onHostStatsUpdated: StatsSnapshot;
   onJobAdded: OnJobAddedPayload;
@@ -2640,11 +2675,6 @@ export type SubscriptionObJobCompletedArgs = {
 };
 
 export type SubscriptionObJobFailedArgs = {
-  jobId: Scalars['String'];
-  queueId: Scalars['String'];
-};
-
-export type SubscriptionObJobStalledArgs = {
   jobId: Scalars['String'];
   queueId: Scalars['String'];
 };

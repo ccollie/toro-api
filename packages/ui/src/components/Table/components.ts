@@ -32,10 +32,6 @@ import {
 export interface TableOptions<D extends Record<string, unknown>>
   extends UseTableOptions<D> {}
 
-export interface TableInstance<D extends Record<string, unknown> = any>
-  extends Omit<TableOptions<D>, 'columns' | 'pageCount'>,
-    UseTableInstanceProps<D> {}
-
 export interface TableState<D extends Record<string, unknown> = any> {
   hiddenColumns?: Array<IdType<D>> | undefined;
 }
@@ -162,11 +158,6 @@ export type TablePropGetter<D extends Record<string, unknown>> = PropGetter<
   TableProps
 >;
 
-export type TableBodyPropGetter<D extends Record<string, unknown>> = PropGetter<
-  D,
-  TableBodyProps
->;
-
 export type RowPropGetter<D extends Record<string, unknown>> = PropGetter<
   D,
   TableRowProps,
@@ -188,34 +179,7 @@ export interface UseTableColumnOptions<D extends Record<string, unknown>> {
   maxWidth?: number | undefined;
 }
 
-type UpdateHiddenColumns<D extends Record<string, unknown>> = (
-  oldHidden: Array<IdType<D>>,
-) => Array<IdType<D>>;
-
 export interface TableToggleHideAllColumnProps extends TableToggleCommonProps {}
-
-export interface UseTableInstanceProps<D extends Record<string, unknown>> {
-  state: TableState<D>;
-  dispatch: TableDispatch;
-  columns: Array<ColumnInstance<D>>;
-  allColumns: Array<ColumnInstance<D>>;
-  visibleColumns: Array<ColumnInstance<D>>;
-  headers: Array<ColumnInstance<D>>;
-  rows: Array<Row<D>>;
-  rowsById: Record<string, Row<D>>;
-  getTableProps: (propGetter?: TablePropGetter<D>) => TableProps;
-  getTableBodyProps: (propGetter?: TableBodyPropGetter<D>) => TableBodyProps;
-  prepareRow: (row: Row<D>) => void;
-  flatRows: Array<Row<D>>;
-  totalColumnsWidth: number;
-  allColumnsHidden: boolean;
-  toggleHideColumn: (columnId: IdType<D>, value?: boolean) => void;
-  setHiddenColumns: (param: Array<IdType<D>> | UpdateHiddenColumns<D>) => void;
-  toggleHideAllColumns: (value?: boolean) => void;
-  getToggleHideAllColumnsProps: (
-    props?: Partial<TableToggleHideAllColumnProps>,
-  ) => TableToggleHideAllColumnProps;
-}
 
 export interface UseTableColumnProps<D extends Record<string, unknown>> {
   id: IdType<D>;
@@ -254,12 +218,6 @@ export interface UseTableCellProps<D extends Record<string, unknown>, V = any> {
   ) => ReactNode;
 }
 
-export type HeaderProps<D extends Record<string, unknown>> =
-  TableInstance<D> & {
-    column: ColumnInstance<D>;
-  };
-
-export type FooterProps<D extends Record<string, unknown>> = TableInstance<D>;
 
 export type CellProps<
   D extends Record<string, unknown>,
@@ -314,25 +272,8 @@ export interface UseRowSelectRowProps {
 //#endregion
 
 //#region useRowState
-export interface UseRowStateState<D extends Record<string, unknown>> {
-  rowState: Record<string, { cellState: UseRowStateLocalState<D> }>;
-}
-
-export interface UseRowStateRowProps<D extends Record<string, unknown>> {
-  state: UseRowStateLocalState<D>;
-  setState: (updater: UseRowUpdater) => void;
-}
-
-export interface UseRowStateCellProps<D extends Record<string, unknown>> {
-  state: UseRowStateLocalState<D>;
-  setState: (updater: UseRowUpdater) => void;
-}
 
 export type UseRowUpdater<T = unknown> = T | ((prev: T) => T);
-export type UseRowStateLocalState<
-  D extends Record<string, unknown>,
-  T = unknown,
-> = Record<IdType<D>, T>;
 //#endregion
 
 // Helpers
@@ -345,5 +286,3 @@ export type Renderer<Props> =
   | ReactElement
   | ReactText
   | ReactFragment;
-
-export type TableDispatch<A = any> = (action: A) => void;

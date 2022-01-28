@@ -1,26 +1,34 @@
 import {  notFound, badRequest } from '@hapi/boom';
-import { Job, Queue } from 'bullmq';
+import { Job, JobJson, Queue } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
-import { JobStatus } from '../types';
+import type { JobStatus } from '../types';
 import { Scripts } from '../commands';
 
-// https://github.com/taskforcesh/bullmq/blob/master/src/classes/job.ts#L11
-export const JobFields = [
-  'id',
-  'name',
-  'parentKey',
-  'data',
-  'opts',
-  'progress',
-  'attemptsMade',
-  'finishedOn',
-  'processedOn',
-  'timestamp',
-  'failedReason',
-  'stacktrace',
-  'returnvalue',
-];
+// All this malarkey is to make sure that we get a compile error if we're
+// out of sync with bullmq's types.
+// eslint-disable-next-line max-len
+// see https://stackoverflow.com/questions/43909566/get-keys-of-a-typescript-interface-as-array-of-strings
+class MyJobJson implements JobJson {
+  attemptsMade: JobJson['attemptsMade'];
+  data: JobJson['data'];
+  failedReason: JobJson['failedReason'];
+  id: JobJson['id'];
+  name: JobJson['name'];
+  opts: JobJson['opts'];
+  progress: JobJson['progress'];
+  returnvalue: JobJson['returnvalue'];
+  stacktrace: JobJson['stacktrace'];
+  timestamp: JobJson['timestamp'];
+}
+
+// The properties of a Job object
+export type JobPropsArray = Array<keyof MyJobJson>;
+
+// Properties of the Job type
+export const JobProps: JobPropsArray =
+  Object.keys(new MyJobJson()) as JobPropsArray;
+
 
 async function processJobInternal(
   queue: Queue,

@@ -14,7 +14,7 @@ export interface JobCountsLoaderKey {
 }
 
 interface QueueJobCountsMeta {
-  types: string[];
+  types: JobType[];
   index: number;
 }
 

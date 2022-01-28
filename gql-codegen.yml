@@ -35,8 +35,8 @@ generates:
     documents: ./packages/ui/src/**/*.graphql
     config:
       omitOperationSuffix: false
-      flattenGeneratedTypes: true
-      exportFragmentSpreadSubTypes: true
+      flattenGeneratedTypes: false
+      exportFragmentSpreadSubTypes: false
       inlineFragmentTypes: "combine"
       withComponent: false
       withHooks: true

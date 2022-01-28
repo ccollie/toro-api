@@ -1,8 +1,8 @@
 import { Queue } from 'bullmq';
+import type { JobType } from 'bullmq';
 import { get } from '@alpen/shared';
 import { schemaComposer } from 'graphql-compose';
 import { FieldConfig } from '../../utils';
-import { JobCountStates } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 
 export const JobCountsTC = schemaComposer.createObjectTC({
@@ -29,10 +29,10 @@ export const jobCounts: FieldConfig = {
   ): Promise<Record<string, number>> {
     // get field names/states
     const fields = get(info, 'fieldNodes[0].selectionSet.selections', []);
-    const states: JobCountStates[] = [];
+    const states: JobType[] = [];
     fields.forEach((node) => {
       const state = node.name.value;
-      if (state !== '__typename') states.push(state as JobCountStates);
+      if (state !== '__typename') states.push(state as JobType);
     });
     const key = {
       queue,

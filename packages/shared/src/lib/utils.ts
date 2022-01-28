@@ -38,9 +38,6 @@ export function parseBool(val: unknown, defaultVal?: boolean): boolean {
   return ['true', '1', 't'].includes(val.toString().toLowerCase());
 }
 
-export const isFinishedStatus = (state: string): boolean =>
-  ['completed', 'failed', 'removed'].includes(state);
-
 export function isPossiblyNumber(num: string | number): boolean {
   if (typeof num === 'number') {
     return num - num === 0;
@@ -49,14 +46,6 @@ export function isPossiblyNumber(num: string | number): boolean {
     return Number.isFinite ? Number.isFinite(+num) : isFinite(+num);
   }
   return false;
-}
-
-export function titleCase(str = ''): string {
-  const elements: string[] = str.toLowerCase().split(' ');
-  for (let i = 0; i < elements.length; i++) {
-    elements[i] = elements[i].charAt(0).toUpperCase() + elements[i].slice(1);
-  }
-  return elements.join(' ');
 }
 
 export const firstChar = (str: string): string =>

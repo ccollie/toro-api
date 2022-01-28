@@ -1,22 +1,25 @@
-import { Queue } from 'bullmq';
+import { Job } from 'bullmq';
 import type { JobState } from 'bullmq';
 import { EZContext } from 'graphql-ez';
 import {
   SortOrderEnum,
   OrderEnumType,
   JobStatusEnumType,
-} from '../../../scalars';
-import { FieldConfig } from '../../utils';
+} from '../../scalars';
+import { FieldConfig } from '../utils';
 import { schemaComposer } from 'graphql-compose';
-import { JobTC } from '../../job/model/Job';
-import { QueueJobsInput } from '../../../typings';
+import { JobTC } from '../job/model/Job';
+import { GetJobsInput } from '../../typings';
 
-export const queueJobs: FieldConfig = {
+export const getJobs: FieldConfig = {
   type: JobTC.NonNull.List.NonNull,
   args: {
     input: schemaComposer.createInputTC({
-      name: 'QueueJobsInput',
+      name: 'GetJobsInput',
       fields: {
+        queueId: {
+          type: 'ID!',
+        },
         offset: {
           type: 'Int',
           defaultValue: 0,
@@ -34,19 +37,21 @@ export const queueJobs: FieldConfig = {
           defaultValue: SortOrderEnum.ASC,
         },
       },
-    }),
+    }).NonNull,
   },
   async resolve(
-    queue: Queue,
-    { input }: { input: QueueJobsInput },
+    _,
+    { input }: { input: GetJobsInput },
     { accessors }: EZContext,
-  ): Promise<any> {
+  ): Promise<Job[]> {
     const {
+      queueId,
       offset = 0,
       limit = 10,
       status,
       sortOrder = SortOrderEnum.DESC,
     } = input || {};
+    const queue = accessors.getQueueById(queueId);
     const asc = sortOrder.toLowerCase() === 'asc';
     const manager = accessors.getQueueManager(queue);
     // todo: check out requested fields. If "states" is requested

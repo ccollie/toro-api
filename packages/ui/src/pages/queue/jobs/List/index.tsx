@@ -1,4 +1,4 @@
-import { LoadingOverlay } from '@mantine/core';
+import { LoadingOverlay, ScrollArea } from '@mantine/core';
 import React, { useCallback, useEffect } from 'react';
 import { useJobQueryParameters } from '@/services';
 import { StatusMenu } from './StatusMenu/StatusMenu';
@@ -10,7 +10,6 @@ import CardView from '../CardView';
 import TableView from '../TableView';
 import JobsToolbar from '../Toolbar';
 import shallow from 'zustand/shallow';
-import s from './QueuePage.module.css';
 
 export const Jobs = () => {
   const { queueId, status, page, jobView, jobFilter: filter } = useJobQueryParameters();
@@ -61,8 +60,8 @@ export const Jobs = () => {
   });
 
   return (
-    <section>
-      <div className={s.stickyHeader}>
+    <section className="flex-1">
+      <div>
         <StatusMenu queue={queue} status={status} />
         <JobsToolbar
           queueId={queueId}
@@ -73,18 +72,20 @@ export const Jobs = () => {
           selected={selectedJobs}
         />
       </div>
-      <div style={{ width: '100%', position: 'relative' }}>
+      <div style={{ width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
         <LoadingOverlay visible={!called} />
         {jobView === 'card' && (
-          <CardView
-            queueId={queueId}
-            jobs={jobs}
-            status={status}
-            isSelected={isSelected}
-            removeSelected={removeSelected}
-            toggleSelected={toggleSelected}
-            isReadOnly={queue.isReadonly}
-          />
+          <ScrollArea sx={{ flex: 1 }}>
+            <CardView
+              queueId={queueId}
+              jobs={jobs}
+              status={status}
+              isSelected={isSelected}
+              removeSelected={removeSelected}
+              toggleSelected={toggleSelected}
+              isReadOnly={queue.isReadonly}
+            />
+          </ScrollArea>
         )}
         {jobView === 'table' && (
           <TableView
