@@ -1,19 +1,22 @@
 import { Queue, Job } from 'bullmq';
+import type { JobJson, JobState } from 'bullmq';
 import type { JobStatus } from '../types';
 import { fixupJob, Scripts } from '../commands';
 
 const DEFAULT_TEXT_SEARCH_SCAN_COUNT = 20;
 
+type JobKey = keyof JobJson;
+
 type TJobExcerpt = {
   id: string;
-  job: Record<string, any> | Partial<Job>;
+  job: Record<keyof JobJson, any> | Partial<Job>;
 };
 
 type TIteratorConfig = {
   scanCount?: number;
-  keys?: string[];
+  keys?: JobKey[];
   jobName?: string;
-  status?: JobStatus;
+  status?: JobState;
 };
 
 abstract class AbstractIterator {
@@ -143,7 +146,7 @@ class ListIterator extends AbstractIterator {
 export function getIterator(
   queue: Queue,
   status: JobStatus,
-  keys = ['data'],
+  keys: JobKey[] = ['data'],
   scanCount = DEFAULT_TEXT_SEARCH_SCAN_COUNT,
   jobName?: string,
 ): SetIterator | ListIterator {

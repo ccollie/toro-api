@@ -463,13 +463,20 @@ export const ErrorLevel = {
 
 export type ErrorLevel = typeof ErrorLevel[keyof typeof ErrorLevel];
 export type FindJobsInput = {
+  /** The cursor to start from */
+  cursor?: InputMaybe<Scalars['String']>;
   /** A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000) */
   expression: Scalars['String'];
-  limit?: InputMaybe<Scalars['Int']>;
-  offset?: InputMaybe<Scalars['Int']>;
   /** The id of the desired queue */
   queueId: Scalars['ID'];
+  scanCount?: InputMaybe<Scalars['Int']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type FindJobsResult = {
+  __typename?: 'FindJobsResult';
+  jobs: Array<Job>;
+  nextCursor: Scalars['ID'];
 };
 
 /** Values needed to create a FlowJob */
@@ -1305,6 +1312,7 @@ export type Mutation = {
   /** Resume a queue after being PAUSED. */
   resumeQueue: Queue;
   retryJob: RetryJobResult;
+  retryJobs: RetryJobsPayload;
   /** Associate a JSON schema with a job name on a queue */
   setJobSchema: JobSchema;
   /** Stop tracking a queue */
@@ -1509,6 +1517,10 @@ export type MutationResumeQueueArgs = {
 
 export type MutationRetryJobArgs = {
   input: JobLocatorInput;
+};
+
+export type MutationRetryJobsArgs = {
+  input: RetryJobsInput;
 };
 
 export type MutationSetJobSchemaArgs = {
@@ -1818,7 +1830,7 @@ export type Query = {
   availableMetrics: Array<MetricInfo>;
   /** Returns the JSON Schema for the BullMq BulkJobOptions type */
   bulkJobOptionsSchema: Scalars['JSONSchema'];
-  findJobs: Array<Job>;
+  findJobs: FindJobsResult;
   /** Find a queue by name */
   findQueue?: Maybe<Queue>;
   /** Load a flow */
@@ -1868,11 +1880,11 @@ export type QueryFlowArgs = {
 };
 
 export type QueryGetJobsArgs = {
-  input?: InputMaybe<GetJobsInput>;
+  input: GetJobsInput;
 };
 
 export type QueryGetJobsByIdArgs = {
-  input?: InputMaybe<GetJobsByIdInput>;
+  input: GetJobsByIdInput;
 };
 
 export type QueryHostArgs = {
@@ -2357,6 +2369,19 @@ export type RetryJobResult = {
   __typename?: 'RetryJobResult';
   job: Job;
   queue: Queue;
+};
+
+export type RetryJobsInput = {
+  /** number to limit how many jobs will be moved to wait status per iteration */
+  count?: InputMaybe<Scalars['Int']>;
+  /** The id of the queue */
+  queueId: Scalars['ID'];
+};
+
+export type RetryJobsPayload = {
+  __typename?: 'RetryJobsPayload';
+  /** the number of retried jobs */
+  count?: Maybe<Scalars['Int']>;
 };
 
 export type Rule = {
@@ -3341,7 +3366,6 @@ export type HostQueuesQuery = {
         isPaused: boolean;
         isReadonly: boolean;
         workerCount: number;
-        ruleAlertCount: number;
         throughput: {
           __typename?: 'Meter';
           count: number;
@@ -3485,6 +3509,23 @@ export type RepeatableJobFragment = {
   descr?: string | null;
 };
 
+export type FindJobsQueryVariables = Exact<{
+  queueId: Scalars['ID'];
+  status?: InputMaybe<JobStatus>;
+  criteria: Scalars['String'];
+  cursor?: InputMaybe<Scalars['String']>;
+  limit?: InputMaybe<Scalars['Int']>;
+}>;
+
+export type FindJobsQuery = {
+  __typename?: 'Query';
+  findJobs: {
+    __typename?: 'FindJobsResult';
+    nextCursor: string;
+    jobs: Array<{ __typename?: 'Job' } & JobFragment>;
+  };
+};
+
 export type GetJobsByFilterQueryVariables = Exact<{
   id: Scalars['ID'];
   status?: InputMaybe<JobStatus>;
@@ -3508,6 +3549,16 @@ export type GetJobsByFilterQuery = {
         };
       } & JobCountsFragment)
     | null;
+};
+
+export type GetJobsByIdQueryVariables = Exact<{
+  queueId: Scalars['ID'];
+  ids: Array<Scalars['ID']> | Scalars['ID'];
+}>;
+
+export type GetJobsByIdQuery = {
+  __typename?: 'Query';
+  getJobsById: Array<{ __typename?: 'Job' } & JobFragment>;
 };
 
 export type GetJobFiltersQueryVariables = Exact<{
@@ -3598,6 +3649,19 @@ export type GetQueueJobsQuery = {
         jobs: Array<{ __typename?: 'Job' } & JobFragment>;
       } & JobCountsFragment)
     | null;
+};
+
+export type GetJobsQueryVariables = Exact<{
+  id: Scalars['ID'];
+  offset?: InputMaybe<Scalars['Int']>;
+  limit?: InputMaybe<Scalars['Int']>;
+  status?: InputMaybe<JobStatus>;
+  sortOrder?: InputMaybe<SortOrderEnum>;
+}>;
+
+export type GetJobsQuery = {
+  __typename?: 'Query';
+  getJobs: Array<{ __typename?: 'Job' } & JobFragment>;
 };
 
 export type GetRepeatableJobsQueryVariables = Exact<{
@@ -7050,10 +7114,6 @@ export const HostQueuesDocument = {
                       },
                       {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'ruleAlertCount' },
-                      },
-                      {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'workerCount' },
                       },
                       {
@@ -7910,6 +7970,293 @@ export type UnregisterQueueMutationOptions = Apollo.BaseMutationOptions<
   UnregisterQueueMutation,
   UnregisterQueueMutationVariables
 >;
+export const FindJobsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'FindJobs' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'status' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobStatus' },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'criteria' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'cursor' },
+          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'limit' },
+          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          defaultValue: { kind: 'IntValue', value: '10' },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'findJobs' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'queueId' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'scanCount' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'limit' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'expression' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'criteria' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'status' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'status' },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'nextCursor' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'jobs' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Job' },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useFindJobsQuery__
+ *
+ * To run a query within a React component, call `useFindJobsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useFindJobsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useFindJobsQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      status: // value for 'status'
+ *      criteria: // value for 'criteria'
+ *      cursor: // value for 'cursor'
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useFindJobsQuery(
+  baseOptions: Apollo.QueryHookOptions<FindJobsQuery, FindJobsQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<FindJobsQuery, FindJobsQueryVariables>(
+    FindJobsDocument,
+    options,
+  );
+}
+export function useFindJobsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    FindJobsQuery,
+    FindJobsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<FindJobsQuery, FindJobsQueryVariables>(
+    FindJobsDocument,
+    options,
+  );
+}
+export type FindJobsQueryHookResult = ReturnType<typeof useFindJobsQuery>;
+export type FindJobsLazyQueryHookResult = ReturnType<
+  typeof useFindJobsLazyQuery
+>;
+export type FindJobsQueryResult = Apollo.QueryResult<
+  FindJobsQuery,
+  FindJobsQueryVariables
+>;
+export function refetchFindJobsQuery(variables: FindJobsQueryVariables) {
+  return { query: FindJobsDocument, variables: variables };
+}
 export const GetJobsByFilterDocument = {
   kind: 'Document',
   definitions: [
@@ -8254,6 +8601,242 @@ export function refetchGetJobsByFilterQuery(
   variables: GetJobsByFilterQueryVariables,
 ) {
   return { query: GetJobsByFilterDocument, variables: variables };
+}
+export const GetJobsByIdDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetJobsById' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'ids' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: {
+                  kind: 'NamedType',
+                  name: { kind: 'Name', value: 'ID' },
+                },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'getJobsById' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'queueId' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'ids' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'ids' },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Job' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobsByIdQuery__
+ *
+ * To run a query within a React component, call `useGetJobsByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobsByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobsByIdQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      ids: // value for 'ids'
+ *   },
+ * });
+ */
+export function useGetJobsByIdQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetJobsByIdQuery,
+    GetJobsByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobsByIdQuery, GetJobsByIdQueryVariables>(
+    GetJobsByIdDocument,
+    options,
+  );
+}
+export function useGetJobsByIdLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobsByIdQuery,
+    GetJobsByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobsByIdQuery, GetJobsByIdQueryVariables>(
+    GetJobsByIdDocument,
+    options,
+  );
+}
+export type GetJobsByIdQueryHookResult = ReturnType<typeof useGetJobsByIdQuery>;
+export type GetJobsByIdLazyQueryHookResult = ReturnType<
+  typeof useGetJobsByIdLazyQuery
+>;
+export type GetJobsByIdQueryResult = Apollo.QueryResult<
+  GetJobsByIdQuery,
+  GetJobsByIdQueryVariables
+>;
+export function refetchGetJobsByIdQuery(variables: GetJobsByIdQueryVariables) {
+  return { query: GetJobsByIdDocument, variables: variables };
 }
 export const GetJobFiltersDocument = {
   kind: 'Document',
@@ -9166,6 +9749,284 @@ export function refetchGetQueueJobsQuery(
   variables: GetQueueJobsQueryVariables,
 ) {
   return { query: GetQueueJobsDocument, variables: variables };
+}
+export const GetJobsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetJobs' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'offset' },
+          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          defaultValue: { kind: 'IntValue', value: '0' },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'limit' },
+          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          defaultValue: { kind: 'IntValue', value: '10' },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'status' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'JobStatus' },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'sortOrder' },
+          },
+          type: {
+            kind: 'NamedType',
+            name: { kind: 'Name', value: 'SortOrderEnum' },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'getJobs' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'queueId' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'id' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'offset' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'offset' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'limit' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'limit' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'status' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'status' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'sortOrder' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'sortOrder' },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Job' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetJobsQuery__
+ *
+ * To run a query within a React component, call `useGetJobsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetJobsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetJobsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      offset: // value for 'offset'
+ *      limit: // value for 'limit'
+ *      status: // value for 'status'
+ *      sortOrder: // value for 'sortOrder'
+ *   },
+ * });
+ */
+export function useGetJobsQuery(
+  baseOptions: Apollo.QueryHookOptions<GetJobsQuery, GetJobsQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetJobsQuery, GetJobsQueryVariables>(
+    GetJobsDocument,
+    options,
+  );
+}
+export function useGetJobsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetJobsQuery,
+    GetJobsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetJobsQuery, GetJobsQueryVariables>(
+    GetJobsDocument,
+    options,
+  );
+}
+export type GetJobsQueryHookResult = ReturnType<typeof useGetJobsQuery>;
+export type GetJobsLazyQueryHookResult = ReturnType<typeof useGetJobsLazyQuery>;
+export type GetJobsQueryResult = Apollo.QueryResult<
+  GetJobsQuery,
+  GetJobsQueryVariables
+>;
+export function refetchGetJobsQuery(variables: GetJobsQueryVariables) {
+  return { query: GetJobsDocument, variables: variables };
 }
 export const GetRepeatableJobsDocument = {
   kind: 'Document',

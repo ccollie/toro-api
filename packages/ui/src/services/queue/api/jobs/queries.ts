@@ -1,6 +1,7 @@
 import { ApolloQueryResult } from '@apollo/client';
 import { client } from '@/providers/ApolloProvider';
 import {
+  FindJobsDocument,
   GetJobLogsDocument,
   GetJobsByFilterDocument,
   GetQueueJobsDocument,
@@ -10,6 +11,8 @@ import {
 } from '@/types';
 import type {
   FilteredJobsResult,
+  FindJobsInput,
+  FindJobsQuery,
   GetQueueJobsQuery,
   GetJobsByFilterQuery,
   GetRepeatableJobsQuery,
@@ -25,7 +28,7 @@ export function getJobs(
   status: JobStatus,
   page = 1,
   pageSize = 10,
-  sortOrder: SortOrderEnum = SortOrderEnum.Desc
+  sortOrder: SortOrderEnum = SortOrderEnum.Desc,
 ) {
   const offset = (page - 1) * pageSize;
   const limit = pageSize;
@@ -54,13 +57,39 @@ export function getJobs(
     });
 }
 
+export function findJobs(
+  { queueId, status, expression, cursor, scanCount }: FindJobsInput,
+): Promise<{ nextCursor: string; jobs: JobFragment[] }> {
+  return client
+    .query<FindJobsQuery>({
+      query: FindJobsDocument,
+      variables: {
+        id: queueId,
+        status,
+        criteria: expression,
+        cursor,
+        scanCount,
+      },
+      fetchPolicy: 'network-only',
+    })
+    .then((results) => {
+      const { data, error } = results;
+      if (error) throw results.error;
+      const { nextCursor, jobs } = data.findJobs;
+      return {
+        jobs: (jobs as JobFragment[]),
+        nextCursor
+      };
+    });
+}
+
 export function getJobsByFilter(
   queueId: string,
-  { status = JobStatus.Completed, cursor, criteria, count }: JobSearchInput
+  { status = JobStatus.Completed, cursor, criteria, count }: JobSearchInput,
 ): Promise<FilteredJobsResult> {
   count = count ?? 10;
   return client
-    .query({
+    .query<GetJobsByFilterQuery>({
       query: GetJobsByFilterDocument,
       variables: {
         id: queueId,
@@ -90,7 +119,12 @@ export function getJobsByFilter(
     });
 }
 
-export function getJobLogs(queueId: string, jobId: string, start = 0, end = -1): Promise<JobLogs> {
+export function getJobLogs(
+  queueId: string,
+  jobId: string,
+  start = 0,
+  end = -1,
+): Promise<JobLogs> {
   return client
     .query({
       query: GetJobLogsDocument,
@@ -111,7 +145,7 @@ export function getRepeatableJobs(queueId: string, page = 1, pageSize = 10) {
   const offset = (page - 1) * pageSize;
   const limit = pageSize;
   return client
-    .query({
+    .query<GetRepeatableJobsQuery>({
       query: GetRepeatableJobsDocument,
       variables: {
         id: queueId,
@@ -119,10 +153,11 @@ export function getRepeatableJobs(queueId: string, page = 1, pageSize = 10) {
         limit,
       },
     })
-    .then((results: ApolloQueryResult<GetRepeatableJobsQuery>) => {
+    .then((results) => {
       // todo: handle error
-      if (results.error) throw results.error;
-      const base = results.data?.queue;
+      const { data, error } = results;
+      if (error) throw error;
+      const base = data?.queue;
       const jobs = (base?.repeatableJobs || []) as RepeatableJob[];
       const count = base?.repeatableJobCount || 0;
       return {

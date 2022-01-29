@@ -1,5 +1,7 @@
+import { isNumber } from '@alpen/shared';
 import {  notFound, badRequest } from '@hapi/boom';
-import { Job, JobJson, Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
+import type { JobJson } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
 import type { JobStatus } from '../types';
@@ -28,6 +30,25 @@ export type JobPropsArray = Array<keyof MyJobJson>;
 // Properties of the Job type
 export const JobProps: JobPropsArray =
   Object.keys(new MyJobJson()) as JobPropsArray;
+
+
+export function calculateResponseTime(job: JobJson | Job ): number | undefined {
+  return isNumber(job.finishedOn)
+    ? job.finishedOn - job.timestamp
+    : undefined;
+}
+
+export function calculateProcessTime(job: JobJson | Job ): number | undefined {
+  return isNumber(job.finishedOn) && isNumber(job.processedOn)
+    ? job.finishedOn - job.processedOn
+    : undefined;
+}
+
+export function calculateWaitTime(job: JobJson | Job ): number | undefined {
+  return isNumber(job.processedOn)
+    ? job.processedOn - job.timestamp
+    : undefined;
+}
 
 
 async function processJobInternal(

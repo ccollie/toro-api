@@ -17,6 +17,7 @@ export const DemoHosts: HostConfig[] = [
       },
       {
         name: 'suzy_queue',
+        isReadonly: true,
       },
       {
         name: 'widgets',

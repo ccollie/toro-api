@@ -7,7 +7,6 @@ import { hashObject, objToString, safeParse, isEmpty } from '@alpen/shared';
 import toJsonSchema from 'to-json-schema';
 
 import { ajv, validate as ajvValidate } from '../validation/ajv';
-import { getIterator } from './job-iterator';
 import { getJobSchemaKey } from '../keys';
 
 const jobsOptionsValidator = ajv.compile(JobOptionsSchema);
@@ -147,38 +146,41 @@ function inferOptions(recs: Record<string, any>[]): Partial<JobsOptions> {
   return {};
 }
 
-const DEFAULT_INFER_SCHEMA_SCAN_COUNT = 25;
-
 export async function inferJobSchema(
   queue: Queue,
   jobName?: string,
 ): Promise<JobSchema> {
-  // get a list of items from completed list
-  const it = getIterator(queue, 'completed', [
+  const fields = [
     'data',
     'opts',
-    'jobName',
-  ], DEFAULT_INFER_SCHEMA_SCAN_COUNT, jobName);
-  const sampleSize = INFER_SAMPLE_SIZE;
+    'name',
+  ];
+
+  const ids = await queue.getRanges(['completed'], 0, INFER_SAMPLE_SIZE - 1);
+
   const jobs: Record<string, any>[] = [];
   const opts: Record<string, any>[] = [];
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/label
-  mainLoop: for await (const jobs of it.generator()) {
-    for (const job of jobs) {
-      if (!jobName || jobName === job['jobName']) {
-        const data = safeParse(job['data']);
-        const jobOpts = safeParse(job['opts']);
-        if (data) {
-          jobs.push(data);
-        }
-        if (jobOpts) {
-          opts.push(jobOpts);
+
+  if (ids.length) {
+    const client = await this._queue.client;
+    const pipeline = client.pipeline();
+    ids.forEach((id) => pipeline.hmget(this._queue.toKey(id), ...fields));
+    const data = await pipeline.exec();
+
+    data.forEach(([error, [jobData]]) => {
+      if (!error && jobData && jobData !== '{}' && jobData !== '[]') {
+        if (!jobName || jobName === jobData['name']) {
+          const data = safeParse(jobData['data']);
+          const jobOpts = safeParse(jobData['opts']);
+          if (!isEmpty(data)) {
+            jobs.push(data);
+          }
+          if (!isEmpty(jobOpts)) {
+            opts.push(jobOpts);
+          }
         }
       }
-      if (jobs.length >= sampleSize) {
-        break mainLoop;
-      }
-    }
+    });
   }
 
   if (!jobs.length) {

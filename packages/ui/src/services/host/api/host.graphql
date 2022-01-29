@@ -115,7 +115,6 @@ query HostQueues($id: ID!, $range: String!, $filter: HostQueuesFilter) {
                 m5Rate
                 m15Rate
             }
-            ruleAlertCount
             workerCount
             stats(input: { range: $range, granularity: Minute }) {
                 ...StatsSnapshot

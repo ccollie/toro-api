@@ -426,13 +426,19 @@ export enum ErrorLevel {
 }
 
 export type FindJobsInput = {
+  /** The cursor to start from */
+  cursor?: InputMaybe<Scalars['String']>;
   /** A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000) */
   expression: Scalars['String'];
-  limit?: InputMaybe<Scalars['Int']>;
-  offset?: InputMaybe<Scalars['Int']>;
   /** The id of the desired queue */
   queueId: Scalars['ID'];
+  scanCount?: InputMaybe<Scalars['Int']>;
   status?: InputMaybe<JobStatus>;
+};
+
+export type FindJobsResult = {
+  jobs: Array<Job>;
+  nextCursor: Scalars['ID'];
 };
 
 /** Values needed to create a FlowJob */
@@ -1234,6 +1240,7 @@ export type Mutation = {
   /** Resume a queue after being PAUSED. */
   resumeQueue: Queue;
   retryJob: RetryJobResult;
+  retryJobs: RetryJobsPayload;
   /** Associate a JSON schema with a job name on a queue */
   setJobSchema: JobSchema;
   /** Stop tracking a queue */
@@ -1438,6 +1445,10 @@ export type MutationResumeQueueArgs = {
 
 export type MutationRetryJobArgs = {
   input: JobLocatorInput;
+};
+
+export type MutationRetryJobsArgs = {
+  input: RetryJobsInput;
 };
 
 export type MutationSetJobSchemaArgs = {
@@ -1717,7 +1728,7 @@ export type Query = {
   availableMetrics: Array<MetricInfo>;
   /** Returns the JSON Schema for the BullMq BulkJobOptions type */
   bulkJobOptionsSchema: Scalars['JSONSchema'];
-  findJobs: Array<Job>;
+  findJobs: FindJobsResult;
   /** Find a queue by name */
   findQueue?: Maybe<Queue>;
   /** Load a flow */
@@ -1767,11 +1778,11 @@ export type QueryFlowArgs = {
 };
 
 export type QueryGetJobsArgs = {
-  input?: InputMaybe<GetJobsInput>;
+  input: GetJobsInput;
 };
 
 export type QueryGetJobsByIdArgs = {
-  input?: InputMaybe<GetJobsByIdInput>;
+  input: GetJobsByIdInput;
 };
 
 export type QueryHostArgs = {
@@ -2245,6 +2256,18 @@ export type RepeatableJobsInput = {
 export type RetryJobResult = {
   job: Job;
   queue: Queue;
+};
+
+export type RetryJobsInput = {
+  /** number to limit how many jobs will be moved to wait status per iteration */
+  count?: InputMaybe<Scalars['Int']>;
+  /** The id of the queue */
+  queueId: Scalars['ID'];
+};
+
+export type RetryJobsPayload = {
+  /** the number of retried jobs */
+  count?: Maybe<Scalars['Int']>;
 };
 
 export type Rule = {

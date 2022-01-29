@@ -44,7 +44,7 @@ type QueryMeta = {
 function parseResult(res: [Error | null, any[]]): TimeseriesDataPoint[] {
   const [err, data] = res;
   if (err) {
-    logger.eror(err);
+    logger.error(err);
     return [];
   }
   return data.map(([timestamp, value]) => ({

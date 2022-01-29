@@ -8,8 +8,9 @@ type PreferencesState = {
   pollingInterval: number;
   confirmDangerousActions: boolean;
   selectedStatuses: Record<Queue['id'], Status>;  // these need to be in their own store
-  setQueueStatus: (id: string, status: Status) => void;
-  removeQueueStatus: (id: string) => void;
+  getQueueStatus: (id: Queue['id']) => Status;
+  setQueueStatus: (id: Queue['id'], status: Status) => void;
+  removeQueueStatus: (id: Queue['id']) => void;
   changeConfirmDangerousActions: (value: boolean) => void;
   toggleConfirmDangerousActions: () => void;
 };
@@ -21,6 +22,7 @@ export const usePreferencesStore = createStore<PreferencesState>(
       pollingInterval: 5000,
       selectedStatuses: {},
       confirmDangerousActions: true,
+      getQueueStatus: (id: string) => get().selectedStatuses[id] || 'completed',
       setQueueStatus: (id, status) => {
         set(state => ({
           ...state,

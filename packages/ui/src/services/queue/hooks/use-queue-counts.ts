@@ -1,12 +1,37 @@
+import { useGetQueueJobCountsQuery } from '@/types';
 import { useCallback, useMemo } from 'react';
 import type { Status, Queue, CountStatus } from '@/types';
+import { usePreferencesStore } from 'src/stores';
 import { useQueueSessionStore } from '../stores';
 import { useQueue } from '@/hooks';
 
-export const useQueueCounts = (queueId: Queue['id']) => {
-  const { queue } = useQueue(queueId);
+export const useQueueCounts = (queueId: Queue['id'], autoUpdate = false) => {
+  const { queue, updateQueue } = useQueue(queueId);
   const activeStatus = useQueueSessionStore(useCallback(x => x.getQueueStatus, [queueId]));
   const changeStatus = useQueueSessionStore(x => x.setQueueStatus);
+  const pollInterval = usePreferencesStore(x => x.pollingInterval);
+
+
+  useGetQueueJobCountsQuery({
+    variables: {
+      id: queueId
+    },
+    pollInterval,
+    nextFetchPolicy: 'cache-and-network',
+    skip: !autoUpdate,
+    onCompleted: (data) => {
+      if (data.queue) {
+        const { jobCounts } = data.queue;
+        const { __typename, ...counts } = jobCounts;
+        updateQueue({
+          jobCounts: {
+            ...queue.jobCounts,
+            ...counts
+          }
+        });
+      }
+    }
+  });
 
   const handleClick = useCallback((status: CountStatus) => {
     // todo: navigate ???

@@ -58,14 +58,12 @@ export const useJobListQuery = ({
     setTotal(total);
     const pages = total === 0 ? 0 : Math.floor(total / pageSize);
     setPageCount(pages);
-    if (queue) {
-      updateQueue(queueId, produce(queue, draft => {
-        Object.assign(draft.jobCounts, {
-          ...(draft.jobCounts ?? {}),
-          ...counts
-        });
-      }));
-    }
+    updateQueue(produce(queue, draft => {
+      Object.assign(draft.jobCounts, {
+        ...(draft.jobCounts ?? {}),
+        ...counts
+      });
+    }));
   }
 
   const fetch = useCallback(async function fetch(
@@ -87,7 +85,7 @@ export const useJobListQuery = ({
       setLoading(false);
       setCalled(true);
     }
-  }, [status, queueId]);
+  }, []);
 
 
   const fetchFiltered = useCallback(async function(page: number) {

@@ -1,28 +1,7 @@
-import * as boom from '@hapi/boom';
-import Ajv, { ValidateFunction } from 'ajv';
-import AjvErrors from 'ajv-errors';
+import { badRequest } from '@hapi/boom';
+import { ValidateFunction } from 'ajv';
 import cronstrue from 'cronstrue';
-
-const ajv = new Ajv({
-  $data: true,
-  coerceTypes: true,
-  useDefaults: true,
-  verbose: true,
-  allErrors: true,
-});
-AjvErrors(ajv);
-
-ajv.addFormat('identifier', {
-  type: 'string',
-  validate: function (data) {
-    return /^[a-z_$][a-z0-9_$]*$/i.test(data + '');
-  },
-});
-
-ajv.addFormat('positive', {
-  type: 'number',
-  validate: (x) => x > 0,
-});
+import { ajv } from '@alpen/shared';
 
 ajv.addFormat('cron', {
   type: 'string',
@@ -45,9 +24,9 @@ export function validate(
     const errors = validator.errors;
     if (errors.length === 1) {
       const { message, ...rest } = errors[0];
-      throw boom.badRequest(message, rest);
+      throw badRequest(message, rest);
     }
-    throw boom.badRequest('Error validating job data', errors);
+    throw badRequest('Error validating data', errors);
   }
 }
 

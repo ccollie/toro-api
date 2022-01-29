@@ -21,7 +21,7 @@ export const HostSidebarSection: React.FC<HostSidebarSectionProps> = (props) => 
   const items = host.queues.map((queue) =>({
     title: queue.name,
     href: `/queues/${queue.id}`,
-  }))
+  }));
 
   // todo: need handler for title click
   return (
@@ -54,7 +54,7 @@ export const HostSidebarSection: React.FC<HostSidebarSectionProps> = (props) => 
         </svg>
       }
     />
-  )
-}
+  );
+};
 
 // todo: memoize on id

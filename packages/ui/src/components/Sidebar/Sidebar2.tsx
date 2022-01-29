@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navbar, ScrollArea } from '@mantine/core';
+import { DarkModeSelectorIcon } from '@/components/DarkModeSelectorIcon';
 import { QueueHost } from 'src/types';
 import { useMatchRoute } from 'react-location';
 
@@ -19,7 +20,7 @@ const Demo = (props: TProps) => {
   const isActive = !!matchRoute( { to: href } );
 
   return (
-    <Navbar height={600} padding={10} width={{ base: 300 }}>
+    <Navbar padding={10} width={{ base: 300 }}>
       <Navbar.Section mt="xs"><Brand /></Navbar.Section>
 
       <Navbar.Section
@@ -32,7 +33,7 @@ const Demo = (props: TProps) => {
         {/* scrollable content here */}
       </Navbar.Section>
 
-      <Navbar.Section><User /></Navbar.Section>
+      <Navbar.Section><DarkModeSelectorIcon/></Navbar.Section>
     </Navbar>
   );
-}
+};

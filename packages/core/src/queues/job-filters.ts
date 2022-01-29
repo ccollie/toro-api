@@ -2,7 +2,7 @@ import { badData, notFound, badRequest } from '@hapi/boom';
 import ms from 'ms';
 import LRUCache from 'lru-cache';
 import { getUniqueId, nanoid } from '../lib';
-import { Job, JobJsonRaw, Queue } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 import type { FilteredJobsResult, JobFilter, JobStatus } from '../types/queues';
 import { ScriptFilteredJobsResult, Scripts } from '../commands';
 import { checkMultiErrors } from '../redis';
@@ -266,10 +266,7 @@ export async function processSearch(
     const [slice, remainder] = splitArray(meta.ids, count);
     const fromCache = await getMultipleJobsById(queue, slice);
     meta.ids = remainder;
-    fromCache.forEach((json) => {
-      const job = Job.fromJSON(queue, json as unknown as JobJsonRaw);
-      jobs.push(job);
-    });
+    jobs.push(...fromCache);
   }
 
   if (jobs.length < count) {
@@ -311,6 +308,9 @@ export async function processSearch(
 
       const [slice, remainder] = splitArray(_jobs, count - jobs.length);
       jobs.push(...slice);
+
+      // todo: if we get ids from stored list, we may have to check the updated status to
+      // make sure its still a valid job
       if (remainder.length) {
         // store remainder to cursor
         meta.ids = uniq(remainder.map((job) => job.id));

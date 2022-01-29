@@ -39,6 +39,9 @@ export async function getMultipleJobsById(
   ...ids: (string | string[])[]
 ): Promise<Job[]> {
   const flat = [].concat(...ids);
+  if (flat.length === 0) {
+    return [];
+  }
   const client = await queue.client;
   const multi = client.multi();
   flat.forEach((jid) => {

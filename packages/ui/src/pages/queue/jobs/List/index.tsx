@@ -1,6 +1,6 @@
 import { LoadingOverlay, ScrollArea } from '@mantine/core';
 import React, { useCallback, useEffect } from 'react';
-import { useJobQueryParameters } from '@/services';
+import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
 import { useJobListQuery } from '../hooks/use-job-list-query';
 import { useQueue, useUnmountEffect, useWhyDidYouUpdate } from '@/hooks';

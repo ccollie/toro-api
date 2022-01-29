@@ -1,5 +1,4 @@
 import type { LocationGenerics } from '@/types';
-import { useCallback } from 'react';
 import { useMatch, useSearch } from 'react-location';
 import { usePreferencesStore } from '@/stores';
 
@@ -16,9 +15,8 @@ export function useJobQueryParameters() {
     pageSize = usePreferencesStore((state) => state.pageSize)
   } = useSearch<LocationGenerics>();
 
-  const status = searchStatus ?? usePreferencesStore(
-    useCallback((state) => state.selectedStatuses[queueId] || 'latest', [queueId])
-  );
+  const getStatus = usePreferencesStore((state) => state.getQueueStatus);
+  const status = searchStatus ?? getStatus(queueId);
 
   return { queueId, status, page, pageSize, jobFilter, jobView };
 }

@@ -12,3 +12,4 @@ export { deleteJobFilter } from './deleteJobFilter';
 export { updateJobFilter } from './updateJobFilter';
 export { deleteQueueStats } from './deleteQueueStats';
 export { deleteJobsByFilter } from './deleteJobsByFilter';
+export { retryJobs } from './retryJobs';

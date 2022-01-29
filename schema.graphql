@@ -20,8 +20,8 @@ type Query {
 
   """Load a flow"""
   flow(input: FlowNodeGetInput!): JobNode
-  getJobs(input: GetJobsInput): [Job!]!
-  getJobsById(input: GetJobsByIdInput): [Job!]!
+  getJobs(input: GetJobsInput!): [Job!]!
+  getJobsById(input: GetJobsByIdInput!): [Job!]!
 
   """Get a Host by id"""
   host(id: ID!): QueueHost
@@ -55,7 +55,7 @@ type Query {
 
   """Infer a JSONSchema from completed jobs in a queue"""
   inferJobSchema(input: InferJobSchemaInput): JobSchema
-  findJobs(input: FindJobsInput!): [Job!]!
+  findJobs(input: FindJobsInput!): FindJobsResult!
 }
 
 type Mutation {
@@ -159,6 +159,7 @@ type Mutation {
 
   """Incrementally delete jobs filtered by query criteria"""
   deleteJobsByFilter(filter: DeleteJobsByFilterInput!): DeleteJobsByFilterPayload!
+  retryJobs(input: RetryJobsInput!): RetryJobsPayload!
 
   """Removes all alerts associated with a rule"""
   clearRuleAlerts(input: ClesrRuleAlertsInput!): ClearRuleAlertsResult!
@@ -748,6 +749,11 @@ type DrainQueueResult {
 
 type EnableNotificationChannelResult {
   updated: Boolean!
+}
+
+type FindJobsResult {
+  nextCursor: ID!
+  jobs: [Job!]!
 }
 
 type HistogramBin {
@@ -1584,6 +1590,11 @@ type RetryJobResult {
   queue: Queue!
 }
 
+type RetryJobsPayload {
+  """the number of retried jobs"""
+  count: Int
+}
+
 type Rule {
   """The rule id"""
   id: ID!
@@ -2181,9 +2192,11 @@ input DeleteRuleInput {
 input FindJobsInput {
   """The id of the desired queue"""
   queueId: ID!
-  offset: Int = 0
-  limit: Int = 20
-  status: JobStatus = completed
+  scanCount: Int = 20
+  status: JobStatus
+
+  """The cursor to start from"""
+  cursor: String
 
   """
   A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000)
@@ -2747,6 +2760,16 @@ input RepeatableJobsInput {
   offset: Int = 0
   limit: Int = 20
   order: SortOrderEnum = DESC
+}
+
+input RetryJobsInput {
+  """The id of the queue"""
+  queueId: ID!
+
+  """
+  number to limit how many jobs will be moved to wait status per iteration
+  """
+  count: Int
 }
 
 input RuleAlertOptionsInput {

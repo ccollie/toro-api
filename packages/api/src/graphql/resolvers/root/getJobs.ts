@@ -41,7 +41,7 @@ export const getJobs: FieldConfig = {
   },
   async resolve(
     _,
-    { input }: { input: GetJobsInput },
+    { input }, //: { input: GetJobsInput },
     { accessors }: EZContext,
   ): Promise<Job[]> {
     const {
@@ -51,11 +51,10 @@ export const getJobs: FieldConfig = {
       status,
       sortOrder = SortOrderEnum.DESC,
     } = input || {};
-    const queue = accessors.getQueueById(queueId);
     const asc = sortOrder.toLowerCase() === 'asc';
-    const manager = accessors.getQueueManager(queue);
-    // todo: check out requested fields. If "states" is requested
-    // use the optimized method to get states in bulk
-    return manager.getJobs(status as JobState, offset, limit, asc);
+    const manager = accessors.getQueueManager(queueId);
+    // TODO: fix the cast
+    const statuses = [status as JobState];
+    return manager.getJobs(statuses, offset, limit, asc);
   },
 };

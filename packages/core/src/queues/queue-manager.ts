@@ -11,7 +11,7 @@ import { QueueListener } from './queue-listener';
 import { deleteAllQueueData, getJobTypes, getMultipleJobsById } from './queue';
 import { HostManager, QueueConfig } from '../hosts';
 import { Clock, getQueueUri } from '../lib';
-import type { JobStatus, RepeatableJob } from '../types/queues';
+import type { RepeatableJob } from '../types/queues';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../keys';
 import { MetricManager, BaseMetric } from '../metrics';
@@ -359,14 +359,14 @@ export class QueueManager {
 
   /**
    * Fetch a number of jobs of certain type
-   * @param {String} state Job states: {WAITING|ACTIVE|DELAYED|COMPLETED|FAILED}
+   * @param {String} states Job states: {WAITING|ACTIVE|DELAYED|COMPLETED|FAILED}
    * @param {Number} offset Index offset (optional)
    * @param {Number} limit Limit of the number of getJobs returned (optional)
    * @param asc {Boolean} asc/desc
    * @returns {Promise} A promise that resolves to an array of Jobs
    */
   async getJobs(
-    state: JobState,
+    states: JobState[],
     offset = 0,
     limit = 25,
     asc?: boolean,
@@ -379,19 +379,18 @@ export class QueueManager {
       failed: false,
     };
 
-    if (asc === undefined) {
-      asc = order[state];
+    if (asc === undefined && states?.length === 1) {
+      asc = order[states[0]];
     }
     const end = limit < 0 ? -1 : offset + limit - 1;
 
-    // eslint-disable-next-line prefer-const
-    const ids = await this.queue.getRanges([state], offset, end, asc);
+    const ids = await this.queue.getRanges(states, offset, end, asc);
     let jobs = [];
     if (ids.length) {
       jobs = await this.getMultipleJobsById(ids as string[]);
       jobs.forEach((job) => {
         (job as any).queueId = this.id;
-        job.state = state;
+        if (states.length === 1) job.state = states[0];
       });
     }
 
@@ -400,7 +399,7 @@ export class QueueManager {
 
   async getJobCounts(
     states: JobState[] = ALL_STATUSES,
-  ): Promise<Record<JobStatus, number>> {
+  ): Promise<Record<JobState, number>> {
     let result = await this.queue.getJobCounts(...states);
     if (!result) result = {};
     states.forEach((state) => {
@@ -408,7 +407,7 @@ export class QueueManager {
         result[state] = 0;
       }
     });
-    return result as Record<JobStatus, number>;
+    return result as Record<JobState, number>;
   }
 
   /**

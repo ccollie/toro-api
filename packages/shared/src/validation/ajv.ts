@@ -1,6 +1,7 @@
 import { badRequest } from '@hapi/boom';
 import Ajv, { ValidateFunction } from 'ajv';
 import AjvErrors from 'ajv-errors';
+import AjvKeywords from 'ajv-keywords';
 import addFormats from 'ajv-formats';
 
 const ajv = new Ajv({
@@ -12,6 +13,7 @@ const ajv = new Ajv({
 });
 AjvErrors(ajv);
 addFormats(ajv);
+AjvKeywords(ajv);
 
 ajv.addFormat('identifier', {
   type: 'string',
@@ -36,7 +38,7 @@ export function validate(
       const { message, ...rest } = errors[0];
       throw badRequest(message, rest);
     }
-    throw badRequest('Error validating job data', errors);
+    throw badRequest('Error validating data', errors);
   }
 }
 

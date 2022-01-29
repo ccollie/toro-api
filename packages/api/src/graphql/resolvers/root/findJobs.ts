@@ -1,5 +1,4 @@
-import { DataSearcher } from '@alpen/core';
-import { Job } from 'bullmq';
+import { JobSearcher, TSearchResult } from '@alpen/core';
 import type { JobType } from 'bullmq';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
@@ -7,11 +6,16 @@ import { schemaComposer } from 'graphql-compose';
 import {
   JobStatusEnumType,
 } from '../../scalars';
-import { JobTC } from '../job/model/Job';
 import { FindJobsInput } from '../../typings';
 
 export const findJobs: FieldConfig = {
-  type: JobTC.NonNull.List.NonNull,
+  type: schemaComposer.createObjectTC({
+    name: 'FindJobsResult',
+    fields: {
+      nextCursor: 'ID!',
+      jobs: '[Job!]!',
+    },
+  }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
       name: 'FindJobsInput',
@@ -20,18 +24,16 @@ export const findJobs: FieldConfig = {
           type: 'ID!',
           description: 'The id of the desired queue',
         },
-        offset: {
-          type: 'Int',
-          defaultValue: 0,
-        },
-        limit: {
+        scanCount: {
           type: 'Int',
           defaultValue: 20,
         },
         status: {
           type: JobStatusEnumType,
-          isRequired: true,
-          defaultValue: 'completed',
+        },
+        cursor: {
+          type: 'String',
+          description: 'The cursor to start from',
         },
         expression: {
           type: 'String!',
@@ -43,27 +45,26 @@ export const findJobs: FieldConfig = {
   },
   async resolve(
     _,
-    { input }: { input: FindJobsInput },
+    { input },
     { accessors }: EZContext,
-  ): Promise<Job[]> {
+  ): Promise<TSearchResult> {
     const {
       queueId,
-      offset = 0,
-      limit = 10,
+      cursor,
+      scanCount,
       status: _status,
       expression,
     } = input;
     const queue = accessors.getQueueById(queueId);
-    const searcher = new DataSearcher(queue);
+    const searcher = new JobSearcher(queue);
     // todo:
     const status = _status as JobType;
     return searcher
       .search({
         status,
         search: expression,
-        offset,
-        limit,
-        scanCount: this._config.textSearchScanCount,
+        cursor,
+        scanCount: scanCount ?? this._config.textSearchScanCount,
       });
   },
 };

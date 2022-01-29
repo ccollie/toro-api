@@ -57,6 +57,15 @@ fragment RepeatableJob on RepeatableJob {
     descr
 }
 
+query FindJobs($queueId: ID!, $status: JobStatus, $criteria: String!, $cursor: String, $limit: Int = 10) {
+    findJobs(input: {queueId: $queueId, scanCount: $limit, expression: $criteria, status: $status}) {
+        nextCursor,
+        jobs {
+            ...Job
+        }
+    }
+}
+
 query GetJobsByFilter($id: ID!, $status: JobStatus, $cursor: String, $criteria: String, $count: Int = 10) {
     queue(id: $id) {
         id
@@ -69,6 +78,12 @@ query GetJobsByFilter($id: ID!, $status: JobStatus, $cursor: String, $criteria: 
             }
         }
         ...JobCounts
+    }
+}
+
+query GetJobsById($queueId: ID!, $ids: [ID!]!) {
+    getJobsById(input: { queueId: $queueId, ids: $ids }) {
+        ...Job
     }
 }
 
@@ -127,6 +142,11 @@ query GetQueueJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobSta
     }
 }
 
+query GetJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobStatus, $sortOrder: SortOrderEnum) {
+    getJobs(input: { queueId: $id, offset: $offset, limit: $limit, status: $status, sortOrder: $sortOrder }) {
+        ...Job
+    }
+}
 
 query GetRepeatableJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $sortOrder: SortOrderEnum) {
     queue(id: $id) {
