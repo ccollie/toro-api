@@ -1,4 +1,6 @@
+import { JOB_STATES } from '@alpen/core';
 import { Queue } from 'bullmq';
+import { ALL } from 'dns';
 import { EZContext } from 'graphql-ez';
 import {
   SortOrderEnum,
@@ -50,6 +52,7 @@ export const queueJobs: FieldConfig = {
     const manager = accessors.getQueueManager(queue);
     // todo: check out requested fields. If "states" is requested
     // use the optimized method to get states in bulk
-    return manager.getJobs(status, offset, limit, asc);
+    const states = status ? [status] : JOB_STATES;
+    return manager.getJobs(states, offset, limit, asc);
   },
 };

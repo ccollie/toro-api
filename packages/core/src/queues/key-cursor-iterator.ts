@@ -30,7 +30,7 @@ const SPECIAL_KEYS = new Set<string>([
   'logs',
 ]);
 
-type FilterFn = (keys: string[]) => string[] | Promise<string[]>;
+export type FilterFn = (keys: string[]) => string[] | Promise<string[]>;
 
 type TKeyCursorIteratorArgs = {
   status?: JobType;

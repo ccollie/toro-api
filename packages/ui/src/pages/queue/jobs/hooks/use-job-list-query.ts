@@ -70,6 +70,7 @@ export const useJobListQuery = ({
     page = 1,
     sortOrder: SortOrderEnum = SortOrderEnum.Desc
   ) {
+    page = Math.min(page, 1);
     const offset = (page - 1) * pageSize;
 
     // todo: support "latest
@@ -85,7 +86,7 @@ export const useJobListQuery = ({
       setLoading(false);
       setCalled(true);
     }
-  }, []);
+  }, [queueId, status, pageSize]);
 
 
   const fetchFiltered = useCallback(async function(page: number) {

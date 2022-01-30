@@ -428,7 +428,7 @@ export enum ErrorLevel {
 export type FindJobsInput = {
   /** The cursor to start from */
   cursor?: InputMaybe<Scalars['String']>;
-  /** A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000) */
+  /** A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000) */
   expression: Scalars['String'];
   /** The id of the desired queue */
   queueId: Scalars['ID'];
@@ -437,8 +437,12 @@ export type FindJobsInput = {
 };
 
 export type FindJobsResult = {
+  /** Total current index of the end of the last set of jobs returned */
+  current: Scalars['Int'];
   jobs: Array<Job>;
   nextCursor: Scalars['ID'];
+  /** Total number of jobs in the given state, but not necessarily the filtered count */
+  total: Scalars['Int'];
 };
 
 /** Values needed to create a FlowJob */

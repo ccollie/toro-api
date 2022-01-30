@@ -1,11 +1,8 @@
-import { JobSearcher, TSearchResult } from '@alpen/core';
-import type { JobType } from 'bullmq';
+import { findJobs as search } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import {
-  JobStatusEnumType,
-} from '../../scalars';
+import { JobStatusEnumType } from '../../scalars';
 import { FindJobsInput } from '../../typings';
 
 export const findJobs: FieldConfig = {
@@ -14,6 +11,17 @@ export const findJobs: FieldConfig = {
     fields: {
       nextCursor: 'ID!',
       jobs: '[Job!]!',
+      total: {
+        type: 'Int!',
+        // eslint-disable-next-line max-len
+        description:
+          'Total number of jobs in the given state, but not necessarily the filtered count',
+      },
+      current: {
+        type: 'Int!',
+        description:
+          'Total current index of the end of the last set of jobs returned',
+      },
     },
   }).NonNull,
   args: {
@@ -38,33 +46,23 @@ export const findJobs: FieldConfig = {
         expression: {
           type: 'String!',
           // eslint-disable-next-line max-len
-          description: 'A JS compatible Search expression, e.g (name === "trancode") && (responseTime > 10000)',
+          description:
+            // eslint-disable-next-line max-len
+            'A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000)',
         },
       },
     }).NonNull,
   },
-  async resolve(
-    _,
-    { input },
-    { accessors }: EZContext,
-  ): Promise<TSearchResult> {
-    const {
-      queueId,
-      cursor,
-      scanCount,
-      status: _status,
-      expression,
-    } = input;
+  async resolve(_, { input }, { accessors }: EZContext) {
+    const { queueId, cursor, scanCount, status, expression } = input;
     const queue = accessors.getQueueById(queueId);
-    const searcher = new JobSearcher(queue);
     // todo:
-    const status = _status as JobType;
-    return searcher
-      .search({
-        status,
-        search: expression,
-        cursor,
-        scanCount: scanCount ?? this._config.textSearchScanCount,
-      });
+    const result = await search(queue, status, expression, cursor, scanCount);
+    return {
+      nextCursor: result.cursor,
+      jobs: result.jobs,
+      current: result.current,
+      total: result.total,
+    };
   },
 };

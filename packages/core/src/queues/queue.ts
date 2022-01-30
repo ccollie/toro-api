@@ -278,9 +278,10 @@ export async function getJobCountByType(
   queue: Queue,
   ...states: JobState[]
 ): Promise<number> {
+  const statuses = states.length ? states : JOB_STATES;
   const key = {
     queue,
-    types: states,
+    types: statuses,
   };
   const counts = await loaders.jobCounts.load(key);
   return Object.values(counts).reduce(

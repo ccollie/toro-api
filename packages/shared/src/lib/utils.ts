@@ -205,3 +205,14 @@ export function ordinal(number: number): string {
 export const escapeRegExp = (text: string) => {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 };
+
+export function splitArray<T = any>(source: T[], count: number): [T[], T[]] {
+  const len = source.length;
+  if (count >= len) {
+    return [source, []];
+  }
+  const toTake = Math.max(len, count);
+  const slice = source.slice(0, toTake - 1);
+  const remainder = toTake < len ? source.slice(toTake) : [];
+  return [slice, remainder];
+}
