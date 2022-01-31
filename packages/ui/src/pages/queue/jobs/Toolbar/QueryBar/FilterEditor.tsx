@@ -2,18 +2,19 @@ import { autocompletion, completionKeymap } from '@codemirror/autocomplete';
 import React, { useEffect, useRef } from 'react';
 import { javascript } from '@codemirror/lang-javascript';
 import type { ViewUpdate } from '@codemirror/view';
-import { history, historyKeymap } from "@codemirror/history";
-import { defaultKeymap } from "@codemirror/commands";
-import { bracketMatching } from "@codemirror/matchbrackets";
-import { closeBrackets, closeBracketsKeymap } from "@codemirror/closebrackets";
-import { commentKeymap } from "@codemirror/comment";
-import { defaultHighlightStyle } from "@codemirror/highlight";
-import { lintKeymap } from "@codemirror/lint";
+import { history, historyKeymap } from '@codemirror/history';
+import { defaultKeymap } from '@codemirror/commands';
+import { bracketMatching } from '@codemirror/matchbrackets';
+import { closeBrackets, closeBracketsKeymap } from '@codemirror/closebrackets';
+import { commentKeymap } from '@codemirror/comment';
+import { defaultHighlightStyle } from '@codemirror/highlight';
+import { lintKeymap } from '@codemirror/lint';
 
 import { EditorState, EditorView, keymap, useCodeMirror } from '@uiw/react-codemirror';
 import { completeFromGlobalScope } from '@/services/autocomplete';
 import { useUnmountEffect } from 'src/hooks';
 import { useCodeEditorStore } from 'src/stores/code-editor';
+import { useDebouncedCallback } from 'use-debounce';
 
 // todo: validate on change
 interface EditorProps {
@@ -28,7 +29,8 @@ interface EditorProps {
   maxHeight?: string;
   width?: string;
   minWidth?: string;
-  maxWidth?: string
+  maxWidth?: string;
+  debounceInterval?: number;
   onInit?: (view: EditorView, state: EditorState) => void;
   onChange?: (value: string, update: ViewUpdate) => void;
   style?: React.CSSProperties;
@@ -39,11 +41,12 @@ export const FilterEditor = ({
   autocomplete = true,
   theme,
   onChange = undefined,
+  debounceInterval = 300,
   onInit,
   editable,
   className,
   placeholder,
-  height = "36px",
+  height = '36px',
   minHeight,
   maxHeight,
   width = '100%',
@@ -68,13 +71,19 @@ export const FilterEditor = ({
       ...lintKeymap
     ]),
     javascript()
-  ]
+  ];
 
   const themeToUse = theme || useCodeEditorStore((store) => store.theme) || 'light';
 
   if (autocomplete && editable === true) {
     extensions.push(autocompletion({ override: [completeFromGlobalScope] }));
   }
+
+  const debouncedChange = useDebouncedCallback((value: string, update: ViewUpdate) => {
+    if (onChange) {
+      onChange(value, update);
+    }
+  }, debounceInterval);
 
   const { setContainer, view, state } = useCodeMirror({
     basicSetup: false,
@@ -83,7 +92,7 @@ export const FilterEditor = ({
     theme: themeToUse,
     value,
     editable,
-    onChange,
+    onChange: debouncedChange,
     placeholder,
     height,
     minHeight,

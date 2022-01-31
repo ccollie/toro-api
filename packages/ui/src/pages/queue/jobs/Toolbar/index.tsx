@@ -1,5 +1,5 @@
 import { JobStatus, JobView, LocationGenerics } from '@/types';
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import type { Job, JobFragment, Status } from '@/types';
 import { useDisclosure, useToast, useWhyDidYouUpdate, useQueue } from '@/hooks';
 import {
@@ -22,6 +22,8 @@ import ExportJobsModal from '../ExportJobsModal';
 import AddJobDialog from '../AddJobDialog';
 import CleanJobsModal from '../CleanJobsModal';
 import JobSchemaModal from '../JobSchemaModal';
+import Pagination from '@/components/Pagination';
+import FilteredPager from '../FilteredPager';
 
 interface BulkJobActionsProps {
   queueId: string;
@@ -37,7 +39,7 @@ interface BulkJobActionsProps {
 export const JobsToolbar = (props : BulkJobActionsProps) => {
   useWhyDidYouUpdate('JobsToolbar', props);
 
-  const { status, queueId, onBulkAction, view = 'card' } = props;
+  const { status, queueId, onBulkAction, view = 'card', pageCount } = props;
   const toast = useToast();
   const { handleDelete, handlePromote, handleRetry, canClear, canPromote, canDelete, canRetry } =
     useJobBulkActions(queueId, status, onBulkAction);
@@ -166,7 +168,7 @@ export const JobsToolbar = (props : BulkJobActionsProps) => {
   );
 
   return (
-    <Fragment>
+    <div style={{ marginBottom: '9px' }}>
       <Group grow={false} spacing="sm" position="apart">
         <Group grow={false} spacing="xs" position="left">
           <Tooltip label="Retry" withArrow>
@@ -229,9 +231,10 @@ export const JobsToolbar = (props : BulkJobActionsProps) => {
         </Group>
 
         <div>
-          <Tooltip label="Refresh" withArrow>
-            <Button>Do Something!</Button>
-          </Tooltip>
+          {!!props.filter ?
+            <FilteredPager pageCount={pageCount ?? 1}  queueId={queueId}/>
+            : <Pagination page={props.page} pageCount={props.pageCount??5} />
+          }
         </div>
       </Group>
       <Collapse in={isFilterPanelOpen}>
@@ -258,7 +261,7 @@ export const JobsToolbar = (props : BulkJobActionsProps) => {
       {isSchemaModalOpen && (
         <JobSchemaModal queueId={queueId} onClose={closeSchemaModal} isOpen={isSchemaModalOpen} />
       )}
-    </Fragment>
+    </div>
   );
 };
 

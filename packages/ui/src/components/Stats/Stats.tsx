@@ -40,7 +40,7 @@ const StatsPart: React.FC<StatsPartProps> = ( props ) => {
   return (
     <div className={getClassName(part, className)} {...rest}>{children}</div>
   );
-}
+};
 
 interface StatsGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 }
@@ -51,8 +51,8 @@ export const StatisticsGroup: React.FC<StatsGroupProps> = (props) => {
     <div className={cn(s.stats, className)} {...rest}>
       {children}
     </div>
-  )
-}
+  );
+};
 
 interface StatsTitleProps extends React.HTMLAttributes<HTMLDivElement> {
 }
@@ -60,11 +60,11 @@ interface StatsTitleProps extends React.HTMLAttributes<HTMLDivElement> {
 export const StatsTitle: React.FC<StatsTitleProps> = (props) => {
   const { children, ...rest } = props;
   return (
-    <div className="stat-title" {...rest}>
+    <div className={s.statTitle} {...rest}>
       {children}
     </div>
-  )
-}
+  );
+};
 
 interface StatsFigureProps extends React.HTMLAttributes<HTMLDivElement> {
 }
@@ -72,11 +72,11 @@ interface StatsFigureProps extends React.HTMLAttributes<HTMLDivElement> {
 export const StatsFigure: React.FC<StatsFigureProps> = (props) => {
   const { children, ...rest } = props;
   return (
-    <div className="stat-figure" {...rest}>
+    <div className={s.statFigure} {...rest}>
       {children}
     </div>
-  )
-}
+  );
+};
 
 export interface StatProps {
   className?: string;
@@ -88,15 +88,15 @@ export interface StatProps {
 
 export const Statistic: React.FC<StatProps> = (props) => {
   const { children, title, value, description, figure, ...rest } = props;
-  const style = { gridTemplateColumns: "1fr auto" };
+  const style = { gridTemplateColumns: '1fr auto' };
   return (
-    <div className="stat" {...rest} style={style}>
-      {title && <div className="stat-title">{title}</div>}
-      {value && <div className="stat-value">{value}</div>}
-      {description && <div className="stat-desc">{description}</div>}
-      {figure && <div className="state-figure">{figure}</div>}
+    <div className={s.stat} {...rest} style={style}>
+      {title && <div className={s.statTitle}>{title}</div>}
+      {value && <div className={s.statValue}>{value}</div>}
+      {description && <div className={s.statDesc}>{description}</div>}
+      {figure && <div className={s.statFigure}>{figure}</div>}
       {children && {children}}
     </div>
-  )
-}
+  );
+};
 

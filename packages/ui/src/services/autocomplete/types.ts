@@ -94,7 +94,7 @@ function _defun(m : Partial<FunctionDef>) : FunctionDef {
     returnType: 'string',
     params: [],
     ...m
-  }
+  };
 }
 
 const StringDefinition: TypeDefinition = {
@@ -335,6 +335,7 @@ const ArrayDefinition: TypeDefinition = {
       name: 'join',
       returnType: 'string',
       description:
+      // eslint-disable-next-line max-len
         'creates and returns a new string by concatenating all of the elements in an array (or an array-like object), separated by commas or a specified separator string.',
       params: [
         { name: 'separator', typeName: 'string', type: 'param' },
@@ -344,6 +345,7 @@ const ArrayDefinition: TypeDefinition = {
       name: 'shift',
       returnType: 'any',
       description:
+      // eslint-disable-next-line max-len
         'The shift() method removes the first element from an array and returns that removed element. This method changes the length of the array.',
     }),
     _method({
@@ -750,16 +752,19 @@ const ObjectDefinition: TypeDefinition = {
     _method({
       name: 'keys',
       returnType: 'array',
+      // eslint-disable-next-line max-len
       description: 'Returns an array containing the names of all of the given object\'s own enumerable string properties.',
     }),
     _method({
       name: 'values',
       returnType: 'array',
+      // eslint-disable-next-line max-len
       description: 'Returns an array containing the values that correspond to all of a given object\'s own string properties.',
     }),
     _method({
       name: 'entries',
       returnType: 'array',
+      // eslint-disable-next-line max-len
       description: 'Returns an array containing all of the [key, value] pairs of a given object\'s own enumerable string properties.',
     }),
   ],

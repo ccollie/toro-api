@@ -1,10 +1,8 @@
-import React from "react";
+import React from 'react';
 
 interface StatisticCardProps {}
-export const StatisticCard: React.FC<StatisticCardProps> = (props) =>{
-  const {
-    children
-  } = props;
+export const StatisticCard: React.FC<StatisticCardProps> = (props) => {
+  const { children } = props;
   return (
     <>
       <div className="w-full flex items-center justify-center">
@@ -14,6 +12,6 @@ export const StatisticCard: React.FC<StatisticCardProps> = (props) =>{
       </div>
     </>
   );
-}
+};
 
 export default StatisticCard;

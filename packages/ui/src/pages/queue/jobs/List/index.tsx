@@ -12,7 +12,13 @@ import JobsToolbar from '../Toolbar';
 import shallow from 'zustand/shallow';
 
 export const Jobs = () => {
-  const { queueId, status, page, jobView, jobFilter: filter } = useJobQueryParameters();
+  const {
+    queueId,
+    status,
+    page,
+    jobView,
+    jobFilter: filter,
+  } = useJobQueryParameters();
   const pollingInterval = usePreferencesStore((state) => state.pollingInterval);
 
   const { queue } = useQueue(queueId);
@@ -27,22 +33,22 @@ export const Jobs = () => {
   });
 
   // todo: load
-  const {
-    loading,
-    called,
-    jobs,
-    fetchJobs,
-    pageCount
-  } = useJobListQuery({
+  const { loading, called, jobs, fetchJobs, pageCount } = useJobListQuery({
     queueId,
     status,
-    filter
+    filter,
   });
 
-  const [selectedJobs, isSelected, toggleSelected, removeSelected] = useJobsStore(
-    (state) => [state.selectedJobs, state.isSelected, state.toggleSelectJob, state.unselectJob],
-    shallow
-  );
+  const [selectedJobs, isSelected, toggleSelected, removeSelected] =
+    useJobsStore(
+      (state) => [
+        state.selectedJobs,
+        state.isSelected,
+        state.toggleSelectJob,
+        state.unselectJob,
+      ],
+      shallow,
+    );
 
   const exec = useCallback(() => {
     !loading && fetchJobs(page);
@@ -72,7 +78,14 @@ export const Jobs = () => {
           selected={selectedJobs}
         />
       </div>
-      <div style={{ width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          width: '100%',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <LoadingOverlay visible={!called} />
         {jobView === 'card' && (
           <ScrollArea sx={{ flex: 1 }}>

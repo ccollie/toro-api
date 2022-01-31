@@ -9,7 +9,7 @@ import type { RepeatableJob } from '@/types';
 import { deleteRepeatableJobByKey, getRepeatableJobs } from '@/services';
 import { useMatch } from 'react-location';
 import { useInterval } from '@/hooks';
-import { Pagination } from '@/components/Pagination/Pagination';
+import { Pagination } from '@/components/Pagination';
 import { ScheduledJobsTable } from './JobsTable';
 import { getPollingInterval } from 'src/stores/network-settings';
 

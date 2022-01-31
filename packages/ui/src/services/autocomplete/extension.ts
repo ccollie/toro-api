@@ -4,7 +4,7 @@ import { syntaxTree } from '@codemirror/language';
 import { suggestGlobals, suggestMembers } from './utils';
 import { Suggestible, isTypeDefinition } from './types';
 
-const completePropertyAfter = ['PropertyName', '.', '?.'];
+const completePropertyAfter = ['Identifier', 'PropertyName', '.', '?.'];
 const dontCompleteIn = [
   'TemplateString',
   'LineComment',

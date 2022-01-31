@@ -1,9 +1,9 @@
 import { ViewUpdate } from '@codemirror/view';
-import { Button, Group } from '@mantine/core';
-import { EditorState, EditorView } from '@uiw/react-codemirror';
+import { Button, Tooltip } from '@mantine/core';
 import React, { useCallback, useState } from 'react';
 import { useCallbackRef, useDisclosure, useWhyDidYouUpdate } from '@/hooks';
 import { validateQuery } from '@/services/job-filter/query-parser';
+import { BackspaceIcon } from 'src/components/Icons';
 import FilterEditor from './FilterEditor';
 import QueryHistoryPopover from './query-history/QueryHistoryPopover';
 import { useQueueJobFilters } from 'src/services';
@@ -23,13 +23,11 @@ export const QueryBar = (props: QueryBarProps) => {
   const [hasError, setHasError] = useState(false);
   const [lastExecutedQuery, setLastExecutedQuery] = useState<string>('');
   const [filter, setFilter] = useState<string>(
-    props.defaultFilter ?? DEFAULT_FILTER
+    props.defaultFilter ?? DEFAULT_FILTER,
   );
   const [isEmptyQuery, setIsEmptyQuery] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const {placeholder = 'Job Filter' } = props;
-  const [editorValue, setEditorValue] = useState<EditorView>();
-  const [editorState, setEditorState] = useState<EditorState>();
+  const { placeholder = 'Job Filter' } = props;
 
   const {
     isOpen: isHistoryDialogOpen,
@@ -102,14 +100,16 @@ export const QueryBar = (props: QueryBarProps) => {
     }
   });
 
-  const handleApply = useCallback((evt: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    if (evt) {
-      evt.preventDefault();
-      evt.stopPropagation();
-    }
-    applyFilter();
-  }, []);
-
+  const handleApply = useCallback(
+    (evt: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      if (evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
+      applyFilter();
+    },
+    [],
+  );
 
   function onResetButtonClicked() {
     const { onReset } = props;
@@ -123,11 +123,6 @@ export const QueryBar = (props: QueryBarProps) => {
     closeHistoryDialog();
   }
 
-  const onEditorInit = useCallback((view: EditorView, state: EditorState) => {
-    setEditorValue(view);
-    setEditorState(state);
-  }, []);
-
   const onEditorChange = useCallback((value: string, _: ViewUpdate) => {
     value = value.trim();
     const valid = validateQuery(value);
@@ -136,32 +131,44 @@ export const QueryBar = (props: QueryBarProps) => {
   }, []);
 
   return (
-    <Group position="apart" grow>
-      <FilterEditor
-        value={filter}
-        onChange={onEditorChange}
-        onInit={onEditorInit}
-        placeholder={placeholder}
-      />
-      <Group position="right" spacing="xs" grow={false}>
-        <Button
-          compact
-          onClick={handleApply}
-          disabled={isLoading || !filter || !isValid}
-          loading={isLoading}
-        >
-          Find
-        </Button>
-        <Button compact onClick={onResetButtonClicked}>Reset</Button>
-        <QueryHistoryPopover
-          queueId={props.queueId}
-          currentFilter={filter}
-          toggleOpen={toggleHistoryDialog}
-          isOpen={isHistoryDialogOpen}
-          onClose={closeHistoryDialog}
-          onFilterClick={onFilterSelected}
-        />
-      </Group>
-    </Group>
+    <div>
+      <div className="flex items-center py-2 space-x-6 rounded-sm">
+        <div className="flex bg-gray-100 p-4 space-x-4 rounded-sm" style={{ flexGrow: 1 }}>
+          <QueryHistoryPopover
+            queueId={props.queueId}
+            currentFilter={filter}
+            toggleOpen={toggleHistoryDialog}
+            isOpen={isHistoryDialogOpen}
+            onClose={closeHistoryDialog}
+            onFilterClick={onFilterSelected}
+          />
+          <div style={{ flexGrow: 1 }}>
+            <FilterEditor
+              value={filter}
+              onChange={onEditorChange}
+              placeholder={placeholder}
+              className={hasError ? 'border-red-500' : undefined}
+            />
+          </div>
+          <Tooltip label="Clear filter" withArrow>
+            <BackspaceIcon
+              aria-label="Clear filter"
+              className="h-6 w-6 opacity-30 mt-2 cursor-pointer"
+              onClick={onResetButtonClicked}
+              fill="none"
+            />
+          </Tooltip>
+          <Button
+            size="sm"
+            onClick={handleApply}
+            disabled={isLoading || !filter || !isValid}
+            loading={isLoading}
+            color={hasError ? 'red' : undefined}
+          >
+            Find
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };

@@ -230,7 +230,7 @@ const QueryHistoryPopover: React.FC<QueryHistoryPopoverOpts> = (props) => {
   function Trigger() {
     return (
       <ActionIcon onClick={toggleOpen} aria-label="Saved Queries popover">
-        <ClockIcon size={24} />
+        <ClockIcon size={24} className="inline-block" />
       </ActionIcon>
     );
   }

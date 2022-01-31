@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pagination as Pager} from '@mantine/core';
+import { Pagination as Pager } from '@mantine/core';
 import { usePagination } from '@/hooks';
 
 interface IPaginationProps {
@@ -7,7 +7,7 @@ interface IPaginationProps {
   pageCount: number;
 }
 
-const InnerPagination: React.FC<IPaginationProps> = (props) => {
+const InnerPagination = (props: IPaginationProps) => {
   const { page: _page, gotoPage } = usePagination();
   const { page = _page, pageCount = 0 } = props;
 
@@ -17,9 +17,8 @@ const InnerPagination: React.FC<IPaginationProps> = (props) => {
 
   const pageIdx = (Number(page) || 1) - 1;
 
-  return (
-    <Pager total={pageCount} page={pageIdx} onChange={gotoPage} />
-  );
-}
+  return <Pager total={pageCount} page={pageIdx} onChange={gotoPage} />;
+};
 
 export const Pagination = InnerPagination;
+export default Pagination;

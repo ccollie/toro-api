@@ -3,6 +3,7 @@ export * from './Analytics';
 export * from './ArrowLeft';
 export * from './ArrowRight';
 export * from './ArrowUp';
+export * from './Backspace';
 export * from './CheckboxBlank';
 export * from './CheckboxChecked';
 export * from './CloudServer';

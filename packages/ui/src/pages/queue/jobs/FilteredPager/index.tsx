@@ -10,7 +10,7 @@ import {
 interface FilteredJobToolbarProps {
   queueId: string;
   pageCount: number;
-  onRefresh: () => void;
+  onRefresh?: () => void;
 }
 
 export const FilteredPager = (props: FilteredJobToolbarProps) => {
