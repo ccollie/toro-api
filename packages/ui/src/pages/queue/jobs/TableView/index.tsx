@@ -3,7 +3,7 @@ import { useJobsStore } from '@/stores';
 import { useWhyDidYouUpdate } from 'src/hooks';
 import { JobStatus } from 'src/types';
 import shallow from 'zustand/shallow';
-import { useRemoveJobSelectionOnUnmount } from 'src/pages/queue/jobs/hooks';
+import { useRemoveJobSelectionOnUnmount } from '../hooks';
 import React from 'react';
 import { EmptyBody } from 'src/components/Table/EmptyBody';
 import { TableWrapper } from 'src/components/Table/TableWrapper';

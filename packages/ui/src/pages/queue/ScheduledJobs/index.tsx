@@ -1,91 +1,63 @@
-import { LocationGenerics } from '@/types';
+import { LocationGenerics, useGetRepeatableJobsQuery } from '@/types';
 import React, {
   useState,
-  useRef,
   useEffect,
   useCallback,
 } from 'react';
 import type { RepeatableJob } from '@/types';
-import { deleteRepeatableJobByKey, getRepeatableJobs } from '@/services';
+import { deleteRepeatableJobByKey } from '@/services';
 import { useMatch } from 'react-location';
-import { useInterval } from '@/hooks';
 import { Pagination } from '@/components/Pagination';
 import { ScheduledJobsTable } from './JobsTable';
 import { getPollingInterval } from 'src/stores/network-settings';
 
-export const ScheduledJobs: React.FC = () => {
+export const ScheduledJobs = () => {
   const {
     params: { queueId } ,
     search: { page = 1, pageSize = 10 }
   } = useMatch<LocationGenerics>();
 
   const [data, setData] = useState<RepeatableJob[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [called, setCalled] = useState(false);
-  const pagination = useRef<{
-    current: number;
-    pageSize: number;
-    total: number;
-    pageCount: number;
-  }>({
-    current: page,
-    pageSize,
-    total: 0,
-    pageCount: 0,
-  });
+  const [count, setCount] = useState<number>(0);
+  const [pageCount, setPageCount] = useState<number>(0);
+  const [offset, setOffset] = useState(0);
 
-  const pollingInterval = getPollingInterval() || 25000;
+  useEffect(() => {
+    setOffset(pageSize * (Math.min(page, 1) - 1));
+  }, [page, pageSize]);
+
+  useEffect(() => {
+    setPageCount(Math.ceil(count / pageSize));
+  }, [count, pageSize]);
+
+  const pollingInterval = getPollingInterval() || 5000;
+
+  const { loading, refetch } = useGetRepeatableJobsQuery({
+    variables: {
+      id: queueId,
+      offset: offset,
+      limit: pageSize,
+    },
+    fetchPolicy: 'cache-and-network',
+    pollInterval: pollingInterval,
+    onCompleted: (data) => {
+      setData(data.queue?.repeatableJobs as RepeatableJob[]);
+      setCount(data.queue?.repeatableJobCount ?? 0);
+    },
+  });
 
   const handleDelete = useCallback((key: string): Promise<void> =>{
     return deleteRepeatableJobByKey(queueId, key).then(() => {
-      fetch();
+      refetch();
     });
   }, [queueId]);
-
-  function fetchJobs(pageNumber: number, pageSize: number): void {
-    if (loading) return;
-    const { current } = pagination;
-    setLoading(true);
-    getRepeatableJobs(queueId, pageNumber, pageSize)
-      .then(({ count, jobs }) => {
-        setCalled(true);
-        setData(jobs);
-        current.current = page;
-        current.pageSize = pageSize;
-        current.total = count;
-        current.pageCount = Math.ceil(count / pageSize);
-      })
-      .catch((err) => {
-        // todo: toast
-        console.log(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }
-
-  function fetch() {
-    const { current, pageSize } = pagination.current;
-    if (!loading && called) {
-      fetchJobs(current, pageSize);
-    }
-  }
-
-  useEffect(() => {
-    const { current, pageSize } = pagination.current;
-    if (!loading) {
-      fetchJobs(current, pageSize);
-    }
-  }, []);
-
-  useInterval(fetch, pollingInterval, { immediate: true });
 
   return (
     <div>
       <ScheduledJobsTable jobs={data} onDelete={handleDelete} loading={loading}/>
-      {pagination.current.pageCount > 0 && (
+      {pageCount > 0 && (
         <div className="float-right mt-5">
-          <Pagination page={pagination.current.current} pageCount={pagination.current.pageCount}/>
+          <Pagination page={page} pageCount={pageCount}/>
         </div>
       )}
     </div>

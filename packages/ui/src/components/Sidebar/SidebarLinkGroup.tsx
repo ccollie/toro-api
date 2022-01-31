@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-export type SidebarLinkClickHandler = () => void;
-
 interface SidebarLinkGroupProps {
   isActive?: boolean;
 }

@@ -1,35 +1,59 @@
-import { getJobsByFilter, getJobs } from '@/services/queue/api';
-import type { JobFragment, JobCounts, Status } from '@/types';
-import { JobStatus, SortOrderEnum } from '@/types';
+import { getJobsByFilter } from '@/services/queue/api';
+import type { JobFragment, JobCounts, GetJobsQuery } from '@/types';
+import { JobStatus, useGetJobsByIdQuery, useGetJobsQuery } from '@/types';
 import { useListState } from '@mantine/hooks';
 import produce from 'immer';
-import { useCallback, useState } from 'react';
-import { useJobsStore, usePreferencesStore } from '@/stores';
-import { useQueue, useWhyDidYouUpdate } from '@/hooks';
+import { useCallback, useEffect, useState } from 'react';
+import { useJobsStore } from '@/stores';
+import { usePagination, useQueue, useWhyDidYouUpdate } from '@/hooks';
 import { EmptyJobCounts } from 'src/constants';
+import { useJobQueryParameters } from './use-job-query-parameters';
+import { useNetworkSettingsStore } from 'src/stores/network-settings';
 import shallow from 'zustand/shallow';
 
 interface UseFilteredJobQueryProps {
   queueId: string;
-  status: Status | 'unknown';
-  filter?: string;
-  pageSize?: number;
 }
 
-export const useJobListQuery = ({
-  queueId,
-  status,
-  filter,
-  pageSize: _pageSize,
-}: UseFilteredJobQueryProps) => {
-  const pageSize = _pageSize ?? usePreferencesStore((state) => state.pageSize);
+export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
+  const [counts, setCounts] = useState<JobCounts>(EmptyJobCounts);
+  const [loading, setLoading] = useState(false);
+  const [cursor, setCursor] = useState<string | undefined>();
+  const [total, setTotal] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [lastPage, setLastPage] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [called, setCalled] = useState(false);
+  const [iterationEnded, setIterationEnded] = useState(false);
+  const [filteredIds, setFilteredIds] = useState<string[]>([]);
 
-  const [jobs, setJobs] = useJobsStore(state =>
-    [
-      state.data,
-      state.setJobs
-    ],
-    shallow);
+  const { queue, updateQueue } = useQueue(queueId);
+
+  const [filteredPages, filteredPageHandlers] = useListState<JobFragment[]>([]);
+  const [shouldFetchData, textSearchPollingDisabled, pollingInterval] =
+    useNetworkSettingsStore(
+      (state) => [
+        state.shouldFetchData,
+        state.textSearchPollingDisabled,
+        state.pollingInterval,
+      ],
+      shallow,
+    );
+
+  const {
+    status,
+    page,
+    pageSize,
+    jobFilter: filter,
+    sortOrder,
+  } = useJobQueryParameters();
+
+  const { gotoPage } = usePagination();
+
+  const [jobs, setJobs] = useJobsStore(
+    (state) => [state.data, state.setJobs],
+    shallow,
+  );
 
   useWhyDidYouUpdate('useJobListQuery', {
     queueId,
@@ -38,59 +62,84 @@ export const useJobListQuery = ({
     pageSize,
   });
 
-  const [counts, setCounts] = useState<JobCounts>(EmptyJobCounts);
-  const [loading, setLoading] = useState(false);
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [total, setTotal] = useState(0);
-  const [pageCount, setPageCount] = useState(0);
-  const [lastPage, setLastPage] = useState(0);
-  const [called, setCalled] = useState(false);
-  const [iterationEnded, setIterationEnded] = useState(false);
-  const {queue, updateQueue} = useQueue(queueId);
+  useEffect(() => {
+    const offset = (page - 1) * pageSize;
+    setOffset(offset);
+  }, [page, pageSize]);
 
-  const [filteredPages, filteredPageHandlers] = useListState<JobFragment[]>([]);
+  useEffect(() => {
+    if (filter) {
+      const ids = jobs.map((job) => job.id);
+      setFilteredIds(ids);
+    } else {
+      setFilteredIds([]);
+    }
+  }, [jobs, filter]);
+
+  function updateCounts(counts?: JobCounts) {
+    if (counts) {
+      setCounts(counts);
+      let total = parseInt((counts as any)[status], 10);
+      if (isNaN(total)) total = 0;
+      setTotal(total);
+      const pages = total === 0 ? 0 : Math.floor(total / pageSize);
+      setPageCount(pages);
+      updateQueue(
+        produce(queue, (draft) => {
+          Object.assign(draft.jobCounts, {
+            ...(draft.jobCounts ?? {}),
+            ...counts,
+          });
+        }),
+      );
+    }
+  }
 
   function updateResults(jobs: JobFragment[], counts: JobCounts) {
     setJobs(jobs);
-    setCounts(counts);
-    let total = parseInt((counts as any)[status], 10);
-    if (isNaN(total)) total = 0;
-    setTotal(total);
-    const pages = total === 0 ? 0 : Math.floor(total / pageSize);
-    setPageCount(pages);
-    updateQueue(produce(queue, draft => {
-      Object.assign(draft.jobCounts, {
-        ...(draft.jobCounts ?? {}),
-        ...counts
-      });
-    }));
+    updateCounts(counts);
   }
 
-  const fetch = useCallback(async function fetch(
-    page = 1,
-    sortOrder: SortOrderEnum = SortOrderEnum.Desc
-  ) {
-    page = Math.min(page, 1);
-    const offset = (page - 1) * pageSize;
-
-    // todo: support "latest
-    // const _status = status === 'latest' ? undefined : (status as JobStatus);
-    // todo: eliminate this hack
-    const _status = (status as JobStatus);
-
-    setLoading(true);
-    try {
-      const {jobs, counts} = await getJobs(queueId, _status, offset, pageSize, sortOrder);
-      updateResults(jobs, counts);
-    } finally {
-      setLoading(false);
+  const { loading: _jobsLoading } = useGetJobsQuery({
+    variables: {
+      id: queueId,
+      status: status as JobStatus,
+      offset,
+      limit: pageCount,
+      sortOrder,
+    },
+    pollInterval: pollingInterval,
+    skip: !shouldFetchData || !!filter?.length,
+    onCompleted: (data: GetJobsQuery) => {
+      const jobs = data.getJobs as JobFragment[];
       setCalled(true);
-    }
-  }, [queueId, status, pageSize]);
+      setJobs(jobs);
+    },
+  });
 
+  const { loading: _jobsByIdLoading } = useGetJobsByIdQuery({
+    variables: {
+      queueId,
+      ids: filteredIds,
+    },
+    pollInterval: pollingInterval,
+    skip:
+      !shouldFetchData ||
+      filteredIds.length === 0 ||
+      filter?.length === 0 ||
+      textSearchPollingDisabled,
+    onCompleted: (data) => {
+      const jobs = data.getJobsById as JobFragment[];
+      setJobs(jobs);
+      setCalled(true);
+    },
+  });
 
-  const fetchFiltered = useCallback(async function(page: number) {
-    setLoading(true);
+  useEffect(() => {
+    setLoading(_jobsLoading || _jobsByIdLoading);
+  }, [_jobsLoading, _jobsByIdLoading]);
+
+  async function fetchFiltered() {
     if (!cursor) {
       setLastPage(0);
       setIterationEnded(false);
@@ -108,8 +157,14 @@ export const useJobListQuery = ({
       return filteredPages[page - 1];
     }
 
+    setLoading(true);
     try {
-      const { jobs, cursor: newCursor, total, counts } = await getJobsByFilter(queueId, {
+      const {
+        jobs,
+        cursor: newCursor,
+        total,
+        counts,
+      } = await getJobsByFilter(queueId, {
         status: status as JobStatus,
         count: pageSize,
         cursor,
@@ -120,6 +175,7 @@ export const useJobListQuery = ({
       filteredPageHandlers.append(jobs);
       setTotal(total);
       if (newCursor) {
+        setCursor(newCursor);
         const last = lastPage + 1;
         setLastPage(last);
         // for ui purposes, set the last page just beyond the current page
@@ -135,7 +191,7 @@ export const useJobListQuery = ({
       setLoading(false);
       setCalled(true);
     }
-  }, [queueId, status]);
+  }
 
   function clear() {
     setCalled(false);
@@ -148,28 +204,25 @@ export const useJobListQuery = ({
     filteredPageHandlers.setState([]);
   }
 
-  const fetchJobs = useCallback(async (page: number) => {
+  useEffect(() => {
     if (filter) {
-      await fetchFiltered(page);
-    } else {
-      await fetch(page);
+      fetchFiltered().catch(e => console.error(e));
     }
-  }, [queueId, status]);
+  }, [queueId, status, page, filter]);
 
-  const refresh = useCallback(async function refresh() {
+  const refresh = useCallback(() => {
     clear();
-    await fetch(1);
-  }, [queueId, status]);
+    gotoPage(1);
+  }, []);
 
   return {
     counts,
     pageCount,
     loading,
     called,
-    total,  // total jobs in the given status
+    total, // total jobs in the given status
     jobs,
     clear,
     refresh,
-    fetchJobs
   };
 };

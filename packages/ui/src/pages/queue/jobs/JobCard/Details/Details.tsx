@@ -1,39 +1,41 @@
-import React from 'react';
-import { useDetailsTabs } from 'src/hooks/useDetailsTabs';
+import React, { useState } from 'react';
+import { TabsType, useDetailsTabs } from 'src/hooks/useDetailsTabs';
 import { isJobFailed } from 'src/lib';
-import { Button } from 'src/pages/queue/jobs/JobCard/Button/Button';
-import s from 'src/pages/queue/jobs/JobCard/Details/Details.module.css';
+import s from './Details.module.css';
 import { DetailsContent } from './DetailsContent/DetailsContent';
-import type { Job as AppJob, JobFragment, Status } from 'src/types';
+import { Tabs } from '@mantine/core';
+import type { Job, JobFragment, Status } from 'src/types';
 
 interface DetailsProps {
-  job: AppJob | JobFragment;
+  job: Job | JobFragment;
   status: Status;
-  actions: { getLogs: () => Promise<string[]> };
 }
 
-export const Details = ({ status, job, actions }: DetailsProps) => {
+export const Details = ({ status, job }: DetailsProps) => {
   const isFailed = isJobFailed(job);
-  const { tabs, selectedTab } = useDetailsTabs(status, isFailed);
+  const { tabs } = useDetailsTabs(status, isFailed);
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState<TabsType>(tabs[0]?.title ?? 'Data');
 
   if (tabs.length === 0) {
     return null;
   }
 
+  function handleTabClick(index: number, tabKey: TabsType) {
+    setActiveTab(index);
+    setSelectedTab(tabKey);
+  }
+
   return (
     <div className={s.details}>
-      <ul className={s.tabActions}>
-        {tabs.map((tab) => (
-          <li key={tab.title}>
-            <Button onClick={tab.selectTab} isActive={tab.isActive}>
-              {tab.title}
-            </Button>
-          </li>
+      <Tabs variant="pills" active={activeTab} onTabChange={handleTabClick}>
+        {tabs.map(({ title }) => (
+          <Tabs.Tab key={title} tabKey={title} label={title} />
         ))}
-      </ul>
+      </Tabs>
       <div className={s.tabContent}>
         <div>
-          <DetailsContent selectedTab={selectedTab} job={job} getJobLogs={actions.getLogs} />
+          <DetailsContent selectedTab={selectedTab} job={job} />
         </div>
       </div>
     </div>

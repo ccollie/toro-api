@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client';
 import React, { useEffect, useState } from 'react';
 import { useMatch } from 'react-location';
 import { useHost } from 'src/services';
-import { usePreferencesStore } from 'src/stores';
+import { useNetworkSettingsStore } from 'src/stores';
 import Header from './Header';
 import { Workers as WorkersTable } from '@/components';
 
@@ -14,7 +14,7 @@ export const Workers: React.FC = () => {
   const { host } = useHost(hostId);
   const [workers, setWorkers] = useState<QueueWorker[]>([]);
   // todo: different interval for workers, since they tend not to change frequently
-  const pollInterval = usePreferencesStore(store => store.pollingInterval);
+  const pollInterval = useNetworkSettingsStore(store => store.pollingInterval);
 
   const { loading, called, data } = useQuery(HostWorkersDocument, {
     variables: {

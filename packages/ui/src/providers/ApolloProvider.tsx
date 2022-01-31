@@ -10,11 +10,6 @@ import {
 } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 
-import {
-  Reference,
-  StoreObject,
-} from '@apollo/client/utilities';
-
 import { SafeReadonly } from '@apollo/client/cache/core/types/common';
 
 import type { Job, Queue, QueueWorker, RepeatableJob, StatsSnapshot } from '@/types';
@@ -72,7 +67,7 @@ const authMiddleware = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
-function mergeArrayByField<T extends StoreObject | Reference>(
+function mergeArrayByField<T extends Record<string, any>>(
   field = 'id',
 ): FieldMergeFunction<T[]> {
   return (

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import type { JobCounts, Queue, StatsSnapshot, Status } from '@/types';
 import { Link } from 'react-location';
 import { JobCountsPieChart } from '@/components/charts';
-import { Statistic } from '@/components/Stats';
+import Statistic from '@/components/Stats/Statistic';
 import { useWhyDidYouUpdate } from '@/hooks';
 import { calcErrorPercentage } from '@/lib/stats';
 import QueueMenu from '../QueueMenu';
@@ -43,7 +43,8 @@ export const QueueCard: React.FC<QueueCardProps> = (props) => {
 
 
   function statsFormatter(value: any) {
-    const val = prettyMilliseconds(parseInt(value), { compact: false });
+    if (value === 0) return '0';
+    const val = prettyMilliseconds(parseInt(value), { compact: true });
     return <span>{val}</span>;
   }
 
@@ -54,9 +55,11 @@ export const QueueCard: React.FC<QueueCardProps> = (props) => {
 
     return (
       <div>
-        <Statistic title="Median" value={median}/>
-        <Statistic title="Mean" value={mean}/>
-        <Statistic title="P95" value={p95}/>
+        <Statistic.Group size="xs" widths={3}>
+          <Statistic label="Median" value={median} size="xs"/>
+          <Statistic label="Mean" value={mean} size="xs"/>
+          <Statistic label="P95" value={p95} size="xs"/>
+        </Statistic.Group>
       </div>
     );
   }

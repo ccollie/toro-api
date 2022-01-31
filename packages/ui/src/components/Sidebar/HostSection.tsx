@@ -11,26 +11,22 @@ interface HostSidebarSectionProps {
   setSidebarOpen: (isOpen: boolean) => void;
 }
 
-export const HostSidebarSection: React.FC<HostSidebarSectionProps> = (props) => {
+export const HostSidebarSection: React.FC<HostSidebarSectionProps> = (
+  props,
+) => {
   const { host, isSidebarOpen, setSidebarOpen } = props;
 
   const matchRoute = useMatchRoute();
   const href = props.href || `/hosts/${host.id}`;
-  const isActive = !!matchRoute( { to: href } );
+  const isActive = !!matchRoute({ to: href });
 
-  const items = host.queues.map((queue) =>({
+  const items = host.queues.map((queue) => ({
     title: queue.name,
     href: `/queues/${queue.id}`,
-  }))
+  }));
 
   // todo: need handler for title click
-  return (
-    <Navbar.Section
-      title={host.name}
-      items={items}
-    >
-    </Navbar.Section>
-  )
-}
+  return <Navbar.Section title={host.name} items={items}></Navbar.Section>;
+};
 
 // todo: memoize on id

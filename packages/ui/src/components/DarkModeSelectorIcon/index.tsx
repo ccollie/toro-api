@@ -7,7 +7,7 @@ interface DarkModeSelectorProps {
   size?: string | number;
 }
 
-export const DarkModeSelectorIcon: React.FC<DarkModeSelectorProps> = (props) => {
+export const DarkModeSelectorIcon = (props: DarkModeSelectorProps) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const { size = 18 } = props;
   const style = { width: size, height: size };
@@ -19,11 +19,9 @@ export const DarkModeSelectorIcon: React.FC<DarkModeSelectorProps> = (props) => 
       onClick={() => toggleDarkMode()}
       title="Toggle color scheme"
     >
-      {isDarkMode ? (
-        <SunIcon style={style} />
-      ) : (
-        <MoonIcon style={style} />
-      )}
+      {isDarkMode ? <SunIcon style={style} /> : <MoonIcon style={style} />}
     </ActionIcon>
   );
-}
+};
+
+export default DarkModeSelectorIcon;

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navbar, ScrollArea } from '@mantine/core';
 import { DarkModeSelectorIcon } from '@/components/DarkModeSelectorIcon';
+import { Brand } from 'src/components/Sidebar/Brand';
 import { QueueHost } from 'src/types';
 import { useMatchRoute } from 'react-location';
 
@@ -8,6 +9,7 @@ interface TProps {
   host: QueueHost;
   className?: string;
   href?: string;
+  hosts: QueueHost[];
   isSidebarOpen: boolean;
   setSidebarOpen: (isOpen: boolean) => void;
 }
@@ -20,7 +22,7 @@ const Demo = (props: TProps) => {
   const isActive = !!matchRoute( { to: href } );
 
   return (
-    <Navbar padding={10} width={{ base: 300 }}>
+    <Navbar padding={10} width={{ base: 420 }} fixed position={{ top: 0, left: 0 }}>
       <Navbar.Section mt="xs"><Brand /></Navbar.Section>
 
       <Navbar.Section

@@ -1,12 +1,12 @@
 import { HostsPageDataDocument, QueueHost } from '@/types';
 import { useQuery } from '@apollo/client';
 import React, { useEffect, useState } from 'react';
+import { useNetworkSettingsStore } from '@/stores/network-settings';
 import HostCard from './HostCard';
-import { usePreferencesStore } from '@/stores';
 
 const HostsPage: React.FC = () => {
   const range = 'last_hour';
-  const pollingInterval = usePreferencesStore(state => state.pollingInterval);
+  const pollingInterval = useNetworkSettingsStore(state => state.pollingInterval);
   const [hosts, setHosts] = useState<QueueHost[]>([]);
 
   const { loading, data, called } = useQuery(HostsPageDataDocument,{

@@ -7,6 +7,7 @@ import 'uno.css';
 import './styles/index.css';
 import './styles/theme.css';
 import './styles/animations.css';
+import './styles/statistics.css';
 
 import ApolloProvider from './providers/ApolloProvider';
 import MantineProvider from './providers/MantineProvider';

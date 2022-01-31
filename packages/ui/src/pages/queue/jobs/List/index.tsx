@@ -1,11 +1,12 @@
 import { LoadingOverlay, ScrollArea } from '@mantine/core';
 import React, { useCallback, useEffect } from 'react';
+import { useNetworkSettingsStore } from 'src/stores/network-settings';
 import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
-import { useJobListQuery } from '../hooks/use-job-list-query';
+import { useJobListQuery } from '../hooks/use-job-list-query2';
 import { useQueue, useUnmountEffect, useWhyDidYouUpdate } from '@/hooks';
 import { useInterval } from '@mantine/hooks';
-import { useJobsStore, usePreferencesStore } from '@/stores';
+import { useJobsStore } from '@/stores';
 import CardView from '../CardView';
 import TableView from '../TableView';
 import JobsToolbar from '../Toolbar';
@@ -19,7 +20,7 @@ export const Jobs = () => {
     jobView,
     jobFilter: filter,
   } = useJobQueryParameters();
-  const pollingInterval = usePreferencesStore((state) => state.pollingInterval);
+  const pollingInterval = useNetworkSettingsStore((state) => state.pollingInterval);
 
   const { queue } = useQueue(queueId);
 

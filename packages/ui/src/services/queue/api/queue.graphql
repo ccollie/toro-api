@@ -176,3 +176,9 @@ query GetPageQueueStats($id: ID!, $range: String!, $granularity: StatsGranularit
     }
   }
 }
+
+query GetJobsById($queueId: ID!, $ids: [ID!]!) {
+  getJobsById(input: {queueId: $queueId, ids: $ids}) {
+    ...Job
+  }
+}

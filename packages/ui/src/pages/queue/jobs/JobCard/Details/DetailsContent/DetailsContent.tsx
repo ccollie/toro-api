@@ -1,32 +1,38 @@
 import React from 'react';
 import { TabsType } from 'src/hooks/useDetailsTabs';
 import { Highlight } from 'src/components/Highlight/Highlight';
-import { JobLogs } from 'src/pages/queue/jobs/JobCard/Details/DetailsContent/JobLogs/JobLogs';
-import type { Job as AppJob, JobFragment } from 'src/types';
+import { JobLogs } from './JobLogs/JobLogs';
+import type { Job, JobFragment } from 'src/types';
 
 interface DetailsContentProps {
-  job: AppJob | JobFragment;
+  job: Job | JobFragment;
   selectedTab: TabsType;
-  getJobLogs: () => Promise<string[]>;
+}
+
+function stringify(data: any) {
+  if (typeof data === 'object') {
+    const { __typename, ...rest } = data;
+    data = rest;
+  }
+  return JSON.stringify(data, null, 2);
 }
 
 export const DetailsContent = ({
-  selectedTab,
-  job: { stacktrace, data, returnvalue, opts, failedReason },
-  getJobLogs,
-}: DetailsContentProps) => {
+  selectedTab, job }: DetailsContentProps) => {
+  const { stacktrace, data, returnvalue, opts, failedReason } = job;
+
   switch (selectedTab) {
     case 'Data':
       return (
-        <Highlight language="json">{JSON.stringify({ data, returnvalue }, null, 2)}</Highlight>
+        <Highlight language="json">{stringify({ data, returnvalue }) }</Highlight>
       );
     case 'Options':
-      return <Highlight language="json">{JSON.stringify(opts, null, 2)}</Highlight>;
+      return <Highlight language="json">{stringify(opts)}</Highlight>;
     case 'Error':
       return (
         <>
           {stacktrace.length === 0 ? (
-            <div className="error">{!!failedReason ? failedReason : 'NA'}</div>
+            <div className="error">{!!failedReason ? `${failedReason}` : 'NA'}</div>
           ) : (
             <Highlight language="stacktrace" key="stacktrace">
               {stacktrace.join('\n')}
@@ -35,7 +41,7 @@ export const DetailsContent = ({
         </>
       );
     case 'Logs':
-      return <JobLogs getJobLogs={getJobLogs} />;
+      return <JobLogs job={job} />;
     default:
       return null;
   }

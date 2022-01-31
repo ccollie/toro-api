@@ -1,7 +1,7 @@
 import { useGetQueueJobCountsQuery } from '@/types';
 import { useCallback, useMemo } from 'react';
 import type { Status, Queue, CountStatus } from '@/types';
-import { usePreferencesStore } from 'src/stores';
+import { useNetworkSettingsStore } from 'src/stores';
 import { useQueueSessionStore } from '../stores';
 import { useQueue } from '@/hooks';
 
@@ -9,8 +9,7 @@ export const useQueueCounts = (queueId: Queue['id'], autoUpdate = false) => {
   const { queue, updateQueue } = useQueue(queueId);
   const activeStatus = useQueueSessionStore(useCallback(x => x.getQueueStatus, [queueId]));
   const changeStatus = useQueueSessionStore(x => x.setQueueStatus);
-  const pollInterval = usePreferencesStore(x => x.pollingInterval);
-
+  const pollInterval = useNetworkSettingsStore(x => x.pollingInterval);
 
   useGetQueueJobCountsQuery({
     variables: {

@@ -20,7 +20,7 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
-  Date: unknown;
+  Date: any;
   /** An ISO date-time string, such as 2007-12-03T10:15:30Z. Also handles Elastic compatible date-math expr:  https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#date-math. */
   DateTime: number;
   /** Specifies a duration in milliseconds - either as an int or a string specification e.g. "2 min", "3 hr" */
@@ -28,7 +28,7 @@ export type Scalars = {
   /** A field whose value conforms to the standard internet email address format as specified in RFC822: https://www.w3.org/Protocols/rfc822/. */
   EmailAddress: string;
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSON: unknown;
+  JSON: any;
   /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSONObject: { [key: string]: unknown };
   /** The `JSONSchema` scalar type represents JSONSchema values as specified by https://json-schema.org/draft/2019-09/json-schema-validation.html. */
@@ -3456,8 +3456,8 @@ export type JobRepeatOptionsFragment = {
   __typename?: 'JobRepeatOptions';
   cron?: string | null;
   tz?: string | null;
-  startDate?: unknown | null;
-  endDate?: unknown | null;
+  startDate?: any | null;
+  endDate?: any | null;
   limit?: number | null;
   every?: string | null;
   jobId?: string | null;
@@ -3466,11 +3466,11 @@ export type JobRepeatOptionsFragment = {
 
 export type JobOptionsFragment = {
   __typename?: 'JobOptions';
-  timestamp?: unknown | null;
+  timestamp?: any | null;
   priority?: number | null;
   delay?: number | null;
   attempts?: number | null;
-  backoff?: unknown | null;
+  backoff?: any | null;
   lifo?: boolean | null;
   timeout?: number | null;
   jobId?: string | null;
@@ -3486,18 +3486,18 @@ export type JobFragment = {
   __typename?: 'Job';
   id: string;
   queueId: string;
-  timestamp: unknown;
+  timestamp: any;
   state: JobStatus;
   name: string;
   data: { [key: string]: unknown };
   delay: number;
   progress?: string | number | Record<string, unknown> | null;
   attemptsMade: number;
-  processedOn?: unknown | null;
-  finishedOn?: unknown | null;
-  failedReason?: unknown | null;
+  processedOn?: any | null;
+  finishedOn?: any | null;
+  failedReason?: any | null;
   stacktrace: Array<string>;
-  returnvalue?: unknown | null;
+  returnvalue?: any | null;
   opts: { __typename?: 'JobOptions' } & JobOptionsFragment;
 };
 
@@ -3506,10 +3506,10 @@ export type RepeatableJobFragment = {
   key: string;
   id?: string | null;
   name?: string | null;
-  endDate?: unknown | null;
+  endDate?: any | null;
   tz?: string | null;
   cron?: string | null;
-  next?: unknown | null;
+  next?: any | null;
   descr?: string | null;
 };
 
@@ -3579,7 +3579,7 @@ export type GetJobFiltersQuery = {
       id: string;
       name: string;
       expression: string;
-      createdAt?: unknown | null;
+      createdAt?: any | null;
     }>;
   } | null;
 };
@@ -3595,7 +3595,7 @@ export type CreateJobFilterMutation = {
     id: string;
     name: string;
     expression: string;
-    createdAt?: unknown | null;
+    createdAt?: any | null;
   };
 };
 
@@ -3613,7 +3613,7 @@ export type UpdateJobFilterMutation = {
       id: string;
       name: string;
       expression: string;
-      createdAt?: unknown | null;
+      createdAt?: any | null;
     } | null;
   };
 };
@@ -4137,8 +4137,8 @@ export type StatsSnapshotFragment = {
   count: number;
   failed: number;
   completed: number;
-  startTime: unknown;
-  endTime: unknown;
+  startTime: any;
+  endTime: any;
   stddev: number;
   mean: number;
   min: number;

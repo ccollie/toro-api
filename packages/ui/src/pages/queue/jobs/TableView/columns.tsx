@@ -61,7 +61,6 @@ const FIELDS: Record<JobStatus, string[]> = {
   ],
   [JobStatus.Waiting]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
   [JobStatus.WaitingChildren]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
-  [JobStatus.Unknown]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
 };
 
 const JobDate = ({ value }: { value: number | string }) => {

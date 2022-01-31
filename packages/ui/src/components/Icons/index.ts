@@ -18,6 +18,7 @@ export * from './ExclamationTriangle';
 export * from './Hide';
 export * from './Promote';
 export * from './Search';
+export * from './SadTear';
 export * from './Loading';
 export * from './LockClosed';
 export * from './Pause';

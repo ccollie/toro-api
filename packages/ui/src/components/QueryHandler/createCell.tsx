@@ -1,14 +1,14 @@
 import React from 'react';
 import { QueryResult } from '@apollo/client';
-import type { ComponentProps, JSXElementConstructor } from 'react'
+import type { ComponentProps, JSXElementConstructor } from 'react';
 
-import type { DocumentNode } from 'graphql'
-import type { A } from 'ts-toolbelt'
+import type { DocumentNode } from 'graphql';
+import type { A } from 'ts-toolbelt';
 
 /**
  * This is part of how we let users swap out their GraphQL client while staying compatible with Cells.
  */
-import { useQuery } from './GraphQLHooksProvider'
+import { useQuery } from './GraphQLHooksProvider';
 
 /**
  * Cell component props which is the combination of query variables and Success props.
@@ -16,29 +16,29 @@ import { useQuery } from './GraphQLHooksProvider'
 export type CellProps<
   CellSuccess extends keyof JSX.IntrinsicElements | JSXElementConstructor<any>,
   GQLResult,
-  GQLVariables
-  > = A.Compute<
+  GQLVariables,
+> = A.Compute<
   Omit<
     ComponentProps<CellSuccess>,
     keyof QueryResult | keyof GQLResult | 'updating'
-    > &
-  (GQLVariables extends { [key: string]: never } ? unknown : GQLVariables)
-  >
+  > &
+    (GQLVariables extends { [key: string]: never } ? unknown : GQLVariables)
+>;
 
 export type CellLoadingProps = Partial<
   Omit<QueryResult, 'loading' | 'error' | 'data'>
-  >
+>;
 
 export type CellFailureProps = Partial<
   Omit<QueryResult, 'loading' | 'error' | 'data'> & {
-  error: QueryResult['error'] | Error // for tests and storybook
-  /**
-   * @see {@link https://www.apollographql.com/docs/apollo-server/data/errors/#error-codes}
-   */
-  errorCode: string
-  updating: boolean
-}
-  >
+    error: QueryResult['error'] | Error; // for tests and storybook
+    /**
+     * @see {@link https://www.apollographql.com/docs/apollo-server/data/errors/#error-codes}
+     */
+    errorCode: string;
+    updating: boolean;
+  }
+>;
 
 /**
  * @MARK not sure about this partial, but we need to do this for tests and storybook.
@@ -48,10 +48,10 @@ export type CellFailureProps = Partial<
  */
 export type CellSuccessProps<TData = any> = Partial<
   Omit<QueryResult<TData>, 'loading' | 'error' | 'data'> & {
-  updating: boolean
-}
-  > &
-  A.Compute<TData> // pre-computing makes the types more readable on hover
+    updating: boolean;
+  }
+> &
+  A.Compute<TData>; // pre-computing makes the types more readable on hover
 
 /**
  * A coarse type for the `data` prop returned by `useQuery`.
@@ -64,7 +64,7 @@ export type CellSuccessProps<TData = any> = Partial<
  * }
  * ```
  */
-export type DataObject = { [key: string]: unknown }
+export type DataObject = { [key: string]: unknown };
 
 /**
  * The main interface.
@@ -74,15 +74,15 @@ export interface CreateCellProps<CellProps> {
    * The GraphQL syntax tree to execute or function to call that returns it.
    * If `QUERY` is a function, it's called with the result of `beforeQuery`.
    */
-  QUERY: DocumentNode | ((variables: Record<string, unknown>) => DocumentNode)
+  QUERY: DocumentNode | ((variables: Record<string, unknown>) => DocumentNode);
   /**
    * Parse `props` into query variables. Most of the time `props` are appropriate variables as is.
    */
-  beforeQuery?: <TProps>(props: TProps) => { variables: TProps }
+  beforeQuery?: <TProps>(props: TProps) => { variables: TProps };
   /**
    * Sanitize the data returned from the query.
    */
-  afterQuery?: (data: DataObject) => DataObject
+  afterQuery?: (data: DataObject) => DataObject;
   /**
    * How to decide if the result of a query should render the `Empty` component.
    * The default implementation checks that the first field isn't `null` or an empty array.
@@ -105,29 +105,29 @@ export interface CreateCellProps<CellProps> {
   isEmpty?: (
     response: DataObject,
     options: {
-      isDataEmpty: (data: DataObject) => boolean
-    }
-  ) => boolean
+      isDataEmpty: (data: DataObject) => boolean;
+    },
+  ) => boolean;
   /**
    * If the query's in flight and there's no stale data, render this.
    */
-  Loading?: React.FC<CellLoadingProps & Partial<CellProps>>
+  Loading?: React.FC<CellLoadingProps & Partial<CellProps>>;
   /**
    * If something went wrong, render this.
    */
-  Failure?: React.FC<CellFailureProps & Partial<CellProps>>
+  Failure?: React.FC<CellFailureProps & Partial<CellProps>>;
   /**
    * If no data was returned, render this.
    */
-  Empty?: React.FC<CellSuccessProps & Partial<CellProps>>
+  Empty?: React.FC<CellSuccessProps & Partial<CellProps>>;
   /**
    * If data was returned, render this.
    */
-  Success: React.FC<CellSuccessProps & Partial<CellProps>>
+  Success: React.FC<CellSuccessProps & Partial<CellProps>>;
   /**
    * What to call the Cell. Defaults to the filename.
    */
-  displayName?: string
+  displayName?: string;
 }
 
 /**
@@ -185,65 +185,64 @@ export interface CreateCellProps<CellProps> {
  * ```
  */
 const dataField = (data: DataObject) => {
-  return data[Object.keys(data)[0]]
-}
+  return data[Object.keys(data)[0]];
+};
 
 const isDataNull = (data: DataObject) => {
-  return dataField(data) === null
-}
+  return dataField(data) === null;
+};
 
 const isDataEmptyArray = (data: DataObject) => {
-  const field = dataField(data)
-  return Array.isArray(field) && field.length === 0
-}
+  const field = dataField(data);
+  return Array.isArray(field) && field.length === 0;
+};
 
 const isDataEmpty = (data: DataObject) => {
-  return isDataNull(data) || isDataEmptyArray(data)
-}
+  return isDataNull(data) || isDataEmptyArray(data);
+};
 
 /**
  * Creates a Cell out of a GraphQL query and components that track to its lifecycle.
  */
 export function createCell<CellProps = any>({
-                                              QUERY,
-                                              beforeQuery = (props) => ({
-                                                variables: props,
-                                                /**
-                                                 * We're duplicating these props here due to a suspected bug in Apollo Client v3.5.4
-                                                 * (it doesn't seem to be respecting `defaultOptions` in `RedwoodApolloProvider`.)
-                                                 *
-                                                 * @see {@link https://github.com/apollographql/apollo-client/issues/9105}
-                                                 */
-                                                fetchPolicy: 'cache-and-network',
-                                                notifyOnNetworkStatusChange: true,
-                                              }),
-                                              afterQuery = (data) => ({ ...data }),
-                                              isEmpty = isDataEmpty,
-                                              Loading = () => <>Loading...</>,
-                                              Failure,
-                                              Empty,
-                                              Success,
-                                              displayName = 'Cell',
-                                            }: CreateCellProps<CellProps>): React.FC<CellProps> {
-
+  QUERY,
+  beforeQuery = (props) => ({
+    variables: props,
+    /**
+     * We're duplicating these props here due to a suspected bug in Apollo Client v3.5.4
+     * (it doesn't seem to be respecting `defaultOptions` in `RedwoodApolloProvider`.)
+     *
+     * @see {@link https://github.com/apollographql/apollo-client/issues/9105}
+     */
+    fetchPolicy: 'cache-and-network',
+    notifyOnNetworkStatusChange: true,
+  }),
+  afterQuery = (data) => ({ ...data }),
+  isEmpty = isDataEmpty,
+  Loading = () => <>Loading...</>,
+  Failure,
+  Empty,
+  Success,
+  displayName = 'Cell',
+}: CreateCellProps<CellProps>): React.FC<CellProps> {
   function NamedCell(props: React.PropsWithChildren<CellProps>) {
     /**
      * Right now, Cells don't render `children`.
      */
-    const { children: _, ...variables } = props
+    const { children: _, ...variables } = props;
 
-    const options = beforeQuery(variables)
+    const options = beforeQuery(variables);
 
     const { error, loading, data, ...queryRest } = useQuery(
       typeof QUERY === 'function' ? QUERY(options) : QUERY,
-      options
-    )
+      options,
+    );
 
     const commonProps = {
       updating: loading,
       ...queryRest,
       ...props,
-    }
+    };
 
     if (error) {
       if (Failure) {
@@ -253,37 +252,39 @@ export function createCell<CellProps = any>({
             errorCode={error.graphQLErrors?.[0]?.extensions?.['code'] as string}
             {...commonProps}
           />
-        )
+        );
       } else {
-        throw error
+        throw error;
       }
     } else if (data) {
-      const afterQueryData = afterQuery(data)
+      const afterQueryData = afterQuery(data);
 
       if (isEmpty(data, { isDataEmpty }) && Empty) {
-        return <Empty {...{ ...afterQueryData, ...commonProps }} />
+        return <Empty {...{ ...afterQueryData, ...commonProps }} />;
       } else {
-        return <Success {...{ ...afterQueryData, ...commonProps }} />
+        return <Success {...{ ...afterQueryData, ...commonProps }} />;
       }
     } else if (loading) {
-      return <Loading {...{ ...queryRest, ...props }} />
+      return <Loading {...{ ...queryRest, ...props }} />;
     } else {
       /**
-       * There really shouldn't be an `else` here, but like any piece of software, GraphQL clients have bugs.
-       * If there's no `error` and there's no `data` and we're not `loading`, something's wrong. Most likely with the cache.
+       * There really shouldn't be an `else` here, but like any piece of software,
+       * GraphQL clients have bugs.
+       * If there's no `error` and there's no `data` and we're not `loading`, something's wrong.
+       * Most likely with the cache.
        *
        * @see {@link https://github.com/redwoodjs/redwood/issues/2473#issuecomment-971864604}
        */
       console.warn(
-        `If you're using Apollo Client, check for its debug logs here in the console, which may help explain the error.`
-      )
+        `If you're using Apollo Client, check for its debug logs here in the console, which may help explain the error.`,
+      );
       throw new Error(
-        'Cannot render Cell: reached an unexpected state where the query succeeded but `data` is `null`. If this happened in Storybook, your query could be missing fields; otherwise this is most likely a GraphQL caching bug. Note that adding an `id` field to all the fields on your query may fix the issue.'
-      )
+        'Cannot render Cell: reached an unexpected state where the query succeeded but `data` is `null`. If this happened in Storybook, your query could be missing fields; otherwise this is most likely a GraphQL caching bug. Note that adding an `id` field to all the fields on your query may fix the issue.',
+      );
     }
   }
 
-  NamedCell.displayName = displayName
+  NamedCell.displayName = displayName;
 
-  return NamedCell
+  return NamedCell;
 }

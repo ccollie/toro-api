@@ -8,7 +8,7 @@ import type {
 import { HostQueuesDocument } from '@/types';
 import { useInterval } from '@/hooks';
 import { useLazyQuery } from '@apollo/client';
-import { usePreferencesStore } from '@/stores';
+import { useNetworkSettingsStore } from '@/stores';
 import { useHost } from './use-host';
 import { filterQueues, sortQueues } from '../filters';
 import { useEffect, useState } from 'react';
@@ -27,7 +27,7 @@ export const useHostQuery = (
 
   const { host, updateHost } = useHost(hostId);
 
-  const pollInterval = usePreferencesStore((state) => state.pollingInterval);
+  const pollInterval = useNetworkSettingsStore((state) => state.pollingInterval);
 
   type TVariables = HostQueuesQueryVariables;
 

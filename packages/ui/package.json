@@ -19,7 +19,6 @@
   "scripts": {
     "start": "NODE_ENV=development vite",
     "clean": "rm -rf dist",
-    "generate": "graphql-codegen",
     "dev": "vite",
     "dev-refresh": "cross-env USE_REFRESH=true vite",
     "build": "vite build",

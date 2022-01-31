@@ -71,7 +71,7 @@ export const JobCard = (props: JobCardProps) =>
         <JobActions status={status} queueId={queue.id} job={job} />
       </div>
       <div className={s.content}>
-        <Details status={status} job={job} actions={ { getLogs }} />
+        <Details status={status} job={job} />
         {typeof job.progress === 'number' && (
           <CircularProgress
             percentage={job.progress}

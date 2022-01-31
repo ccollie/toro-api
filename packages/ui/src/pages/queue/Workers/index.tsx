@@ -4,7 +4,7 @@ import { useQuery } from '@apollo/client';
 import React, { useEffect, useState } from 'react';
 import { useMatch } from 'react-location';
 import { Workers as WorkersTable } from '@/components';
-import { usePreferencesStore } from '@/stores';
+import { useNetworkSettingsStore } from '@/stores';
 
 export const Workers = () => {
   const {
@@ -13,7 +13,7 @@ export const Workers = () => {
 
   const [workers, setWorkers] = useState<QueueWorker[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const pollInterval = usePreferencesStore(state => state.pollingInterval);
+  const pollInterval = useNetworkSettingsStore(state => state.pollingInterval);
 
   const { loading, data, called } = useQuery(GetQueueWorkersDocument, {
     variables: { id },
