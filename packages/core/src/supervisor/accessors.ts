@@ -104,10 +104,12 @@ export function raiseIfQueueIsReadonly(
   } else {
     manager = q;
   }
-  const name = manager?.queue.name;
-  const opName = mutation || 'modify queue';
-  const message = `Queue ${name} is read-only (${opName})`;
-  throw boom.forbidden(message, { name: 'AlpenError' });
+  if (manager && manager.isReadonly) {
+    const name = manager.queue.name;
+    const opName = mutation || 'modify queue';
+    const message = `Queue ${name} is read-only (${opName})`;
+    throw boom.forbidden(message, { name: 'AlpenError' });
+  }
 }
 
 function validateQueueReadonly(

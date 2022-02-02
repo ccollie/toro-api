@@ -45,6 +45,14 @@ export function titleCase(str = ''): string {
   return elements.join(' ');
 }
 
+//#Source https://bit.ly/2neWfJ2
+export const snakeCase = (str: string) =>
+  str &&
+  str
+    .match(/[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+/g)
+    .map(x => x.toLowerCase())
+    .join('_');
+
 export const isEmptyArray = (value: unknown) =>
   isArray(value) && value.length === 0;
 
@@ -76,16 +84,6 @@ export const isObject = (value: unknown): value is Dict => {
     !isArray(value)
   );
 };
-
-// WARNING: This is not a drop in replacement solution, and
-// it might not work for some edge cases. Test your code!
-export const has = (obj, path: string): boolean => {
-  // Regex explained: https://regexr.com/58j0k
-  const pathArray = Array.isArray(path) ? path : path.match(/([^[.\]])+/g);
-
-  return !!pathArray.reduce((prevObj, key) => prevObj && prevObj[key], obj);
-};
-
 
 export const isEmptyObject = (value: unknown): boolean =>
   isObject(value) && Object.keys(value).length === 0;
@@ -250,6 +248,23 @@ export function get(
   };
   const result = travel(/[,[\]]+?/) || travel(/[,[\].]+?/);
   return result === undefined || result === obj ? defaultValue : result;
+}
+
+const hasOwnProperty = Object.prototype.hasOwnProperty;
+
+// WARNING: This is not a drop in replacement solution, and
+// it might not work for some edge cases. Test your code!
+export function has(obj: Record<string, unknown>, key: string): boolean {
+  if (!obj) {
+    return false;
+  }
+  const keyParts = key.split('.');
+  if (keyParts.length === 1) {
+    return hasOwnProperty.call(obj, key);
+  }
+  const field = obj[keyParts[0]];
+  const rest = keyParts.slice(1).join('.');
+  return isObject(field) && has(field, rest);
 }
 
 export function first<T>(items: T[]): T | undefined {

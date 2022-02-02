@@ -1,6 +1,5 @@
-import { humanize, titleCase } from '../../utils';
-import { chunk, isNumber, isObject } from '@alpen/shared';
-import { keys as _keys } from 'lodash';
+import { humanize } from '../../utils';
+import { chunk, isNumber, isObject, titleCase } from '@alpen/shared';
 import utils from 'handlebars-utils';
 import * as handlebars from 'handlebars';
 
@@ -17,7 +16,7 @@ export function createDataTable(
   if (Array.isArray(inputObj) && inputObj.length === 1) {
     inputObj = inputObj[0];
   }
-  const keys = _keys(inputObj).sort();
+  const keys = Object.keys(inputObj).sort();
   if (keys.length === 0) {
     return '';
   }

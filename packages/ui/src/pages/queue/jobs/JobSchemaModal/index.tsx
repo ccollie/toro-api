@@ -1,12 +1,12 @@
 import { TrashIcon, RetryIcon } from 'src/components/Icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { JobSchema } from 'src/types';
-import { isEqual, isEmptyObject, stringify } from '@/lib';
+import { isEqual, isEmptyObject, isObject } from '@/lib';
 import CodeEditor from '@/components/CodeEditor';
 import JobNamesSelect from '@/components/jobs/JobNamesSelect';
 import { Button, Drawer, Group, Space } from '@mantine/core';
 import { useToast } from '@/hooks';
-import { setJobSchema, useJobSchemaActions } from '@/services';
+import { JsonService, setJobSchema, useJobSchemaActions } from '@/services';
 
 interface JobSchemaModalOpts {
   queueId: string;
@@ -45,15 +45,16 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
       .finally(() => setIsLoadingNames(false));
   }, [queueId]);
 
-  useEffect(() => {
+  function setSchemaState(editSchema: JobSchema | undefined | null) {
     let schema, defaultOpts: Record<string, any> | null | undefined;
     if (editSchema) {
       schema = editSchema.schema;
       defaultOpts = editSchema.defaultOpts;
     }
-    setSchemaString(schema ? stringify(schema) : '{}');
-    setOptionsString(defaultOpts ? stringify(defaultOpts) : '{}');
-  }, [editSchema]);
+    setSchema(editSchema ?? undefined);
+    setSchemaString(formatValue(schema ?? '{}'));
+    setOptionsString(formatValue(defaultOpts ?? '{}'));
+  }
 
   const handleClose = useCallback(() => {
     onClose && onClose();
@@ -63,14 +64,7 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
     setIsLoadingSchema(true);
     actions
       .getSchema(jobName)
-      .then((schema) => {
-        if (schema) {
-          setEditSchema({ ...schema });
-        } else {
-          setEditSchema(undefined);
-        }
-        setSchema(schema ?? undefined);
-      })
+      .then(setSchemaState)
       .finally(() => {
         setIsLoadingSchema(false);
       });
@@ -116,10 +110,7 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
       setIsInferring(true);
       actions
         .inferSchema(jobName!)
-        .then((schema) => {
-          setSchema(schema ?? undefined);
-          setEditSchema(schema ?? undefined);
-        })
+        .then(setSchemaState)
         .catch((err) => {
           const msg = (err instanceof Error) ? err.message : `${err}`;
           toast.warn(msg);
@@ -198,7 +189,7 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
             disabled={isLoadingNames}
             queueId={queueId}
           />
-          <Space h="md" />
+          <Space h="lg" />
           <span>Schema</span>
           <CodeEditor
             height="250px"
@@ -207,7 +198,7 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
             value={schemaString}
             onChange={onSchemaUpdate}
           />
-          <Space h="md" />
+          <Space h="lg" />
           <span>Job Options</span>
           <CodeEditor
             height="250px"
@@ -217,7 +208,8 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
             onChange={onOptionsUpdate}
           />
           <div style={{ textAlign: 'right' }}>
-            <Group spacing={5}>
+            <Space h="lg" />
+            <Group spacing={5} position="right">
               <Button
                 color={isInferError ? 'red' : undefined}
                 onClick={inferSchema}
@@ -251,15 +243,6 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
             </Group>
           </div>
         </form>
-        <div
-          style={{
-            textAlign: 'right',
-          }}
-        >
-          <Button onClick={handleClose} style={{ marginRight: 8 }}>
-            Close
-          </Button>
-        </div>
       </Drawer>
     </>
   );
@@ -274,6 +257,13 @@ function toObj(value: string | null | undefined): Record<string, unknown> {
     }
   }
   return Object.create(null);
+}
+
+function formatValue(value?: string | null | Record<string, any>): string {
+  if (isObject(value)) {
+    return JsonService.maybeStringify(value);
+  }
+  return JsonService.maybeStringify(JsonService.maybeParse(value));
 }
 
 export default JobSchemaModal;

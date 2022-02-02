@@ -1,12 +1,5 @@
+import { capitalize, isString, snakeCase } from '@alpen/shared';
 import querystring from 'querystring';
-import {
-  capitalize,
-  isString,
-  snakeCase,
-  startCase,
-  toLower,
-  trim,
-} from 'lodash';
 
 export const escapeURI = (str: string | undefined): string => {
   if (isString(str)) {
@@ -16,9 +9,7 @@ export const escapeURI = (str: string | undefined): string => {
 };
 
 export function humanize(str: string): string {
-  return capitalize(
-    trim(snakeCase(str).replace(/_id$/, '').replace(/_/g, ' ')),
-  );
+  const value = snakeCase(str ?? '').replace(/_id$/, '').replace(/_/g, ' ');
+  return capitalize(value.trim());
 }
 
-export const titleCase = (str: string): string => startCase(toLower(str));

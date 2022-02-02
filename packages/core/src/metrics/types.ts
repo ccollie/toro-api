@@ -19,6 +19,7 @@ export enum MetricTypes {
   Latency,
   PeakMemory,
   PendingCount,
+  ResponseTime,
   UsedMemory,
   Waiting,
   WaitingChildren,

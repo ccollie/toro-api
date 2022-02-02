@@ -74,6 +74,7 @@ export function createFinishedEvent(
     ...event,
     wait: data.wait ?? -1,
     latency: data.latency ?? 0,
+    responseTime: data.responseTime ?? 0,
     success: successful,
   };
   ensureDurations(result);

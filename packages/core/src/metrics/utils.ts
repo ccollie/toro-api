@@ -37,6 +37,7 @@ export const metricNameByEnum: Record<MetricTypes, MetricTypeName> = {
   [MetricTypes.UsedMemory]: 'UsedMemory',
   [MetricTypes.PeakMemory]: 'PeakMemory',
   [MetricTypes.PendingCount]: 'PendingCount',
+  [MetricTypes.ResponseTime]: 'ResponseTime',
   [MetricTypes.InstantaneousOps]: 'InstantaneousOps',
   [MetricTypes.Waiting]: 'Waiting',
   [MetricTypes.WaitingChildren]: 'WaitingChildren',

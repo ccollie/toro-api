@@ -6,7 +6,7 @@ import {
   isObject,
   safeParse,
 } from '@alpen/shared';
-import { errorObject, JobState, Queue, tryCatch } from 'bullmq';
+import { array2obj, errorObject, JobState, Queue, tryCatch } from 'bullmq';
 import type { JobJson } from 'bullmq';
 import { logger } from '../logger';
 import {
@@ -182,9 +182,10 @@ export async function extractJobsData(
   ids.forEach((id) => pipeline.hmget(queue.toKey(id), ...fields));
   const data = await pipeline.exec();
 
-  return data.reduce((acc, [error, [jobData]], idx) => {
+  return data.reduce((acc, [error, jobData], idx) => {
     if (!error && jobData && jobData !== '{}' && jobData !== '[]') {
-      const job = hydrateJobJson(ids[idx], jobData);
+      const rec = array2obj(jobData);
+      const job = hydrateJobJson(ids[idx], rec);
       if (job && (!ast || matchData(ast, job))) {
         acc.push(job);
       }

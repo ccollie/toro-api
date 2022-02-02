@@ -2,7 +2,7 @@ overwrite: true
 schema: './schema.graphql'
 config:
   maybeValue: T | null
-  defaultScalarType: unknown
+  defaultScalarType: any
   useTypeImports: true
   flattenGeneratedTypes: true
   scalars:

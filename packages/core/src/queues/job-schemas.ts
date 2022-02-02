@@ -162,18 +162,18 @@ export async function inferJobSchema(
   const opts: Record<string, any>[] = [];
 
   if (ids.length) {
-    const client = await this._queue.client;
+    const client = await queue.client;
     const pipeline = client.pipeline();
-    ids.forEach((id) => pipeline.hmget(this._queue.toKey(id), ...fields));
+    ids.forEach((id) => pipeline.hmget(queue.toKey(id), ...fields));
     const data = await pipeline.exec();
 
-    data.forEach(([error, [jobData]]) => {
-      if (!error && jobData && jobData !== '{}' && jobData !== '[]') {
-        if (!jobName || jobName === jobData['name']) {
-          const data = safeParse(jobData['data']);
-          const jobOpts = safeParse(jobData['opts']);
-          if (!isEmpty(data)) {
-            jobs.push(data);
+    data.forEach(([error, [_data, _opts, name]]) => {
+      if (!error && _data && _data !== '{}' && _data !== '[]') {
+        if (!jobName || jobName === name) {
+          const jobData = safeParse(_data);
+          const jobOpts = safeParse(_opts);
+          if (!isEmpty(jobData)) {
+            jobs.push(jobData);
           }
           if (!isEmpty(jobOpts)) {
             opts.push(jobOpts);

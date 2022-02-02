@@ -1,5 +1,5 @@
 import { QueueBasedMetric } from './baseMetric';
-import { JobFinishedEventData } from '../queues';
+import type { JobFinishedEventData } from '../queues';
 import { Events } from './constants';
 import { MetricTypes } from './types';
 

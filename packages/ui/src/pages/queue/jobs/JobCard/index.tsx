@@ -1,6 +1,5 @@
 import { Paper } from '@mantine/core';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useJobActions } from 'src/hooks/use-job-actions';
+import React, { useEffect, useState } from 'react';
 import CircularProgress from 'src/components/CircularProgress';
 import { isJobFailed } from 'src/lib';
 import { Details } from './Details/Details';
@@ -27,19 +26,12 @@ export const JobCard = (props: JobCardProps) =>
 {
   const { job, queue, status, isSelected } = props;
   const isFailed = isJobFailed(job);
-  const actions = useJobActions(queue.id, job);
 
   const [progressColor, setProgressColor] = useState<string>('teal');
   useEffect(() => {
     const color = isFailed && !greenStatuses.includes(status) ? '#F56565' : 'teal';
     setProgressColor(color);
   }, [status]);
-
-  const getLogs = useCallback(async (): Promise<string[]> => {
-    const logs = await actions.getLogs();
-    return logs.items;
-  }, [job.id]);
-
 
   return (
   <Paper

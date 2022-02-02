@@ -1,5 +1,6 @@
 import { parseTimestamp } from '@alpen/shared';
-import { Queue, QueueEvents, QueueEventsListener, RedisClient } from 'bullmq';
+import { Queue, QueueEvents, RedisClient } from 'bullmq';
+import type { JobJsonRaw, QueueEventsListener } from 'bullmq';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
 import ms from 'ms';
@@ -13,14 +14,14 @@ import {
 import { logger } from '../logger';
 import { Events } from '../metrics/constants';
 import { parseStreamId, timestampFromStreamId } from '../redis';
-import { AppJob } from '../types';
+import type { AppJob } from '../types';
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');
 
 type QueueEventName = keyof QueueEventsListener;
 
-const DEFAULT_FIELDS_TO_FETCH = [
+const DEFAULT_FIELDS_TO_FETCH: Array<keyof JobJsonRaw> = [
   'timestamp',
   'processedOn',
   'finishedOn',
@@ -38,6 +39,8 @@ export interface JobEventData {
 
 export interface JobFinishedEventData extends JobEventData {
   latency: number;
+  // Time spent in the queue, i.e. difference between timestamp and processedOn
+  responseTime: number;
   wait: number;
   success: boolean;
 }
@@ -281,11 +284,12 @@ export class QueueListener extends Emittery {
     job.state = status;
     job.finishedOn = ts;
 
-    this.getDurations(data).then(({ latency, wait }) => {
+    this.getDurations(data).then(({ latency, wait, responseTime }) => {
       const evtData: JobFinishedEventData = {
         job,
         ts,
         latency,
+        responseTime,
         wait,
         success: !failed,
         event: status,
@@ -316,7 +320,7 @@ export class QueueListener extends Emittery {
 
   private async getDurations(
     data: JobEventData,
-  ): Promise<{ latency: number; wait: number }> {
+  ): Promise<{ latency: number; wait: number; responseTime: number }> {
     const { job } = data;
     if (QueueListener.needsMeta(data)) {
       // since we're hitting the backend anyway, grab data
@@ -325,11 +329,13 @@ export class QueueListener extends Emittery {
     }
     const finishedOn = job.finishedOn || systemClock.getTime();
     const latency = finishedOn && finishedOn - job.processedOn;
-
     const wait = job.timestamp && job.processedOn - job.timestamp;
+    const responseTime = finishedOn && finishedOn - job.timestamp;
+
     return {
       latency,
       wait,
+      responseTime
     };
   }
 

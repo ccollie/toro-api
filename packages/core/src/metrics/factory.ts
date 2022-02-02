@@ -9,6 +9,7 @@ import { ErrorPercentageMetric } from './errorPercentageMetric';
 import { JobRateMetric } from './jobRateMetric';
 import { WaitTimeMetric } from './waitTimeMetric';
 import { LatencyMetric } from './latencyMetric';
+import { ResponseTimeMetric } from './responseTimeMetric';
 import { BaseMetric, PollingMetric } from './baseMetric';
 import {
   ConnectedClientsMetric,
@@ -62,6 +63,7 @@ export const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
   [MetricTypes.UsedMemory]: UsedMemoryMetric,
   [MetricTypes.PeakMemory]: PeakMemoryMetric,
   [MetricTypes.PendingCount]: PendingCountMetric,
+  [MetricTypes.ResponseTime]: ResponseTimeMetric,
   [MetricTypes.InstantaneousOps]: InstantaneousOpsMetric,
   [MetricTypes.Waiting]: CurrentWaitingCountMetric,
   [MetricTypes.WaitingChildren]: WaitingChildrenCountMetric,
@@ -91,6 +93,7 @@ export const metricsMap: {
   UsedMemory: UsedMemoryMetric,
   PeakMemory: PeakMemoryMetric,
   PendingCount: PendingCountMetric,
+  ResponseTime: ResponseTimeMetric,
   InstantaneousOps: InstantaneousOpsMetric,
   Waiting: CurrentWaitingCountMetric,
   WaitingChildren: WaitingChildrenCountMetric,

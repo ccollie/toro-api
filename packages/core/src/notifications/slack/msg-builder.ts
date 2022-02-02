@@ -9,9 +9,8 @@ import {
   TextType,
 } from './slack.types';
 import toDate from 'date-fns/toDate';
-import { humanize, titleCase } from '../utils';
-import { isObject, flatten } from '@alpen/shared';
-import { map } from 'lodash';
+import { humanize } from '../utils';
+import { isObject, flatten, titleCase } from '@alpen/shared';
 import slackifyMarkdown from 'slackify-markdown';
 
 /**
@@ -82,7 +81,8 @@ export function toFields(inputObj: any, prefix: string = null): Field[] {
     inputObj = inputObj[0];
   }
 
-  const result = map(inputObj, (key) => {
+  const keys = Object.keys(inputObj);
+  const result = keys.map((key) => {
     const value = inputObj[key];
     if (isObject(value)) {
       return toFields(value, prefix + key);

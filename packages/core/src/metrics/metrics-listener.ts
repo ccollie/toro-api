@@ -454,7 +454,6 @@ export class MetricsListener {
       timer = setInterval(() => {
         const now = systemClock.getTime();
         if (now - lastSeen > TIMEOUT) {
-          // todo: log this
           logger.warn('[MetricsListener] timed out WAITING for event');
           cancel();
         }

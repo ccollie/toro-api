@@ -1,8 +1,8 @@
-import pMap from 'p-map';
 import { Queue, RedisClient } from 'bullmq';
 import DataLoader from 'dataloader';
-import { aggregateQueuesByClient, mapQueuesToIndex } from './utils';
+import pMap from 'p-map';
 import { convertWorker, QueueWorker } from '../queues/queue-worker';
+import { aggregateQueuesByClient, mapQueuesToIndex } from './utils';
 
 export async function getQueueWorkers(
   client: RedisClient,
@@ -16,8 +16,11 @@ export async function getQueueWorkers(
     result.set(queue, []);
   });
 
-  function parseClientList(list: string): void {
+  const keys = Array.from(queueByClientName.keys());
+
+  function parseClientList(list: string) {
     const lines = list.split('\n');
+    const clients: { [index: string]: string }[] = [];
 
     lines.forEach((line: string) => {
       const client: { [index: string]: string } = {};
@@ -29,13 +32,20 @@ export async function getQueueWorkers(
       });
       const name = client['name'];
       if (!name) return;
-      const queue = queueByClientName.get(name);
-      if (queue) {
-        const workers = result.get(queue);
-        client['name'] = queue.name;
-        workers.push(convertWorker(client));
-      }
+
+      keys.forEach((key) => {
+        if (name.startsWith(key)) {
+          const queue = queueByClientName.get(key);
+          if (queue) {
+            const workers = result.get(queue);
+            const workerName = name.substring(key.length + 1);
+            client['name'] = workerName ? workerName : queue.name;
+            workers.push(convertWorker(client));
+          }
+        }
+      });
     });
+    return clients;
   }
 
   const clients = await client.client('list');

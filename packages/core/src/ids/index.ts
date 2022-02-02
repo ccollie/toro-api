@@ -1,5 +1,4 @@
-import { random } from '@alpen/shared';
-import { UniqueID } from 'nodejs-snowflake';
+import { Snowflake } from 'nodejs-snowflake';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet(
@@ -7,32 +6,24 @@ const nanoid = customAlphabet(
   6,
 );
 
-const Epoch = +new Date(2021, 1, 1);
+const Epoch = +new Date(2022, 1, 1).getTime();
 
-function getMachineID(): number {
-  const id = process.env.MACHINE_ID;
-  const machineId: number = parseInt(id, 10);
-  return isNaN(machineId) ? random(0, 4096) : machineId;
-}
-
-const idConfig = {
-  // Defaults to false. If set to true, the returned ids will be of type bigint
-  // or else of type string
-  returnNumber: false,
-  customEpoch: Epoch, // This is UNIX timestamp in ms
-  machineID: getMachineID(),
-};
-
-const idGenerator = new UniqueID(idConfig);
+// eslint-disable-next-line camelcase
+const idGenerator = new Snowflake({ custom_epoch: Epoch });
 
 export function getUniqueId(): string {
-  return idGenerator.getUniqueID() as string;
+  return idGenerator.getUniqueID().toString();
 }
 
 export function getTimestampFromId(id: string): number {
-  return idGenerator.getTimestampFromID(id);
+  const asBigInt = BigInt(id);
+  return Snowflake.timestampFromID(asBigInt, idGenerator.customEpoch());
 }
 
+export function getMachineId(id: string): number {
+  const asBigInt = BigInt(id);
+  return Snowflake.instanceIDFromID(asBigInt);
+}
 export function getSnowflakeId(): string {
   return getUniqueId();
 }

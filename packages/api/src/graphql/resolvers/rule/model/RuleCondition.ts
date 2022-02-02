@@ -7,7 +7,7 @@ import {
   RuleOperatorEnum,
   RuleTypeEnum,
 } from '../../../scalars';
-import has from 'lodash/has';
+import { has } from '@alpen/shared';
 
 const BaseFields = {
   errorThreshold: {
