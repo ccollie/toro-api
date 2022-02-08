@@ -26,6 +26,10 @@ export const retryJobs: FieldConfig = {
           type: 'Int',
           description: 'number to limit how many jobs will be moved to wait status per iteration',
         },
+        timestamp: {
+          type: 'Int',
+          description: 'retry all failed jobs before the given timestamp',
+        },
       },
     }).NonNull,
   },

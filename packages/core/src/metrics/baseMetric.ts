@@ -8,10 +8,8 @@ import { Events } from './constants';
 import { createAsyncIterator, systemClock } from '../lib';
 import { MetricsListener } from './metrics-listener';
 import { DurationSchema } from '../validation';
-import {
-  MetricCategory,
-  MetricValueType,
-  MetricTypes,
+import { MetricCategory, MetricValueType, MetricTypes } from './types';
+import type {
   SerializedMetric,
   QueueMetricOptions,
   MetricOptions,
@@ -20,7 +18,7 @@ import { createJobNameFilter, metricNameByEnum } from './utils';
 import { getConfigDuration } from '../lib/config-utils';
 import { getStaticProp } from '@alpen/shared';
 import { Predicate } from '../types';
-import { TimeseriesDataPoint } from '../stats';
+import type { TimeseriesDataPoint } from '../stats';
 
 export interface MetricUpdateEvent {
   ts: number;
@@ -214,7 +212,7 @@ export abstract class BaseMetric {
 
   // Public core used elsewhere
   update(value: number, ts?: number): number {
-    if (!ts) ts = systemClock.getTime();
+    ts = ts ?? systemClock.getTime();
     this._value = this.transformValue(value, ts);
     if (this._value !== this._prev) {
       this._prev = this._value;

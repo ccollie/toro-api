@@ -30,7 +30,6 @@ export const Jobs = () => {
     filter,
     page,
     jobView,
-    queue,
   });
 
   // todo: load
@@ -76,6 +75,7 @@ export const Jobs = () => {
           pageCount={pageCount}
           status={status}
           view={jobView}
+          filter={filter}
           selected={selectedJobs}
         />
       </div>

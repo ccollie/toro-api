@@ -40,7 +40,7 @@ export function useJobQuery(props: JobListProps) {
     setTotal(_total);
     setManuallyRefreshed(false);
     if (queue) {
-      updateQueue(queueId, produce(queue, draft => {
+      updateQueue(produce(queue, draft => {
         Object.assign(draft.jobCounts, {
           ...(draft.jobCounts ?? {}),
           ...counts

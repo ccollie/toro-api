@@ -15,9 +15,6 @@ import { SafeReadonly } from '@apollo/client/cache/core/types/common';
 import type { Job, Queue, QueueWorker, RepeatableJob, StatsSnapshot } from '@/types';
 import { EnvConfig } from 'src/config';
 
-console.log('ApolloProvider.tsx, EnvConfig:', EnvConfig);
-console.log('Env', import.meta.env);
-
 const httpLink = new HttpLink({
   uri: EnvConfig.graphqlEndpoint,
 });

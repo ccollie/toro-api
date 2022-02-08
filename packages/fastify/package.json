@@ -23,9 +23,9 @@
   "dependencies": {
     "@alpen/api": "^0.0.2",
     "@alpen/core": "^0.0.2",
-    "@graphql-ez/fastify": "^0.9.5",
-    "graphql": "16.1.0-experimental-stream-defer.6",
-    "graphql-ez": "^0.13.7"
+    "@graphql-ez/fastify": "^0.9.6",
+    "graphql": "16.3.0",
+    "graphql-ez": "^0.14.0"
   },
   "peerDependencies": {
     "fastify": "3.x"

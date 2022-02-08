@@ -1,5 +1,5 @@
 import { OnlineNormalEstimator } from './online-normal-estimator';
-import { SlidingTimeWindow, TickEventData } from './sliding-time-window';
+import { SlidingTimeWindow, type TickEventData } from './sliding-time-window';
 import { Clock, systemClock } from '../lib';
 import Denque from 'denque';
 

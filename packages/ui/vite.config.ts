@@ -17,7 +17,6 @@ export default defineConfig({
         presetUno(),
         presetIcons({
           // options
-          prefix: 'i-',
           extraProperties: {
             display: 'inline-block',
             'vertical-align': 'middle',

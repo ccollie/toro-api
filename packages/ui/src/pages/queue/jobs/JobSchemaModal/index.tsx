@@ -40,7 +40,8 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
 
   useEffect(() => {
     setIsLoadingNames(true);
-    actions.getJobOptionsSchema()
+    actions
+      .getJobOptionsSchema()
       .then(setJobOptionsSchema)
       .finally(() => setIsLoadingNames(false));
   }, [queueId]);
@@ -64,7 +65,9 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
     setIsLoadingSchema(true);
     actions
       .getSchema(jobName)
-      .then(setSchemaState)
+      .then((schema) => {
+        setSchemaState(schema);
+      })
       .finally(() => {
         setIsLoadingSchema(false);
       });
@@ -110,9 +113,15 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
       setIsInferring(true);
       actions
         .inferSchema(jobName!)
-        .then(setSchemaState)
+        .then((schema) => {
+          setSchemaState(schema);
+          const canSave =
+            !!schema &&
+            (!isEmptyObject(schema.schema) || !isEmptyObject(schema.defaultOpts));
+          setChanged(canSave);
+        })
         .catch((err) => {
-          const msg = (err instanceof Error) ? err.message : `${err}`;
+          const msg = err instanceof Error ? err.message : `${err}`;
           toast.warn(msg);
           setIsInferError(true);
         })
@@ -145,7 +154,10 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
       jobName: value?.jobName ?? jobName ?? '',
     });
     setChanged(isEqual(editSchema, schema));
-    if (isEmptyObject(editSchema?.schema) && isEmptyObject(editSchema?.defaultOpts)) {
+    if (
+      isEmptyObject(editSchema?.schema) &&
+      isEmptyObject(editSchema?.defaultOpts)
+    ) {
       // todo: error message if not new
       setIsValid(false);
     }

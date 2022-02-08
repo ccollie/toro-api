@@ -3,13 +3,12 @@ import React from 'react';
 import { useMatch } from 'react-location';
 import type { LocationGenerics } from '@/types';
 import { useHostQuery } from '@/services/host/hooks/use-host-query';
-import QueueFilterToolbar from './QueueFilterToolbar';
+import QueueFilterToolbar from '../QueueFilterToolbar';
 import { useHostQueueFilter } from '@/services';
 import { useWhyDidYouUpdate } from '@/hooks';
-import Header from './Header';
-import { QueueCard } from '../../queue/QueueCard';
+import { QueueCard } from '@/pages/queue/QueueCard';
 
-export const Queues: React.FC = () => {
+export const HostQueues = () => {
   const { params: { hostId } } = useMatch<LocationGenerics>();
 
   // Update the filter in the store when the URL changes
@@ -20,12 +19,11 @@ export const Queues: React.FC = () => {
   useWhyDidYouUpdate('HostPage', { match });
   const range = 'last_hour';
 
-  const { loading, called, host, filteredQueues } = useHostQuery(hostId, filter, range);
+  const { loading, called, filteredQueues } = useHostQuery(hostId, filter, range);
 
   return (
     <div>
-      <Header host={host} />
-
+      <LoadingOverlay visible={loading && !called} />
       <QueueFilterToolbar
         hostId={hostId}
         filter={filter}
@@ -52,4 +50,4 @@ export const Queues: React.FC = () => {
   );
 };
 
-export default Queues;
+export default HostQueues;

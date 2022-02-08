@@ -16,7 +16,7 @@ export function App() {
       location={location}
       routes={routes}
       defaultPendingElement={
-        <div className={`text-2xl`}>
+        <div className="text-2xl">
           <LoadingOverlay visible={true} />
         </div>
       }>

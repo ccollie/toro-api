@@ -40,7 +40,7 @@ export const FilteredPager = (props: FilteredJobToolbarProps) => {
           leftIcon={<ArrowLeftIcon />}
           onClick={gotoPrev}
         />
-        {page}
+        <span>{page}</span>
         <Button
           size="sm"
           disabled={!hasNext}
