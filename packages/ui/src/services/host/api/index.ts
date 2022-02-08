@@ -2,9 +2,6 @@ import {
   DiscoverQueuesDocument,
   GetHostQueuesDocument,
   GetHostsAndQueuesDocument,
-  GetRedisStatsDocument,
-  GetRedisStatsQuery,
-  RedisInfo,
   RegisterQueueDocument,
 } from '@/types';
 import type {
@@ -95,17 +92,5 @@ export function getHostData(): Promise<QueueHost[]> {
     .then((result) => {
       if (result.error) throw result.error;
       return (result.data?.hosts ?? []) as QueueHost[];
-    });
-}
-
-export function getRedisInfo(): Promise<RedisInfo> {
-  const client = getApolloClient();
-  return client
-    .query<GetRedisStatsQuery>({
-      query: GetRedisStatsDocument,
-    })
-    .then((result) => {
-      if (result.error) throw result.error;
-      return result.data?.host?.redis as RedisInfo;
     });
 }

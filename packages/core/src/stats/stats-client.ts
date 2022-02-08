@@ -1,7 +1,7 @@
 import { Queue } from 'bullmq';
 import { DateLike, isEmpty } from '@alpen/shared';
 import { getHostStatsKey, getQueueMetaKey, getStatsKey } from '../keys';
-import { StatsGranularity, StatsMetricType, StatsRateType } from './types';
+import { StatsGranularity, type StatsMetricType, StatsRateType } from './types';
 import { Pipeline } from 'ioredis';
 import { TimeSeries } from '../commands';
 import Emittery from 'emittery';
@@ -11,8 +11,8 @@ import toDate from 'date-fns/toDate';
 import { aggregateSnapshots, getRetention, aggregateMeter } from './utils';
 import { WriteCache } from '../redis';
 import { MeterSummary } from './meter';
-import { Timespan } from '../types';
-import { StatisticalSnapshot } from './timer';
+import type { Timespan } from '../types';
+import type { StatisticalSnapshot } from './timer';
 
 export interface RangeOpts {
   key: string;
@@ -322,7 +322,6 @@ export class StatsClient extends Emittery {
     unit: StatsGranularity,
     value: DateLike,
   ): Pipeline {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const key = getCursorKey(jobType, type, unit);
     const update = {
       [key]: toDate(value).getTime(),

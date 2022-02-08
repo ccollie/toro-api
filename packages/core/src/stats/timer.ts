@@ -1,9 +1,9 @@
-import { Meter, MeteredRates, MeterSummary } from './meter';
+import { Meter, type MeteredRates, type MeterSummary } from './meter';
 import { Clock } from '../lib';
-import { Histogram } from 'hdr-histogram-js';
+import type { Histogram } from 'hdr-histogram-js';
 import { getHistogramSnapshot, createHistogram } from './utils';
 import { toDate } from 'date-fns';
-import { HistogramSnapshot } from './types';
+import type { HistogramSnapshot } from './types';
 
 /**
  * A convenience wrapper class for a {@link Timer} to measure durations.

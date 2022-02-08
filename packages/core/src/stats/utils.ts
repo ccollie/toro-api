@@ -8,9 +8,9 @@ import {
 import ms from 'ms';
 import * as units from './units';
 import { ManualClock } from '../lib';
-import { Meter, MeterSummary } from './meter';
+import { Meter, type MeterSummary } from './meter';
 import { HistogramSnapshot, StatsGranularity, StatsRateType } from './types';
-import { StatisticalSnapshot } from './timer';
+import type { StatisticalSnapshot } from './timer';
 
 export const CONFIG = {
   units: [

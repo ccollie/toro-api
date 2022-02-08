@@ -1,35 +1,30 @@
-import { HostsPageDataDocument, QueueHost } from '@/types';
+import { HostsPageDataDocument, HostsPageDataQuery, QueueHost } from '@/types';
 import { useQuery } from '@apollo/client';
-import React, { useEffect, useState } from 'react';
+import { LoadingOverlay } from '@mantine/core';
+import React, { useState } from 'react';
 import { useNetworkSettingsStore } from '@/stores/network-settings';
 import HostCard from './HostCard';
+import Header from './Header';
 
 const HostsPage: React.FC = () => {
   const range = 'last_hour';
-  const pollingInterval = useNetworkSettingsStore(state => state.pollingInterval);
+  const pollInterval = useNetworkSettingsStore(state => state.pollingInterval);
   const [hosts, setHosts] = useState<QueueHost[]>([]);
 
-  const { loading, data, called } = useQuery(HostsPageDataDocument,{
+  const { loading, called } = useQuery<HostsPageDataQuery>(HostsPageDataDocument,{
     variables: {
       range,
     },
-    pollInterval: pollingInterval
-  });
-
-  useEffect((): void => {
-    if (data && data.hosts) {
+    pollInterval,
+    onCompleted: (data) => {
       setHosts(data.hosts as QueueHost[]);
-    }
-  }, [data]);
+    },
+  });
 
   return (
     <div>
-      <h1>Hosts</h1>
-      {(!called && loading) && (
-        <div>
-          <p>Loading...</p>
-        </div>
-      )}
+      <LoadingOverlay visible={!called && loading} />
+      <Header />
       <div className="flex flex-wrap flex-start gap-2 gap-y-2">
         {hosts.map(host => (
           <HostCard host={host} key={host.id} />

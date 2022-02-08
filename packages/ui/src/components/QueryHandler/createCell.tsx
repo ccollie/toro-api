@@ -1,3 +1,4 @@
+import { LoadingOverlay } from '@mantine/core';
 import React from 'react';
 import { QueryResult } from '@apollo/client';
 import type { ComponentProps, JSXElementConstructor } from 'react';
@@ -6,7 +7,8 @@ import type { DocumentNode } from 'graphql';
 import type { A } from 'ts-toolbelt';
 
 /**
- * This is part of how we let users swap out their GraphQL client while staying compatible with Cells.
+ * This is part of how we let users swap out their GraphQL client while
+ * staying compatible with Cells.
  */
 import { useQuery } from './GraphQLHooksProvider';
 
@@ -219,7 +221,7 @@ export function createCell<CellProps = any>({
   }),
   afterQuery = (data) => ({ ...data }),
   isEmpty = isDataEmpty,
-  Loading = () => <>Loading...</>,
+  Loading = () => <LoadingOverlay visible={true}/>,
   Failure,
   Empty,
   Success,
@@ -276,9 +278,11 @@ export function createCell<CellProps = any>({
        * @see {@link https://github.com/redwoodjs/redwood/issues/2473#issuecomment-971864604}
        */
       console.warn(
-        `If you're using Apollo Client, check for its debug logs here in the console, which may help explain the error.`,
+        // eslint-disable-next-line max-len
+        'If you\'re using Apollo Client, check for its debug logs here in the console, which may help explain the error.',
       );
       throw new Error(
+        // eslint-disable-next-line max-len
         'Cannot render Cell: reached an unexpected state where the query succeeded but `data` is `null`. If this happened in Storybook, your query could be missing fields; otherwise this is most likely a GraphQL caching bug. Note that adding an `id` field to all the fields on your query may fix the issue.',
       );
     }

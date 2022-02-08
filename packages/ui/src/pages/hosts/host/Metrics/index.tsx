@@ -1,18 +1,15 @@
 import { ErrorChart, JobCountsPieChart, StatsChart } from '@/components/charts';
-import { useLazyQuery } from '@apollo/client';
+import { LoadingOverlay } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import { useMatch } from 'react-location';
 import type { ErrorDataItem } from '@/components/charts';
 import { calcErrorPercentage } from '@/lib/stats';
 import { StatisticCard } from '@/components/Stats';
-import { useInterval, useUpdateEffect } from '@/hooks';
 import { useHost } from '@/services/host';
-import { RedisStats } from 'src/components/RedisStats/RedisStats';
 import { useNetworkSettingsStore } from '@/stores/network-settings';
 import Statistic from '@/components/Stats/Statistic';
 import StatisticGroup from '@/components/Stats/StatisticGroup';
-import Header from './Header';
-import { HostOverviewDocument } from '@/types';
+import { useHostOverviewQuery } from '@/types';
 import type {
   JobCounts,
   LocationGenerics,
@@ -22,7 +19,7 @@ import type {
 } from '@/types';
 import prettyMilliseconds from 'pretty-ms';
 
-export const HostOverview: React.FC = () => {
+export const HostMetrics = () => {
   const {
     params: { hostId },
   } = useMatch<LocationGenerics>();
@@ -51,36 +48,13 @@ export const HostOverview: React.FC = () => {
   ];
 
   // todo: use actual date-times so we can cache results
-  const [getData, { loading, data, called }] = useLazyQuery(
-    HostOverviewDocument,
-    {
-      fetchPolicy: 'cache-and-network',
-    },
-  );
-
-  function fetch() {
-    getData({
-      variables: {
-        id: hostId,
-        range,
-      },
-    });
-  }
-
-  const { stop: resetInterval } = useInterval(
-    () => {
-      if (!loading) {
-        fetch();
-      }
+  const { data, loading, called } = useHostOverviewQuery({
+    variables: {
+      id: hostId,
+      range,
     },
     pollInterval,
-    { immediate: true },
-  );
-
-  useUpdateEffect(() => {
-    fetch();
-    resetInterval();
-  }, [hostId, range]);
+  });
 
   function getErrorChardData(snaps: StatsSnapshot[]): ErrorDataItem[] {
     return snaps.map((snap) => {
@@ -127,8 +101,6 @@ export const HostOverview: React.FC = () => {
 
   return (
     <div>
-      <Header host={host} />
-      {host?.redis && <RedisStats stats={host?.redis} />}
       <>
         <div className="flex">
           <div className="node">
@@ -158,7 +130,7 @@ export const HostOverview: React.FC = () => {
         <div>{/*<TimeRangeToolbar onRangeChange={onDateRangeChange} />*/}</div>
         <div className="w-full">
           <h3>Runtime</h3>
-          {loading && !called && <p>Loading...</p>}
+          <LoadingOverlay visible={loading && !called} />
           <StatsChart fields={RuntimeFields} data={snapshots} />
         </div>
         <div className="flex flex-wrap w-full mt-4" style={{ height: 300 }}>
@@ -180,4 +152,4 @@ export const HostOverview: React.FC = () => {
   );
 };
 
-export default HostOverview;
+export default HostMetrics;

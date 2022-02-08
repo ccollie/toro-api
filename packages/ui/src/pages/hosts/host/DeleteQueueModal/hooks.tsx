@@ -1,8 +1,8 @@
+import { Button, Text, TextInput } from '@mantine/core';
 import { useSetState } from '@mantine/hooks';
 import { useModals } from '@mantine/modals';
 import React, { useCallback, useEffect, useState } from 'react';
-import type { Queue } from '@/types';
-import { Text, TextInput } from '@mantine/core';
+import { Queue } from 'src/types';
 
 type ConfirmProps = {
   queue: Queue;
@@ -37,8 +37,9 @@ const ConfirmationForm: React.FC<ConfirmProps> = (props) => {
 
   return (
     <>
-      <h4>Are you sure you want to delete the queue?</h4>
-      <Text>{queue.name}</Text>
+      <h4>
+        Are you sure you want to delete the queue &quot;{queue.name}&quot;?
+      </h4>
       <Text size="sm">
         To confirm, please enter the name of the queue below.
       </Text>
@@ -52,12 +53,13 @@ const ConfirmationForm: React.FC<ConfirmProps> = (props) => {
           onChange={handleInputChange}
           required={true}
           error={error}
-          className={`w-full py-2`}
+          className="w-full py-2"
         />
       </div>
     </>
   );
 };
+
 
 export function useQueueDeleteConfirmModal(queue: Queue) {
   const modals = useModals();
@@ -70,7 +72,7 @@ export function useQueueDeleteConfirmModal(queue: Queue) {
     setConfirmProps({ disabled: !isMatch });
   }, []);
 
-  const openConfirmDeleteModal = () => {
+  const openDeleteModal = () => {
     return new Promise<void>((resolve, reject) => {
       function close(id: string, fn: () => void) {
         modals.closeModal(id);
@@ -93,7 +95,9 @@ export function useQueueDeleteConfirmModal(queue: Queue) {
     });
   };
 
-  return {
-    openConfirmDeleteModal,
-  };
+  return (
+    <Button onClick={openDeleteModal} color="red">
+      Delete account
+    </Button>
+  );
 }

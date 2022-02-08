@@ -20,7 +20,7 @@ export interface LockOptions {
 }
 
 const DEFAULT_LOCK_TTL = 10000;
-export const DEFAULT_LOCK_KEY = 'toro:writer';
+export const DEFAULT_LOCK_KEY = 'alpen:writer';
 
 const defaultOption: Partial<LockOptions> = {
   key: DEFAULT_LOCK_KEY,

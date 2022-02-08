@@ -1182,6 +1182,7 @@ export const MetricType = {
   None: 'None',
   PeakMemory: 'PeakMemory',
   PendingCount: 'PendingCount',
+  ResponseTime: 'ResponseTime',
   UsedMemory: 'UsedMemory',
   WaitTime: 'WaitTime',
   Waiting: 'Waiting',
@@ -2311,16 +2312,20 @@ export type RedisInfo = {
   mem_fragmentation_ratio?: Maybe<Scalars['Float']>;
   number_of_cached_scripts: Scalars['Int'];
   os: Scalars['String'];
+  redis_mode: Scalars['String'];
   redis_version: Scalars['String'];
   role: Scalars['String'];
   tcp_port: Scalars['Int'];
   total_system_memory: Scalars['Int'];
+  total_system_memory_human: Scalars['String'];
   uptime_in_days: Scalars['Int'];
   uptime_in_seconds: Scalars['Int'];
   used_cpu_sys: Scalars['Float'];
   used_memory: Scalars['Int'];
+  used_memory_human: Scalars['String'];
   used_memory_lua: Scalars['Int'];
   used_memory_peak: Scalars['Int'];
+  used_memory_peak_human: Scalars['String'];
 };
 
 export type RefreshMetricDataInput = {
@@ -2380,6 +2385,8 @@ export type RetryJobsInput = {
   count?: InputMaybe<Scalars['Int']>;
   /** The id of the queue */
   queueId: Scalars['ID'];
+  /** retry all failed jobs before the given timestamp */
+  timestamp?: InputMaybe<Scalars['Int']>;
 };
 
 export type RetryJobsPayload = {
@@ -3266,8 +3273,11 @@ export type RedisStatsFragment = {
   connected_clients: number;
   blocked_clients: number;
   total_system_memory: number;
+  total_system_memory_human: string;
+  used_memory_human: string;
   used_memory: number;
   used_memory_peak: number;
+  used_memory_peak_human: string;
   used_memory_lua: number;
   used_cpu_sys: number;
   maxmemory: number;
@@ -3275,6 +3285,9 @@ export type RedisStatsFragment = {
   instantaneous_ops_per_sec: number;
   mem_fragmentation_ratio?: number | null;
   role: string;
+  os: string;
+  tcp_port: number;
+  redis_mode: string;
 };
 
 export type HostFragment = {
@@ -4283,8 +4296,17 @@ export const RedisStatsFragmentDoc = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -4301,6 +4323,9 @@ export const RedisStatsFragmentDoc = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -4358,8 +4383,17 @@ export const HostFragmentDoc = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -4376,6 +4410,9 @@ export const HostFragmentDoc = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -5201,8 +5238,17 @@ export const HostsPageDataDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -5219,6 +5265,9 @@ export const HostsPageDataDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -5661,8 +5710,17 @@ export const HostOverviewDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -5679,6 +5737,9 @@ export const HostOverviewDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -6088,8 +6149,17 @@ export const GetAllHostsDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -6106,6 +6176,9 @@ export const GetAllHostsDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -6263,8 +6336,17 @@ export const GetHostsAndQueuesDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -6281,6 +6363,9 @@ export const GetHostsAndQueuesDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -6463,8 +6548,17 @@ export const GetHostByIdDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -6481,6 +6575,9 @@ export const GetHostByIdDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -6659,8 +6756,17 @@ export const GetHostByIdFullDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -6677,6 +6783,9 @@ export const GetHostByIdFullDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },
@@ -7425,8 +7534,17 @@ export const GetRedisStatsDocument = {
             kind: 'Field',
             name: { kind: 'Name', value: 'total_system_memory' },
           },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'total_system_memory_human' },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'used_memory_human' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_peak' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'used_memory_peak_human' },
+          },
           { kind: 'Field', name: { kind: 'Name', value: 'used_memory_lua' } },
           { kind: 'Field', name: { kind: 'Name', value: 'used_cpu_sys' } },
           { kind: 'Field', name: { kind: 'Name', value: 'maxmemory' } },
@@ -7443,6 +7561,9 @@ export const GetRedisStatsDocument = {
             name: { kind: 'Name', value: 'mem_fragmentation_ratio' },
           },
           { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'os' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
         ],
       },
     },

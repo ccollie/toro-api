@@ -24,6 +24,7 @@ export * from './LockClosed';
 export * from './Pause';
 export * from './Play';
 export * from './NoData';
+export * from './RedisLogo';
 export * from './Trash';
 export * from './Clock';
 export * from './Calendar';

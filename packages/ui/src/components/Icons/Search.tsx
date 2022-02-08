@@ -11,4 +11,4 @@ export const SearchIcon = (props: IconProps) => {
       <path d="M23 23 L30 30" />
     </BaseIcon>
   );
-}
+};

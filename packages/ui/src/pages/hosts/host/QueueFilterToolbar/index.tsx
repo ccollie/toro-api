@@ -6,9 +6,12 @@ import RegisterQueueDialog from 'src/pages/hosts/host/QueueFilterToolbar/Registe
 import { useHostActions } from 'src/services/host/hooks';
 import React, { useCallback, useRef } from 'react';
 import type { Queue, QueueFilter, QueueHost } from 'src/types';
-import { DEFAULT_SORT_FIELDS, filtersEqual, normalizeFilter } from 'src/services';
+import {
+  DEFAULT_SORT_FIELDS,
+  filtersEqual,
+  normalizeFilter,
+} from 'src/services';
 import { useClickOutside } from '@mantine/hooks';
-
 
 interface FilterToolbarProps {
   hostId: QueueHost['id'];
@@ -17,7 +20,7 @@ interface FilterToolbarProps {
 }
 
 const DEFAULT_SORT = 'name';
-export const SORT_FIELDS = DEFAULT_SORT_FIELDS
+export const SORT_FIELDS = DEFAULT_SORT_FIELDS;
 
 const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
   const { onFilterUpdated, filter, hostId } = props;
@@ -50,19 +53,18 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
         ...delta,
         sortBy: curr.sortBy,
         sortOrder: curr.sortOrder,
-      }
+      };
       onFilterUpdated(update);
     },
-    [hostId]
+    [hostId],
   );
 
   const onQueueAdded = useCallback(
     (queue: Queue) => {
       console.log('onQueueAdded', queue);
     },
-    [hostId]
+    [hostId],
   );
-
 
   function onSortChange(sortBy: string, sortOrder: SortOrderEnum) {
     const filter = savedState.current;
@@ -93,25 +95,30 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
     const filter = savedState.current;
     const ascending = filter.sortOrder === SortOrderEnum.Asc;
     return (
-      <ActionIcon
-        onClick={toggleSort}
-        aria-label="Sort"
-      >
+      <ActionIcon onClick={toggleSort} aria-label="Sort">
         {ascending ? (
-          <i className="i-la-sort-alpha-up text-3xl" style={{ width: 24, height: 24 }}/>
+          <i
+            className="i-la-sort-alpha-up text-3xl"
+            style={{ width: 24, height: 24 }}
+          />
         ) : (
-          <i className="i-la-sort-alpha-down-alt text-3xl" style={{ width: 24, height: 24 }}/>
+          <i
+            className="i-la-sort-alpha-down-alt text-3xl"
+            style={{ width: 24, height: 24 }}
+          />
         )}
       </ActionIcon>
     );
   }
 
-  const onSortFieldClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, name: string) => {
-    e.preventDefault();
-    closeDropdown();
-    onSortChange(name, savedState.current.sortOrder ?? SortOrderEnum.Asc);
-  }, [filter]);
-
+  const onSortFieldClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, name: string) => {
+      e.preventDefault();
+      closeDropdown();
+      onSortChange(name, savedState.current.sortOrder ?? SortOrderEnum.Asc);
+    },
+    [filter],
+  );
 
   function ToolbarControl() {
     const filter = savedState.current;
@@ -128,44 +135,54 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
                     aria-label={`Sort by ${filter.sortBy}`}
                     id="sort-dropdown-button"
                     className="font-medium text-md px-4 flex-1 grow"
-                    type="button">
+                    type="button"
+                  >
                     {filter.sortBy}
-                    <i className="i-la-angle-down text-2xl ml-2"/>
+                    <i className="i-la-angle-down text-2xl ml-2" />
                   </Button>
-                  <Center className={"left-0"}>
+                  <Center className={'left-0'}>
                     <SortIcon />
                   </Center>
                 </div>
 
-                {isDropdownOpen && <div
-                  ref={dropdownRef}
-                  className={`absolute z-400 w-44 text-base list-none bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700`}>
-                  <ul className="py-1" aria-labelledby="dropdownButton">
-                    {SORT_FIELDS.map((name) => (
-                      <li key={name}>
-                        <a href="#"
-                           onClick={e => onSortFieldClick(e, name)}
-                           className="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">
-                          {name}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>}
+                {isDropdownOpen && (
+                  <div
+                    ref={dropdownRef}
+                    className={'absolute z-400 w-44 text-base list-none bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700'}
+                  >
+                    <ul className="py-1" aria-labelledby="dropdownButton">
+                      {SORT_FIELDS.map((name) => (
+                        <li key={name}>
+                          <a
+                            href="#"
+                            onClick={(e) => onSortFieldClick(e, name)}
+                            className="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+                          >
+                            {name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           <div>
             <span className="sr-only">Filter</span>
-            <FilterDropdown onFilterUpdated={onQueuesChanged} filter={savedState.current} hostId={hostId} />
+            <FilterDropdown
+              onFilterUpdated={onQueuesChanged}
+              filter={savedState.current}
+              hostId={hostId}
+            />
           </div>
           <Button
-            color={"indigo"}
             variant="filled"
             compact={true}
             aria-label="Add Queue"
             id="add-queue-button"
-            onClick={toggleRegisterQueue}>
+            onClick={toggleRegisterQueue}
+          >
             Add
           </Button>
         </Group>
@@ -176,8 +193,7 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
   function Actions() {
     return (
       <div className="flex justify-between sm:items-center mb-8">
-        <div>Avatars</div>
-
+        <div></div>
         {/* Right: Actions */}
         <div className="flex justify-start gap-2">
           <ToolbarControl />
@@ -188,9 +204,13 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
 
   return (
     <>
-    <Actions />
-    <RegisterQueueDialog
-      actions={actions} onQueueAdded={onQueueAdded} isOpen={isRegisterQueueOpen} onClose={closeRegisterQueue}/>
+      <Actions />
+      <RegisterQueueDialog
+        actions={actions}
+        onQueueAdded={onQueueAdded}
+        isOpen={isRegisterQueueOpen}
+        onClose={closeRegisterQueue}
+      />
     </>
   );
 };

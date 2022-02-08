@@ -2,7 +2,7 @@ import React from 'react';
 import shallow from 'zustand/shallow';
 import { useJobLogsStore } from '@/stores/job-logs';
 import { useNetwork } from '@/hooks/use-network';
-import NetworkRequest from '@/components/NetworkRequest';
+import Index from 'src/components/NetworkRequest/NetworkRequest';
 import { useQueueData } from '@/hooks/use-queue-data';
 import { Button, createStyles, Group, List, Modal, TextInput } from '@mantine/core';
 
@@ -87,13 +87,13 @@ const JobLogs = () => {
 
           </div>
         </form>
-        <NetworkRequest status={status} refetch={refetch}>
+        <Index status={status} refetch={refetch}>
           <List withPadding size="md">
             {data?.job?.logs?.logs.map((log, idx) => (
               <List.Item key={idx}>{log}</List.Item>
             ))}
           </List>
-        </NetworkRequest>
+        </Index>
       </Modal>
       <div>
         <Button onClick={onClose}>Close</Button>

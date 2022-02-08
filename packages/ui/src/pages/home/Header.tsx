@@ -1,4 +1,4 @@
-import { Paper, Group, Tabs, ActionIcon } from '@mantine/core';
+import { Paper, Group, Tabs } from '@mantine/core';
 import React, { useCallback, useState } from 'react';
 import { useNavigate, useResolvePath } from 'react-location';
 import { QueueHost } from '@/types';
@@ -6,11 +6,8 @@ import {
   QueueIcon,
   AnalyticsIcon,
   CloudServerIcon,
-  WorkerIcon, RedisLogo,
+  WorkerIcon,
 } from '@/components/Icons';
-import { useRedisInfoModalStore } from 'src/stores';
-import shallow from 'zustand/shallow';
-import HostStateBadge from '../HostStateBadge';
 
 interface TProps {
   host?: QueueHost;
@@ -19,10 +16,6 @@ interface TProps {
 const TabKeys = ['queues', 'workers', 'metrics'];
 
 export const Header = ({ host }: TProps) => {
-  const [isRedisModalOpen, onOpenRedisModal, onCloseRedisModal] = useRedisInfoModalStore(
-    (state) => [state.isOpen, state.open, state.close],
-    shallow
-  );
   const resolvePath = useResolvePath();
   const [activeTab, setActiveTab] = useState(getActiveTab());
   const navigate = useNavigate();
@@ -33,15 +26,6 @@ export const Header = ({ host }: TProps) => {
     const tab = parts[parts.length - 1];
     return TabKeys.indexOf(tab);
   }
-
-  const onToggleRedisModal = useCallback(() => {
-    if (isRedisModalOpen) {
-      onCloseRedisModal();
-    } else {
-      const hostId = host?.id ?? '-1';
-      onOpenRedisModal(hostId);
-    }
-  }, []);
 
   const onTabChange = useCallback((tabIndex: number, tabKey: string) => {
     setActiveTab(tabIndex);
@@ -60,8 +44,7 @@ export const Header = ({ host }: TProps) => {
         <div className="flex items-center text-gray-400">
           <CloudServerIcon size={48} />
           <p className="focus:outline-none text-gray-900 dark:text-gray-100 text-base ml-3">
-            <span className="text-3xl">{host?.name}</span>{' '}
-            {host && <HostStateBadge host={host} />}
+            <span className="text-3xl">Hosts</span>{' '}
           </p>
         </div>
         <Group position="center" mt={4} mr={10} className="dark:text-gray-400">
@@ -88,9 +71,6 @@ export const Header = ({ host }: TProps) => {
               }
             />
           </Tabs>
-          <ActionIcon onClick={onToggleRedisModal}>
-            <RedisLogo size={48} />
-          </ActionIcon>
         </Group>
       </Paper>
     </div>

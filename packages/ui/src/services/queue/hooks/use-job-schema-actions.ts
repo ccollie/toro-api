@@ -18,7 +18,7 @@ export function useJobSchemaActions(queueId: string): JobSchemaActions {
     },
     getJobNames(): Promise<string[]> {
       return getJobNames(queueId).then((data) => {
-        updateQueue(queueId, {
+        updateQueue({
           jobNames: data ?? [],
         });
         return data;

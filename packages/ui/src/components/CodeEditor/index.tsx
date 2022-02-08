@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import CodeMirror, { Extension } from '@uiw/react-codemirror';
+import CodeMirror, { EditorState, Extension } from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { bracketMatching } from '@codemirror/matchbrackets';
@@ -20,6 +20,7 @@ type TProps = {
   placeholder?: string;
   readOnly?: boolean;
   className?: string;
+  isSingleLine?: boolean;
 };
 
 const CodeEditor = (props: TProps) => {
@@ -32,21 +33,24 @@ const CodeEditor = (props: TProps) => {
     readOnly = false,
     className,
     basicSetup = true,
+    isSingleLine,
   } = props;
   const [code, setCode] = useState('');
   const [extensions, setExtensions] = useState<Extension[]>();
   const height = dimensionToString(props.height);
   const width = dimensionToString(props.width);
 
-  const theme = useCodeEditorStore(
-    (state) => state.theme);
+  const theme = useCodeEditorStore((state) => state.theme);
 
-  const handleChange = useCallback((value: string) => {
-    if (onChange) {
-      // todo: additional validation (e.g. ajv.validate)
-      onChange(value);
-    }
-  }, [props.onChange]);
+  const handleChange = useCallback(
+    (value: string) => {
+      if (onChange) {
+        // todo: additional validation (e.g. ajv.validate)
+        onChange(value);
+      }
+    },
+    [props.onChange],
+  );
 
   useEffect(() => {
     if (value) {
@@ -57,12 +61,16 @@ const CodeEditor = (props: TProps) => {
   function getExtensions(): Extension[] {
     const result: Extension[] = [];
     if (!basicSetup) {
-      result.push(bracketMatching(), closeBrackets())
+      result.push(bracketMatching(), closeBrackets());
     }
     if (language === 'json') {
       result.push(json());
     } else if (language === 'javascript') {
       result.push(javascript());
+      if (isSingleLine ?? true) {
+        // https://discuss.codemirror.net/t/codemirror-6-single-line-and-or-avoid-carriage-return/2979
+        result.push(EditorState.transactionFilter.of(tr => tr.newDoc.lines > 1 ? [] : tr));
+      }
     }
     return result;
   }

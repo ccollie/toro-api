@@ -20,7 +20,7 @@ import QuerySaveDialog from './QuerySaveDialog';
 interface QueryHistoryPopoverOpts {
   queueId: string;
   currentFilter?: string;
-  isOpen?: boolean;
+  isOpen: boolean;
   toggleOpen: () => void;
   onClose: () => void;
   onFilterClick?: (filter: JobFilter) => void;
@@ -35,7 +35,7 @@ interface FilterRowProps {
   onDelete: (id: string) => Promise<void> | void;
 }
 
-const FilterRow: React.FC<FilterRowProps> = (props) => {
+const FilterRow = (props: FilterRowProps) => {
   const { filter, onClick, onDelete, onCopy } = props;
   const { name, id } = filter;
   const [isDeleting, setIsDeleting] = useState(false);
@@ -80,8 +80,8 @@ const FilterRow: React.FC<FilterRowProps> = (props) => {
   );
 };
 
-const QueryHistoryPopover: React.FC<QueryHistoryPopoverOpts> = (props) => {
-  const { queueId, onClose, isOpen = false, toggleOpen } = props;
+const QueryHistoryPopover = (props: QueryHistoryPopoverOpts) => {
+  const { queueId, onClose, isOpen, toggleOpen } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState<JobFilter[]>([]);
   const [view, setView] = useState<ViewType>('recent');

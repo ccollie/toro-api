@@ -15,7 +15,7 @@ type SelectValue = {
   value: string;
 };
 
-const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
+const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
   const { onQueueAdded, actions, isOpen } = props;
   const [prefix, setPrefix] = useState<string>('');
   const [queue, setQueue] = useState<DiscoverQueuesPayload | null>(null);
@@ -31,20 +31,25 @@ const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
   function createSelectValue(q: DiscoverQueuesPayload): SelectValue {
     return {
       label: q.name,
-      value: `${q.prefix}:${q.name}`
-    }
+      value: `${q.prefix}:${q.name}`,
+    };
   }
 
   function fetch() {
     setLoading(true);
-    actions.discoverQueues(prefix || undefined, true).then((items) => {
-      const prefixes = Array.from(new Set<string>(items.map((x: DiscoverQueuesPayload) => x.prefix))).sort();
-      const prefixValues = prefixes.map((x) => ({ label: x, value: x }));
-      const queueValues = items.map(createSelectValue);
-      setQueueValues(queueValues);
-      setPrefixValues(prefixValues);
-      setFiltered(queueValues);
-    }).finally(() => setLoading(false));
+    actions
+      .discoverQueues(prefix || undefined, true)
+      .then((items) => {
+        const prefixes = Array.from(
+          new Set<string>(items.map((x: DiscoverQueuesPayload) => x.prefix)),
+        ).sort();
+        const prefixValues = prefixes.map((x) => ({ label: x, value: x }));
+        const queueValues = items.map(createSelectValue);
+        setQueueValues(queueValues);
+        setPrefixValues(prefixValues);
+        setFiltered(queueValues);
+      })
+      .finally(() => setLoading(false));
   }
 
   function onChange(value: any) {
@@ -78,10 +83,7 @@ const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
     setFormValid(!!queue);
   }, [queue]);
 
-  function remove(
-    queues: SelectValue[],
-    item: SelectValue
-  ): SelectValue[] {
+  function remove(queues: SelectValue[], item: SelectValue): SelectValue[] {
     return queues.filter((x) => {
       return !(item.label === x.label && item.value === x.value);
     });
@@ -106,13 +108,11 @@ const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
       setFiltered(newItems);
       setQueue(null);
 
-      const msg = `Queue ${prefix && (prefix + ':')}${name} added`;
+      const msg = `Queue ${prefix && prefix + ':'}${name} added`;
       toast.success(`${msg} successfully`);
 
       // form.resetFields();
       onQueueAdded && onQueueAdded(added);
-
-
     } catch (error) {
       const msg = (error as any).message || error;
       toast.error(msg);
@@ -120,10 +120,13 @@ const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
   }
 
   return (
-    <Modal opened={isOpen} onClose={handleClose} title={"Register A Queue"} centered>
-      <Text>
-        Register an existing queue with the current host.
-      </Text>
+    <Modal
+      opened={isOpen}
+      onClose={handleClose}
+      title={'Register A Queue'}
+      centered
+    >
+      <Text>Register an existing queue with the current host.</Text>
       <div>
         <form>
           <Select
@@ -146,9 +149,9 @@ const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
               data={filtered}
             />
           </div>
-          <Space h={"md"} />
+          <Space h="md" />
           <div className="flex items-center">
-            <Checkbox defaultChecked label="Track Statistics" id="c1"/>
+            <Checkbox defaultChecked label="Track Statistics" id="c1" />
           </div>
         </form>
         <div className="flex mt-25 justify-end">
@@ -163,7 +166,7 @@ const RegisterQueueDialog: React.FC<RegisterQueueDialogProps> = (props) => {
         </div>
       </div>
     </Modal>
-  )
+  );
 };
 
 export default RegisterQueueDialog;

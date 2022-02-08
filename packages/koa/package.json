@@ -37,10 +37,10 @@
   "dependencies": {
     "@alpen/api": "^0.0.2",
     "@alpen/core": "^0.0.2",
-    "@graphql-ez/koa": "^0.8.8",
+    "@graphql-ez/koa": "^0.8.9",
     "@koa/router": "^10.1.1",
-    "graphql": "16.1.0-experimental-stream-defer.6",
-    "graphql-ez": "^0.13.7"
+    "graphql": "16.3.0",
+    "graphql-ez": "^0.14.0"
   },
   "devDependencies": {
     "@types/koa": "^2.13.4",

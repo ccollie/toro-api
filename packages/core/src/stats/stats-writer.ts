@@ -1,17 +1,14 @@
 import { deserializePipeline, EventBus, WriteCache } from '../redis';
 import { DateLike, endOf, parseTimestamp, startOf } from '@alpen/shared';
-import {
-  StatisticalSnapshotOptions,
-  StatsGranularity,
-  StatsMetricType,
-} from './types';
-import { StatsClient, StatsClientArgs } from './stats-client';
+import { StatsGranularity } from './types';
+import type { StatisticalSnapshotOptions, StatsMetricType } from './types';
+import { StatsClient, type StatsClientArgs } from './stats-client';
 import { QueueStats } from './queue-stats';
 import { TimeSeries } from '../commands';
 import { aggregateSnapshots, CONFIG, EmptyStatsSnapshot } from './utils';
 import { isNil, random } from '@alpen/shared';
 import { systemClock } from '../lib';
-import { StatisticalSnapshot } from './timer';
+import type { StatisticalSnapshot } from './timer';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -119,7 +116,7 @@ export class StatsWriter extends StatsClient {
         start,
         jobName,
         metric,
-        keys: new Set<string>()
+        keys: new Set<string>(),
       };
       HostRollupCache.set(key, cacheData);
 

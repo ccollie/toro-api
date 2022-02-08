@@ -1,11 +1,11 @@
 import { JobStatus } from '@/types';
 import React, { Fragment, useEffect, useState } from 'react';
 import type { Job, JobFragment, Status } from '@/types';
-import { useDisclosure, useToast, useWhyDidYouUpdate } from '@/hooks';
+import { useDisclosure, useQueue, useToast, useWhyDidYouUpdate } from '@/hooks';
 import { TrashIcon, ClearIcon, ExportIcon, AddIcon, ArrowUpIcon } from '@/components/Icons';
 import CleanJobsModal from '../CleanJobsModal';
 import AddJobDialog from '../AddJobDialog';
-import { cleanQueue, useJobBulkActions, useQueue } from 'src/services';
+import { cleanQueue, useJobBulkActions } from 'src/services';
 import type { BulkActionType } from 'src/services';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { ActionIcon, Badge, Group, Tooltip } from '@mantine/core';
@@ -20,7 +20,7 @@ interface BulkJobActionsProps {
   onBulkAction?: (action: BulkActionType, ids: string[]) => void;
 }
 
-export const JobBulkActions: React.FC<BulkJobActionsProps> = (props) => {
+export const JobBulkActions = (props: BulkJobActionsProps) => {
   const { status, queueId, onBulkAction } = props;
   const toast = useToast();
   const { handleDelete, handlePromote, handleRetry, canClear, canPromote, canDelete, canRetry } =

@@ -13,7 +13,7 @@ export const jobCounts: FieldConfig = {
   ): Promise<Record<string, number>> {
     // get field names/states
     const fields = get(info, 'fieldNodes[0].selectionSet.selections', []);
-    const states = fields.map((node) => node.name.value);
+    const states = fields.map((node) => node.name.value).filter(x => x !== '__typename');
     return host.getJobCounts(states);
   },
 };

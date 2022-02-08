@@ -5,7 +5,6 @@ import { persist } from 'zustand/middleware';
 
 type PreferencesState = {
   pageSize: number;
-  pollingInterval: number;
   confirmDangerousActions: boolean;
   selectedStatuses: Record<Queue['id'], Status>;  // these need to be in their own store
   getQueueStatus: (id: Queue['id']) => Status;
@@ -19,7 +18,6 @@ export const usePreferencesStore = createStore<PreferencesState>(
   persist(
     (set, get) => ({
       pageSize: 10,
-      pollingInterval: 5000,
       selectedStatuses: {},
       confirmDangerousActions: true,
       getQueueStatus: (id: string) => get().selectedStatuses[id] || 'completed',

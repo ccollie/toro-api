@@ -177,13 +177,15 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
 
   const onFilterReset = useCallback(() => {
     console.log('filter was reset');
-  }, [queueId]);
+    updateSearchParams({ jobFilter: '' });
+  }, []);
 
   const onApplyFilter = useCallback(
     (filter: string) => {
       console.log('filter was applied', filter);
+      updateSearchParams({ jobFilter: filter });
     },
-    [queueId],
+    [],
   );
 
   return (

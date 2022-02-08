@@ -10,9 +10,6 @@ export const QueueHome = () => {
   } = useMatch<LocationGenerics>();
 
   const { queue } = useQueue(queueId);
-//  const actions = useQueueActions(id);
-
-  // todo: load
 
   if (!queue) {
     return <section>Queue Not found</section>;

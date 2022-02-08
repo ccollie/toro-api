@@ -104,6 +104,7 @@
     font-weight: normal;
     line-height: 1em;
     color: #1B1C1D;
+    opacity: 0.85;
     text-transform: uppercase;
     text-align: center;
 }

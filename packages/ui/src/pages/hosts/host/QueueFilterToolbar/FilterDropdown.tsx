@@ -7,23 +7,38 @@ import {
   Group,
   CloseButton,
   Chips,
-  Chip, Space, MultiSelect,
+  Chip,
+  Space,
+  MultiSelect,
+  Button,
 } from '@mantine/core';
 import { FilterIcon } from 'src/components/Icons';
 import { QueueStateBadge } from '@/pages/queue/QueueStateBadge';
-import { useDisclosure, useSelection, useUpdateEffect, useWhyDidYouUpdate } from 'src/hooks';
+import {
+  useDisclosure,
+  useSelection,
+  useUpdateEffect,
+  useWhyDidYouUpdate,
+} from 'src/hooks';
 import {
   AllStatuses,
   filterQueues,
   normalizeExclusions,
   normalizeFilter,
   stringEqual,
-  useHost, useQueuePrefixes,
+  useHost,
+  useQueuePrefixes,
 } from 'src/services';
 import { useStore } from 'src/stores';
 import type { Queue, QueueFilter, QueueHost } from 'src/types';
 import { QueueFilterStatus } from 'src/types';
-import React, { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 interface FilterDropdownProps {
   isOpen?: boolean;
@@ -32,7 +47,7 @@ interface FilterDropdownProps {
   onFilterUpdated: (filter: Partial<QueueFilter>) => void;
 }
 
-const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
+const QueuesForm = (props: FilterDropdownProps) => {
   const { hostId, filter } = props;
   const [filtered, setFiltered] = useState<Queue[]>([]);
   const [queues, setQueues] = useState<Queue[]>([]);
@@ -41,7 +56,9 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
   const getHostQueues = useStore((state) => state.getHostQueues);
   const { host } = useHost(hostId);
   const [searchTerm, setSearchTerm] = useState(filter.search);
-  const [statuses, setStatuses] = useState<QueueFilterStatus[]>(filter.statuses ?? AllStatuses);
+  const [statuses, setStatuses] = useState<QueueFilterStatus[]>(
+    filter.statuses ?? AllStatuses,
+  );
   const [prefixes, setPrefixes] = useState<string[]>(filter.prefixes ?? []);
 
   // todo: we may need to go to server to get all prefixes, since we may be filtered
@@ -149,7 +166,7 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
       }
       console.log('All clicked');
     },
-    [queues]
+    [queues],
   );
 
   function QueueItem({ queue, selected }: { queue: Queue; selected: boolean }) {
@@ -163,14 +180,18 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
           unselectItem(id);
         }
       },
-      [id]
+      [id],
     );
 
     return (
       <li className="py-1" onClick={(_) => toggleSelection(id)}>
         <Group position="apart">
           <div style={{ display: 'inherit' }}>
-            <Checkbox defaultChecked={selected} onChange={onChange} className="inline" />
+            <Checkbox
+              defaultChecked={selected}
+              onChange={onChange}
+              className="inline"
+            />
             <span className="text-sm ml-2">{queue.name}</span>
           </div>
           <QueueStateBadge queue={queue} size="xs" />
@@ -184,17 +205,27 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
       <form className="form">
         <div className="mt-4 mb-2">
           <Chips multiple value={statuses} onChange={onStatusChanged}>
-            <Chip value={QueueFilterStatus.Active} aria-label="Active">Active</Chip>
-            <Chip value={QueueFilterStatus.Inactive} aria-label="Inactive">Inactive</Chip>
-            <Chip value={QueueFilterStatus.Running} aria-label="Running">Running</Chip>
-            <Chip value={QueueFilterStatus.Paused} aria-label="Paused">Paused</Chip>
+            <Chip value={QueueFilterStatus.Active} aria-label="Active">
+              Active
+            </Chip>
+            <Chip value={QueueFilterStatus.Inactive} aria-label="Inactive">
+              Inactive
+            </Chip>
+            <Chip value={QueueFilterStatus.Running} aria-label="Running">
+              Running
+            </Chip>
+            <Chip value={QueueFilterStatus.Paused} aria-label="Paused">
+              Paused
+            </Chip>
           </Chips>
         </div>
         <div className="mt-4" aria-label="Queue selections">
           <div className="flex justify-center">
             <TextInput
               type="search"
-              icon={<i className="i-la-search text-gray-600 dark:text-gray-400 text-xl" />}
+              icon={
+                <i className="i-la-search text-gray-600 dark:text-gray-400 text-xl" />
+              }
               label="Filter Queues"
               className="w-full"
               placeholder="Filter By Name"
@@ -214,7 +245,10 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
           <Space h="md" />
           <div className="flex flex-row justify-between mb-3 ml-2 mt-1">
             <div className="border border-gray-400 flex-shrink">
-              <Checkbox defaultChecked={isAllSelected} onChange={onSelectAllClicked} />
+              <Checkbox
+                defaultChecked={isAllSelected}
+                onChange={onSelectAllClicked}
+              />
             </div>
             <div className="flex-1">
               <span className="ml-2">{totalSelected}</span> queues selected
@@ -225,7 +259,11 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
               <div className="pl-2">
                 <ul className="list-reset flex-row">
                   {filtered.map((queue) => (
-                    <QueueItem key={queue.id} queue={queue} selected={isSelected(queue.id)} />
+                    <QueueItem
+                      key={queue.id}
+                      queue={queue}
+                      selected={isSelected(queue.id)}
+                    />
                   ))}
                 </ul>
               </div>
@@ -237,9 +275,13 @@ const QueuesForm: React.FC<FilterDropdownProps> = (props) => {
   );
 };
 
-export const FilterDropdown: React.FC<FilterDropdownProps> = (props) => {
+export const FilterDropdown = (props: FilterDropdownProps) => {
   const { onFilterUpdated, hostId, filter } = props;
-  const { isOpen: isPopoverOpen, onClose: closePopover, onToggle: togglePopover } = useDisclosure();
+  const {
+    isOpen: isPopoverOpen,
+    onClose: closePopover,
+    onToggle: togglePopover,
+  } = useDisclosure();
   const savedState = useRef<QueueFilter>(normalizeFilter(filter));
 
   useWhyDidYouUpdate('QueueFilterToolbar', props);
@@ -256,7 +298,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = (props) => {
     (delta: Partial<QueueFilter>) => {
       Object.assign(savedState.current, delta);
     },
-    [hostId]
+    [hostId],
   );
 
   const applyFilter = useCallback(() => {
@@ -291,26 +333,28 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = (props) => {
       <div className="flex flex-col">
         <Group position="apart">
           <h4>Filter</h4>
-          <CloseButton title="Close popover" size="xl" iconSize={20} onClick={closePopover} />
+          <CloseButton
+            title="Close popover"
+            size="xl"
+            iconSize={20}
+            onClick={closePopover}
+          />
         </Group>
         <div className="mb-4">
-          <QueuesForm hostId={hostId} filter={savedState.current} onFilterUpdated={pushUpdate} />
+          <QueuesForm
+            hostId={hostId}
+            filter={savedState.current}
+            onFilterUpdated={pushUpdate}
+          />
         </div>
       </div>
       <div className="py-2 border-gray-200 bg-gray-50">
-        <ul className="flex items-center justify-between">
-          <li>
-            <button className="btn btn-xs btn-light">Clear</button>
-          </li>
-          <li>
-            <button
-              className="btn btn-xs bg-indigo-500 hover:bg-indigo-600 text-white"
-              onClick={applyFilter}
-            >
-              Apply
-            </button>
-          </li>
-        </ul>
+        <Group position="right">
+          <Button variant="default">Clear</Button>
+          <Button variant="filled" onClick={applyFilter}>
+            Apply
+          </Button>
+        </Group>
       </div>
     </Popover>
   );

@@ -12,16 +12,20 @@ const ScriptPath = path.join(__dirname, '../commands');
 export type RedisMetrics = {
   /* eslint-disable */
   redis_version: string;
+  redis_mode: string;
   tcp_port: number;
   role: string;
   uptime_in_seconds: number;
   uptime_in_days: number;
   total_system_memory: number;
+  total_system_memory_human: string;
   used_cpu_sys: number;
   used_memory: number;
+  used_memory_human: string;
   used_memory_rss: number;
   used_memory_lua: number;
   used_memory_peak: number;
+  used_memory_peak_human: string;
   maxmemory: number;
   mem_fragmentation_ratio: number;
   connected_clients: number;
@@ -367,14 +371,18 @@ type MetricName = keyof RedisMetrics;
 const metrics: MetricName[] = [
   'redis_version',
   'tcp_port',
+  'redis_mode',
   'uptime_in_seconds',
   'uptime_in_days',
   'connected_clients',
   'blocked_clients',
   'total_system_memory',
+  'total_system_memory_human',
   'used_memory',
+  'used_memory_human',
   'used_memory_rss',
   'used_memory_peak',
+  'used_memory_peak_human',
   'used_cpu_sys',
   'maxmemory',
   'os',
