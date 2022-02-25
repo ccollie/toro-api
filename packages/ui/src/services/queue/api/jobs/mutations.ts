@@ -2,7 +2,7 @@ import { FetchResult } from '@apollo/client';
 import { client } from '@/providers/ApolloProvider';
 import type {
   Job,
-  JobFragment,
+  MetricFragment,
   BulkStatusItem,
   CreateJobMutation,
   DeleteBulkJobsMutation,
@@ -75,7 +75,7 @@ export async function createJob(
   jobName: string,
   data: Record<string, any>,
   opts: Record<string, any>
-): Promise<JobFragment> {
+): Promise<MetricFragment> {
   return client
     .mutate({
       mutation: CreateJobDocument,
@@ -88,7 +88,7 @@ export async function createJob(
     })
     .then((value: FetchResult<CreateJobMutation>) => {
       checkError(value);
-      return value.data?.createJob as JobFragment;
+      return value.data?.createJob as MetricFragment;
     });
 }
 

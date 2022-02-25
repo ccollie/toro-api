@@ -3,7 +3,7 @@ import { inferJobSchema as inferSchema, JobSchema } from '@alpen/core';
 import { InferJobSchemaInput } from '../../typings';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobSchemaTC } from '../job/model/Job.schema';
+import { JobSchemaTC } from '../job/query/schema';
 
 export const inferJobSchema: FieldConfig = {
   type: JobSchemaTC,

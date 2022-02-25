@@ -14,6 +14,7 @@ export type LocationGenerics = MakeGenerics<{
     userId: string;
     queueId: string;
     hostId: string;
+    metricId: string;
   };
   Search: {
     status: Status;

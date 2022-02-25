@@ -4,6 +4,8 @@ import { RedisLogo } from 'src/components/Icons';
 import s from './RedisStats.module.css';
 import { RedisInfo as ValidMetrics } from 'src/types';
 
+/* eslint-disable camelcase */
+
 const getMemoryUsage = (
   used_memory?: ValidMetrics['used_memory'],
   total_system_memory?: ValidMetrics['total_system_memory']

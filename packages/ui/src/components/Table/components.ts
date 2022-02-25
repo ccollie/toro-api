@@ -8,6 +8,7 @@
 
 // The changelog for the important changes is located in the Readme.md
 
+import { HeaderProps } from '@mantine/core';
 import { DefaultProps } from '@mantine/styles';
 import {
   ChangeEvent,

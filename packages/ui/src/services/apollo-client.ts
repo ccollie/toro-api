@@ -44,14 +44,8 @@ function mergeArrayByField<T extends StoreObject | Reference>(
       const id = readField<string>(field, item);
       if (id === undefined) return;
       const index = idToIndex[id];
-      if (typeof index === 'number') {
-        // Merge the new queue data with the existing queue data.
-        merged[index] = mergeObjects(merged[index], item);
-      } else {
-        // First time we've seen this queue in this array.
-        idToIndex[id] = merged.length;
-        merged.push(item);
-      }
+       // Merge the new queue data with the existing queue data.
+      merged[index] = mergeObjects(merged[index], item);
     });
     return merged;
   };

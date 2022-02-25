@@ -3,7 +3,7 @@ import { EZContext } from 'graphql-ez';
 import { GetJobsByIdInput } from '../../typings';
 import { FieldConfig } from '../utils';
 import { schemaComposer } from 'graphql-compose';
-import { JobTC } from '../job/model/Job';
+import { JobTC } from '../job/query';
 
 export const getJobsById: FieldConfig = {
   type: JobTC.NonNull.List.NonNull,

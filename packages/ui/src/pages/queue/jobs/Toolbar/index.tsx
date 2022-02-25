@@ -1,6 +1,6 @@
 import { JobStatus, JobView, LocationGenerics } from '@/types';
 import React, { useCallback, useEffect, useState } from 'react';
-import type { Job, JobFragment, Status } from '@/types';
+import type { Job, MetricFragment, Status } from '@/types';
 import { useDisclosure, useToast, useWhyDidYouUpdate, useQueue } from '@/hooks';
 import {
   TrashIcon,
@@ -35,7 +35,7 @@ import FilteredPager from '../FilteredPager';
 interface BulkJobActionsProps {
   queueId: string;
   status: Status;
-  selected: Array<JobFragment | Job>;
+  selected: Array<MetricFragment | Job>;
   filter?: string;
   page?: number;
   pageCount?: number;

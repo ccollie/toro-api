@@ -252,7 +252,7 @@ export class Supervisor {
   async deleteQueue(
     queue: Queue | string,
     options?: QueueDeleteOptions,
-  ): Promise<number> {
+  ): Promise<void> {
     const opts = Object.assign(
       { checkExists: false, checkActivity: true },
       options || {},
@@ -301,9 +301,8 @@ export class Supervisor {
     await this.removeQueue(queue);
 
     // TODO: send mail notification as well as subscription event
-    const count = await manager.removeAllQueueData();
+    await manager.removeAllQueueData();
     await manager.destroy();
-    return count;
   }
 
   async waitUntilReady(): Promise<Supervisor> {

@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
-import { MetricTC } from '../metric/model';
+import { MetricTC } from '../metric/query';
 import boom from '@hapi/boom';
 
 export const metric: FieldConfig = {

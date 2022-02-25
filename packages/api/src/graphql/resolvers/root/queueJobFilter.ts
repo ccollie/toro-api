@@ -3,7 +3,7 @@ import { getJobFilter } from '@alpen/core';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
 import boom from '@hapi/boom';
-import { JobFilterTC } from '../job/model/Job.filter';
+import { JobFilterTC } from '../job/query/filter';
 
 export const queueJobFilter: FieldConfig = {
   type: JobFilterTC,

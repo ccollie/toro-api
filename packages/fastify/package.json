@@ -6,9 +6,9 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "yarn run clean && yarn run compile",
-    "clean": "rm -rf ./dist",
-    "compile": "tsc --build tsconfig.build.json && tsc-alias -p tsconfig.build.json",
+    "build": "yarn run compile",
+    "clean": "rm -rf ./dist && rm -rf .turbo",
+    "compile": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "types": "tsc --declaration --emitDeclarationOnly",
     "test": "jest"
@@ -25,7 +25,7 @@
     "@alpen/core": "^0.0.2",
     "@graphql-ez/fastify": "^0.9.6",
     "graphql": "16.3.0",
-    "graphql-ez": "^0.14.0"
+    "graphql-ez": "^0.14.1"
   },
   "peerDependencies": {
     "fastify": "3.x"

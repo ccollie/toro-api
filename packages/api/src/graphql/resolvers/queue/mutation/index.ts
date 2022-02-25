@@ -13,3 +13,5 @@ export { updateJobFilter } from './updateJobFilter';
 export { deleteQueueStats } from './deleteQueueStats';
 export { deleteJobsByFilter } from './deleteJobsByFilter';
 export { retryJobs } from './retryJobs';
+export { obliterateQueue } from './obliterateQueue';
+export { trimQueueEvents } from './trimQueueEvents';

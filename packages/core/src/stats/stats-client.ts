@@ -47,7 +47,7 @@ export class StatsClient extends Emittery {
     this.onError = this.onError.bind(this);
     this.cache = new LRUCache({
       max: 200,
-      maxAge: 15000,
+      ttl: 15000,
     });
   }
 

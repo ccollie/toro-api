@@ -1,3 +1,4 @@
+import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobTC, QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
@@ -17,6 +18,10 @@ export const retryJob: FieldConfig = {
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId } = input;
+    const manager = accessors.getQueueManager(queueId);
+    if (!(manager.config.allowRetries ?? true)) {
+      throw boom.forbidden('Retries are not allowed');
+    }
     const queue = accessors.getQueueById(queueId, true);
     const job = await processJobCommand('retry', queue, jobId);
     return {

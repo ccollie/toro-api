@@ -66,15 +66,15 @@ export function filterQueues(queues: Queue[], filter?: QueueFilter): Queue[] {
   const excludeSet = new Set(exclude);
 
   if (queues.length) {
-    const checkPaused = statuses!.includes(QueueFilterStatus.Paused);
-    const checkRunning = statuses!.includes(QueueFilterStatus.Running);
-    const checkActive = statuses!.includes(QueueFilterStatus.Active);
-    const checkInactive = statuses!.includes(QueueFilterStatus.Inactive);
+    const checkPaused = statuses?.includes(QueueFilterStatus.Paused);
+    const checkRunning = statuses?.includes(QueueFilterStatus.Running);
+    const checkActive = statuses?.includes(QueueFilterStatus.Active);
+    const checkInactive = statuses?.includes(QueueFilterStatus.Inactive);
 
     const regex = search ? new RegExp(escapeRegExp(search), 'i') : null;
     queues = queues.filter((q) => {
       let valid =
-        (!include!.length || includeSet.has(q.id)) && !excludeSet.has(q.id);
+        (!include?.length || includeSet.has(q.id)) && !excludeSet.has(q.id);
       if (valid && prefixes?.length) {
         valid = prefixes.some((p) => q.prefix === p);
       }

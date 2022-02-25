@@ -98,8 +98,8 @@ query GetQueueWorkers($id: ID!) {
   }
 }
 
-query GetJobSchemas($queueId: ID!) {
-  queue(id: $queueId) {
+query GetJobSchemas($id: ID!) {
+  queue(id: $id) {
     jobSchemas {
       jobName
       schema
@@ -108,31 +108,31 @@ query GetJobSchemas($queueId: ID!) {
   }
 }
 
-query GetJobSchema($queueId: ID!, $jobName: String!) {
-  queueJobSchema(input: { queueId: $queueId, jobName: $jobName}) {
+query GetJobSchema($id: ID!, $jobName: String!) {
+  queueJobSchema(input: { queueId: $id, jobName: $jobName}) {
     jobName,
     schema
     defaultOpts
   }
 }
 
-mutation SetJobSchema($queueId: ID!, $jobName: String!, $schema: JSONSchema!,  $defaultOpts: JobOptionsInput) {
-  setJobSchema(input: { queueId: $queueId, jobName: $jobName, schema: $schema, defaultOpts: $defaultOpts }) {
+mutation SetJobSchema($id: ID!, $jobName: String!, $schema: JSONSchema!,  $defaultOpts: JobOptionsInput) {
+  setJobSchema(input: { queueId: $id, jobName: $jobName, schema: $schema, defaultOpts: $defaultOpts }) {
     jobName
     schema
     defaultOpts
   }
 }
 
-mutation DeleteJobSchema($queueId: ID!, $jobName: String!) {
-  deleteJobSchema(input: { queueId: $queueId, jobName: $jobName }) {
+mutation DeleteJobSchema($id: ID!, $jobName: String!) {
+  deleteJobSchema(input: { queueId: $id, jobName: $jobName }) {
     jobName
   }
 }
 
 
-query InferJobSchema($queueId: ID!, $jobName: String!) {
-  inferJobSchema(input: { queueId: $queueId, jobName: $jobName}) {
+query InferJobSchema($id: ID!, $jobName: String!) {
+  inferJobSchema(input: { queueId: $id, jobName: $jobName}) {
     jobName,
     schema
     defaultOpts
@@ -177,8 +177,8 @@ query GetPageQueueStats($id: ID!, $range: String!, $granularity: StatsGranularit
   }
 }
 
-query GetJobsById($queueId: ID!, $ids: [ID!]!) {
-  getJobsById(input: {queueId: $queueId, ids: $ids}) {
+query GetJobsById($id: ID!, $ids: [ID!]!) {
+  getJobsById(input: {queueId: $id, ids: $ids}) {
     ...Job
   }
 }

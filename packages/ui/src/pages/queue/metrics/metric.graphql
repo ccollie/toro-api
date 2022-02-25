@@ -1,0 +1,73 @@
+fragment Metric on Metric {
+    id
+    type
+    queueId
+    name
+    description
+    isActive
+    options
+    createdAt
+    updatedAt
+    sampleInterval
+    aggregator {
+        type
+        options
+    }
+    dateRange {
+        startTime
+        endTime
+    }
+}
+
+query GetAvailableMetrics {
+    availableMetrics {
+        key
+        type
+        description
+        unit
+        category
+        isPolling
+    }
+}
+
+query GetAvailableAggregates {
+    aggregates {
+        type
+        isWindowed
+        description
+    }
+}
+
+query GetMetricById($id: ID!, $metricId: ID!) {
+    metric(queueId: $id, metricId: $metricId) {
+        ... Metric
+    }
+}
+
+mutation CreateMetric($input: CreateMetricInput!) {
+    createMetric(input: $input) {
+        ... Metric
+    }
+}
+
+mutation UpdateMetric($input: MetricInput!) {
+    updateMetric(input: $input) {
+        ... Metric
+    }
+}
+
+mutation DeleteMetric($input: DeleteMetricInput!) {
+    deleteMetric(input: $input) {
+        isDeleted
+    }
+}
+
+query GetQueueMetrics($id: ID!) {
+    queue(id: $id) {
+        id
+        metrics {
+            ... Metric
+        }
+        metricCount
+    }
+}

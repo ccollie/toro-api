@@ -1,4 +1,5 @@
 export * from './enums';
+export * from './FinishedStatusEnum';
 export * from './HttpMethodEnum';
 export * from './JobStatusEnum';
 export * from './SortOrderEnum';

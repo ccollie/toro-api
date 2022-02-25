@@ -1,6 +1,6 @@
 import { JobStatus } from '@/types';
 import React, { Fragment, useEffect, useState } from 'react';
-import type { Job, JobFragment, Status } from '@/types';
+import type { Job, MetricFragment, Status } from '@/types';
 import { useDisclosure, useQueue, useToast, useWhyDidYouUpdate } from '@/hooks';
 import { TrashIcon, ClearIcon, ExportIcon, AddIcon, ArrowUpIcon } from '@/components/Icons';
 import CleanJobsModal from '../CleanJobsModal';
@@ -15,7 +15,7 @@ import ExportJobsModal from '../ExportJobsModal';
 interface BulkJobActionsProps {
   queueId: string;
   status: Status;
-  selected: Array<JobFragment | Job>;
+  selected: Array<MetricFragment | Job>;
   filter?: string;
   onBulkAction?: (action: BulkActionType, ids: string[]) => void;
 }

@@ -1,5 +1,5 @@
 import type { JobCounts, JobStatus, Queue } from '@/types';
-import { EmptyJobCounts } from '@/services/queue';
+import { EmptyJobCounts } from 'src/constants';
 
 export interface Pagination {
   pageCount: number;
@@ -8,7 +8,6 @@ export interface Pagination {
     end: number;
   };
 }
-
 
 const JOB_PER_PAGE = 10;
 
@@ -20,13 +19,17 @@ export function getJobTotal(counts: JobCounts): number {
   }, 0);
 }
 
-export function getJobCountByStatus(queue: Queue, counts: JobCounts, status: string): number {
+export function getJobCountByStatus(
+  queue: Queue,
+  counts: JobCounts,
+  status: string,
+): number {
   let count = 0;
   if (status === 'paused') {
     if (queue.isPaused) {
       count = getJobTotal(counts);
     }
-  } else if (status === 'latest'){
+  } else if (status === 'latest') {
     count = getJobTotal(counts);
   } else {
     count = ((queue.jobCounts ?? EmptyJobCounts) as any)[status] ?? 0;
@@ -34,15 +37,22 @@ export function getJobCountByStatus(queue: Queue, counts: JobCounts, status: str
   return count;
 }
 
-export function getJobPagination(statuses: JobStatus[], counts: JobCounts, currentPage: number): Pagination {
+export function getJobPagination(
+  statuses: JobStatus[],
+  counts: JobCounts,
+  currentPage: number,
+): Pagination {
   const isLatestStatus = statuses.length > 1;
 
   function getCount(status: JobStatus): number {
-    return ((counts as any)[status]) ?? 0;
+    return (counts as any)[status] ?? 0;
   }
 
   const total = isLatestStatus
-    ? statuses.reduce((total, status) => total + Math.min(getCount(status), JOB_PER_PAGE), 0)
+    ? statuses.reduce(
+        (total, status) => total + Math.min(getCount(status), JOB_PER_PAGE),
+        0,
+      )
     : getCount(statuses[0]);
 
   const start = isLatestStatus ? 0 : (currentPage - 1) * JOB_PER_PAGE;

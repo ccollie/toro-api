@@ -8,11 +8,10 @@ import {
 } from '../../scalars';
 import { FieldConfig } from '../utils';
 import { schemaComposer } from 'graphql-compose';
-import { JobTC } from '../job/model/Job';
 import { GetJobsInput } from '../../typings';
 
 export const getJobs: FieldConfig = {
-  type: JobTC.NonNull.List.NonNull,
+  type: '[Job!]!',
   args: {
     input: schemaComposer.createInputTC({
       name: 'GetJobsInput',

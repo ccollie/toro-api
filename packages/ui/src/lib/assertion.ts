@@ -119,4 +119,4 @@ export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const __DEV__ = process.env.NODE_ENV !== 'production';
+export const __DEV__ = !import.meta.env.PROD;

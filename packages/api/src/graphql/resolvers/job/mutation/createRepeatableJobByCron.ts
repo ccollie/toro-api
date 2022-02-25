@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC, FieldConfig } from '../../index';
-import { JobOptionsCronInputTC } from '../model/Job.opts';
+import { JobOptionsCronInputTC } from '../query/opts';
 import { addJob } from './utils';
 
 const CreateRepeatableJobByCronInput = schemaComposer.createInputTC({

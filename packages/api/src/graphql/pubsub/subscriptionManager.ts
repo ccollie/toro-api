@@ -1,7 +1,6 @@
-import { isNil, isString } from '@alpen/shared';
+import { isNil, isString, isPromise } from '@alpen/shared';
 import { GraphQLFieldResolver, GraphQLResolveInfo } from 'graphql';
 import { RefCountCache, withCancel, withFilter } from '@alpen/core';
-import { isPromise } from '@alpen/shared';
 import { EZContext } from 'graphql-ez';
 
 declare module 'graphql-ez' {
@@ -11,15 +10,15 @@ declare module 'graphql-ez' {
 }
 
 export type ChannelNameFn = (
-  rootValue: any,
-  args: any,
+  rootValue: unknown,
+  args: unknown,
   context: EZContext,
   info: any,
 ) => string;
 
 export type SubscribeFn = (
   rootValue: unknown,
-  args: any,
+  args: unknown,
   context: EZContext,
   info: GraphQLResolveInfo,
 ) => void | AsyncIterator<any> | Promise<void | AsyncIterator<any>>;
@@ -27,7 +26,7 @@ export type SubscribeFn = (
 const defaultChannelNameFn = (_, args) => args.event;
 
 const defaultCreateSubscription: SubscribeFn = (_, args, context) =>
-  context.pubsub.subscribe(context.channelName || args.event);
+  context.pubsub.subscribe(context.channelName || (args as any).event);
 
 export type UnsubscribeFn = (
   rootValue: unknown,

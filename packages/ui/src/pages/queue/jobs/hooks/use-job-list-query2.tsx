@@ -1,5 +1,5 @@
 import { getJobsByFilter, getJobs } from '@/services/queue/api';
-import type { JobFragment, JobCounts, Status } from '@/types';
+import type { MetricFragment, JobCounts, Status } from '@/types';
 import { JobStatus, SortOrderEnum } from '@/types';
 import { useListState } from '@mantine/hooks';
 import produce from 'immer';
@@ -48,9 +48,9 @@ export const useJobListQuery = ({
   const [iterationEnded, setIterationEnded] = useState(false);
   const {queue, updateQueue} = useQueue(queueId);
 
-  const [filteredPages, filteredPageHandlers] = useListState<JobFragment[]>([]);
+  const [filteredPages, filteredPageHandlers] = useListState<MetricFragment[]>([]);
 
-  function updateResults(jobs: JobFragment[], counts: JobCounts) {
+  function updateResults(jobs: MetricFragment[], counts: JobCounts) {
     setJobs(jobs);
     setCounts(counts);
     let total = parseInt((counts as any)[status], 10);

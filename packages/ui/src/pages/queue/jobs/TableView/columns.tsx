@@ -5,7 +5,7 @@ import { Breakpoint, JobStatus, Queue } from 'src/types';
 import { Group, Tooltip } from '@mantine/core';
 import { format, isToday } from 'date-fns';
 import React, { Fragment, useMemo, useState } from 'react';
-import type { Job, JobFragment } from 'src/types';
+import type { Job, JobFragment } from '@/types';
 import { JobProgress, RelativeDateFormat } from 'src/components';
 import JobId from '../JobId';
 import JobActions from '../JobActions';
@@ -88,7 +88,7 @@ const JobDate = ({ value }: { value: number | string }) => {
   );
 };
 
-const Duration = ({ job, showIcon = true }: { job: Job | JobFragment; showIcon?: boolean }) => {
+const Duration = ({ job, showIcon = true }: { job: Job | MetricFragment; showIcon?: boolean }) => {
   const duration = getJobDuration(job);
   if (!duration) {
     return null;
@@ -101,7 +101,7 @@ const Duration = ({ job, showIcon = true }: { job: Job | JobFragment; showIcon?:
   );
 };
 
-const WaitTime = ({ job }: { job: Job | JobFragment }) => {
+const WaitTime = ({ job }: { job: Job | MetricFragment }) => {
   const duration = getJobWaitTime(job);
   if (!duration) {
     return null;

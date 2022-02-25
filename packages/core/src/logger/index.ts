@@ -130,7 +130,7 @@ export const defaultLoggerOptions: LoggerOptions = {
 };
 
 /**
- * RedwoodLoggerOptions defines custom logger options that extend those available in LoggerOptions
+ * AlpenLoggerOptions defines custom logger options that extend those available in LoggerOptions
  * and can define a destination like a file or other supported pin log transport stream
  *
  * @typedef {Object} AlpenLoggerOptions
@@ -158,7 +158,7 @@ export interface AlpenLoggerOptions {
  *
  * @example
  * // Create the logger to log to a file
- * createLogger({ destination: { 'var/logs/redwood-api.log' } })
+ * createLogger({ destination: { 'var/logs/alpen-api.log' } })
  *
  * @return {Logger} - The configured logger
  */

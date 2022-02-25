@@ -19,3 +19,4 @@ export * from './use-confirm';
 export * from './use-queue';
 export * from './use-selection';
 export * from './use-toast';
+export * from './use-remove-selection-on-unmount';

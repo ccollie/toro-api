@@ -21,6 +21,7 @@ import {
 
 import { schemaComposer } from 'graphql-compose';
 import * as query from './resolvers/root';
+import flow from './resolvers/flow';
 import host from './resolvers/host';
 import queue from './resolvers/queue';
 import job from './resolvers/job';
@@ -48,12 +49,14 @@ schemaComposer.add(RuleOperatorEnum);
 schemaComposer.add(RuleStateEnum);
 schemaComposer.add(SeverityType);
 schemaComposer.add(MetricCategory);
+schemaComposer.add(flow.JobNode);
 
 schemaComposer.Query.addFields({
   ...query,
 });
 
 schemaComposer.Mutation.addFields({
+  ...flow.Mutation,
   ...metric.Mutation,
   ...host.Mutation,
   ...job.Mutation,

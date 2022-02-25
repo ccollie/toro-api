@@ -70,6 +70,13 @@ export function createBulkMutationHandler(
     },
     async resolve(_, { input }, { accessors }: EZContext): Promise<any> {
       const { queueId, jobIds } = input;
+      // validate retries
+      if (action === 'retry') {
+        const manager = accessors.getQueueManager(queueId, true); // force check for readonly
+        if (!(manager?.config.allowRetries ?? true)) {
+          throw boom.forbidden('retries forbidden by config');
+        }
+      }
       const queue = accessors.getQueueById(queueId, true);
 
       const status = await bulkJobHandler(action, queue, jobIds);

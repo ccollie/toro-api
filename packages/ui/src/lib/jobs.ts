@@ -20,7 +20,7 @@ export function isJobFailed(job: JobFragment | Job): boolean {
 export function isJobFinished(job: Job | JobFragment): boolean {
   if (!job) return false;
   if (job.state) {
-    return [JobStatus.Completed, JobStatus.Failed].includes(job.state);
+    return (job.state === JobStatus.Completed || job.state === JobStatus.Failed);
   }
   return (
     job.returnvalue !== undefined ||

@@ -5,18 +5,18 @@ import { isJobFailed } from 'src/lib';
 import { Details } from './Details/Details';
 import JobActions from '../JobActions';
 import { Timeline } from './Timeline/Timeline';
-import type { Job, Queue, JobFragment, Status } from '@/types';
+import type { Job, Queue, MetricFragment, Status } from '@/types';
 
 import s from './JobCard.module.css';
 
 const greenStatuses: Status[] = ['active', 'completed'];
 
 interface JobCardProps {
-  job: Job | JobFragment;
+  job: Job | MetricFragment;
   queue: Queue;
   isReadOnly?: boolean;
   status: Status;
-  onClick?: (job: Job | JobFragment) => void;
+  onClick?: (job: Job | MetricFragment) => void;
   isSelected?: boolean;
   toggleSelected?: (id: string) => void;
   removeSelected?: (id: string) => void;

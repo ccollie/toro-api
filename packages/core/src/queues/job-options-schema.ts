@@ -34,8 +34,18 @@ const RepeatOptionsSchema = {
       description:
         'Repeated job should start right now (works only with every settings)',
     },
+    count: {
+      type: 'integer',
+    },
+    prevMillis: {
+      type: 'integer',
+    },
     offset: {
       type: 'integer',
+    },
+    jobId: {
+      type: 'string',
+      description: 'Timezone',
     },
   },
   additionalProperties: false,
@@ -55,13 +65,41 @@ const JobParentSchema = {
   required: ['queue', 'id'],
 };
 
+const JobRemoveOptions = {
+  oneOf: [
+    {
+      type: 'object',
+      properties: {
+        age: {
+          type: 'number',
+          description: 'Maximum age in seconds for job to be kept.',
+        },
+        count: {
+          type: 'number',
+          description: 'Maximum number of jobs to be kept.',
+        },
+      },
+      additionalProperties: false,
+    },
+    {
+      type: 'boolean',
+      description: 'If true, removes the job when it fails after all attempts.',
+    },
+    {
+      type: 'integer',
+      description: 'Specifies the maximum amount of jobs to keep'
+    },
+  ],
+};
+
 // eslint-disable-next-line max-len
-// https://github.com/taskforcesh/bullmq/blob/2604753984a03d079ece28db0686d734ee10ba52/src/interfaces/jobs-options.ts
+// https://https://github.com/taskforcesh/bullmq/blob/master/src/interfaces/jobs-options.ts
 export const BulkJobsOptionsSchema = {
   type: 'object',
   properties: {
     timestamp: {
       type: 'integer',
+      description: 'Timestamp when the job was created. Defaults to current unix timestamp',
     },
     priority: {
       type: 'integer',
@@ -80,6 +118,11 @@ export const BulkJobsOptionsSchema = {
       description:
         'The total number of attempts to try the job until it completes.',
       minimum: 0,
+    },
+    rateLimiterKey: {
+      type: 'string',
+      description:
+        'Rate limiter key to use if rate limiter enabled.',
     },
     backoff: {
       oneOf: [
@@ -113,21 +156,26 @@ export const BulkJobsOptionsSchema = {
     },
     jobId: {
       type: 'string',
+      description: 'Override the job ID - by default, the job ID is a unique' +
+        'integer, but this setting can be used to override it.',
     },
-    removeOnComplete: {
-      anyOf: [{ type: 'boolean' }, { type: 'integer' }],
-    },
-    removeOnFail: {
-      anyOf: [{ type: 'boolean' }, { type: 'integer' }],
-    },
+    removeOnComplete: JobRemoveOptions,
+    removeOnFail: JobRemoveOptions,
     stackTraceLimit: {
       type: 'integer',
       description:
         'Limits the amount of stack trace lines that will be recorded in the stacktrace.',
     },
     parent: JobParentSchema,
+    prevMillis: {
+      type: 'integer',
+      description:
+        'Property used by repeatable jobs.'
+    },
     sizeLimit: {
       type: 'integer',
+      description:
+        'Limits the size in bytes of the job\'s data payload (as a JSON serialized string).'
     },
   },
 };

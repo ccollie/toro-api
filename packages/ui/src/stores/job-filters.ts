@@ -158,6 +158,7 @@ export const useJobFilterStore = createStore<JobFilterStore>(
       },
       async updateFilter(queueId: string, id: string, delta: Partial<JobFilter>) {
         const client = useApolloClient();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { __typename, id: _id, expression= '', ...rest } = delta;
         if (expression === '') {
           throw Error('Expression is required');
@@ -203,13 +204,13 @@ export const useJobFilterStore = createStore<JobFilterStore>(
           .mutate({
             variables: { input: { queueId, filterId: id } },
             mutation: DeleteJobFilterDocument,
-          })
+          });
 
         if (errors) {
           // todo: toast
           return false;
         }
-        const deleted = !!data?.deleteJobFilter.isDeleted
+        const deleted = !!data?.deleteJobFilter.isDeleted;
         const { filters }  = get();
         const queueFilters = filters[queueId];
         const idx = queueFilters?.findIndex(filter => filter.id === id);

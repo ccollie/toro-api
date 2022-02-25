@@ -1,11 +1,4 @@
-import React from 'react';
-import { Route } from 'react-location';
-import {
-  HostWorkers,
-  HostQueues,
-  HostMetrics,
-  HostPage
-} from '@/pages/hosts/host';
+import { HostMetrics, HostPage, HostQueues, HostWorkers } from '@/pages/hosts/host';
 import HostsHome from '@/pages/hosts/HostsPage';
 import Jobs from '@/pages/queue/jobs/List';
 import QueueHome from '@/pages/queue/QueueHome';
@@ -13,16 +6,18 @@ import ScheduledJobs from '@/pages/queue/ScheduledJobs';
 import Workers from '@/pages/queue/Workers';
 import { useStore } from '@/stores/hosts';
 import type { LocationGenerics } from '@/types';
+import React from 'react';
+import { Route } from 'react-location';
 
 export function useRouteBuilder(): Route<LocationGenerics>[] {
   const getHosts = useStore(x => x.getHosts);
 
 // todo: register/unregister
 // Build our routes. We could do this in our component, too.
-  const routes: Route<LocationGenerics>[] = [
+  return [
     {
       path: '/',
-      element: <HostsHome />,
+      element: <HostsHome/>,
       loader: async () => {
         return {
           hosts: await getHosts(),
@@ -31,18 +26,18 @@ export function useRouteBuilder(): Route<LocationGenerics>[] {
     },
     {
       path: 'dashboard',
-      element: <HostsHome />,
+      element: <HostsHome/>,
     },
     {
       path: 'hosts',
       children: [
         {
           path: ':hostId',
-          element: <HostPage />,
+          element: <HostPage/>,
           children: [
-            { path: 'workers', element: <HostWorkers /> },
-            { path: 'queues', element: <HostQueues /> },
-            { path: 'metrics', element: <HostMetrics /> },
+            {path: 'workers', element: <HostWorkers/>},
+            {path: 'queues', element: <HostQueues/>},
+            {path: 'metrics', element: <HostMetrics/>},
           ]
         }
       ]
@@ -52,16 +47,14 @@ export function useRouteBuilder(): Route<LocationGenerics>[] {
       children: [
         {
           path: ':queueId',
-          element: <QueueHome />,
+          element: <QueueHome/>,
           children: [
-            { path: 'workers', element: <Workers /> },
-            { path: 'jobs', element: <Jobs /> },
-            { path: 'scheduled-jobs', element: <ScheduledJobs /> },
+            {path: 'workers', element: <Workers/>},
+            {path: 'jobs', element: <Jobs/>},
+            {path: 'scheduled-jobs', element: <ScheduledJobs/>},
           ]
         }
       ]
     }
   ];
-
-  return routes;
 }

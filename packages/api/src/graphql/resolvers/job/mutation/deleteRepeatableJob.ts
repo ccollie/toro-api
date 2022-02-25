@@ -4,7 +4,7 @@ import { FieldConfig, QueueTC } from '../../index';
 
 export const deleteRepeatableJob: FieldConfig = {
   type: schemaComposer.createObjectTC({
-    name: 'DeleteRepeatableResult',
+    name: 'DeleteRepeatableJobResult',
     fields: {
       queue: QueueTC.NonNull,
     },

@@ -2,7 +2,7 @@ import { createAggregator, QueueMetricOptions } from '@alpen/core';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
-import { MetricTC } from '../model';
+import { MetricTC } from '../query';
 import { MetricInputTC } from '../scalars';
 
 export const updateMetric: FieldConfig = {

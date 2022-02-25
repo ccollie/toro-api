@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { JobFragment, JobStatus } from '@/types';
+import type { MetricFragment, JobStatus } from '@/types';
 import { usePagination, useToast } from 'src/hooks';
 import { getJobsByFilter } from '@/services/queue/api';
 
@@ -29,7 +29,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
   const [lastPage, setLastPage] = useState(Math.min(page, 1));
   const [totalPages, setTotalPages] = useState(Math.min(page, 1));
 
-  const [data, setData] = useState<JobFragment[]>([]);
+  const [data, setData] = useState<MetricFragment[]>([]);
 
   const [cursor, setCursor] = useState<string>();
   const [filter] = useState<string>((_filter ?? '').trim());
@@ -93,7 +93,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
     }
   }
 
-  async function fetch(): Promise<JobFragment[]> {
+  async function fetch(): Promise<MetricFragment[]> {
     const { jobs, cursor: _cursor, total } = await getJobsByFilter(queueId, {
       status,
       count: pageSize,
@@ -150,7 +150,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
         try {
           const items = JSON.parse(data);
           if (Array.isArray(items)) {
-            setData(items as JobFragment[]);
+            setData(items as MetricFragment[]);
             return;
           }
         } catch (e) {
@@ -161,7 +161,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
     setData([]);
   }
 
-  async function getPage(index: number): Promise<JobFragment[]> {
+  async function getPage(index: number): Promise<MetricFragment[]> {
     if (index < 0 || index > totalPages) {
       return [];
     }

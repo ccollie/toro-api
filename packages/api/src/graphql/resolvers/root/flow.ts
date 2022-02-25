@@ -11,7 +11,7 @@ export interface NodeOpts {
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobNodeTC } from '../flow/model/jobNode';
+import { JobNodeTC } from '../flow/query/jobNode';
 import { JobNode, NodeOpts } from 'bullmq';
 import { FlowNodeGetInput } from '../../typings';
 

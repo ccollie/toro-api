@@ -1,0 +1,8 @@
+query GetMetricData($id: ID!, $metricId: ID!, $input: MetricDataInput!) {
+    metric(queueId: $id, metricId: $metricId) {
+        data(input: $input) {
+            ts
+            value
+        }
+    }
+}

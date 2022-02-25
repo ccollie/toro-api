@@ -176,8 +176,8 @@ mutation RegisterQueue(
   }
 }
 
-mutation UnregisterQueue($queueId: ID!) {
-  unregisterQueue(id: $queueId) {
+mutation UnregisterQueue($id: ID!) {
+  unregisterQueue(id: $id) {
     host {
       id
     }

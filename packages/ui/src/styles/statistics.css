@@ -16,7 +16,6 @@
 
 /* Standalone */
 .ui.statistic {
-    display: -webkit-inline-box;
     display: -ms-inline-flexbox;
     display: inline-flex;
     -webkit-box-orient: vertical;
@@ -54,7 +53,6 @@
     flex-wrap: wrap;
 }
 .ui.statistics > .statistic {
-    display: -webkit-inline-box;
     display: -ms-inline-flexbox;
     display: inline-flex;
     -webkit-box-flex: 0;

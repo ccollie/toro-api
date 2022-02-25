@@ -5,7 +5,7 @@ import { BaseMetric } from '@alpen/core';
 import { parseRange } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { RefreshMetricDataInput } from '../../../typings';
-import { MetricTC } from '../model';
+import { MetricTC } from '../query';
 
 const RefreshMetricDataInput = schemaComposer.createInputTC({
   name: 'RefreshMetricDataInput',

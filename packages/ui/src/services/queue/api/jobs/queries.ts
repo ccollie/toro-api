@@ -17,7 +17,7 @@ import type {
   GetJobsByFilterQuery,
   GetRepeatableJobsQuery,
   JobCounts,
-  JobFragment,
+  MetricFragment,
   JobLogs,
   JobSearchInput,
   RepeatableJob,
@@ -48,7 +48,7 @@ export function getJobs(
       // todo: handle error
       if (results.error) throw results.error;
       const base = results.data?.queue;
-      const jobs = (base?.jobs || []) as JobFragment[];
+      const jobs = (base?.jobs || []) as MetricFragment[];
       const { __typename, ...counts } = base?.jobCounts as JobCounts;
       return {
         jobs,
@@ -59,7 +59,7 @@ export function getJobs(
 
 export function findJobs(
   { queueId, status, expression, cursor, scanCount }: FindJobsInput,
-): Promise<{ nextCursor: string; jobs: JobFragment[] }> {
+): Promise<{ nextCursor: string; jobs: MetricFragment[] }> {
   return client
     .query<FindJobsQuery>({
       query: FindJobsDocument,
@@ -77,7 +77,7 @@ export function findJobs(
       if (error) throw results.error;
       const { nextCursor, jobs } = data.findJobs;
       return {
-        jobs: (jobs as JobFragment[]),
+        jobs: (jobs as MetricFragment[]),
         nextCursor
       };
     });
@@ -105,7 +105,7 @@ export function getJobsByFilter(
       if (results.error) throw results.error;
       const base = results.data?.queue;
       const searchResult = base?.jobSearch;
-      const jobs = (searchResult?.jobs || []) as JobFragment[];
+      const jobs = (searchResult?.jobs || []) as MetricFragment[];
       const counts = base?.jobCounts as JobCounts;
       const cursor = searchResult?.cursor || undefined;
       return {

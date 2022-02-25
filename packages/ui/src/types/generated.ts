@@ -3251,6 +3251,128 @@ export type HostWorkersQuery = {
   } | null;
 };
 
+export type GetMetricDataQueryVariables = Exact<{
+  queueId: Scalars['ID'];
+  metricId: Scalars['ID'];
+  input: MetricDataInput;
+}>;
+
+export type GetMetricDataQuery = {
+  __typename?: 'Query';
+  metric?: {
+    __typename?: 'Metric';
+    data: Array<{
+      __typename?: 'TimeseriesDataPoint';
+      ts: number;
+      value: number;
+    } | null>;
+  } | null;
+};
+
+export type MetricFragment = {
+  __typename?: 'Metric';
+  id: string;
+  type: MetricType;
+  queueId: string;
+  name: string;
+  description: string;
+  isActive: boolean;
+  options: { [key: string]: unknown };
+  createdAt: any;
+  updatedAt: any;
+  sampleInterval?: number | null;
+  aggregator: {
+    __typename?: 'Aggregator';
+    type: AggregateTypeEnum;
+    options?: { [key: string]: unknown } | null;
+  };
+  dateRange?: {
+    __typename?: 'TimeSpan';
+    startTime: number;
+    endTime: number;
+  } | null;
+};
+
+export type GetAvailableMetricsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type GetAvailableMetricsQuery = {
+  __typename?: 'Query';
+  availableMetrics: Array<{
+    __typename?: 'MetricInfo';
+    key: string;
+    type: MetricType;
+    description?: string | null;
+    unit?: string | null;
+    category: MetricCategory;
+    isPolling: boolean;
+  }>;
+};
+
+export type GetAvailableAggregatesQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type GetAvailableAggregatesQuery = {
+  __typename?: 'Query';
+  aggregates: Array<{
+    __typename?: 'AggregateInfo';
+    type: AggregateTypeEnum;
+    isWindowed: boolean;
+    description: string;
+  } | null>;
+};
+
+export type GetMetricByIdQueryVariables = Exact<{
+  queueId: Scalars['ID'];
+  metricId: Scalars['ID'];
+}>;
+
+export type GetMetricByIdQuery = {
+  __typename?: 'Query';
+  metric?: ({ __typename?: 'Metric' } & MetricFragment) | null;
+};
+
+export type CreateMetricMutationVariables = Exact<{
+  input: CreateMetricInput;
+}>;
+
+export type CreateMetricMutation = {
+  __typename?: 'Mutation';
+  createMetric: { __typename?: 'Metric' } & MetricFragment;
+};
+
+export type UpdateMetricMutationVariables = Exact<{
+  input: MetricInput;
+}>;
+
+export type UpdateMetricMutation = {
+  __typename?: 'Mutation';
+  updateMetric: { __typename?: 'Metric' } & MetricFragment;
+};
+
+export type DeleteMetricMutationVariables = Exact<{
+  input: DeleteMetricInput;
+}>;
+
+export type DeleteMetricMutation = {
+  __typename?: 'Mutation';
+  deleteMetric: { __typename?: 'DeleteMetricResult'; isDeleted: boolean };
+};
+
+export type GetQueueMetricsQueryVariables = Exact<{
+  id: Scalars['ID'];
+}>;
+
+export type GetQueueMetricsQuery = {
+  __typename?: 'Query';
+  queue?: {
+    __typename?: 'Queue';
+    id: string;
+    metricCount: number;
+    metrics: Array<{ __typename?: 'Metric' } & MetricFragment>;
+  } | null;
+};
+
 export type HostsAndQueuesQueryVariables = Exact<{ [key: string]: never }>;
 
 export type HostsAndQueuesQuery = {
@@ -4167,35 +4289,6 @@ export type StatsSnapshotFragment = {
   m15Rate: number;
 };
 
-export type GetAvailableMetricsQueryVariables = Exact<{ [key: string]: never }>;
-
-export type GetAvailableMetricsQuery = {
-  __typename?: 'Query';
-  availableMetrics: Array<{
-    __typename?: 'MetricInfo';
-    key: string;
-    description?: string | null;
-    unit?: string | null;
-    category: MetricCategory;
-    isPolling: boolean;
-    valueType: MetricValueType;
-  }>;
-};
-
-export type GetAvailableAggregatesQueryVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type GetAvailableAggregatesQuery = {
-  __typename?: 'Query';
-  aggregates: Array<{
-    __typename?: 'AggregateInfo';
-    type: AggregateTypeEnum;
-    isWindowed: boolean;
-    description: string;
-  } | null>;
-};
-
 export type GetStatsSpanQueryVariables = Exact<{
   id: Scalars['ID'];
   input: StatsSpanInput;
@@ -4274,6 +4367,56 @@ export type HostStatsUpdatedSubscription = {
   onHostStatsUpdated: { __typename?: 'StatsSnapshot' } & StatsSnapshotFragment;
 };
 
+export const MetricFragmentDoc = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Metric' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Metric' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'aggregator' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dateRange' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
 export const RedisStatsFragmentDoc = {
   kind: 'Document',
   definitions: [
@@ -5950,6 +6093,1042 @@ export type HostWorkersQueryResult = Apollo.QueryResult<
 >;
 export function refetchHostWorkersQuery(variables: HostWorkersQueryVariables) {
   return { query: HostWorkersDocument, variables: variables };
+}
+export const GetMetricDataDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetMetricData' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'metricId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'MetricDataInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'metric' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'queueId' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'metricId' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'metricId' },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'data' },
+                  arguments: [
+                    {
+                      kind: 'Argument',
+                      name: { kind: 'Name', value: 'input' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'input' },
+                      },
+                    },
+                  ],
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'ts' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'value' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetMetricDataQuery__
+ *
+ * To run a query within a React component, call `useGetMetricDataQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetMetricDataQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetMetricDataQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      metricId: // value for 'metricId'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useGetMetricDataQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetMetricDataQuery,
+    GetMetricDataQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetMetricDataQuery, GetMetricDataQueryVariables>(
+    GetMetricDataDocument,
+    options,
+  );
+}
+export function useGetMetricDataLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetMetricDataQuery,
+    GetMetricDataQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetMetricDataQuery, GetMetricDataQueryVariables>(
+    GetMetricDataDocument,
+    options,
+  );
+}
+export type GetMetricDataQueryHookResult = ReturnType<
+  typeof useGetMetricDataQuery
+>;
+export type GetMetricDataLazyQueryHookResult = ReturnType<
+  typeof useGetMetricDataLazyQuery
+>;
+export type GetMetricDataQueryResult = Apollo.QueryResult<
+  GetMetricDataQuery,
+  GetMetricDataQueryVariables
+>;
+export function refetchGetMetricDataQuery(
+  variables: GetMetricDataQueryVariables,
+) {
+  return { query: GetMetricDataDocument, variables: variables };
+}
+export const GetAvailableMetricsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetAvailableMetrics' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'availableMetrics' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'key' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isPolling' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetAvailableMetricsQuery__
+ *
+ * To run a query within a React component, call `useGetAvailableMetricsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAvailableMetricsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAvailableMetricsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAvailableMetricsQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >(GetAvailableMetricsDocument, options);
+}
+export function useGetAvailableMetricsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetAvailableMetricsQuery,
+    GetAvailableMetricsQueryVariables
+  >(GetAvailableMetricsDocument, options);
+}
+export type GetAvailableMetricsQueryHookResult = ReturnType<
+  typeof useGetAvailableMetricsQuery
+>;
+export type GetAvailableMetricsLazyQueryHookResult = ReturnType<
+  typeof useGetAvailableMetricsLazyQuery
+>;
+export type GetAvailableMetricsQueryResult = Apollo.QueryResult<
+  GetAvailableMetricsQuery,
+  GetAvailableMetricsQueryVariables
+>;
+export function refetchGetAvailableMetricsQuery(
+  variables?: GetAvailableMetricsQueryVariables,
+) {
+  return { query: GetAvailableMetricsDocument, variables: variables };
+}
+export const GetAvailableAggregatesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetAvailableAggregates' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'aggregates' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'isWindowed' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetAvailableAggregatesQuery__
+ *
+ * To run a query within a React component, call `useGetAvailableAggregatesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAvailableAggregatesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAvailableAggregatesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetAvailableAggregatesQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >(GetAvailableAggregatesDocument, options);
+}
+export function useGetAvailableAggregatesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetAvailableAggregatesQuery,
+    GetAvailableAggregatesQueryVariables
+  >(GetAvailableAggregatesDocument, options);
+}
+export type GetAvailableAggregatesQueryHookResult = ReturnType<
+  typeof useGetAvailableAggregatesQuery
+>;
+export type GetAvailableAggregatesLazyQueryHookResult = ReturnType<
+  typeof useGetAvailableAggregatesLazyQuery
+>;
+export type GetAvailableAggregatesQueryResult = Apollo.QueryResult<
+  GetAvailableAggregatesQuery,
+  GetAvailableAggregatesQueryVariables
+>;
+export function refetchGetAvailableAggregatesQuery(
+  variables?: GetAvailableAggregatesQueryVariables,
+) {
+  return { query: GetAvailableAggregatesDocument, variables: variables };
+}
+export const GetMetricByIdDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetMetricById' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'metricId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'metric' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'queueId' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'metricId' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'metricId' },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Metric' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Metric' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Metric' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'aggregator' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dateRange' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetMetricByIdQuery__
+ *
+ * To run a query within a React component, call `useGetMetricByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetMetricByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetMetricByIdQuery({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      metricId: // value for 'metricId'
+ *   },
+ * });
+ */
+export function useGetMetricByIdQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetMetricByIdQuery,
+    GetMetricByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetMetricByIdQuery, GetMetricByIdQueryVariables>(
+    GetMetricByIdDocument,
+    options,
+  );
+}
+export function useGetMetricByIdLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetMetricByIdQuery,
+    GetMetricByIdQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<GetMetricByIdQuery, GetMetricByIdQueryVariables>(
+    GetMetricByIdDocument,
+    options,
+  );
+}
+export type GetMetricByIdQueryHookResult = ReturnType<
+  typeof useGetMetricByIdQuery
+>;
+export type GetMetricByIdLazyQueryHookResult = ReturnType<
+  typeof useGetMetricByIdLazyQuery
+>;
+export type GetMetricByIdQueryResult = Apollo.QueryResult<
+  GetMetricByIdQuery,
+  GetMetricByIdQueryVariables
+>;
+export function refetchGetMetricByIdQuery(
+  variables: GetMetricByIdQueryVariables,
+) {
+  return { query: GetMetricByIdDocument, variables: variables };
+}
+export const CreateMetricDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateMetric' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'CreateMetricInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createMetric' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Metric' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Metric' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Metric' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'aggregator' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dateRange' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+export type CreateMetricMutationFn = Apollo.MutationFunction<
+  CreateMetricMutation,
+  CreateMetricMutationVariables
+>;
+
+/**
+ * __useCreateMetricMutation__
+ *
+ * To run a mutation, you first call `useCreateMetricMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateMetricMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createMetricMutation, { data, loading, error }] = useCreateMetricMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateMetricMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    CreateMetricMutation,
+    CreateMetricMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    CreateMetricMutation,
+    CreateMetricMutationVariables
+  >(CreateMetricDocument, options);
+}
+export type CreateMetricMutationHookResult = ReturnType<
+  typeof useCreateMetricMutation
+>;
+export type CreateMetricMutationResult =
+  Apollo.MutationResult<CreateMetricMutation>;
+export type CreateMetricMutationOptions = Apollo.BaseMutationOptions<
+  CreateMetricMutation,
+  CreateMetricMutationVariables
+>;
+export const UpdateMetricDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateMetric' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'MetricInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateMetric' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Metric' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Metric' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Metric' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'aggregator' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dateRange' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+export type UpdateMetricMutationFn = Apollo.MutationFunction<
+  UpdateMetricMutation,
+  UpdateMetricMutationVariables
+>;
+
+/**
+ * __useUpdateMetricMutation__
+ *
+ * To run a mutation, you first call `useUpdateMetricMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateMetricMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateMetricMutation, { data, loading, error }] = useUpdateMetricMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateMetricMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    UpdateMetricMutation,
+    UpdateMetricMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    UpdateMetricMutation,
+    UpdateMetricMutationVariables
+  >(UpdateMetricDocument, options);
+}
+export type UpdateMetricMutationHookResult = ReturnType<
+  typeof useUpdateMetricMutation
+>;
+export type UpdateMetricMutationResult =
+  Apollo.MutationResult<UpdateMetricMutation>;
+export type UpdateMetricMutationOptions = Apollo.BaseMutationOptions<
+  UpdateMetricMutation,
+  UpdateMetricMutationVariables
+>;
+export const DeleteMetricDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteMetric' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'input' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'DeleteMetricInput' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteMetric' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'input' },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'isDeleted' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+export type DeleteMetricMutationFn = Apollo.MutationFunction<
+  DeleteMetricMutation,
+  DeleteMetricMutationVariables
+>;
+
+/**
+ * __useDeleteMetricMutation__
+ *
+ * To run a mutation, you first call `useDeleteMetricMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteMetricMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteMetricMutation, { data, loading, error }] = useDeleteMetricMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useDeleteMetricMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    DeleteMetricMutation,
+    DeleteMetricMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<
+    DeleteMetricMutation,
+    DeleteMetricMutationVariables
+  >(DeleteMetricDocument, options);
+}
+export type DeleteMetricMutationHookResult = ReturnType<
+  typeof useDeleteMetricMutation
+>;
+export type DeleteMetricMutationResult =
+  Apollo.MutationResult<DeleteMetricMutation>;
+export type DeleteMetricMutationOptions = Apollo.BaseMutationOptions<
+  DeleteMetricMutation,
+  DeleteMetricMutationVariables
+>;
+export const GetQueueMetricsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'GetQueueMetrics' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'queue' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: {
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'id' },
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'metrics' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      {
+                        kind: 'FragmentSpread',
+                        name: { kind: 'Name', value: 'Metric' },
+                      },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'metricCount' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Metric' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Metric' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'description' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'aggregator' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
+              ],
+            },
+          },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dateRange' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+
+/**
+ * __useGetQueueMetricsQuery__
+ *
+ * To run a query within a React component, call `useGetQueueMetricsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetQueueMetricsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetQueueMetricsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetQueueMetricsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    GetQueueMetricsQuery,
+    GetQueueMetricsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useQuery<GetQueueMetricsQuery, GetQueueMetricsQueryVariables>(
+    GetQueueMetricsDocument,
+    options,
+  );
+}
+export function useGetQueueMetricsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    GetQueueMetricsQuery,
+    GetQueueMetricsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useLazyQuery<
+    GetQueueMetricsQuery,
+    GetQueueMetricsQueryVariables
+  >(GetQueueMetricsDocument, options);
+}
+export type GetQueueMetricsQueryHookResult = ReturnType<
+  typeof useGetQueueMetricsQuery
+>;
+export type GetQueueMetricsLazyQueryHookResult = ReturnType<
+  typeof useGetQueueMetricsLazyQuery
+>;
+export type GetQueueMetricsQueryResult = Apollo.QueryResult<
+  GetQueueMetricsQuery,
+  GetQueueMetricsQueryVariables
+>;
+export function refetchGetQueueMetricsQuery(
+  variables: GetQueueMetricsQueryVariables,
+) {
+  return { query: GetQueueMetricsDocument, variables: variables };
 }
 export const HostsAndQueuesDocument = {
   kind: 'Document',
@@ -14390,174 +15569,6 @@ export function refetchGetPageQueueStatsQuery(
   variables: GetPageQueueStatsQueryVariables,
 ) {
   return { query: GetPageQueueStatsDocument, variables: variables };
-}
-export const GetAvailableMetricsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'getAvailableMetrics' },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'availableMetrics' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'key' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'isPolling' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'valueType' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'category' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode;
-
-/**
- * __useGetAvailableMetricsQuery__
- *
- * To run a query within a React component, call `useGetAvailableMetricsQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetAvailableMetricsQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGetAvailableMetricsQuery({
- *   variables: {
- *   },
- * });
- */
-export function useGetAvailableMetricsQuery(
-  baseOptions?: Apollo.QueryHookOptions<
-    GetAvailableMetricsQuery,
-    GetAvailableMetricsQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    GetAvailableMetricsQuery,
-    GetAvailableMetricsQueryVariables
-  >(GetAvailableMetricsDocument, options);
-}
-export function useGetAvailableMetricsLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    GetAvailableMetricsQuery,
-    GetAvailableMetricsQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    GetAvailableMetricsQuery,
-    GetAvailableMetricsQueryVariables
-  >(GetAvailableMetricsDocument, options);
-}
-export type GetAvailableMetricsQueryHookResult = ReturnType<
-  typeof useGetAvailableMetricsQuery
->;
-export type GetAvailableMetricsLazyQueryHookResult = ReturnType<
-  typeof useGetAvailableMetricsLazyQuery
->;
-export type GetAvailableMetricsQueryResult = Apollo.QueryResult<
-  GetAvailableMetricsQuery,
-  GetAvailableMetricsQueryVariables
->;
-export function refetchGetAvailableMetricsQuery(
-  variables?: GetAvailableMetricsQueryVariables,
-) {
-  return { query: GetAvailableMetricsDocument, variables: variables };
-}
-export const GetAvailableAggregatesDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'getAvailableAggregates' },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'aggregates' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'isWindowed' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode;
-
-/**
- * __useGetAvailableAggregatesQuery__
- *
- * To run a query within a React component, call `useGetAvailableAggregatesQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetAvailableAggregatesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGetAvailableAggregatesQuery({
- *   variables: {
- *   },
- * });
- */
-export function useGetAvailableAggregatesQuery(
-  baseOptions?: Apollo.QueryHookOptions<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >(GetAvailableAggregatesDocument, options);
-}
-export function useGetAvailableAggregatesLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >(GetAvailableAggregatesDocument, options);
-}
-export type GetAvailableAggregatesQueryHookResult = ReturnType<
-  typeof useGetAvailableAggregatesQuery
->;
-export type GetAvailableAggregatesLazyQueryHookResult = ReturnType<
-  typeof useGetAvailableAggregatesLazyQuery
->;
-export type GetAvailableAggregatesQueryResult = Apollo.QueryResult<
-  GetAvailableAggregatesQuery,
-  GetAvailableAggregatesQueryVariables
->;
-export function refetchGetAvailableAggregatesQuery(
-  variables?: GetAvailableAggregatesQueryVariables,
-) {
-  return { query: GetAvailableAggregatesDocument, variables: variables };
 }
 export const GetStatsSpanDocument = {
   kind: 'Document',

@@ -9,13 +9,13 @@ import { EmptyBody } from 'src/components/Table/EmptyBody';
 import { TableWrapper } from 'src/components/Table/TableWrapper';
 import { Cell, Header, JobColumnType, useColumns } from './columns';
 import { Checkbox, Group, Text } from '@mantine/core';
-import type { Job, JobFragment, Status } from 'src/types';
+import type { Job, MetricFragment, Status } from 'src/types';
 
 interface TableProps {
   queueId: string;
   status: Status;
   isReadOnly: boolean;
-  jobs: Array<Job | JobFragment>;
+  jobs: Array<Job | MetricFragment>;
   loading?: boolean;
   isSelected: (job: string) => boolean;
   toggleSelected: (id: string) => void;
@@ -34,7 +34,7 @@ function Empty({ colSpan }: { colSpan: number }) {
 }
 
 interface JobRowProps {
-  job: JobFragment;
+  job: MetricFragment;
   columns: JobColumnType[];
   isSelected: boolean;
   toggleSelected: (id: string) => void;

@@ -2,7 +2,7 @@ import type {
   BulkStatusItem,
   DiscoverQueuesPayload,
   JobCounts,
-  JobFragment,
+  MetricFragment,
   JobLogs,
   JobSchema,
   JobSearchInput,
@@ -39,7 +39,7 @@ export interface BulkJobActions {
 }
 
 export interface FilteredJobsResult {
-  jobs: JobFragment[];
+  jobs: MetricFragment[];
   counts: JobCounts;
   current: number;
   total: number;
@@ -54,7 +54,7 @@ export interface QueueJobActions extends BulkJobActions {
     page: number,
     pageSize: number,
     sortOrder?: SortOrderEnum,
-  ) => Promise<{ jobs: JobFragment[]; counts: JobCounts }>;
+  ) => Promise<{ jobs: MetricFragment[]; counts: JobCounts }>;
   getJobsByFilter: (
     queueId: string,
     filter: JobSearchInput,

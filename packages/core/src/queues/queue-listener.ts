@@ -72,7 +72,7 @@ export class QueueListener extends Emittery {
 
     this.cache = new LRUCache({
       max: 500,
-      maxAge: CACHE_TIMEOUT,
+      ttl: CACHE_TIMEOUT,
     });
 
 

@@ -4,7 +4,7 @@ import produce from 'immer';
 import { useCallback, useState } from 'react';
 import type {
   JobCounts,
-  JobFragment,
+  MetricFragment,
   Status,
   JobStatus
 } from '@/types';
@@ -20,12 +20,12 @@ export function useJobQuery(props: JobListProps) {
   const { queueId, status } = props;
 
   const [counts, setCounts] = useState<JobCounts>(EmptyJobCounts);
-  const [data, setData] = useState<JobFragment[]>([]);
+  const [data, setData] = useState<MetricFragment[]>([]);
   const [total, setTotal] = useState(0);
 
   const {queue, updateQueue}= useQueue(queueId);
 
-  function updateResults(jobs: JobFragment[], counts: JobCounts) {
+  function updateResults(jobs: MetricFragment[], counts: JobCounts) {
     setData(jobs);
     setCounts(counts);
     let total = parseInt((counts as any)[status], 10);
@@ -49,7 +49,7 @@ export function useJobQuery(props: JobListProps) {
     page = 1,
     pageSize = 10,
     sortOrder: SortOrderEnum = SortOrderEnum.Desc
-  ): Promise<JobFragment[]> {
+  ): Promise<MetricFragment[]> {
     const offset = (page - 1) * pageSize;
 
     const _status = status === 'latest' ? undefined : (status as JobStatus);

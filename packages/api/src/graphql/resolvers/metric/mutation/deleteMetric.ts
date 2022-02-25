@@ -1,6 +1,6 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
-import { QueueTC } from '../../queue/model/Queue';
+import { QueueTC } from '../../queue/query';
 import { schemaComposer } from 'graphql-compose';
 import boom from '@hapi/boom';
 

@@ -36,14 +36,14 @@
     "@alpen/core": "^0.0.2",
     "@graphql-ez/hapi": "^0.8.9",
     "graphql": "16.3.0",
-    "graphql-ez": "^0.14.0"
+    "graphql-ez": "^0.14.1"
   },
   "devDependencies": {
     "@hapi/hapi": "^20.1.2",
     "@types/hapi__hapi": "^20.0.7",
     "@types/node": "^14.17.5",
-    "bob-ts": "^3.0.2",
-    "esbuild": "^0.14.0",
-    "tsc-alias": "^1.4.1"
+    "bob-ts": "^3.1.1",
+    "esbuild": "^0.14.27",
+    "tsc-alias": "^1.6.4"
   }
 }

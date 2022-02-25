@@ -13,19 +13,21 @@ interface JobNamesSelectProps extends BaseSelectProps {
   selected?: string | string[];
   onChange?: (values: string[]) => void;
   onCreated?: (values: string) => void;
+  label?: string;
 }
 
 type DataItem = {
   value: string;
   label: string;
-}
+};
 
-const JobNamesSelect: React.FC<JobNamesSelectProps> = props => {
+const JobNamesSelect: React.FC<JobNamesSelectProps> = (props) => {
   const {
     queueId,
     selected,
     isMulti = true,
     isClearable = true,
+    label,
     onChange,
     onCreated,
     ...rest
@@ -50,7 +52,7 @@ const JobNamesSelect: React.FC<JobNamesSelectProps> = props => {
     }
   }, [selected, isMulti]);
 
-  const { loading } = useQuery(GetQueueJobsNamesDocument,{
+  const { loading } = useQuery(GetQueueJobsNamesDocument, {
     variables: { id: queueId },
     onCompleted(data) {
       const { jobNames = [] } = data.queue ?? {};
@@ -69,7 +71,9 @@ const JobNamesSelect: React.FC<JobNamesSelectProps> = props => {
       // todo: clear after some time. The user cann always create
       setPlaceholder('Error loading job names');
     } else {
-      const value = isMulti ? 'Select One or more' : 'Select or Creeate a Job Name';
+      const value = isMulti
+        ? 'Select One or more'
+        : 'Select or Creeate a Job Name';
       setPlaceholder(value);
     }
   }, [error, isMulti, loading]);
@@ -81,26 +85,29 @@ const JobNamesSelect: React.FC<JobNamesSelectProps> = props => {
     };
   }
 
-  const onCreateOption = useCallback((searchValue: string) => {
-    const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const onCreateOption = useCallback(
+    (searchValue: string) => {
+      const normalizedSearchValue = searchValue.trim().toLowerCase();
 
-    if (!normalizedSearchValue) {
-      return;
-    }
+      if (!normalizedSearchValue) {
+        return;
+      }
 
-    const newOption = createOption(searchValue);
+      const newOption = createOption(searchValue);
 
-    // Create the option if it doesn't exist.
-    if (
-      options.findIndex(
-        option => option.label.trim().toLowerCase() === normalizedSearchValue
-      ) === -1
-    ) {
-      setOptions([...options, newOption]);
-      onCreated && onCreated(searchValue);
-    }
-
-  }, [queueId]);
+      // Create the option if it doesn't exist.
+      if (
+        options.findIndex(
+          (option) =>
+            option.label.trim().toLowerCase() === normalizedSearchValue,
+        ) === -1
+      ) {
+        setOptions([...options, newOption]);
+        onCreated && onCreated(searchValue);
+      }
+    },
+    [queueId],
+  );
 
   function handleMultiChange(selectedOptions: string[]) {
     setSelectedOptions(selectedOptions);
@@ -114,6 +121,7 @@ const JobNamesSelect: React.FC<JobNamesSelectProps> = props => {
     return (
       <MultiSelect
         searchable
+        label={label}
         clearable={isClearable}
         data={options}
         icon={loading && <LoadingIcon />}
@@ -129,6 +137,7 @@ const JobNamesSelect: React.FC<JobNamesSelectProps> = props => {
   return (
     <Select
       searchable
+      label={label}
       clearable={isClearable}
       icon={loading && <LoadingIcon />}
       disabled={loading}

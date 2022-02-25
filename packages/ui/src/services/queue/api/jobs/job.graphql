@@ -57,8 +57,8 @@ fragment RepeatableJob on RepeatableJob {
     descr
 }
 
-query FindJobs($queueId: ID!, $status: JobStatus, $criteria: String!, $cursor: String, $limit: Int = 10) {
-    findJobs(input: {queueId: $queueId, scanCount: $limit, expression: $criteria, status: $status}) {
+query FindJobs($id: ID!, $status: JobStatus, $criteria: String!, $cursor: String, $limit: Int = 10) {
+    findJobs(input: {queueId: $id, scanCount: $limit, expression: $criteria, status: $status}) {
         nextCursor,
         jobs {
             ...Job
@@ -81,14 +81,14 @@ query GetJobsByFilter($id: ID!, $status: JobStatus, $cursor: String, $criteria: 
     }
 }
 
-query GetJobsById($queueId: ID!, $ids: [ID!]!) {
-    getJobsById(input: { queueId: $queueId, ids: $ids }) {
+query GetJobsById($id: ID!, $ids: [ID!]!) {
+    getJobsById(input: { queueId: $id, ids: $ids }) {
         ...Job
     }
 }
 
-query GetJobFilters($queueId: ID!, $ids: [ID!]) {
-    queue(id: $queueId) {
+query GetJobFilters($id: ID!, $ids: [ID!]) {
+    queue(id: $id) {
         jobFilters(ids: $ids) {
             id
             name
@@ -158,14 +158,14 @@ query GetRepeatableJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $sortOrder
     }
 }
 
-query GetJobById($queueId: ID!, $id: ID!) {
-    job(queueId: $queueId, id: $id) {
+query GetJobById($id: ID!, $id: ID!) {
+    job(queueId: $id, id: $id) {
         ...Job
     }
 }
 
-query GetJobLogs($queueId: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
-    job(queueId: $queueId, id: $id) {
+query GetJobLogs($id: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
+    job(queueId: $id, id: $id) {
         logs(start: $start, end: $end) {
             count
             items
@@ -173,10 +173,10 @@ query GetJobLogs($queueId: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
     }
 }
 
-mutation CreateJob($queueId: ID!, $jobName: String!, $data: JSONObject, $options: JobOptionsInput) {
+mutation CreateJob($id: ID!, $jobName: String!, $data: JSONObject, $options: JobOptionsInput) {
     createJob(
         input: {
-            queueId: $queueId,
+            queueId: $id,
             jobName: $jobName,
             data: $data,
             options: $options
@@ -185,25 +185,16 @@ mutation CreateJob($queueId: ID!, $jobName: String!, $data: JSONObject, $options
     }
 }
 
-mutation DeleteJob($queueId: ID!, $jobId: ID!) {
-    deleteJob(input: { queueId: $queueId, jobId: $jobId }) {
+mutation DeleteJob($id: ID!, $jobId: ID!) {
+    deleteJob(input: { queueId: $id, jobId: $jobId }) {
         job {
             id
         }
     }
 }
 
-mutation DiscardJob($queueId: ID!, $jobId: ID!) {
-    discardJob(input: { queueId: $queueId, jobId: $jobId }) {
-        job {
-            id
-            state
-        }
-    }
-}
-
-mutation MoveJobToCompleted($queueId: ID!, $jobId: ID!) {
-    moveJobToCompleted(input: { queueId: $queueId, jobId: $jobId }) {
+mutation DiscardJob($id: ID!, $jobId: ID!) {
+    discardJob(input: { queueId: $id, jobId: $jobId }) {
         job {
             id
             state
@@ -211,8 +202,8 @@ mutation MoveJobToCompleted($queueId: ID!, $jobId: ID!) {
     }
 }
 
-mutation MoveJobToFailed($queueId: ID!, $jobId: ID!) {
-    moveJobToFailed(input: { queueId: $queueId, jobId: $jobId }) {
+mutation MoveJobToCompleted($id: ID!, $jobId: ID!) {
+    moveJobToCompleted(input: { queueId: $id, jobId: $jobId }) {
         job {
             id
             state
@@ -220,14 +211,23 @@ mutation MoveJobToFailed($queueId: ID!, $jobId: ID!) {
     }
 }
 
-mutation DeleteRepeatableJobByKey($queueId: ID!, $key: String!) {
-    deleteRepeatableJobByKey(input: { queueId: $queueId, key: $key }) {
+mutation MoveJobToFailed($id: ID!, $jobId: ID!) {
+    moveJobToFailed(input: { queueId: $id, jobId: $jobId }) {
+        job {
+            id
+            state
+        }
+    }
+}
+
+mutation DeleteRepeatableJobByKey($id: ID!, $key: String!) {
+    deleteRepeatableJobByKey(input: { queueId: $id, key: $key }) {
         key
     }
 }
 
-mutation DeleteBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
-    bulkDeleteJobs(input: { queueId: $queueId, jobIds: $jobIds }) {
+mutation DeleteBulkJobs($id: ID!, $jobIds: [ID!]!) {
+    bulkDeleteJobs(input: { queueId: $id, jobIds: $jobIds }) {
         status {
             id
             success
@@ -236,8 +236,8 @@ mutation DeleteBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
     }
 }
 
-mutation RetryJob($queueId: ID!, $jobId: ID!) {
-    retryJob(input: { queueId: $queueId, jobId: $jobId }) {
+mutation RetryJob($id: ID!, $jobId: ID!) {
+    retryJob(input: { queueId: $id, jobId: $jobId }) {
         job {
             id
             state
@@ -245,8 +245,8 @@ mutation RetryJob($queueId: ID!, $jobId: ID!) {
     }
 }
 
-mutation RetryBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
-    bulkRetryJobs(input: { queueId: $queueId, jobIds: $jobIds }) {
+mutation RetryBulkJobs($id: ID!, $jobIds: [ID!]!) {
+    bulkRetryJobs(input: { queueId: $id, jobIds: $jobIds }) {
         status {
             id
             success
@@ -255,8 +255,8 @@ mutation RetryBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
     }
 }
 
-mutation PromoteJob($queueId: ID!, $jobId: ID!) {
-    promoteJob(input: { queueId: $queueId, jobId: $jobId }) {
+mutation PromoteJob($id: ID!, $jobId: ID!) {
+    promoteJob(input: { queueId: $id, jobId: $jobId }) {
         job {
             id
             state
@@ -265,8 +265,8 @@ mutation PromoteJob($queueId: ID!, $jobId: ID!) {
 }
 
 
-mutation PromoteBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
-    bulkPromoteJobs(input: { queueId: $queueId, jobIds: $jobIds }) {
+mutation PromoteBulkJobs($id: ID!, $jobIds: [ID!]!) {
+    bulkPromoteJobs(input: { queueId: $id, jobIds: $jobIds }) {
         status {
             id
             success

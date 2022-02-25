@@ -92,7 +92,7 @@ function createFilter(filterArg: QueueJobChangesFilter): FilterPredicate {
 
 const cache = new LRUCache({
   max: 2500,
-  maxAge: ms('1 hour'),
+  ttl: ms('1 hour'),
 });
 
 export function getResolver(): GraphQLFieldResolver<any, any> {

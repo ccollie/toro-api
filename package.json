@@ -18,10 +18,11 @@
   "homepage": "https://github.com/ccollie/alpen#readme",
   "scripts": {
     "lint": "eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
-    "clean": "rimraf \"**/{node_modules,dist,.next,coverage}\"",
+    "clean": "turbo run clean && rimraf \"**/{node_modules,dist,.next,coverage,.turbo}\"",
     "pretty": "prettier --config package.json --write \"**/*.{ts,tsx,json,yaml,js,cjs,mjs,mdx,md}\"",
     "pretty:check": "prettier --check \"**/*.{ts,tsx,json,yaml,js,cjs,mjs,mdx}\"",
     "typecheck": "tsc --no-emit",
+    "build": "turbo run build",
     "build:core": "yarn workspace @alpen/shared build && yarn workspace @alpen/core build && yarn workspace @alpen/api build",
     "gen-schema": "node -r ts-node/register ./scripts/gen-schema.ts",
     "generate": "yarn run generate:server && yarn run generate:client",
@@ -30,30 +31,31 @@
     "generate:full": "yarn run gen-schema && yarn run generate"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^2.6.0",
     "@graphql-codegen/add": "^3.1.1",
-    "@graphql-codegen/typescript": "^2.4.3",
-    "@graphql-codegen/typescript-operations": "^2.3.0",
-    "@graphql-codegen/typescript-resolvers": "^2.5.0",
-    "@graphql-codegen/typed-document-node": "^2.2.3",
-    "@graphql-codegen/typescript-react-apollo": "^3.2.5",
-    "graphql-tag.macro": "^2.0.1",
-    "@types/jest": "^27.4.0",
-    "@types/node": "^17.0.15",
-    "@typescript-eslint/eslint-plugin": "^5.11.0",
-    "@typescript-eslint/parser": "^5.11.0",
-    "eslint": "^8.8.0",
+    "@graphql-codegen/cli": "^2.6.2",
+    "@graphql-codegen/typed-document-node": "^2.2.8",
+    "@graphql-codegen/typescript": "^2.4.8",
+    "@graphql-codegen/typescript-operations": "^2.3.5",
+    "@graphql-codegen/typescript-react-apollo": "^3.2.11",
+    "@graphql-codegen/typescript-resolvers": "^2.6.1",
+    "@types/jest": "^27.4.1",
+    "@types/node": "^17.0.21",
+    "@typescript-eslint/eslint-plugin": "^5.15.0",
+    "@typescript-eslint/parser": "^5.15.0",
+    "eslint": "^8.11.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-prettier": "4.0.0",
     "fs-extra": "^10.0.0",
+    "graphql-tag.macro": "^2.0.1",
     "jest": "^27.5.1",
     "jest-date-mock": "^1.0.8",
-    "prettier": "^2.5.1",
+    "prettier": "^2.6.0",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.1.3",
-    "ts-node": "^10.5.0",
-    "tsc-alias": "^1.5.0",
-    "typescript": "^4.5.5"
+    "ts-node": "^10.7.0",
+    "tsc-alias": "^1.6.4",
+    "turbo": "latest",
+    "typescript": "^4.6.2"
   },
   "dependencies": {
     "core-js": "^3.21.0",
@@ -72,7 +74,7 @@
   },
   "resolutions": {
     "tsc-alias": "^1.5.0",
-    "typescript": ">=4.5.4"
+    "typescript": ">=4.6.0"
   },
   "packageManager": "yarn@3.1.0-rc.12"
 }

@@ -1,6 +1,4 @@
 // todo: theme ????
-
-export type ElementSize = 'sm' | 'md' | 'lg' | 'xs' | 'xl';
 export type BasicColor =
   | 'blue'
   | 'green'
@@ -22,18 +20,22 @@ export type StatusColor =
   | 'info'
   | 'warning'
   | 'danger'
+  | 'subdued'
+  | 'accent'
   | 'light'
   | 'dark';
 
-const StatusColorMap: Record<StatusColor, BasicColor> = {
+const StatusColorMap: Record<StatusColor, BasicColor | string> = {
   primary: 'indigo',
   secondary: 'orange',
   success: 'green',
-  info: 'blue',
   warning: 'yellow',
+  info: 'blue',
   danger: 'red',
   light: 'indigo',
   dark: 'gray',
+  accent: '#f04e98',
+  subdued: '#69707d',
 };
 
 export function mapColor(color: BasicColor | StatusColor): BasicColor {

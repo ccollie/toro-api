@@ -16,7 +16,7 @@ interface QueueCardProps {
   statsSummary?: StatsSnapshot | null;
 }
 
-export const QueueCard: React.FC<QueueCardProps> = (props) => {
+export const QueueCard = (props: QueueCardProps) => {
   const { queue, statsSummary } = props;
   const [errorPercentage, setErrorPercentage] = useState(0);
   // const navigate = useNavigate();

@@ -27,26 +27,6 @@ fragment StatsSnapshot on StatsSnapshot {
   m15Rate
 }
 
-query getAvailableMetrics {
-  availableMetrics {
-    key
-    description
-    unit
-    category
-    isPolling
-    valueType
-    category
-  }
-}
-
-query getAvailableAggregates {
-  aggregates {
-    type
-    isWindowed
-    description
-  }
-}
-
 query GetStatsSpan($id: ID!, $input: StatsSpanInput!) {
   queue(id: $id) {
     statsDateRange(input: $input) {

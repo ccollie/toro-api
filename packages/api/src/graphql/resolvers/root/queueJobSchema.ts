@@ -2,7 +2,7 @@ import { EZContext } from 'graphql-ez';
 import { getJobSchema, JobSchema } from '@alpen/core';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobSchemaTC } from '../job/model/Job.schema';
+import { JobSchemaTC } from '../job/query/schema';
 import boom from '@hapi/boom';
 
 export const queueJobSchema: FieldConfig = {

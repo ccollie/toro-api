@@ -1,12 +1,12 @@
 import { Center, Group, LoadingOverlay, Text } from '@mantine/core';
 import React, { useState } from 'react';
-import type { Job, JobFragment } from '@/types';
+import type { Job, MetricFragment } from '@/types';
 import { SadTearIcon } from 'src/components/Icons';
 import { useGetJobLogsQuery } from 'src/types';
 import s from './JobLogs.module.css';
 
 interface JobLogsProps {
-  job: Job | JobFragment;
+  job: Job | MetricFragment;
 }
 
 export const JobLogs = ({ job }: JobLogsProps) => {

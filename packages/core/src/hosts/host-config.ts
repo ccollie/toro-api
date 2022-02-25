@@ -12,7 +12,7 @@ let hostsMap: Record<string, HostConfig>;
 export interface QueueConfig {
   /** Unique, system generated id based on host/port/db/queue names */
   id?: string;
-  /** Queue names */
+  /** Queue name */
   name: string;
   prefix?: string;
   jobTypes?: string[];
@@ -20,6 +20,8 @@ export interface QueueConfig {
   trackMetrics?: boolean;
   /** Is the queue readonly? If so prevent updates from client */
   isReadonly?: boolean;
+  /** Allow retries on this queue */
+  allowRetries?: boolean;
 }
 
 /** A grouped collection of bull queues on a single redis instance */
@@ -53,6 +55,7 @@ const queueConfigSchema = Joi.object().keys({
   jobTypes: Joi.array().items(Joi.string()).single().default([]),
   trackMetrics: Joi.boolean().optional().default(true),
   isReadonly: Joi.boolean().optional().default(true),
+  allowRetries: Joi.boolean().optional().default(true),
 });
 
 const channelConfig = Joi.object()

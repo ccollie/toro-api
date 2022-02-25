@@ -16,7 +16,8 @@ export const useMatchedBreakpoints = (): Record<Breakpoint, boolean> => {
     xl: false,
   });
 
-  BreakpointOrder.forEach(breakpoint => breakpointMatched.current[breakpoint] = useMediaQuery(theme.fn.largerThan(breakpoint)));
+  BreakpointOrder.forEach(breakpoint =>
+    breakpointMatched.current[breakpoint] = useMediaQuery(theme.fn.largerThan(breakpoint)));
 
   return breakpointMatched.current;
-}
+};

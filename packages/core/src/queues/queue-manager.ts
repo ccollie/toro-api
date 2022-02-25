@@ -455,8 +455,8 @@ export class QueueManager {
     return workers.length;
   }
 
-  async removeAllQueueData(): Promise<number> {
-    return deleteAllQueueData(this.queue);
+  async removeAllQueueData(): Promise<void> {
+    await deleteAllQueueData(this.queue);
   }
 
   /**

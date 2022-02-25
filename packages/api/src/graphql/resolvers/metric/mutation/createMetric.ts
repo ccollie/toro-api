@@ -3,7 +3,7 @@ import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { CreateMetricTC } from '../scalars';
 import { SerializedMetric } from '@alpen/core';
-import { MetricTC } from '../model';
+import { MetricTC } from '../query';
 
 export const createMetric: FieldConfig = {
   description: 'Create a queue metric',

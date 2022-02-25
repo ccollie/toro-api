@@ -10,6 +10,10 @@
     --btn-text-case: uppercase; /* default text case for buttons */
     --navbar-padding: 0.5rem;    /* default padding for navbar */
     --border-btn: 1px;          /* default border size for button */
+    --code-font-family: 'Roboto Mono', Consolas, Menlo, Courier, monospace;
+    --border-width-thick: 2px;  /* border-width for elements with thick borders */
+    --border-width-thin: 1px;  /* border-width for elements with thick borders */
+    --border-editable: 2px dotted #D3DAE6; /* border for editable elements */
 }
 
 body {

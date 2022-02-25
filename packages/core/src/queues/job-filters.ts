@@ -16,7 +16,7 @@ import { compileExpression, ExpressionMeta, getExpressionHash } from '../lib/exp
 // cache to save expression parsing overhead
 const filterCache = new LRUCache({
   max: 40,
-  maxAge: 60000,
+  ttl: 60000,
 });
 
 function getCompiled(filter: string, hash?: string): ExpressionMeta {

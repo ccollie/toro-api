@@ -3,23 +3,24 @@
   "version": "1.0.0",
   "description": "Koa adapter for Alpen",
   "types": "dist/index.d.ts",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.mjs",
   "private": true,
   "exports": {
     ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.mjs"
     },
     "./*": {
-      "require": "./dist/*.js",
-      "import": "./dist/*.mjs"
+      "require": "./dist/cjs/*.js",
+      "import": "./dist/esm/*.mjs"
     }
   },
   "scripts": {
-    "build": "npm run clean && npm run compile",
-    "clean": "rm -rf ./dist",
-    "compile": "bob-ts -i src -f interop",
+    "build": "yarn run build:esm && yarn run build:cjs",
+    "clean": "rm -rf ./dist && rm -rf .turbo",
+    "build:esm": "bob-ts -i src -f esm -d dist/esm",
+    "build:cjs": "bob-ts -i src -f cjs -d dist/cjs",
     "prepack": "bob-esbuild build",
     "test": "jest"
   },
@@ -40,16 +41,16 @@
     "@graphql-ez/koa": "^0.8.9",
     "@koa/router": "^10.1.1",
     "graphql": "16.3.0",
-    "graphql-ez": "^0.14.0"
+    "graphql-ez": "^0.14.1"
   },
   "devDependencies": {
     "@types/koa": "^2.13.4",
     "@types/koa__router": "^8.0.8",
     "@types/node": ">=16.11.1",
     "bob-ts": "^1.2.2",
-    "esbuild": "^0.14.0",
+    "esbuild": "^0.14.27",
     "bob-esbuild-cli": "^3.0.1",
     "tsc-alias": "^1.4.5",
-    "typescript": "^4.5.4"
+    "typescript": "^4.6.2"
   }
 }

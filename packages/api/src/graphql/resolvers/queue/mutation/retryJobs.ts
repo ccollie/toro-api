@@ -1,5 +1,6 @@
 import { Queue } from 'bullmq';
 import { EZContext } from 'graphql-ez';
+import { FinishedStatusEnum } from '../../../scalars';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { JOBS_RETRIED_PREFIX } from '../../../helpers';
@@ -22,6 +23,11 @@ export const retryJobs: FieldConfig = {
           type: 'ID!',
           description: 'The id of the queue',
         },
+        state: {
+          type: FinishedStatusEnum,
+          defaultValue: 'failed',
+          description: 'Job status to consider. Defaults to failed.',
+        },
         count: {
           type: 'Int',
           description: 'number to limit how many jobs will be moved to wait status per iteration',
@@ -35,19 +41,21 @@ export const retryJobs: FieldConfig = {
   },
   resolve: async (
     _,
-    { input: { queueId, count } },
+    { input: { queueId, count, state } },
     { publish, accessors }: EZContext,
   ) => {
     // enforce a minimum count for efficiency
     count = typeof count === 'number' ? Math.max(50, count) : undefined;
     const queue = accessors.getQueueById(queueId, true) as Queue;
     const failedCount = await queue.getFailedCount();
-    await queue.retryJobs(count ? { count } : undefined);
+    const opts = { state, count };
+    await queue.retryJobs(opts);
 
     const queueName = queue.name;
     const payload = {
       queueId,
       queueName,
+      state,
       count: failedCount,
     };
 

@@ -2,6 +2,6 @@
 const Subscription = {};
 
 import * as Mutation from './mutation';
-import { MetricTC as Metric } from './model';
+import { MetricTC as Metric } from './query';
 
 export default { Subscription, Mutation, Metric };

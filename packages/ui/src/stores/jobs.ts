@@ -1,22 +1,22 @@
-import type { JobFragment } from 'src/types';
+import type { MetricFragment } from 'src/types';
 import createStore from 'zustand';
 
 type TState = {
   selected: Set<string>;
-  data: JobFragment[];
+  data: MetricFragment[];
   selectedCount: number;
-  selectedJobs: JobFragment[];
+  selectedJobs: MetricFragment[];
   isSelected: (id: JobOrId) => boolean;
   selectJob: (job: JobOrId) => void;
   selectJobs: (ids: Array<JobOrId>) => void;
   unselectJob: (job: JobOrId) => void;
   toggleSelectJob: (job: JobOrId) => void;
-  setJobs: (jobs: JobFragment[]) => void;
-  removeJob: (job: string | JobFragment) => void;
+  setJobs: (jobs: MetricFragment[]) => void;
+  removeJob: (job: string | MetricFragment) => void;
   clear: () => void;
 };
 
-type JobOrId = JobFragment | string;
+type JobOrId = MetricFragment | string;
 
 export const useJobsStore = createStore<TState>((set, get) => ({
   selected: new Set(),
@@ -53,7 +53,7 @@ export const useJobsStore = createStore<TState>((set, get) => ({
       });
     }
   },
-  removeJob: (job: string | JobFragment) => {
+  removeJob: (job: string | MetricFragment) => {
     const { data, selected } = get();
     const id = getId(job);
     const newSelected = new Set(selected);
@@ -76,7 +76,7 @@ export const useJobsStore = createStore<TState>((set, get) => ({
       set({ selected: newSelected });
     }
   },
-  setJobs(jobs: JobFragment[]) {
+  setJobs(jobs: MetricFragment[]) {
     const { selected } = get();
     // check if items and current selection are in sync
     // for example when removing item
@@ -107,6 +107,6 @@ export const useJobsStore = createStore<TState>((set, get) => ({
   },
 }));
 
-function getId(job: string | JobFragment): string {
+function getId(job: string | MetricFragment): string {
   return typeof job === 'string' ? job : job.id;
 }

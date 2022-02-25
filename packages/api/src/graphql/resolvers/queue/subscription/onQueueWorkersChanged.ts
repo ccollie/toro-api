@@ -4,7 +4,7 @@ import { schemaComposer } from 'graphql-compose';
 import { keyBy } from 'lodash';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
 import { FieldConfig } from '../../index';
-import { QueueWorkerTC } from '../model/Queue.workers';
+import { QueueWorkerTC } from '../query/workers';
 
 const POLLING_INTERVAL = 4500; // todo: get from config
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 export const isProduction = import.meta.env.PROD;
 
 const useMocks = import.meta.env.VITE_ENABLE_MOCKS === 'true';

@@ -45,7 +45,6 @@ export const findJobs: FieldConfig = {
         },
         expression: {
           type: 'String!',
-          // eslint-disable-next-line max-len
           description:
             // eslint-disable-next-line max-len
             'A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000)',

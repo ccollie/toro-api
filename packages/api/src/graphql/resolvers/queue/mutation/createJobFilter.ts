@@ -1,9 +1,10 @@
 'use strict';
 import { EZContext } from 'graphql-ez';
 import { addJobFilter } from '@alpen/core';
+import { JobFilterTC } from '../../job/query/filter';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobFilterTC } from '../../job/model/Job.filter';
+
 
 const CreateJobFilterInput = schemaComposer.createInputTC({
   name: 'CreateJobFilterInput',

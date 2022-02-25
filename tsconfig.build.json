@@ -10,7 +10,6 @@
     "strict": false,
     "alwaysStrict": true,
     "composite": true,
-    "incremental": true,
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
@@ -37,13 +36,5 @@
     { "path": "./packages/koa" },
     { "path": "./packages/fastify" },
     { "path": "./packages/example" }
-  ],
-  "tsc-alias": {
-    "replacers": {
-      "logger": {
-        "enabled": true,
-        "file": "./alias-replacer.js"
-      },
-    }
-  }
+  ]
 }

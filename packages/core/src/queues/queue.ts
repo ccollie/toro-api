@@ -215,12 +215,13 @@ export async function deleteQueueStats(
   return deleteByPattern(client, pattern);
 }
 
-export async function deleteAllQueueData(queue: Queue): Promise<number> {
+export async function deleteAllQueueData(queue: Queue): Promise<void> {
   const prefix = queue.opts.prefix;
   const pattern = `${prefix}:${queue.name}:*`;
   const client = await queue.client;
+  await queue.obliterate();
   // todo: need to delete data at the host level
-  return deleteByPattern(client, pattern);
+  await deleteByPattern(client, pattern);
 }
 
 export function getPipelinedCounts(

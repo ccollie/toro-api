@@ -4,7 +4,7 @@ import { getJobFilter, updateJobFilter as updateFilter } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig, JobStatusEnumType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobFilterTC } from '../../job/model/Job.filter';
+import { JobFilterTC } from '../../job/query/filter';
 
 const UpdateJobFilterInput = schemaComposer.createInputTC({
   name: 'UpdateJobFilterInput',

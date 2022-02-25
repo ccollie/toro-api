@@ -1,8 +1,8 @@
 import type {
   JobCounts,
-  JobFragment
+  MetricFragment
 } from '@/types';
-import { EmptyJobCounts } from '@/services/queue';
+import { EmptyJobCounts } from 'src/constants';
 import create from 'zustand';
 import { makeArray } from '@/lib';
 
@@ -10,13 +10,13 @@ interface TJobListState {
   jobCounts: JobCounts;
   expandedRowIds: Set<string>;
   selectedJobIds: Set<string>;
-  jobs: Array<JobFragment>;
-  selectedJobs: Array<JobFragment>;
-  expandedJobs: Array<JobFragment>;
+  jobs: Array<MetricFragment>;
+  selectedJobs: Array<MetricFragment>;
+  expandedJobs: Array<MetricFragment>;
   totalJobs: number;
   selectedCount: number;
   clearJobs: () => void;
-  setJobs: (jobs: Array<JobFragment>) => void;
+  setJobs: (jobs: Array<MetricFragment>) => void;
   setJobCounts: (counts: JobCounts) => void;
   setExpanded: (jobId: string | string[], expanded: boolean) => void;
   setSelected: (jobId: string | string[]) => void;
@@ -29,7 +29,7 @@ interface TJobListState {
   removeJobs: (id: string | string[]) => void;
 }
 
-type JobOrId = string | JobFragment;
+type JobOrId = string | MetricFragment;
 
 export const useJobsStore = create<TJobListState>((set, get) => ({
   expandedRowIds: new Set<string>(),
@@ -128,7 +128,7 @@ export const useJobsStore = create<TJobListState>((set, get) => ({
     const id = typeof job === 'string' ? job : job.id;
     return selectedJobIds.has(id);
   },
-  setJobs(jobs: Array<JobFragment>) {
+  setJobs(jobs: Array<MetricFragment>) {
     // Note: for our purposes, we modify the array directly
     // to avoid some issues we're investigating with grid re-renders.
     const { selectedJobIds, expandedRowIds, jobs: prev } = get();
@@ -160,12 +160,12 @@ export const useJobsStore = create<TJobListState>((set, get) => ({
     };
     set({ jobCounts });
   },
-  get selectedJobs(): Array<JobFragment> {
+  get selectedJobs(): Array<MetricFragment> {
     const { jobs, selectedJobIds } = get();
     if (selectedJobIds.size === 0) return [];
     return jobs.filter(job => selectedJobIds.has(job.id));
   },
-  get expandedJobs(): Array<JobFragment> {
+  get expandedJobs(): Array<MetricFragment> {
     const { jobs, expandedRowIds } = get();
     if (expandedRowIds.size === 0) return [];
     return jobs.filter(job => expandedRowIds.has(job.id));
@@ -181,7 +181,7 @@ export const useJobsStore = create<TJobListState>((set, get) => ({
   },
 }));
 
-function getId(job: JobFragment | string): string {
+function getId(job: MetricFragment | string): string {
   return typeof job === 'string' ? job : job.id;
 }
 

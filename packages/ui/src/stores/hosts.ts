@@ -99,7 +99,7 @@ export const useStore = createStore<THostState>(
                 Object.assign(host.queues[index], x);
               }
             });
-          })
+          });
           return get().hosts[hostIndex].queues;
         }
         return [];
@@ -228,8 +228,8 @@ export const useStore = createStore<THostState>(
         });
       },
       updateHost(id: string, delta: Partial<Omit<QueueHost, 'id'>>): boolean {
-        let result = false
-        let _queues: Queue[] = []
+        let result = false;
+        let _queues: Queue[] = [];
         set((draft) => {
           const idx = draft.hosts.findIndex((x) => x.id === id);
           if (idx >= 0) {

@@ -1,5 +1,5 @@
 import { getJobsByFilter } from '@/services/queue/api';
-import type { JobFragment, JobCounts, GetJobsQuery } from '@/types';
+import type { MetricFragment, JobCounts, GetJobsQuery } from '@/types';
 import { JobStatus, useGetJobsByIdQuery, useGetJobsQuery } from '@/types';
 import { useListState } from '@mantine/hooks';
 import produce from 'immer';
@@ -29,7 +29,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
 
   const { queue, updateQueue } = useQueue(queueId);
 
-  const [filteredPages, filteredPageHandlers] = useListState<JobFragment[]>([]);
+  const [filteredPages, filteredPageHandlers] = useListState<MetricFragment[]>([]);
   const [shouldFetchData, textSearchPollingDisabled, pollingInterval] =
     useNetworkSettingsStore(
       (state) => [
@@ -95,7 +95,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
     }
   }
 
-  function updateResults(jobs: JobFragment[], counts: JobCounts) {
+  function updateResults(jobs: MetricFragment[], counts: JobCounts) {
     setJobs(jobs);
     updateCounts(counts);
   }
@@ -111,7 +111,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
     pollInterval: pollingInterval,
     skip: !shouldFetchData || !!filter?.length,
     onCompleted: (data: GetJobsQuery) => {
-      const jobs = data.getJobs as JobFragment[];
+      const jobs = data.getJobs as MetricFragment[];
       setCalled(true);
       setJobs(jobs);
     },
@@ -129,7 +129,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
       filter?.length === 0 ||
       textSearchPollingDisabled,
     onCompleted: (data) => {
-      const jobs = data.getJobsById as JobFragment[];
+      const jobs = data.getJobsById as MetricFragment[];
       setJobs(jobs);
       setCalled(true);
     },
