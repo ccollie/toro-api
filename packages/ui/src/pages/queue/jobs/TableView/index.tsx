@@ -1,7 +1,7 @@
 import { DbExclamationIcon } from 'src/components/Icons';
 import { useJobsStore } from '@/stores';
 import { useWhyDidYouUpdate } from 'src/hooks';
-import { JobStatus } from 'src/types';
+import { JobType } from 'src/types';
 import shallow from 'zustand/shallow';
 import { useRemoveJobSelectionOnUnmount } from '../hooks';
 import React from 'react';
@@ -9,13 +9,13 @@ import { EmptyBody } from 'src/components/Table/EmptyBody';
 import { TableWrapper } from 'src/components/Table/TableWrapper';
 import { Cell, Header, JobColumnType, useColumns } from './columns';
 import { Checkbox, Group, Text } from '@mantine/core';
-import type { Job, MetricFragment, Status } from 'src/types';
+import type { Job, JobFragment } from 'src/types';
 
 interface TableProps {
   queueId: string;
-  status: Status;
+  status: JobType;
   isReadOnly: boolean;
-  jobs: Array<Job | MetricFragment>;
+  jobs: Array<Job | JobFragment>;
   loading?: boolean;
   isSelected: (job: string) => boolean;
   toggleSelected: (id: string) => void;
@@ -34,7 +34,7 @@ function Empty({ colSpan }: { colSpan: number }) {
 }
 
 interface JobRowProps {
-  job: MetricFragment;
+  job: JobFragment;
   columns: JobColumnType[];
   isSelected: boolean;
   toggleSelected: (id: string) => void;
@@ -65,7 +65,7 @@ function JobRow(props: JobRowProps) {
 
 const InnerTableView: React.VFC<TableProps> = (props) => {
   const { jobs, queueId, status, isSelected, toggleSelected, removeSelected } = props;
-  const columns = useColumns(queueId, status as JobStatus);
+  const columns = useColumns(queueId, status as JobType);
   const [selectedCount, clearSelected, setSelected] = useJobsStore(
     (state) => [state.selectedCount, state.clear, state.selectJobs],
     shallow

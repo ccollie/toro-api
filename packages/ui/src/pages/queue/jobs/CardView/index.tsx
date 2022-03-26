@@ -1,14 +1,14 @@
 import React from 'react';
 import { JobCard } from '../JobCard';
-import type { MetricFragment, Queue, Status } from 'src/types';
+import type { JobFragment, JobState, Queue } from 'src/types';
 import { useQueue } from '@/hooks';
 
 interface CardViewProps {
   queueId: Queue['id'];
-  jobs: MetricFragment[];
-  status: Status;
+  jobs: JobFragment[];
+  status: JobState;
   isReadOnly: boolean;
-  onClick?: (job: MetricFragment) => void;
+  onClick?: (job: JobFragment) => void;
   isSelected: (id: string) => boolean;
   toggleSelected: (id: string) => void;
   removeSelected: (id: string) => void;

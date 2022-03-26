@@ -1,12 +1,13 @@
 import { LoadingOverlay, ScrollArea } from '@mantine/core';
-import React, { useCallback, useEffect } from 'react';
-import { useNetworkSettingsStore } from 'src/stores/network-settings';
+import React, { useEffect } from 'react';
+import { useMatch } from 'react-location';
+import { LocationGenerics } from 'src/types';
 import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
 import { useJobListQuery } from '../hooks/use-job-list-query2';
-import { useQueue, useUnmountEffect, useWhyDidYouUpdate } from '@/hooks';
+import { useUpdateEffect, useWhyDidYouUpdate } from '@/hooks';
 import { useInterval } from '@mantine/hooks';
-import { useJobsStore } from '@/stores';
+import { useJobsStore, useNetworkSettingsStore } from '@/stores';
 import CardView from '../CardView';
 import TableView from '../TableView';
 import JobsToolbar from '../Toolbar';
@@ -20,9 +21,10 @@ export const Jobs = () => {
     jobView,
     jobFilter: filter,
   } = useJobQueryParameters();
-  const pollingInterval = useNetworkSettingsStore((state) => state.pollingInterval);
 
-  const { queue } = useQueue(queueId);
+  const { data: { queue } } = useMatch<LocationGenerics>();
+
+  const pollingInterval = useNetworkSettingsStore((state) => state.pollingInterval);
 
   useWhyDidYouUpdate('JobList', {
     queueId,
@@ -35,7 +37,6 @@ export const Jobs = () => {
   // todo: load
   const { loading, called, jobs, fetchJobs, pageCount } = useJobListQuery({
     queueId,
-    status,
     filter,
   });
 
@@ -50,20 +51,29 @@ export const Jobs = () => {
       shallow,
     );
 
-  const exec = useCallback(() => {
-    !loading && fetchJobs(page);
-  }, [page]);
+  function exec() {
+    if (!loading) {
+      interval.stop();
+      fetchJobs(status, page).finally(() => interval.start());
+    }
+  }
 
   const interval = useInterval(exec, pollingInterval);
 
   useEffect(() => {
     exec();
     interval.start();
-  }, [queue, exec]);
+    return () => interval.stop();
+  }, []);
 
-  useUnmountEffect(() => {
-    interval.stop();
-  });
+  useUpdateEffect(exec, [status, page]);
+
+  // todo: error page
+  if (!queue) {
+    return <>
+      <div> Queue Not Found</div>
+    </>;
+  }
 
   return (
     <section className="flex-1">
@@ -97,7 +107,7 @@ export const Jobs = () => {
               isSelected={isSelected}
               removeSelected={removeSelected}
               toggleSelected={toggleSelected}
-              isReadOnly={queue.isReadonly}
+              isReadOnly={!!queue?.isReadonly}
             />
           </ScrollArea>
         )}
@@ -109,7 +119,7 @@ export const Jobs = () => {
             isSelected={isSelected}
             removeSelected={removeSelected}
             toggleSelected={toggleSelected}
-            isReadOnly={queue.isReadonly}
+            isReadOnly={!!queue?.isReadonly}
           />
         )}
       </div>

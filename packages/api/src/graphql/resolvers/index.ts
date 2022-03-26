@@ -1,4 +1,4 @@
-export * from '../scalars/JobStatusEnum';
+export * from '../scalars/JobType';
 export * from './host/query';
 export * from './queue/query';
 export * from './job/query';

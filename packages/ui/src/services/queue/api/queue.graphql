@@ -56,11 +56,12 @@ mutation ResumeQueue($id: ID!) {
 
 mutation DeleteQueue($id: ID!, $checkActivity: Boolean = false) {
   deleteQueue(id: $id, options: { checkActivity: $checkActivity }) {
-    deletedKeys
+    queueId
+    deletedJobCount
   }
 }
 
-mutation CleanQueue($id: ID! $grace: Duration!, $limit: Int, $status: JobStatus) {
+mutation CleanQueue($id: ID! $grace: Duration!, $limit: Int, $status: CleanQueueJobType) {
   cleanQueue(input: { id: $id, grace: $grace, limit: $limit, status: $status }) {
     count
   }
@@ -131,8 +132,8 @@ mutation DeleteJobSchema($id: ID!, $jobName: String!) {
 }
 
 
-query InferJobSchema($id: ID!, $jobName: String!) {
-  inferJobSchema(input: { queueId: $id, jobName: $jobName}) {
+query InferJobSchema($queueId: ID!, $jobName: String!) {
+  inferJobSchema(input: { queueId: $queueId, jobName: $jobName}) {
     jobName,
     schema
     defaultOpts

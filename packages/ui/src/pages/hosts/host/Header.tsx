@@ -41,13 +41,13 @@ export const Header = ({ host }: TProps) => {
       const hostId = host?.id ?? '-1';
       onOpenRedisModal(hostId);
     }
-  }, []);
+  }, [host?.id]);
 
   const onTabChange = useCallback((tabIndex: number, tabKey: string) => {
     setActiveTab(tabIndex);
     const route = `/hosts/${host?.id}/${tabKey}`;
     navigate({ to: route });
-  }, []);
+  }, [host?.id]);
 
   return (
     <div>
@@ -59,10 +59,10 @@ export const Header = ({ host }: TProps) => {
       >
         <div className="flex items-center text-gray-400">
           <CloudServerIcon size={48} />
-          <p className="focus:outline-none text-gray-900 dark:text-gray-100 text-base ml-3">
+          <div className="focus:outline-none text-gray-900 dark:text-gray-100 text-base ml-3">
             <span className="text-3xl">{host?.name}</span>{' '}
             {host && <HostStateBadge host={host} />}
-          </p>
+          </div>
         </div>
         <Group position="center" mt={4} mr={10} className="dark:text-gray-400">
           <Tabs variant="pills" active={activeTab} onTabChange={onTabChange}>

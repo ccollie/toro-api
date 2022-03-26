@@ -2,7 +2,7 @@
 import boom from '@hapi/boom';
 import { getJobFilter, updateJobFilter as updateFilter } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
-import { FieldConfig, JobStatusEnumType } from '../../index';
+import { FieldConfig, JobType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { JobFilterTC } from '../../job/query/filter';
 
@@ -12,7 +12,7 @@ const UpdateJobFilterInput = schemaComposer.createInputTC({
     queueId: 'ID!',
     filterId: 'ID!',
     name: 'String',
-    status: JobStatusEnumType,
+    status: JobType,
     expression: 'String!',
   },
 });

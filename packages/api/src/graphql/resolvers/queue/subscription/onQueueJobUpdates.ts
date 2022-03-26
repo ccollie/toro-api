@@ -7,7 +7,7 @@ import { isEmpty, isNumber } from '@alpen/shared';
 import LRUCache from 'lru-cache';
 import ms from 'ms';
 import { createSharedSubscriptionResolver } from '../../../pubsub';
-import { FieldConfig, JobStatusEnumType } from '../../index';
+import { FieldConfig, JobType } from '../../index';
 
 function isFinishedStatus(status: string): boolean {
   return status === 'completed' || status === 'failed';
@@ -223,7 +223,7 @@ const QueueJobUpdatesFilter = schemaComposer.createInputTC({
       description: 'The job names to filter for',
     },
     states: {
-      type: [JobStatusEnumType],
+      type: [JobType],
       description: 'Only return updates for jobs with these states',
     },
   },

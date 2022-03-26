@@ -1,4 +1,5 @@
-import type { BulkStatusItem, Queue, Status } from '@/types';
+import { JobState } from '@/types';
+import type { BulkStatusItem, Queue } from '@/types';
 import { useToast, useQueue } from '@/hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import React, { useCallback } from 'react';
@@ -13,7 +14,7 @@ export type OnBulkJobAction = (action: BulkActionType, ids: string[]) => void;
 
 export function useJobBulkActions(
   queueId: Queue['id'],
-  status: Status,
+  status: JobState,
   onBulkAction?: OnBulkJobAction,
 ) {
   const toast = useToast();
@@ -30,7 +31,7 @@ export function useJobBulkActions(
     clean: 'cleared',
   };
 
-  function validState(statuses: Status[]): boolean {
+  function validState(statuses: JobState[]): boolean {
     return !queue.isReadonly && statuses.includes(status);
   }
 

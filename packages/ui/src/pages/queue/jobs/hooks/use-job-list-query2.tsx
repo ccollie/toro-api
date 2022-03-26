@@ -1,6 +1,6 @@
 import { getJobsByFilter, getJobs } from '@/services/queue/api';
-import type { MetricFragment, JobCounts, Status } from '@/types';
-import { JobStatus, SortOrderEnum } from '@/types';
+import type { JobFragment, JobCounts, JobState, JobType } from '@/types';
+import { SortOrderEnum } from '@/types';
 import { useListState } from '@mantine/hooks';
 import produce from 'immer';
 import { useCallback, useState } from 'react';
@@ -11,14 +11,12 @@ import shallow from 'zustand/shallow';
 
 interface UseFilteredJobQueryProps {
   queueId: string;
-  status: Status | 'unknown';
   filter?: string;
   pageSize?: number;
 }
 
 export const useJobListQuery = ({
                                   queueId,
-                                  status,
                                   filter,
                                   pageSize: _pageSize,
                                 }: UseFilteredJobQueryProps) => {
@@ -33,7 +31,6 @@ export const useJobListQuery = ({
 
   useWhyDidYouUpdate('useJobListQuery', {
     queueId,
-    status,
     filter,
     pageSize,
   });
@@ -48,9 +45,9 @@ export const useJobListQuery = ({
   const [iterationEnded, setIterationEnded] = useState(false);
   const {queue, updateQueue} = useQueue(queueId);
 
-  const [filteredPages, filteredPageHandlers] = useListState<MetricFragment[]>([]);
+  const [filteredPages, filteredPageHandlers] = useListState<JobFragment[]>([]);
 
-  function updateResults(jobs: MetricFragment[], counts: JobCounts) {
+  function updateResults(status: JobState, jobs: JobFragment[], counts: JobCounts) {
     setJobs(jobs);
     setCounts(counts);
     let total = parseInt((counts as any)[status], 10);
@@ -66,7 +63,8 @@ export const useJobListQuery = ({
     }));
   }
 
-  const fetch = useCallback(async function fetch(
+  async function fetch(
+    status: JobType,
     page = 1,
     sortOrder: SortOrderEnum = SortOrderEnum.Desc
   ) {
@@ -76,20 +74,20 @@ export const useJobListQuery = ({
     // todo: support "latest
     // const _status = status === 'latest' ? undefined : (status as JobStatus);
     // todo: eliminate this hack
-    const _status = (status as JobStatus);
+    const _status = (status as JobState);
 
     setLoading(true);
     try {
       const {jobs, counts} = await getJobs(queueId, _status, offset, pageSize, sortOrder);
-      updateResults(jobs, counts);
+      updateResults(_status, jobs, counts);
     } finally {
       setLoading(false);
       setCalled(true);
     }
-  }, [queueId, status, pageSize]);
+  }
 
 
-  const fetchFiltered = useCallback(async function(page: number) {
+  const fetchFiltered = useCallback(async function(status: JobState, page: number) {
     setLoading(true);
     if (!cursor) {
       setLastPage(0);
@@ -110,13 +108,13 @@ export const useJobListQuery = ({
 
     try {
       const { jobs, cursor: newCursor, total, counts } = await getJobsByFilter(queueId, {
-        status: status as JobStatus,
+        status: status as JobState,
         count: pageSize,
         cursor,
         criteria: cursor ? undefined : filter,
       });
 
-      updateResults(jobs, counts);
+      updateResults(status, jobs, counts);
       filteredPageHandlers.append(jobs);
       setTotal(total);
       if (newCursor) {
@@ -135,7 +133,7 @@ export const useJobListQuery = ({
       setLoading(false);
       setCalled(true);
     }
-  }, [queueId, status]);
+  }, [queueId]);
 
   function clear() {
     setCalled(false);
@@ -148,18 +146,18 @@ export const useJobListQuery = ({
     filteredPageHandlers.setState([]);
   }
 
-  const fetchJobs = useCallback(async (page: number) => {
+  const fetchJobs = useCallback(async (status: JobState, page: number) => {
     if (filter) {
-      await fetchFiltered(page);
+      await fetchFiltered(status, page);
     } else {
-      await fetch(page);
+      await fetch(status, page);
     }
-  }, [queueId, status]);
+  }, [queueId]);
 
-  const refresh = useCallback(async function refresh() {
+  const refresh = useCallback(async function refresh(status: JobState) {
     clear();
-    await fetch(1);
-  }, [queueId, status]);
+    await fetchJobs(status, 1);
+  }, []);
 
   return {
     counts,

@@ -29,12 +29,12 @@ export const Header = ({ queue }: TProps) => {
     setActiveTab(tabIndex);
     const route = `/queues/${queue.id}/${tabKey}`;
     navigate({ to: route });
-  }, []);
+  }, [queue?.id]);
 
   return (
     <div>
       <Paper
-        padding="xl"
+        p="xl"
         shadow="sm"
         radius="md"
         className="md:flex dark:bg-gray-800 mb-5 items-center justify-between px-4 py-6 sticky top-0"

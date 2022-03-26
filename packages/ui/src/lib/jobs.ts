@@ -1,5 +1,5 @@
 import type { Job, JobFragment, RepeatableJob } from '@/types';
-import { JobStatus } from '@/types';
+import { JobState } from '@/types';
 import { parseJSON } from 'date-fns';
 import { DEFAULT_JOB_NAME } from '@/constants';
 
@@ -20,7 +20,7 @@ export function isJobFailed(job: JobFragment | Job): boolean {
 export function isJobFinished(job: Job | JobFragment): boolean {
   if (!job) return false;
   if (job.state) {
-    return (job.state === JobStatus.Completed || job.state === JobStatus.Failed);
+    return (job.state === JobState.Completed || job.state === JobState.Failed);
   }
   return (
     job.returnvalue !== undefined ||
@@ -40,7 +40,7 @@ export function normalizeJobName(
 export function getJobDuration(job: Job | JobFragment): number {
   if (job.finishedOn) {
     return subtract(job.finishedOn, job.processedOn);
-  } else if (job.state === JobStatus.Active) {
+  } else if (job.state === JobState.Active) {
     if (!job.processedOn) {
       const processedOn = parseJSON(job.processedOn);
       return Date.now() - processedOn.getTime();

@@ -30,17 +30,19 @@ export const EmptyBody: React.FC<EmptyBodyProps> = (props)  => {
   }
 
   return (
-    <td {...rest}
-      colSpan={colSpan}
-      className="relative p-4 leading-6 text-center text-gray-500 border-0 border-t-0 border-r-0 border-l-0 border-b border-gray-200 border-solid box-border hover:bg-white"
-      style={{ transition: "background 0.3s ease 0s" }}
-    >
-      <div
-        className="my-8 mx-0 text-sm text-gray-500 border-0 border-current border-solid box-border leading-6">
-        <Center>
-          {children ?? <DefaultContent />}
-        </Center>
-      </div>
-    </td>
+    <tr>
+      <td {...rest}
+          colSpan={colSpan}
+          className="relative p-4 leading-6 text-center text-gray-500 border-0 border-t-0 border-r-0 border-l-0 border-b border-gray-200 border-solid box-border hover:bg-white"
+          style={{ transition: "background 0.3s ease 0s" }}
+      >
+        <div
+          className="my-8 mx-0 text-sm text-gray-500 border-0 border-current border-solid box-border leading-6">
+          <Center>
+            {children ?? <DefaultContent />}
+          </Center>
+        </div>
+      </td>
+    </tr>
   );
 };

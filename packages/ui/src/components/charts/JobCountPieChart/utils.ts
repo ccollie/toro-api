@@ -1,6 +1,6 @@
-import type { JobCounts, JobStatus } from 'src/types';
-
-export type OnPieClickCallback = (status: JobStatus, value?: number) => void;
+import type { JobCounts } from 'src/types';
+import { JobState } from 'src/types';
+export type OnPieClickCallback = (status: JobState, value?: number) => void;
 
 export type PieChartDataProps = {
   height?: number;
@@ -9,14 +9,12 @@ export type PieChartDataProps = {
   onClick?: OnPieClickCallback;
 };
 
-export const Colors: Record<JobStatus, string> = {
+export const Colors: Record<JobState, string> = {
   waiting: 'hsl(32, 70%, 50%)',
   active: 'hsl(22, 70%, 50%)',
   completed: 'hsl(132, 70%, 50%)',
   failed: 'hsl(345, 70%, 50%)',
-  paused: 'hsl(345, 70%, 50%)',
   delayed: 'hsl(292, 70%, 50%)',
-  unknown: 'hsl(0,7%,67%)',
   // eslint-disable-next-line camelcase
   waiting_children: 'hsl(191,70%,50%)', // not used currently
 };
@@ -31,7 +29,7 @@ export function normalizeData(props: PieChartDataProps): DataPoint[] {
   const data: DataPoint[] = [];
   const {__typename, ...counts } = props.counts;
   Object.entries(counts).forEach(([status, value]) => {
-    const color = Colors[status as JobStatus];
+    const color = Colors[status as JobState];
     data.push({
       status,
       value: value ?? 0, //ts couldn't infer this

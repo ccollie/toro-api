@@ -4,11 +4,11 @@ import { isJobFailed } from 'src/lib';
 import s from './Details.module.css';
 import { DetailsContent } from './DetailsContent/DetailsContent';
 import { Tabs } from '@mantine/core';
-import type { Job, MetricFragment, Status } from 'src/types';
+import type { Job, JobFragment, JobState } from 'src/types';
 
 interface DetailsProps {
-  job: Job | MetricFragment;
-  status: Status;
+  job: Job | JobFragment;
+  status: JobState;
 }
 
 export const Details = ({ status, job }: DetailsProps) => {

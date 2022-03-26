@@ -1,4 +1,5 @@
-import type { HostQueuesFilter, Queue, SortOrderEnum, JobStatus } from './generated';
+import type { HostQueuesFilter, Queue, SortOrderEnum } from './generated';
+import { JobState } from './generated';
 
 export const STATUSES = {
   latest: 'latest',
@@ -12,7 +13,7 @@ export const STATUSES = {
 
 // https://stackoverflow.com/questions/56841134/use-typescript-enum-values-to-create-new-type
 // convert Enum values to type
-export type States = `${JobStatus}`;
+export type States = `${JobState}`;
 
 export type Status = keyof typeof STATUSES;
 

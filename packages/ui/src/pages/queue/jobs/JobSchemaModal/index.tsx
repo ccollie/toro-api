@@ -119,6 +119,7 @@ export const JobSchemaModal = (props: JobSchemaModalOpts) => {
             !!schema &&
             (!isEmptyObject(schema.schema) || !isEmptyObject(schema.defaultOpts));
           setChanged(canSave);
+          toast.success('Schema inferred');
         })
         .catch((err) => {
           const msg = err instanceof Error ? err.message : `${err}`;

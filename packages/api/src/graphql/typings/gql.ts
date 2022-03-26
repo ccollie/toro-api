@@ -55,7 +55,7 @@ export type AddJobLogResult = {
   count: Scalars['Int'];
   /** The job id */
   id: Scalars['String'];
-  state?: Maybe<JobStatus>;
+  state?: Maybe<JobType>;
 };
 
 export type AggregateInfo = {
@@ -157,6 +157,15 @@ export type ChangeJobDelayInput = {
   queueId: Scalars['String'];
 };
 
+export enum CleanQueueJobType {
+  Active = 'active',
+  Completed = 'completed',
+  Delayed = 'delayed',
+  Failed = 'failed',
+  Paused = 'paused',
+  Wait = 'wait',
+}
+
 export type ClearRuleAlertsResult = {
   /** The count of deleted alerts */
   deletedItems: Scalars['Int'];
@@ -187,7 +196,7 @@ export type CreateJobFilterInput = {
   expression: Scalars['String'];
   name: Scalars['String'];
   queueId: Scalars['ID'];
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobType>;
 };
 
 export type CreateJobInput = {
@@ -295,7 +304,7 @@ export type DeleteJobsByFilterInput = {
   /** The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null */
   cursor?: InputMaybe<Scalars['Int']>;
   /** Search for jobs having this status */
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobType>;
 };
 
 export type DeleteJobsByFilterPayload = {
@@ -323,8 +332,8 @@ export type DeleteNotificationChannelResult = {
 };
 
 export type DeleteQueueDeleteResult = {
-  /** The number of keys deleted */
-  deletedKeys: Scalars['Int'];
+  /** The number of jobs in the queue at the time of deletion */
+  deletedJobCount: Scalars['Int'];
   /** The queue host */
   host: QueueHost;
   /** The id of the deleted queue */
@@ -368,7 +377,7 @@ export type DeleteRepeatableJobOptions = {
   tz?: InputMaybe<Scalars['String']>;
 };
 
-export type DeleteRepeatableResult = {
+export type DeleteRepeatableJobResult = {
   queue: Queue;
 };
 
@@ -433,7 +442,7 @@ export type FindJobsInput = {
   /** The id of the desired queue */
   queueId: Scalars['ID'];
   scanCount?: InputMaybe<Scalars['Int']>;
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobState>;
 };
 
 export type FindJobsResult = {
@@ -444,6 +453,11 @@ export type FindJobsResult = {
   /** Total number of jobs in the given state, but not necessarily the filtered count */
   total: Scalars['Int'];
 };
+
+export enum FinishedStatus {
+  Completed = 'completed',
+  Failed = 'failed',
+}
 
 /** Values needed to create a FlowJob */
 export type FlowJobInput = {
@@ -487,6 +501,7 @@ export type FlowJobOptionsInput = {
   stackTraceLimit?: InputMaybe<Scalars['Int']>;
   /** The number of milliseconds after which the job should be fail with a timeout error [optional] */
   timeout?: InputMaybe<Scalars['Int']>;
+  /** Timestamp when the job was created. Defaults to `Date.now() */
   timestamp?: InputMaybe<Scalars['Date']>;
 };
 
@@ -516,7 +531,7 @@ export type GetJobsInput = {
   offset?: InputMaybe<Scalars['Int']>;
   queueId: Scalars['ID'];
   sortOrder?: InputMaybe<SortOrderEnum>;
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobState>;
 };
 
 export type HistogramBin = {
@@ -636,7 +651,7 @@ export type Job = {
   queueId: Scalars['String'];
   returnvalue?: Maybe<Scalars['JSON']>;
   stacktrace: Array<Scalars['String']>;
-  state: JobStatus;
+  state?: Maybe<JobState>;
   timestamp: Scalars['Date'];
 };
 
@@ -711,7 +726,7 @@ export type JobFilter = {
   /** A descriptive name of the filter */
   name: Scalars['String'];
   /** Optional job status to filter jobs by */
-  status?: Maybe<JobStatus>;
+  status?: Maybe<JobType>;
 };
 
 export type JobLocatorInput = {
@@ -767,6 +782,7 @@ export type JobOptions = {
   stackTraceLimit?: Maybe<Scalars['Int']>;
   /** The number of milliseconds after which the job should be fail with a timeout error [optional] */
   timeout?: Maybe<Scalars['Int']>;
+  /** Timestamp when the job was created. Defaults to `Date.now() */
   timestamp?: Maybe<Scalars['Date']>;
 };
 
@@ -800,6 +816,7 @@ export type JobOptionsInput = {
   stackTraceLimit?: InputMaybe<Scalars['Int']>;
   /** The number of milliseconds after which the job should be fail with a timeout error [optional] */
   timeout?: InputMaybe<Scalars['Int']>;
+  /** Timestamp when the job was created. Defaults to `Date.now() */
   timestamp?: InputMaybe<Scalars['Date']>;
 };
 
@@ -864,7 +881,7 @@ export type JobSearchInput = {
   /** The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null */
   cursor?: InputMaybe<Scalars['String']>;
   /** Search for jobs having this status */
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobState>;
 };
 
 export type JobSearchPayload = {
@@ -874,6 +891,15 @@ export type JobSearchPayload = {
   jobs: Array<Job>;
   total: Scalars['Int'];
 };
+
+export enum JobState {
+  Active = 'active',
+  Completed = 'completed',
+  Delayed = 'delayed',
+  Failed = 'failed',
+  Waiting = 'waiting',
+  WaitingChildren = 'waiting_children',
+}
 
 /** Base implementation for job stats information. */
 export type JobStatsInterface = {
@@ -889,12 +915,14 @@ export type JobStatsInterface = {
   startTime: Scalars['Date'];
 };
 
-export enum JobStatus {
+export enum JobType {
   Active = 'active',
   Completed = 'completed',
   Delayed = 'delayed',
   Failed = 'failed',
   Paused = 'paused',
+  Repeat = 'repeat',
+  Wait = 'wait',
   Waiting = 'waiting',
   WaitingChildren = 'waiting_children',
 }
@@ -918,8 +946,8 @@ export type JobsMemoryAvgInput = {
   jobName?: InputMaybe<Scalars['String']>;
   /** An optional upper limit of jobs to sample for the average */
   limit?: InputMaybe<Scalars['Int']>;
-  /** Job status to consider. Defaults to COMPLETED */
-  status?: InputMaybe<JobStatus>;
+  /** Job status to consider. Defaults to completed. */
+  status?: InputMaybe<JobType>;
 };
 
 /** A channel which sends notifications through email */
@@ -1184,7 +1212,7 @@ export type Mutation = {
   /** Bulk retries a list of jobs by id */
   bulkRetryJobs?: Maybe<BulkJobActionPayload>;
   changeJobDelay: Job;
-  /** Remove all jobs created outside of a grace interval in milliseconds. You can clean the jobs with the following states: COMPLETED, wait (typo for WAITING), isActive, DELAYED, and FAILED. */
+  /** Remove all jobs created outside of a grace interval in milliseconds. You can clean the jobs with the following states: completed, wait, active, delayed, paused, and failed. */
   cleanQueue: QueueCleanResult;
   /** Removes all alerts associated with a rule */
   clearRuleAlerts: ClearRuleAlertsResult;
@@ -1217,7 +1245,7 @@ export type Mutation = {
   deleteQueue: DeleteQueueDeleteResult;
   /** Delete all stats associated with a queue */
   deleteQueueStats: DeleteQueueStatsResult;
-  deleteRepeatableJob: DeleteRepeatableResult;
+  deleteRepeatableJob: DeleteRepeatableJobResult;
   deleteRepeatableJobByKey: DeleteRepeatableJobByKeyResult;
   /** Delete a rule */
   deleteRule: DeleteRuleResult;
@@ -1232,6 +1260,8 @@ export type Mutation = {
   /** Moves job from active to delayed. */
   moveJobToDelayed: MoveJobToDelayedResult;
   moveJobToFailed: MoveoJobToFailedResult;
+  /** Completely destroys the queue and all of its contents irreversibly. Note: This operation requires to iterate on all the jobs stored in the queue, and can be slow for very large queues. */
+  obliterateQueue?: Maybe<JobCounts>;
   /**
    * Pause the queue.
    *
@@ -1248,6 +1278,8 @@ export type Mutation = {
   retryJobs: RetryJobsPayload;
   /** Associate a JSON schema with a job name on a queue */
   setJobSchema: JobSchema;
+  /** Trim the event stream to an approximately maxLength. */
+  trimQueueEvents: Queue;
   /** Stop tracking a queue */
   unregisterQueue: UnregisterQueueResult;
   updateJob: UpdateJobResult;
@@ -1428,6 +1460,10 @@ export type MutationMoveJobToFailedArgs = {
   input?: InputMaybe<MoveJobToFailedInput>;
 };
 
+export type MutationObliterateQueueArgs = {
+  input?: InputMaybe<QueueObliterateInput>;
+};
+
 export type MutationPauseQueueArgs = {
   id: Scalars['ID'];
 };
@@ -1458,6 +1494,11 @@ export type MutationRetryJobsArgs = {
 
 export type MutationSetJobSchemaArgs = {
   input: JobSchemaInput;
+};
+
+export type MutationTrimQueueEventsArgs = {
+  id: Scalars['ID'];
+  maxLength?: InputMaybe<Scalars['Int']>;
 };
 
 export type MutationUnregisterQueueArgs = {
@@ -1849,6 +1890,10 @@ export type QueryValidateJobOptionsArgs = {
 };
 
 export type Queue = {
+  /** Queue configuration */
+  config?: Maybe<QueueConfig>;
+  /** Returns the current default job options of the specified queue. */
+  defaultJobOptions?: Maybe<JobOptions>;
   /** Gets the current job ErrorPercentage rates based on an exponential moving average */
   errorPercentageRate: Meter;
   /** Gets the current job Errors rates based on an exponential moving average */
@@ -1879,6 +1924,7 @@ export type Queue = {
   jobsById: Array<Job>;
   /** Gets the last recorded queue stats snapshot for a metric */
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
+  limiter?: Maybe<QueueLimiter>;
   metricCount: Scalars['Int'];
   metrics: Array<Metric>;
   name: Scalars['String'];
@@ -1895,6 +1941,8 @@ export type Queue = {
   /** Gets rule alerts associated with the queue */
   ruleAlerts: Array<RuleAlert>;
   rules: Array<Rule>;
+  schedulerCount: Scalars['Int'];
+  schedulers: Array<QueueScheduler>;
   /** Queries for queue stats snapshots within a range */
   stats: Array<StatsSnapshot>;
   /** Aggregates queue statistics within a range */
@@ -1978,6 +2026,10 @@ export type QueueRuleAlertsArgs = {
   input?: InputMaybe<QueueRuleAlertsInput>;
 };
 
+export type QueueSchedulersArgs = {
+  limit?: InputMaybe<Scalars['Int']>;
+};
+
 export type QueueStatsArgs = {
   input: StatsQueryInput;
 };
@@ -2010,7 +2062,7 @@ export type QueueCleanInput = {
   /** limit Maximum amount of jobs to clean per call. If not provided will clean all matching jobs. */
   limit?: InputMaybe<Scalars['Int']>;
   /** Status of the jobs to clean */
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<CleanQueueJobType>;
 };
 
 export type QueueCleanResult = {
@@ -2020,6 +2072,20 @@ export type QueueCleanResult = {
   id: Scalars['ID'];
   /** Returns a list of cleared job ids */
   jobIds?: Maybe<Array<Scalars['ID']>>;
+};
+
+/** Queue configuration */
+export type QueueConfig = {
+  /** returns true if the jobs can be retried */
+  allowRetries: Scalars['Boolean'];
+  /** the queue id */
+  id: Scalars['ID'];
+  /** returns true if the queue is readonly */
+  isReadonly: Scalars['Boolean'];
+  /** the queue name */
+  name: Scalars['String'];
+  /** the queue prefix */
+  prefix?: Maybe<Scalars['String']>;
 };
 
 export enum QueueFilterStatus {
@@ -2145,7 +2211,7 @@ export type QueueJobUpdatesFilterInput = {
   names?: InputMaybe<Array<Scalars['String']>>;
   queueId: Scalars['ID'];
   /** Only return updates for jobs with these states */
-  states?: InputMaybe<Array<InputMaybe<JobStatus>>>;
+  states?: InputMaybe<Array<InputMaybe<JobType>>>;
 };
 
 export type QueueJobsByIdInput = {
@@ -2156,7 +2222,19 @@ export type QueueJobsInput = {
   limit?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   sortOrder?: InputMaybe<SortOrderEnum>;
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobState>;
+};
+
+export type QueueLimiter = {
+  groupKey?: Maybe<Scalars['String']>;
+};
+
+export type QueueObliterateInput = {
+  /** The maximum number of deleted keys per iteration. */
+  count?: InputMaybe<Scalars['Int']>;
+  /** Use force = true to force obliteration even with active jobs in the queue. */
+  force?: InputMaybe<Scalars['Boolean']>;
+  id: Scalars['ID'];
 };
 
 /** Options for retrieving queue rule alerts */
@@ -2169,6 +2247,29 @@ export type QueueRuleAlertsInput = {
   sortOrder?: InputMaybe<SortOrderEnum>;
   /** Consider alerts starting on or after this date */
   startDate?: InputMaybe<Scalars['Date']>;
+};
+
+export type QueueScheduler = {
+  /** address of the client */
+  addr: Scalars['String'];
+  /** total duration of the connection (in seconds) */
+  age: Scalars['Int'];
+  /** the current database number */
+  db: Scalars['Int'];
+  id?: Maybe<Scalars['String']>;
+  /** Idle time of the connection (in seconds) */
+  idle: Scalars['Int'];
+  multi: Scalars['Int'];
+  name?: Maybe<Scalars['String']>;
+  obl: Scalars['Int'];
+  oll: Scalars['Int'];
+  omem: Scalars['Int'];
+  qbuf: Scalars['Int'];
+  qbufFree: Scalars['Int'];
+  role?: Maybe<Scalars['String']>;
+  /** Date/time when the connection started */
+  started?: Maybe<Scalars['DateTime']>;
+  sub: Scalars['Int'];
 };
 
 export type QueueWorker = {
@@ -2272,6 +2373,8 @@ export type RetryJobsInput = {
   count?: InputMaybe<Scalars['Int']>;
   /** The id of the queue */
   queueId: Scalars['ID'];
+  /** Job status to consider. Defaults to failed. */
+  state?: InputMaybe<FinishedStatus>;
   /** retry all failed jobs before the given timestamp */
   timestamp?: InputMaybe<Scalars['Int']>;
 };
@@ -2873,7 +2976,7 @@ export type UpdateJobFilterInput = {
   filterId: Scalars['ID'];
   name?: InputMaybe<Scalars['String']>;
   queueId: Scalars['ID'];
-  status?: InputMaybe<JobStatus>;
+  status?: InputMaybe<JobType>;
 };
 
 export type UpdateJobFilterResult = {

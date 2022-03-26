@@ -57,7 +57,7 @@ fragment RepeatableJob on RepeatableJob {
     descr
 }
 
-query FindJobs($id: ID!, $status: JobStatus, $criteria: String!, $cursor: String, $limit: Int = 10) {
+query FindJobs($id: ID!, $status: JobState, $criteria: String!, $cursor: String, $limit: Int = 10) {
     findJobs(input: {queueId: $id, scanCount: $limit, expression: $criteria, status: $status}) {
         nextCursor,
         jobs {
@@ -66,7 +66,7 @@ query FindJobs($id: ID!, $status: JobStatus, $criteria: String!, $cursor: String
     }
 }
 
-query GetJobsByFilter($id: ID!, $status: JobStatus, $cursor: String, $criteria: String, $count: Int = 10) {
+query GetJobsByFilter($id: ID!, $status: JobState, $cursor: String, $criteria: String, $count: Int = 10) {
     queue(id: $id) {
         id
         jobSearch(filter: { cursor: $cursor, count: $count, status: $status, criteria: $criteria }) {
@@ -132,7 +132,7 @@ query GetQueueJobCounts($id: ID!) {
     }
 }
 
-query GetQueueJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobStatus, $sortOrder: SortOrderEnum) {
+query GetQueueJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobState, $sortOrder: SortOrderEnum) {
     queue(id: $id) {
         id
         jobs(input: { offset: $offset, limit: $limit, status: $status, sortOrder: $sortOrder }) {
@@ -142,7 +142,7 @@ query GetQueueJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobSta
     }
 }
 
-query GetJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobStatus, $sortOrder: SortOrderEnum) {
+query GetJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobState, $sortOrder: SortOrderEnum) {
     getJobs(input: { queueId: $id, offset: $offset, limit: $limit, status: $status, sortOrder: $sortOrder }) {
         ...Job
     }
@@ -158,13 +158,13 @@ query GetRepeatableJobs($id: ID!, $offset: Int = 0, $limit: Int = 10, $sortOrder
     }
 }
 
-query GetJobById($id: ID!, $id: ID!) {
-    job(queueId: $id, id: $id) {
+query GetJobById($queueId: ID!, $id: ID!) {
+    job(queueId: $queueId, id: $id) {
         ...Job
     }
 }
 
-query GetJobLogs($id: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
+query GetJobLogs($queueId: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
     job(queueId: $id, id: $id) {
         logs(start: $start, end: $end) {
             count

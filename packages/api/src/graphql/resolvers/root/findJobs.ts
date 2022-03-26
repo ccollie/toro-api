@@ -2,8 +2,7 @@ import { findJobs as search } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnumType } from '../../scalars';
-import { FindJobsInput } from '../../typings';
+import { JobState } from '../../scalars';
 
 export const findJobs: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -37,7 +36,7 @@ export const findJobs: FieldConfig = {
           defaultValue: 20,
         },
         status: {
-          type: JobStatusEnumType,
+          type: JobState,
         },
         cursor: {
           type: 'String',

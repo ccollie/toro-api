@@ -1,5 +1,4 @@
-import { ExportMimeTypes, ExportStage, JobExportOptions, JobStatus } from '@/types';
-import type { MetricFragment, Status } from '@/types';
+import { ExportMimeTypes, ExportStage, JobExportOptions, JobFragment, JobState } from '@/types';
 import { useCallbackRef } from '@/hooks';
 import { download, noop } from '@/lib';
 import { useRef } from 'react';
@@ -37,7 +36,7 @@ interface UpdateState {
   isCancelled: boolean;
   cursor?: string;
   remainder: number;
-  status: Status;
+  status: JobState;
 }
 
 export function useJobDownloads(props: DownloadJobProps) {
@@ -49,13 +48,13 @@ export function useJobDownloads(props: DownloadJobProps) {
 
   function fetchByCriteria(
     filter: string,
-    status: Status,
+    status: JobState,
     state: UpdateState
-  ): Promise<MetricFragment[]> {
+  ): Promise<JobFragment[]> {
     const { cursor, remainder } = state;
     const fetchCount = Math.min(count, remainder);
     return getJobsByFilter(queueId, {
-      status: status as JobStatus,
+      status,
       count: fetchCount,
       cursor,
       criteria: cursor ? undefined : filter,
@@ -68,11 +67,11 @@ export function useJobDownloads(props: DownloadJobProps) {
   }
 
   function fetch(
-    status: Status,
+    status: JobState,
     state: UpdateState
-  ): Promise<MetricFragment[]> {
+  ): Promise<JobFragment[]> {
     state.pageNumber++;
-    return getJobs(queueId, status as JobStatus, state.pageNumber, pageSize) // calculate this !!
+    return getJobs(queueId, status, state.pageNumber, pageSize) // calculate this !!
       .then(({ counts, jobs }) => {
         let total = parseInt((counts as any)[status], 10);
         if (isNaN(total)) total = 0;
@@ -87,7 +86,7 @@ export function useJobDownloads(props: DownloadJobProps) {
   }
 
   async function saveResults(
-    data: MetricFragment[],
+    data: JobFragment[],
     options: JobExportOptions
   ): Promise<void> {
     const { format, showHeaders, filename, fields } = options;
@@ -176,7 +175,7 @@ export function useJobDownloads(props: DownloadJobProps) {
   async function start(options: JobExportOptions): Promise<void> {
     const state = init(options);
     const { filter, status } = options;
-    const data: MetricFragment[] = [];
+    const data: JobFragment[] = [];
     let isDone = false;
 
     cancelRef.current = () => {
@@ -184,7 +183,7 @@ export function useJobDownloads(props: DownloadJobProps) {
     };
 
     while (!state.isCancelled && !isDone && state.remainder) {
-      let jobs: MetricFragment[];
+      let jobs: JobFragment[];
       if (filter) {
         jobs = await fetchByCriteria(filter, status, state);
       } else {

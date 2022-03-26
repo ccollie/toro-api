@@ -1,4 +1,4 @@
-import { GetQueueJobsDocument, SortOrderEnum } from '@/types';
+import { GetQueueJobsDocument, JobFragment, SortOrderEnum } from '@/types';
 import { useLazyQuery } from '@apollo/client';
 import produce from 'immer';
 import { useCallback, useState } from 'react';
@@ -6,10 +6,10 @@ import type {
   JobCounts,
   MetricFragment,
   Status,
-  JobStatus
+  JobState
 } from '@/types';
-import { EmptyJobCounts } from '@/services/queue';
 import { useQueue } from '@/hooks';
+import { EmptyJobCounts } from 'src/constants';
 
 interface JobListProps {
   queueId: string;
@@ -20,19 +20,19 @@ export function useJobQuery(props: JobListProps) {
   const { queueId, status } = props;
 
   const [counts, setCounts] = useState<JobCounts>(EmptyJobCounts);
-  const [data, setData] = useState<MetricFragment[]>([]);
+  const [data, setData] = useState<JobFragment[]>([]);
   const [total, setTotal] = useState(0);
 
   const {queue, updateQueue}= useQueue(queueId);
 
-  function updateResults(jobs: MetricFragment[], counts: JobCounts) {
+  function updateResults(jobs: JobFragment[], counts: JobCounts) {
     setData(jobs);
     setCounts(counts);
     let total = parseInt((counts as any)[status], 10);
     if (isNaN(total)) total = 0;
     setTotal(total);
     if (queue) {
-      updateQueue(queueId, produce(queue, draft => {
+      updateQueue(produce(queue, draft => {
         Object.assign(draft.jobCounts, {
           ...(draft.jobCounts ?? {}),
           ...counts
@@ -52,7 +52,7 @@ export function useJobQuery(props: JobListProps) {
   ): Promise<MetricFragment[]> {
     const offset = (page - 1) * pageSize;
 
-    const _status = status === 'latest' ? undefined : (status as JobStatus);
+    const _status = status === 'latest' ? undefined : (status as JobState);
 
     return getJobs({
       variables: {

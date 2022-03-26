@@ -1,7 +1,6 @@
-import { parseDuration } from '@alpen/shared';
 import { badRequest, notFound } from '@hapi/boom';
 import { Queue } from 'bullmq';
-import { isNil, isString } from '@alpen/shared';
+import { isNil, parseDuration } from '@alpen/shared';
 import ms from 'ms';
 import pMap from 'p-map';
 import pSettle from 'p-settle';
@@ -135,7 +134,7 @@ export class Supervisor {
         host.queueManagers.forEach(addToCache);
       });
     }
-    if (isString(queue)) {
+    if (typeof queue === 'string') {
       return this.queueManagersById.get(queue as string) ?? null;
     }
 
@@ -190,7 +189,7 @@ export class Supervisor {
     let id: string;
     let mgr: QueueManager | null;
 
-    if (isString(queueOrId)) {
+    if (typeof queueOrId === 'string') {
       result = this.hostManagerByQueue.get(queueOrId);
       id = queueOrId;
     } else {
@@ -214,7 +213,7 @@ export class Supervisor {
   async ensureQueueExists(queueOrId: Queue | string): Promise<void> {
     let queue: Queue;
 
-    if (isString(queueOrId)) {
+    if (typeof queueOrId === 'string') {
       queue = this.getQueueById(queueOrId);
       if (!queue) {
         throw notFound(`Queue with id#"${queueOrId}" not found`);
@@ -252,7 +251,7 @@ export class Supervisor {
   async deleteQueue(
     queue: Queue | string,
     options?: QueueDeleteOptions,
-  ): Promise<void> {
+  ): Promise<number> {
     const opts = Object.assign(
       { checkExists: false, checkActivity: true },
       options || {},
@@ -261,7 +260,7 @@ export class Supervisor {
     const manager = this.getQueueManager(queue);
     if (!manager) {
       let fragment;
-      if (isString(queue)) {
+      if (typeof queue === 'string') {
         fragment = `id#${queue}`;
       } else if (queue) {
         fragment = `name "${queue.name}"`;
@@ -298,11 +297,16 @@ export class Supervisor {
       }
     }
 
+    const counts = await queue.getJobCounts();
+    const total = Object.values(counts).reduce((res, count) => res + count, 0);
+
     await this.removeQueue(queue);
 
     // TODO: send mail notification as well as subscription event
     await manager.removeAllQueueData();
     await manager.destroy();
+
+    return total;
   }
 
   async waitUntilReady(): Promise<Supervisor> {

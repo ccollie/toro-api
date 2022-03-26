@@ -33,6 +33,10 @@ export const deleteQueue: FieldConfig = {
         type: HostTC.NonNull,
         description: 'The queue host',
       },
+      deletedJobCount: {
+        type: 'Int!',
+        description: 'The number of jobs in the queue at the time of deletion',
+      },
     },
   }).NonNull,
   args: {
@@ -46,7 +50,7 @@ export const deleteQueue: FieldConfig = {
   ) => {
     const host = accessors.getQueueHost(id);
     const queue = accessors.getQueueById(id, true);
-    await supervisor.deleteQueue(queue, {
+    const deletedJobCount = await supervisor.deleteQueue(queue, {
       checkExists: checkExistence,
       checkActivity,
     });
@@ -57,10 +61,11 @@ export const deleteQueue: FieldConfig = {
       queueId,
       queueName,
       host,
+      deletedJobCount
     };
 
     const eventName = `${QUEUE_DELETED_PREFIX}${host.id}`;
-    publish(eventName, { queueId, queueName, hostId: host.id });
+    publish(eventName, { queueId, queueName, hostId: host.id, deletedJobCount });
 
     return payload;
   },

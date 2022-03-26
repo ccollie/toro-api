@@ -103,4 +103,5 @@ export const RedisInfo = ({ hostId, isOpen }: RedisInfoProps) => {
 function formatMins(mins: number) {
   return ms(Number(mins) * 1000, { long: true });
 }
+
 export default RedisInfo;

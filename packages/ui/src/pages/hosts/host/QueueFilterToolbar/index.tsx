@@ -1,8 +1,8 @@
 import { useDisclosure, useEscPressed, useWhyDidYouUpdate } from 'src/hooks';
 import { SortOrderEnum } from 'src/types';
 import { ActionIcon, Button, Center, Group, Paper } from '@mantine/core';
-import { FilterDropdown } from 'src/pages/hosts/host/QueueFilterToolbar/FilterDropdown';
-import RegisterQueueDialog from 'src/pages/hosts/host/QueueFilterToolbar/RegisterQueueDialog';
+import { FilterDropdown } from './FilterDropdown';
+import RegisterQueueDialog from './RegisterQueueDialog';
 import { useHostActions } from 'src/services/host/hooks';
 import React, { useCallback, useRef } from 'react';
 import type { Queue, QueueFilter, QueueHost } from 'src/types';
@@ -123,7 +123,7 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
   function ToolbarControl() {
     const filter = savedState.current;
     return (
-      <Paper shadow="xs" radius="sm" padding="sm" className="px-3">
+      <Paper shadow="xs" radius="sm" p="sm" className="px-3">
         <Group>
           <div>
             <div className="flex">
@@ -193,7 +193,7 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
   function Actions() {
     return (
       <div className="flex justify-between sm:items-center mb-8">
-        <div></div>
+        <div/>
         {/* Right: Actions */}
         <div className="flex justify-start gap-2">
           <ToolbarControl />

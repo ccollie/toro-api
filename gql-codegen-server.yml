@@ -31,27 +31,3 @@ generates:
     hooks:
       afterOneFileWrite:
         - prettier --write
-  ./packages/ui/src/types/generated.ts:
-    documents: ./packages/ui/src/**/*.graphql
-    config:
-      omitOperationSuffix: false
-      flattenGeneratedTypes: false
-      exportFragmentSpreadSubTypes: false
-      inlineFragmentTypes: "combine"
-      withComponent: false
-      withHooks: true
-      enumsAsConst: true
-      withRefetchFn: true
-      gqlImport: graphql.macro#gql
-      documentNode: "documentNode"
-      noGraphQLTag: true
-    plugins:
-      - add:
-          content:
-            - /* eslint-disable */
-      - typescript
-      - typescript-operations
-      - typescript-react-apollo
-    hooks:
-      afterOneFileWrite:
-        - prettier --write

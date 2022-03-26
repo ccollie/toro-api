@@ -1,7 +1,7 @@
-import { JobStatus } from '@/types';
+import { JobState } from '@/types';
 import React, { useState } from 'react';
 import { useJobActions, useQueue } from '@/hooks';
-import type { Job, JobFragment, Status } from '@/types';
+import type { Job, JobFragment } from '@/types';
 import {
   RetryIcon,
   TrashIcon,
@@ -14,7 +14,7 @@ import { Group, ActionIcon, Tooltip, Menu } from '@mantine/core';
 interface JobActionsProps {
   queueId: string;
   job: Job | JobFragment;
-  status?: Status;
+  status?: JobState;
   onSelect?: (job: Job) => void;
 }
 
@@ -50,17 +50,17 @@ function JobActionsMenu(props: JobMenuProps) {
           Queue again
         </Menu.Item>
       )}
-      {job.state === JobStatus.Failed && (
+      {job.state === JobState.Failed && (
         <Menu.Item disabled={readonly} icon={<RetryIcon />} onClick={actions.retry}>
           Retry
         </Menu.Item>
       )}
-      {job.state === JobStatus.Waiting && (
+      {job.state === JobState.Waiting && (
         <Menu.Item disabled={readonly} onClick={actions.moveToCompleted}>
           Move to completed
         </Menu.Item>
       )}
-      {job.state === JobStatus.Waiting && (
+      {job.state === JobState.Waiting && (
         <Menu.Item disabled={readonly} onClick={actions.moveToFailed}>
           Move to failed
         </Menu.Item>
@@ -70,7 +70,7 @@ function JobActionsMenu(props: JobMenuProps) {
       </Menu.Item>
 
       {/*<Menu.Item onClick={() => shareJob(job.id)}>Share</Menu.Item>*/}
-      {job.state === JobStatus.Delayed && (
+      {job.state === JobState.Delayed && (
         <Menu.Item disabled={readonly} icon={<PromoteIcon />} onClick={actions.promote}>
           Promote
         </Menu.Item>
@@ -85,7 +85,7 @@ function JobActionsMenu(props: JobMenuProps) {
 
 export const JobActions = (props: JobActionsProps) => {
   const { job, status = props.job.state, queueId } = props;
-  const isFinished = ['completed', 'failed'].includes(status);
+  const isFinished = ['completed', 'failed'].includes(status ?? '');
   const isDelayed = status === 'delayed';
   const { queue } = useQueue(queueId);
   const isReadonly = queue?.isReadonly;

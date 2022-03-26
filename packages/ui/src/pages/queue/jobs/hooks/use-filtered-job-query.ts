@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { MetricFragment, JobStatus } from '@/types';
+import type { JobFragment, JobState } from '@/types';
 import { usePagination, useToast } from 'src/hooks';
 import { getJobsByFilter } from '@/services/queue/api';
 
 interface UseFilteredJobQueryProps {
   queueId: string;
-  status: JobStatus;
+  status: JobState;
   filter?: string;
   page?: number;
   pageSize?: number;
@@ -29,7 +29,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
   const [lastPage, setLastPage] = useState(Math.min(page, 1));
   const [totalPages, setTotalPages] = useState(Math.min(page, 1));
 
-  const [data, setData] = useState<MetricFragment[]>([]);
+  const [data, setData] = useState<JobFragment[]>([]);
 
   const [cursor, setCursor] = useState<string>();
   const [filter] = useState<string>((_filter ?? '').trim());
@@ -93,7 +93,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
     }
   }
 
-  async function fetch(): Promise<MetricFragment[]> {
+  async function fetch(): Promise<JobFragment[]> {
     const { jobs, cursor: _cursor, total } = await getJobsByFilter(queueId, {
       status,
       count: pageSize,
@@ -150,7 +150,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
         try {
           const items = JSON.parse(data);
           if (Array.isArray(items)) {
-            setData(items as MetricFragment[]);
+            setData(items as JobFragment[]);
             return;
           }
         } catch (e) {
@@ -161,7 +161,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
     setData([]);
   }
 
-  async function getPage(index: number): Promise<MetricFragment[]> {
+  async function getPage(index: number): Promise<JobFragment[]> {
     if (index < 0 || index > totalPages) {
       return [];
     }
@@ -176,7 +176,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
       await fetchByCriteria();
       return data;
     }
-    return []
+    return [];
   }
 
   function getPreviousPage() {
@@ -210,7 +210,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
     data,
     loading,
     called
-  }
+  };
 };
 
 export default useFilteredJobQuery;

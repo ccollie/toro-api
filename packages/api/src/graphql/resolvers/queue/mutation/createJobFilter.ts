@@ -2,7 +2,7 @@
 import { EZContext } from 'graphql-ez';
 import { addJobFilter } from '@alpen/core';
 import { JobFilterTC } from '../../job/query/filter';
-import { FieldConfig, JobStatusEnumType } from '../../index';
+import { FieldConfig, JobType } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 
 
@@ -11,7 +11,7 @@ const CreateJobFilterInput = schemaComposer.createInputTC({
   fields: {
     queueId: 'ID!',
     name: 'String!',
-    status: JobStatusEnumType,
+    status: JobType,
     expression: 'String!',
   },
 });

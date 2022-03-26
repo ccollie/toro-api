@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import type { JobExportFormat, JobExportOptions, Status } from 'src/types';
+import { JobState } from 'src/types';
+import type { JobExportFormat, JobExportOptions } from 'src/types';
 import {
   Group,
   Checkbox,
@@ -11,11 +12,11 @@ import {
   SegmentedControl,
   Button,
 } from '@mantine/core';
-import { FieldList, AllFieldNames } from 'src/pages/queue/jobs/ExportJobsModal/FieldList';
+import { FieldList, AllFieldNames } from './FieldList';
 
 interface ExportOptionsProps {
   queueId: string;
-  status: Status;
+  status: JobState;
   filter?: string;
   isOpen: boolean;
   onConfirm: (evt: JobExportOptions) => void;
@@ -101,7 +102,6 @@ export const ExportOptionsModal = (props: ExportOptionsProps) => {
         <TextInput
           style={{ width: '100%' }}
           label="Filename"
-          invalid={!filename}
           required={true}
           placeholder="Enter file name"
           error={!filename && 'Missing filename'}

@@ -1,14 +1,14 @@
 import { StorageConfig } from 'src/config';
-import type { Queue, Status } from 'src/types';
+import type { JobState, Queue } from 'src/types';
 import createStore from 'zustand';
 import { persist } from 'zustand/middleware';
 
 type PreferencesState = {
   pageSize: number;
   confirmDangerousActions: boolean;
-  selectedStatuses: Record<Queue['id'], Status>;  // these need to be in their own store
-  getQueueStatus: (id: Queue['id']) => Status;
-  setQueueStatus: (id: Queue['id'], status: Status) => void;
+  selectedStatuses: Record<Queue['id'], JobState>;  // these need to be in their own store
+  getQueueStatus: (id: Queue['id']) => JobState;
+  setQueueStatus: (id: Queue['id'], status: JobState) => void;
   removeQueueStatus: (id: Queue['id']) => void;
   changeConfirmDangerousActions: (value: boolean) => void;
   toggleConfirmDangerousActions: () => void;

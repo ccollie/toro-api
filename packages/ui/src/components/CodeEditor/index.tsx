@@ -1,11 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import CodeMirror, { EditorState, Extension } from '@uiw/react-codemirror';
+import CodeMirror, {
+  EditorState,
+  EditorView,
+  Extension,
+  ReactCodeMirrorRef,
+} from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { bracketMatching } from '@codemirror/matchbrackets';
 import { closeBrackets } from '@codemirror/closebrackets';
 import { useCodeEditorStore } from '@/stores/code-editor';
 import { dimensionToString } from '@/components/utils';
+import { useUpdateEffect } from 'src/hooks';
 
 export type EditorLanguage = 'javascript' | 'json';
 
@@ -35,7 +41,9 @@ const CodeEditor = (props: TProps) => {
     basicSetup = true,
     isSingleLine,
   } = props;
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(valueOrDefault(value));
+  const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>();
+  const [view, setView] = useState<EditorView>();
   const [extensions, setExtensions] = useState<Extension[]>();
   const height = dimensionToString(props.height);
   const width = dimensionToString(props.width);
@@ -52,11 +60,25 @@ const CodeEditor = (props: TProps) => {
     [props.onChange],
   );
 
-  useEffect(() => {
-    if (value) {
-      setCode(value);
+  function valueOrDefault(value: string | undefined): string {
+    return value ?? (language === 'javascript' ? '' : '{}');
+  }
+
+  useUpdateEffect(() => {
+    if (editorRef?.view) {
+      const view = editorRef.view;
+      const currentValue = view.state.doc.toString();
+      const val = valueOrDefault(value);
+      if (val !== currentValue) {
+        setTimeout(() => {
+          view.dispatch({
+            changes: { from: 0, to: currentValue.length, insert: val },
+          });
+        }, 0);
+
+      }
     }
-  }, [value]);
+  }, [value, editorRef]);
 
   function getExtensions(): Extension[] {
     const result: Extension[] = [];
@@ -68,8 +90,13 @@ const CodeEditor = (props: TProps) => {
     } else if (language === 'javascript') {
       result.push(javascript());
       if (isSingleLine ?? true) {
+        // eslint-disable-next-line max-len
         // https://discuss.codemirror.net/t/codemirror-6-single-line-and-or-avoid-carriage-return/2979
-        result.push(EditorState.transactionFilter.of(tr => tr.newDoc.lines > 1 ? [] : tr));
+        result.push(
+          EditorState.transactionFilter.of((tr) =>
+            tr.newDoc.lines > 1 ? [] : tr,
+          ),
+        );
       }
     }
     return result;
@@ -92,6 +119,7 @@ const CodeEditor = (props: TProps) => {
       className={className}
       placeholder={placeholder}
       onChange={handleChange}
+      ref={setEditorRef}
     />
   );
 };

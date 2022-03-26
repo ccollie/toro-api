@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
-import { JobStatusEnumType, FieldConfig } from '../../index';
+import { JobType, FieldConfig } from '../../index';
 
 export const addJobLog: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -15,7 +15,7 @@ export const addJobLog: FieldConfig = {
         description: 'The number of log entries after adding',
       },
       state: {
-        type: JobStatusEnumType,
+        type: JobType,
         makeRequired: true,
       },
     },

@@ -77,9 +77,10 @@ export const useStore = createStore<THostState>(
           hostIndex,
         };
       },
-      _updateHostQueues(host: QueueHost, queues: Queue[]): Queue[] {
+      _updateHostQueues(host: QueueHost | string, queues: Queue[]): Queue[] {
         const { hosts } = get();
-        const hostIndex = hosts.findIndex((x) => x.id === host.id);
+        const id = typeof host === 'string' ? host : host.id;
+        const hostIndex = hosts.findIndex((x) => x.id === id);
         if (hostIndex >= 0) {
           set((draft) => {
             const host = draft.hosts[hostIndex];

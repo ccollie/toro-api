@@ -1,14 +1,14 @@
 import { removeJobsByFilter } from '@alpen/core';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnumType } from '../../../scalars';
+import { JobType } from '../../../scalars';
 import { FieldConfig } from '../../utils';
 
 const DeleteJobsByFilterInput = schemaComposer.createInputTC({
   name: 'DeleteJobsByFilterInput',
   fields: {
     status: {
-      type: JobStatusEnumType,
+      type: JobType,
       makeRequired: true,
       makeFieldNonNull: true,
       defaultValue: 'completed',

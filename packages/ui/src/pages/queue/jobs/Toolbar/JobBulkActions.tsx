@@ -1,6 +1,6 @@
-import { JobStatus } from '@/types';
+import { JobState } from '@/types';
 import React, { Fragment, useEffect, useState } from 'react';
-import type { Job, MetricFragment, Status } from '@/types';
+import type { Job, JobFragment } from '@/types';
 import { useDisclosure, useQueue, useToast, useWhyDidYouUpdate } from '@/hooks';
 import { TrashIcon, ClearIcon, ExportIcon, AddIcon, ArrowUpIcon } from '@/components/Icons';
 import CleanJobsModal from '../CleanJobsModal';
@@ -14,8 +14,8 @@ import ExportJobsModal from '../ExportJobsModal';
 
 interface BulkJobActionsProps {
   queueId: string;
-  status: Status;
-  selected: Array<MetricFragment | Job>;
+  status: JobState;
+  selected: Array<JobFragment | Job>;
   filter?: string;
   onBulkAction?: (action: BulkActionType, ids: string[]) => void;
 }
@@ -80,9 +80,9 @@ export const JobBulkActions = (props: BulkJobActionsProps) => {
     defaultIsOpen: false,
   });
 
-  function cleanJobs(status: Status, grace?: number, limit?: number): Promise<void> {
+  function cleanJobs(status: JobState, grace?: number, limit?: number): Promise<void> {
     // Status is a subset of JobStatus so the cast is safe
-    return cleanQueue(queueId, grace ?? 0, limit, status as JobStatus).then(
+    return cleanQueue(queueId, grace ?? 0, limit, status).then(
       (count: number | undefined) => {
         toast.success('Cleaned ' + (count ?? 0) + ' jobs');
       }

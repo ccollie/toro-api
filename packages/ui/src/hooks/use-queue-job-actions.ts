@@ -1,4 +1,4 @@
-import { JobStatus } from '@/types';
+import { JobState } from '@/types';
 import {
   bulkDeleteJobs,
   bulkPromoteJobs,
@@ -11,7 +11,7 @@ import type { Queue, QueueJobActions } from '@/types';
 
 // move this to store ??
 export function useQueueJobActions(queueId: Queue['id']): QueueJobActions {
-  async function cleanJobs(status: JobStatus, grace = 0, limit?: number): Promise<number> {
+  async function cleanJobs(status: JobState, grace = 0, limit?: number): Promise<number> {
     return cleanQueue(queueId, grace, limit, status);
   }
 

@@ -1,6 +1,6 @@
 import { getJobsByFilter } from '@/services/queue/api';
-import type { MetricFragment, JobCounts, GetJobsQuery } from '@/types';
-import { JobStatus, useGetJobsByIdQuery, useGetJobsQuery } from '@/types';
+import type { JobCounts, GetJobsQuery, JobFragment } from '@/types';
+import { useGetJobsByIdQuery, useGetJobsQuery } from '@/types';
 import { useListState } from '@mantine/hooks';
 import produce from 'immer';
 import { useCallback, useEffect, useState } from 'react';
@@ -29,7 +29,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
 
   const { queue, updateQueue } = useQueue(queueId);
 
-  const [filteredPages, filteredPageHandlers] = useListState<MetricFragment[]>([]);
+  const [filteredPages, filteredPageHandlers] = useListState<JobFragment[]>([]);
   const [shouldFetchData, textSearchPollingDisabled, pollingInterval] =
     useNetworkSettingsStore(
       (state) => [
@@ -95,7 +95,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
     }
   }
 
-  function updateResults(jobs: MetricFragment[], counts: JobCounts) {
+  function updateResults(jobs: JobFragment[], counts: JobCounts) {
     setJobs(jobs);
     updateCounts(counts);
   }
@@ -103,7 +103,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
   const { loading: _jobsLoading } = useGetJobsQuery({
     variables: {
       id: queueId,
-      status: status as JobStatus,
+      status,
       offset,
       limit: pageCount,
       sortOrder,
@@ -111,7 +111,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
     pollInterval: pollingInterval,
     skip: !shouldFetchData || !!filter?.length,
     onCompleted: (data: GetJobsQuery) => {
-      const jobs = data.getJobs as MetricFragment[];
+      const jobs = data.getJobs as JobFragment[];
       setCalled(true);
       setJobs(jobs);
     },
@@ -119,7 +119,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
 
   const { loading: _jobsByIdLoading } = useGetJobsByIdQuery({
     variables: {
-      queueId,
+      id: queueId,
       ids: filteredIds,
     },
     pollInterval: pollingInterval,
@@ -129,7 +129,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
       filter?.length === 0 ||
       textSearchPollingDisabled,
     onCompleted: (data) => {
-      const jobs = data.getJobsById as MetricFragment[];
+      const jobs = data.getJobsById as JobFragment[];
       setJobs(jobs);
       setCalled(true);
     },
@@ -165,7 +165,7 @@ export const useJobListQuery = ({ queueId }: UseFilteredJobQueryProps) => {
         total,
         counts,
       } = await getJobsByFilter(queueId, {
-        status: status as JobStatus,
+        status,
         count: pageSize,
         cursor,
         criteria: cursor ? undefined : filter,

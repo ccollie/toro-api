@@ -6,7 +6,7 @@ import {
   GetJobsByFilterDocument,
   GetQueueJobsDocument,
   GetRepeatableJobsDocument,
-  JobStatus,
+  JobState,
   SortOrderEnum,
 } from '@/types';
 import type {
@@ -17,7 +17,7 @@ import type {
   GetJobsByFilterQuery,
   GetRepeatableJobsQuery,
   JobCounts,
-  MetricFragment,
+  JobFragment,
   JobLogs,
   JobSearchInput,
   RepeatableJob,
@@ -25,7 +25,7 @@ import type {
 
 export function getJobs(
   queueId: string,
-  status: JobStatus,
+  status: JobState,
   page = 1,
   pageSize = 10,
   sortOrder: SortOrderEnum = SortOrderEnum.Desc,
@@ -48,7 +48,7 @@ export function getJobs(
       // todo: handle error
       if (results.error) throw results.error;
       const base = results.data?.queue;
-      const jobs = (base?.jobs || []) as MetricFragment[];
+      const jobs = (base?.jobs || []) as JobFragment[];
       const { __typename, ...counts } = base?.jobCounts as JobCounts;
       return {
         jobs,
@@ -59,7 +59,7 @@ export function getJobs(
 
 export function findJobs(
   { queueId, status, expression, cursor, scanCount }: FindJobsInput,
-): Promise<{ nextCursor: string; jobs: MetricFragment[] }> {
+): Promise<{ nextCursor: string; jobs: JobFragment[] }> {
   return client
     .query<FindJobsQuery>({
       query: FindJobsDocument,
@@ -77,7 +77,7 @@ export function findJobs(
       if (error) throw results.error;
       const { nextCursor, jobs } = data.findJobs;
       return {
-        jobs: (jobs as MetricFragment[]),
+        jobs: (jobs as JobFragment[]),
         nextCursor
       };
     });
@@ -85,7 +85,7 @@ export function findJobs(
 
 export function getJobsByFilter(
   queueId: string,
-  { status = JobStatus.Completed, cursor, criteria, count }: JobSearchInput,
+  { status = JobState.Completed, cursor, criteria, count }: JobSearchInput,
 ): Promise<FilteredJobsResult> {
   count = count ?? 10;
   return client
@@ -105,7 +105,7 @@ export function getJobsByFilter(
       if (results.error) throw results.error;
       const base = results.data?.queue;
       const searchResult = base?.jobSearch;
-      const jobs = (searchResult?.jobs || []) as MetricFragment[];
+      const jobs = (searchResult?.jobs || []) as JobFragment[];
       const counts = base?.jobCounts as JobCounts;
       const cursor = searchResult?.cursor || undefined;
       return {

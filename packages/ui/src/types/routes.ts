@@ -1,7 +1,6 @@
-import { JobView, QueueFilterStatus, SortOrderEnum } from '@/types';
+import { JobState, JobView, QueueFilterStatus, SortOrderEnum } from '@/types';
 import type { MakeGenerics } from 'react-location';
 import type { Queue, QueueHost, QueueWorker } from './generated';
-import type { Status } from './types';
 
 export type LocationGenerics = MakeGenerics<{
   LoaderData: {
@@ -17,7 +16,7 @@ export type LocationGenerics = MakeGenerics<{
     metricId: string;
   };
   Search: {
-    status: Status;
+    status: JobState;
     page: number;
     pageSize: number;
     sortBy: string;

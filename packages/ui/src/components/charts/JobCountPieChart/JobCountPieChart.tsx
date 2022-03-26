@@ -1,5 +1,5 @@
 import { DataItem } from 'src/components/charts/common/models';
-import type { JobStatus } from '@/types';
+import { JobState } from '@/types';
 import { arePropsEqual, Colors, PieChartDataProps } from './utils';
 import React, { useEffect, useState } from 'react';
 import DonutChart from '../Donut';
@@ -55,7 +55,7 @@ export const JobCountsPieChart: React.FC<TProps> = (props) => {
         name: status,
         value: val,
       });
-      colors.push(Colors[status as JobStatus]);
+      colors.push(Colors[status as JobState]);
       total += val;
     });
     data.forEach((item) => {

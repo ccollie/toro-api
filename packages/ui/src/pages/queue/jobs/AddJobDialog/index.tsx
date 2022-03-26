@@ -75,7 +75,8 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
   }, [jobName, schemas]);
 
   useEffect(() => {
-    const valid = !!jobName && !isEmpty(jobData); // review this. I think it's reasonable to allow empty job data
+    // review this. I think it's reasonable to allow empty job data
+    const valid = !!jobName && !isEmpty(jobData);
     // todo: validate job data against schema and validate job options
     setIsValid(valid);
   }, [jobData, jobName]);
@@ -134,7 +135,7 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
 
   const onOptionsUpdate = useCallback((value: string) => {
     setJobOptions(toObj(value));
-  }, []);
+  }, [queueId]);
 
   function handleClose() {
     onClose();

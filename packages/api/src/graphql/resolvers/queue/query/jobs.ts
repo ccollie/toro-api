@@ -4,12 +4,12 @@ import { EZContext } from 'graphql-ez';
 import {
   SortOrderEnum,
   OrderEnumType,
-  JobStatusEnumType,
+  JobState,
 } from '../../../scalars';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
 import { JobTC } from '../../job/query';
-import { QueueJobsInput } from '../../../typings';
+// import { QueueJobsInput } from '../../../typings';
 
 export const jobs: FieldConfig = {
   type: JobTC.NonNull.List.NonNull,
@@ -26,7 +26,7 @@ export const jobs: FieldConfig = {
           defaultValue: 10,
         },
         status: {
-          type: JobStatusEnumType,
+          type: JobState,
           defaultValue: 'completed',
         },
         sortOrder: {

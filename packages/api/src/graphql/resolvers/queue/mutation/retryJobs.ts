@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 import { EZContext } from 'graphql-ez';
-import { FinishedStatusEnum } from '../../../scalars';
+import { FinishedStatus } from '../../../scalars';
 import { FieldConfig } from '../../index';
 import { schemaComposer } from 'graphql-compose';
 import { JOBS_RETRIED_PREFIX } from '../../../helpers';
@@ -24,7 +24,7 @@ export const retryJobs: FieldConfig = {
           description: 'The id of the queue',
         },
         state: {
-          type: FinishedStatusEnum,
+          type: FinishedStatus,
           defaultValue: 'failed',
           description: 'Job status to consider. Defaults to failed.',
         },

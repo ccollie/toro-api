@@ -7,13 +7,13 @@ import {
   getJobMemoryAvg,
   getJobMemoryUsage
 } from '@alpen/core';
-import { JobStatusEnumType } from '../../../scalars';
+import { JobType } from '../../../scalars';
 
 export const JobMemoryAvgInputTC = schemaComposer.createInputTC({
   name: 'JobsMemoryAvgInput',
   fields: {
     status: {
-      type: JobStatusEnumType,
+      type: JobType,
       description: 'Job status to consider. Defaults to completed.',
     },
     jobName: {

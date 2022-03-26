@@ -1,5 +1,5 @@
+import { JobState } from '@/types';
 import React, { useState, useEffect } from 'react';
-import type { Status } from '@/types';
 import { ucFirst } from '@/lib';
 import { parseDuration } from '@/lib/dates';
 import ms from 'ms';
@@ -9,8 +9,8 @@ import { NumberInput, TextInput, Checkbox, Modal, Group, Button } from '@mantine
 type CleanJobsDialogProps = {
   max?: number;
   isOpen: boolean;
-  status: Status;
-  onCleanJobs: (status: Status, grace: number, limit?: number) => Promise<void>;
+  status: JobState;
+  onCleanJobs: (status: JobState, grace: number, limit?: number) => Promise<void>;
   onClose?: () => void;
 };
 
@@ -92,24 +92,23 @@ const CleanJobsModal = (props: CleanJobsDialogProps) => {
       <p>Clean {type} jobs? You can&lsquo;t undo this action afterwards.</p>
       <form>
         <TextInput
-          label={`Grace Period`}
+          label={'Grace Period'}
           name="grace"
           mt="md"
           icon={<ClockIcon />}
-          invalid={!isGracePeriodValid}
           error={!isGracePeriodValid ? DurationError : undefined}
           disabled={deleteAll}
           placeholder="Enter a number (millis) or expression like '5 mins'"
-          description={`The grace period is the amount of time to wait before deleting jobs.`}
+          description={'The grace period is the amount of time to wait before deleting jobs.'}
           onChange={onGracePeriodChange}
         />
         <NumberInput
-          label={`Limit`}
+          label={'Limit'}
           defaultValue={1000}
           min={1}
           mt="md"
           mb="md"
-          description={`The max number of jobs to delete.`}
+          description={'The max number of jobs to delete.'}
           disabled={deleteAll}
           onChange={onLimitChange}
         />

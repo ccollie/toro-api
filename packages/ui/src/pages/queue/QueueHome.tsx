@@ -1,15 +1,15 @@
 import React from 'react';
 import { Outlet, useMatch } from 'react-location';
 import type { LocationGenerics } from '@/types';
+import { useWhyDidYouUpdate } from 'src/hooks';
 import Header from './Header';
-import { useQueue } from '@/hooks';
 
 export const QueueHome = () => {
   const {
-    params: { queueId },
+    data: { queue },
   } = useMatch<LocationGenerics>();
 
-  const { queue } = useQueue(queueId);
+  useWhyDidYouUpdate('QueueHome', { queue });
 
   if (!queue) {
     return <section>Queue Not found</section>;

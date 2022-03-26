@@ -1,14 +1,14 @@
 import { processSearch } from '@alpen/core';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
-import { JobStatusEnumType } from '../../../scalars';
+import { JobState } from '../../../scalars';
 import { FieldConfig } from '../../utils';
 
 const JobSearchInputTC = schemaComposer.createInputTC({
   name: 'JobSearchInput',
   fields: {
     status: {
-      type: JobStatusEnumType,
+      type: JobState,
       makeRequired: true,
       makeFieldNonNull: true,
       defaultValue: 'completed',

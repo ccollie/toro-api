@@ -16,7 +16,6 @@ export const BaseIcon: React.FC<IconProps> = (props) => {
       className="icon"
       width={size}
       height={size}
-      strokeWidth="2"
       fill="none"
       focusable="false"
       role="img"

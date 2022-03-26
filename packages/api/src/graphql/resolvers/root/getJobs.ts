@@ -4,7 +4,7 @@ import { EZContext } from 'graphql-ez';
 import {
   SortOrderEnum,
   OrderEnumType,
-  JobStatusEnumType,
+  JobState as GqlJobState,
 } from '../../scalars';
 import { FieldConfig } from '../utils';
 import { schemaComposer } from 'graphql-compose';
@@ -28,7 +28,7 @@ export const getJobs: FieldConfig = {
           defaultValue: 10,
         },
         status: {
-          type: JobStatusEnumType,
+          type: GqlJobState,
           defaultValue: 'completed',
         },
         sortOrder: {
@@ -40,7 +40,7 @@ export const getJobs: FieldConfig = {
   },
   async resolve(
     _,
-    { input }, //: { input: GetJobsInput },
+    { input }: { input: GetJobsInput },
     { accessors }: EZContext,
   ): Promise<Job[]> {
     const {
@@ -53,7 +53,9 @@ export const getJobs: FieldConfig = {
     const asc = sortOrder.toLowerCase() === 'asc';
     const manager = accessors.getQueueManager(queueId);
     // TODO: fix the cast
-    const statuses = [status as JobState];
+    const _status: JobState =
+      (status === 'waiting_children' ? 'waiting-children' : status) as JobState;
+    const statuses = [_status];
     return manager.getJobs(statuses, offset, limit, asc);
   },
 };

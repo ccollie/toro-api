@@ -1,19 +1,19 @@
 import { useShallowEffect } from '@mantine/hooks';
-import { useMatchedBreakpoints } from 'src/hooks';
-import { getJobDuration, getJobWaitTime, normalizeJobName } from 'src/lib';
-import { Breakpoint, JobStatus, Queue } from 'src/types';
+import { useMatchedBreakpoints } from '@/hooks';
+import { getJobDuration, getJobWaitTime, normalizeJobName } from '@/lib';
+import { Breakpoint, JobType, Queue } from '@/types';
 import { Group, Tooltip } from '@mantine/core';
 import { format, isToday } from 'date-fns';
 import React, { Fragment, useMemo, useState } from 'react';
 import type { Job, JobFragment } from '@/types';
-import { JobProgress, RelativeDateFormat } from 'src/components';
+import { JobProgress, RelativeDateFormat } from '@/components';
 import JobId from '../JobId';
 import JobActions from '../JobActions';
 import { formatDuration, parseDate, relativeFormat } from '@/lib/dates';
-import { CalendarIcon, ClockIcon } from 'src/components/Icons';
+import { CalendarIcon, ClockIcon } from '@/components/Icons';
 
-const FIELDS: Record<JobStatus, string[]> = {
-  [JobStatus.Active]: [
+const FIELDS: Record<JobType, string[]> = {
+  [JobType.Active]: [
     'id',
     'name',
     'timestamp',
@@ -22,7 +22,7 @@ const FIELDS: Record<JobStatus, string[]> = {
     'progress',
     'actions',
   ],
-  [JobStatus.Completed]: [
+  [JobType.Completed]: [
     'id',
     'name',
     'finishedOn',
@@ -33,7 +33,7 @@ const FIELDS: Record<JobStatus, string[]> = {
     'attemptsMade',
     'actions',
   ],
-  [JobStatus.Delayed]: [
+  [JobType.Delayed]: [
     'id',
     'name',
     'attemptsMade',
@@ -41,7 +41,7 @@ const FIELDS: Record<JobStatus, string[]> = {
     'nextRun',
     'actions',
   ],
-  [JobStatus.Failed]: [
+  [JobType.Failed]: [
     'id',
     'attemptsMade',
     'name',
@@ -51,7 +51,7 @@ const FIELDS: Record<JobStatus, string[]> = {
     'runtime',
     'actions',
   ],
-  [JobStatus.Paused]: [
+  [JobType.Paused]: [
     'id',
     'attemptsMade',
     'name',
@@ -59,8 +59,8 @@ const FIELDS: Record<JobStatus, string[]> = {
     'processedOn',
     'actions',
   ],
-  [JobStatus.Waiting]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
-  [JobStatus.WaitingChildren]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
+  [JobType.Waiting]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
+  [JobType.WaitingChildren]: ['id', 'name', 'timestamp', 'finishedOn', 'actions'],
 };
 
 const JobDate = ({ value }: { value: number | string }) => {
@@ -88,7 +88,7 @@ const JobDate = ({ value }: { value: number | string }) => {
   );
 };
 
-const Duration = ({ job, showIcon = true }: { job: Job | MetricFragment; showIcon?: boolean }) => {
+const Duration = ({ job, showIcon = true }: { job: Job | JobFragment; showIcon?: boolean }) => {
   const duration = getJobDuration(job);
   if (!duration) {
     return null;
@@ -101,7 +101,7 @@ const Duration = ({ job, showIcon = true }: { job: Job | MetricFragment; showIco
   );
 };
 
-const WaitTime = ({ job }: { job: Job | MetricFragment }) => {
+const WaitTime = ({ job }: { job: Job | JobFragment }) => {
   const duration = getJobWaitTime(job);
   if (!duration) {
     return null;
@@ -161,7 +161,7 @@ export function Cell({ job, column } : { job: Job | JobFragment; column: JobColu
 
 export function getColumns(
   queueId: Queue['id'],
-  status: JobStatus,
+  status: JobType,
 ): JobColumnType[] {
   const columns: JobColumnType[] = [
     {
@@ -271,7 +271,7 @@ export function getColumns(
   );
 }
 
-export const useColumns = (queueId: string, status: JobStatus): JobColumnType[] => {
+export const useColumns = (queueId: string, status: JobType): JobColumnType[] => {
   const [breaker, setBreaker] = useState(1);
   const breakpointMatched = useMatchedBreakpoints();
 

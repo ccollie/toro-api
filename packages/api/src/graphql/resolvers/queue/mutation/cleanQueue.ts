@@ -1,8 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
-import { JobStatusEnumType } from '../../index';
+import { CleanQueueJobType } from '../../index';
 import { FieldConfig } from '../../index';
-import { JobStatus } from '@alpen/core';
 import { Duration } from '../../../scalars';
 import { parseDuration } from '@alpen/shared';
 import boom from '@hapi/boom';
@@ -10,8 +9,8 @@ import boom from '@hapi/boom';
 export const cleanQueue: FieldConfig = {
   description:
     'Remove all jobs created outside of a grace interval in milliseconds. ' +
-    'You can clean the jobs with the following states: COMPLETED, wait (typo for WAITING), ' +
-    'isActive, DELAYED, and FAILED.',
+    'You can clean the jobs with the following states: completed, wait, ' +
+    'active, delayed, paused, and failed.',
   type: schemaComposer.createObjectTC({
     name: 'QueueCleanResult',
     fields: {
@@ -44,8 +43,8 @@ export const cleanQueue: FieldConfig = {
             'Grace period interval (ms). Jobs older this this will be removed. ',
         },
         status: {
-          type: JobStatusEnumType,
-          defaultValue: 'completed' as JobStatus,
+          type: CleanQueueJobType,
+          defaultValue: 'completed',
           description: 'Status of the jobs to clean',
         },
         limit: {

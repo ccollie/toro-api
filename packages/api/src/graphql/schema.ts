@@ -1,7 +1,9 @@
 import {
   ChangeAggregationEnum,
+  CleanQueueJobType,
   Duration,
   ErrorLevelEnum,
+  FinishedStatus,
   GraphQLDateTime,
   GraphQLEmailAddress,
   GraphQLJSONSchema,
@@ -10,7 +12,8 @@ import {
   HttpMethodType,
   JobProgress,
   JobRemoveOption,
-  JobStatusEnumType,
+  JobState,
+  JobType,
   MetricCategory,
   OrderEnumType,
   PeakSignalDirectionEnum,
@@ -32,8 +35,10 @@ import { logger } from '@alpen/core';
 
 // Scalars
 schemaComposer.add(ChangeAggregationEnum);
+schemaComposer.add(CleanQueueJobType);
 schemaComposer.add(Duration);
 schemaComposer.add(ErrorLevelEnum);
+schemaComposer.add(FinishedStatus);
 schemaComposer.add(GraphQLDateTime);
 schemaComposer.add(GraphQLEmailAddress);
 schemaComposer.add(GraphQLJSONSchema);
@@ -42,7 +47,8 @@ schemaComposer.add(GraphQLTimestamp);
 schemaComposer.add(HttpMethodType);
 schemaComposer.add(JobProgress);
 schemaComposer.add(JobRemoveOption);
-schemaComposer.add(JobStatusEnumType);
+schemaComposer.add(JobState);
+schemaComposer.add(JobType);
 schemaComposer.add(OrderEnumType);
 schemaComposer.add(PeakSignalDirectionEnum);
 schemaComposer.add(RuleOperatorEnum);

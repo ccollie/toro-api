@@ -59,6 +59,8 @@ type Query {
 }
 
 type Mutation {
+  createFlow(input: CreateFlowInput): JobNode!
+
   """Delete a queue metric"""
   deleteMetric(input: DeleteMetricInput!): DeleteMetricResult!
 
@@ -68,7 +70,6 @@ type Mutation {
 
   """Update a job metric"""
   updateMetric(input: MetricInput!): Metric!
-  createFlow(input: CreateFlowInput): JobNode!
 
   """Add a mail notification channel"""
   createMailNotificationChannel(input: CreateMailNotificationChannelInput!): MailNotificationChannel!
@@ -109,11 +110,11 @@ type Mutation {
   """Bulk retries a list of jobs by id"""
   bulkRetryJobs(input: BulkJobActionInput!): BulkJobActionPayload
   deleteRepeatableJobByKey(input: DeleteRepeatableJobByKeyInput!): DeleteRepeatableJobByKeyResult!
-  deleteRepeatableJob(id: ID!, jobName: String, repeat: DeleteRepeatableJobOptions!): DeleteRepeatableResult!
+  deleteRepeatableJob(id: ID!, jobName: String, repeat: DeleteRepeatableJobOptions!): DeleteRepeatableJobResult!
   changeJobDelay(input: ChangeJobDelayInput): Job!
 
   """
-  Remove all jobs created outside of a grace interval in milliseconds. You can clean the jobs with the following states: COMPLETED, wait (typo for WAITING), isActive, DELAYED, and FAILED.
+  Remove all jobs created outside of a grace interval in milliseconds. You can clean the jobs with the following states: completed, wait, active, delayed, paused, and failed.
   """
   cleanQueue(input: QueueCleanInput!): QueueCleanResult!
 
@@ -160,6 +161,14 @@ type Mutation {
   """Incrementally delete jobs filtered by query criteria"""
   deleteJobsByFilter(filter: DeleteJobsByFilterInput!): DeleteJobsByFilterPayload!
   retryJobs(input: RetryJobsInput!): RetryJobsPayload!
+
+  """
+  Completely destroys the queue and all of its contents irreversibly. Note: This operation requires to iterate on all the jobs stored in the queue, and can be slow for very large queues.
+  """
+  obliterateQueue(input: QueueObliterateInput): JobCounts
+
+  """Trim the event stream to an approximately maxLength."""
+  trimQueueEvents(id: ID!, maxLength: Int): Queue!
 
   """Removes all alerts associated with a rule"""
   clearRuleAlerts(input: ClesrRuleAlertsInput!): ClearRuleAlertsResult!
@@ -339,6 +348,15 @@ enum ChangeAggregation {
   P99
 }
 
+enum CleanQueueJobType {
+  completed
+  failed
+  active
+  delayed
+  paused
+  wait
+}
+
 enum ConditionChangeType {
   CHANGE
   PCT
@@ -348,6 +366,11 @@ enum ErrorLevel {
   NONE
   WARNING
   ERROR
+}
+
+enum FinishedStatus {
+  completed
+  failed
 }
 
 """
@@ -373,14 +396,25 @@ enum HttpMethodEnum {
   POST
 }
 
-enum JobStatus {
+enum JobState {
   completed
-  waiting
+  failed
   active
   delayed
-  failed
-  paused
+  waiting
   waiting_children
+}
+
+enum JobType {
+  completed
+  failed
+  active
+  delayed
+  waiting
+  waiting_children
+  paused
+  repeat
+  wait
 }
 
 enum MetricCategory {
@@ -595,7 +629,7 @@ type AddJobLogResult {
 
   """The number of log entries after adding"""
   count: Int!
-  state: JobStatus
+  state: JobType
 }
 
 type AggregateInfo {
@@ -695,8 +729,8 @@ type DeleteQueueDeleteResult {
   """The queue host"""
   host: QueueHost!
 
-  """The number of keys deleted"""
-  deletedKeys: Int!
+  """The number of jobs in the queue at the time of deletion"""
+  deletedJobCount: Int!
 }
 
 type DeleteQueueStatsResult {
@@ -709,7 +743,7 @@ type DeleteRepeatableJobByKeyResult {
   queue: Queue
 }
 
-type DeleteRepeatableResult {
+type DeleteRepeatableJobResult {
   queue: Queue!
 }
 
@@ -805,7 +839,7 @@ type Job {
   finishedOn: Date
   processedOn: Date
   opts: JobOptions!
-  state: JobStatus!
+  state: JobState
 
   """
   Returns the fully qualified id of a job, including the queue prefix and queue name
@@ -876,7 +910,7 @@ type JobFilter {
   name: String!
 
   """Optional job status to filter jobs by"""
-  status: JobStatus
+  status: JobType
 
   """The job filter query"""
   expression: String!
@@ -904,6 +938,7 @@ type JobNode {
 }
 
 type JobOptions {
+  """Timestamp when the job was created. Defaults to `Date.now()"""
   timestamp: Date
 
   """
@@ -1319,6 +1354,12 @@ type PromoteJobResult {
 type Queue {
   id: String!
   prefix: String!
+
+  """Queue configuration"""
+  config: QueueConfig
+
+  """Returns the current default job options of the specified queue."""
+  defaultJobOptions: JobOptions
   name: String!
 
   """Compute the histogram of job data."""
@@ -1359,6 +1400,7 @@ type Queue {
 
   """Gets the last recorded queue stats snapshot for a metric"""
   lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
+  limiter: QueueLimiter
   metrics: [Metric!]!
   metricCount: Int!
 
@@ -1380,6 +1422,8 @@ type Queue {
   jobs(input: QueueJobsInput): [Job!]!
   jobsById(input: QueueJobsByIdInput): [Job!]!
   rules: [Rule!]!
+  schedulers(limit: Int): [QueueScheduler!]!
+  schedulerCount: Int!
 
   """Queries for queue stats snapshots within a range"""
   stats(input: StatsQueryInput!): [StatsSnapshot!]!
@@ -1432,6 +1476,24 @@ type QueueCleanResult {
 
   """Returns a list of cleared job ids"""
   jobIds: [ID!]
+}
+
+"""Queue configuration"""
+type QueueConfig {
+  """the queue id"""
+  id: ID!
+
+  """the queue name"""
+  name: String!
+
+  """the queue prefix"""
+  prefix: String
+
+  """returns true if the queue is readonly"""
+  isReadonly: Boolean!
+
+  """returns true if the jobs can be retried"""
+  allowRetries: Boolean!
 }
 
 type QueueHost {
@@ -1520,6 +1582,39 @@ type QueueJobCountDelta {
   delayed: Int
   active: Int
   waiting: Int
+}
+
+type QueueLimiter {
+  groupKey: String
+}
+
+""""""
+type QueueScheduler {
+  id: String
+
+  """address of the client"""
+  addr: String!
+  name: String
+
+  """total duration of the connection (in seconds)"""
+  age: Int!
+
+  """Idle time of the connection (in seconds)"""
+  idle: Int!
+
+  """Date/time when the connection started"""
+  started: DateTime
+
+  """the current database number"""
+  db: Int!
+  role: String
+  sub: Int!
+  multi: Int!
+  qbuf: Int!
+  qbufFree: Int!
+  obl: Int!
+  oll: Int!
+  omem: Int!
 }
 
 type QueueWorker {
@@ -2041,7 +2136,7 @@ input CreateFlowInput {
 input CreateJobFilterInput {
   queueId: ID!
   name: String!
-  status: JobStatus
+  status: JobType
   expression: String!
 }
 
@@ -2136,7 +2231,7 @@ input DeleteJobFilterInput {
 
 input DeleteJobsByFilterInput {
   """Search for jobs having this status"""
-  status: JobStatus = completed
+  status: JobType = completed
 
   """The job filter expression"""
   criteria: String
@@ -2206,7 +2301,7 @@ input FindJobsInput {
   """The id of the desired queue"""
   queueId: ID!
   scanCount: Int = 20
-  status: JobStatus
+  status: JobState
 
   """The cursor to start from"""
   cursor: String
@@ -2235,6 +2330,7 @@ input FlowJobInput {
 
 """"""
 input FlowJobOptionsInput {
+  """Timestamp when the job was created. Defaults to `Date.now()"""
   timestamp: Date
 
   """
@@ -2324,7 +2420,7 @@ input GetJobsInput {
   queueId: ID!
   offset: Int = 0
   limit: Int = 10
-  status: JobStatus = completed
+  status: JobState = completed
   sortOrder: SortOrderEnum = ASC
 }
 
@@ -2415,6 +2511,7 @@ input JobLocatorInput {
 }
 
 input JobOptionsInput {
+  """Timestamp when the job was created. Defaults to `Date.now()"""
   timestamp: Date
 
   """
@@ -2516,7 +2613,7 @@ input JobSchemaInput {
 
 input JobSearchInput {
   """Search for jobs having this status"""
-  status: JobStatus = completed
+  status: JobState = completed
 
   """The job filter expression"""
   criteria: String
@@ -2531,8 +2628,8 @@ input JobSearchInput {
 }
 
 input JobsMemoryAvgInput {
-  """Job status to consider. Defaults to COMPLETED"""
-  status: JobStatus
+  """Job status to consider. Defaults to completed."""
+  status: JobType
 
   """Consider only jobs of this type (optional)"""
   jobName: String
@@ -2696,7 +2793,7 @@ input QueueCleanInput {
   grace: Duration = 0
 
   """Status of the jobs to clean"""
-  status: JobStatus = completed
+  status: CleanQueueJobType = completed
 
   """
   limit Maximum amount of jobs to clean per call. If not provided will clean all matching jobs.
@@ -2721,7 +2818,7 @@ input QueueJobSchemaInput {
 input QueueJobsInput {
   offset: Int = 0
   limit: Int = 10
-  status: JobStatus = completed
+  status: JobState = completed
   sortOrder: SortOrderEnum = ASC
 }
 
@@ -2732,7 +2829,19 @@ input QueueJobUpdatesFilterInput {
   names: [String!]
 
   """Only return updates for jobs with these states"""
-  states: [JobStatus]
+  states: [JobType]
+}
+
+input QueueObliterateInput {
+  id: ID!
+
+  """
+  Use force = true to force obliteration even with active jobs in the queue.
+  """
+  force: Boolean = false
+
+  """The maximum number of deleted keys per iteration."""
+  count: Int = 1000
 }
 
 """Options for retrieving queue rule alerts"""
@@ -2778,6 +2887,9 @@ input RepeatableJobsInput {
 input RetryJobsInput {
   """The id of the queue"""
   queueId: ID!
+
+  """Job status to consider. Defaults to failed."""
+  state: FinishedStatus = failed
 
   """
   number to limit how many jobs will be moved to wait status per iteration
@@ -2975,7 +3087,7 @@ input UpdateJobFilterInput {
   queueId: ID!
   filterId: ID!
   name: String
-  status: JobStatus
+  status: JobType
   expression: String!
 }
 

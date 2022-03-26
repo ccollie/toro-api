@@ -1,13 +1,13 @@
 import { Group } from '@mantine/core';
 import React from 'react';
-import type { Job, MetricFragment, Queue, QueueJobActions, Status } from '@/types';
+import type { Job, JobFragment, JobState, Queue, QueueJobActions } from '@/types';
 import { JobBulkActions } from './JobBulkActions';
 
 interface BulkActionToolbarOpts {
   queueId: Queue['id'];
-  status: Status;
+  status: JobState;
   actions: QueueJobActions;
-  selectedItems: Array<Job | MetricFragment>;
+  selectedItems: Array<Job | JobFragment>;
   onCleanSelected: () => void;
   onBulkAction: (action: string, ids: string[]) => void;
 }

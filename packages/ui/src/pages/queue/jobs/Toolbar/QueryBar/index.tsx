@@ -108,7 +108,7 @@ export const QueryBar = (props: QueryBarProps) => {
       }
       applyFilter();
     },
-    [],
+    [props.queueId],
   );
 
   function onResetButtonClicked() {

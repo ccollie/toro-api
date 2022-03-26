@@ -2,10 +2,10 @@ import React from 'react';
 import { TabsType } from 'src/hooks/useDetailsTabs';
 import { Highlight } from 'src/components/Highlight/Highlight';
 import { JobLogs } from './JobLogs/JobLogs';
-import type { Job, MetricFragment } from 'src/types';
+import type { Job, JobFragment } from 'src/types';
 
 interface DetailsContentProps {
-  job: Job | MetricFragment;
+  job: Job | JobFragment;
   selectedTab: TabsType;
 }
 

@@ -1,6 +1,6 @@
-import { JobStatus, JobView, LocationGenerics } from '@/types';
+import { JobState } from '@/types';
 import React, { useCallback, useEffect, useState } from 'react';
-import type { Job, MetricFragment, Status } from '@/types';
+import type { Job, JobFragment, JobView, LocationGenerics } from '@/types';
 import { useDisclosure, useToast, useWhyDidYouUpdate, useQueue } from '@/hooks';
 import {
   TrashIcon,
@@ -34,8 +34,8 @@ import FilteredPager from '../FilteredPager';
 
 interface BulkJobActionsProps {
   queueId: string;
-  status: Status;
-  selected: Array<MetricFragment | Job>;
+  status: JobState;
+  selected: Array<JobFragment | Job>;
   filter?: string;
   page?: number;
   pageCount?: number;
@@ -145,12 +145,12 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
   }
 
   function cleanJobs(
-    status: Status,
+    status: JobState,
     grace?: number,
     limit?: number,
   ): Promise<void> {
     // Status is a subset of JobStatus so the cast is safe
-    return cleanQueue(queueId, grace ?? 0, limit, status as JobStatus).then(
+    return cleanQueue(queueId, grace ?? 0, limit, status as JobState).then(
       (count: number | undefined) => {
         toast.success('Cleaned ' + (count ?? 0) + ' jobs');
       },

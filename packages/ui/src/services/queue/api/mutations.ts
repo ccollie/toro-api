@@ -25,7 +25,7 @@ import {
   GetQueueByIdDocument,
   GetQueueJobCountsDocument,
   InferJobSchemaDocument,
-  JobStatus,
+  JobState,
   PauseQueueDocument,
   ResumeQueueDocument,
   SetJobSchemaDocument,
@@ -173,7 +173,7 @@ export const deleteQueue = (id: Queue['id']): Promise<number> => {
       },
     })
     .then((value: FetchResult<DeleteQueueMutation>) => {
-      return value.data?.deleteQueue.deletedKeys || 0;
+      return value.data?.deleteQueue.deletedJobCount || 0;
     });
 };
 
@@ -197,13 +197,13 @@ export function cleanQueue(
   id: Queue['id'],
   grace: number,
   limit?: number,
-  status?: JobStatus,
+  status?: JobState,
 ): Promise<number> {
   const input = {
     id,
     grace,
     limit: limit || 0,
-    status: status || JobStatus.Completed,
+    status: status || JobState.Completed,
   };
 
   return client

@@ -191,7 +191,7 @@ const QueryHistoryPopover = (props: QueryHistoryPopoverOpts) => {
       setEditName(found.name);
       openSaveDialog();
     }
-  }, []);
+  }, [props.queueId]);
 
   const onFilterClick = useCallback(
     (id: string) => {

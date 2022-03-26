@@ -2,6 +2,35 @@
   "$schema": "https://turborepo.org/schema.json",
   "baseBranch": "origin/master",
   "pipeline": {
+    "gen-schema": {
+      "outputs": [
+        "./schema.graphql"
+      ],
+      "dependsOn": [
+        "build", "^gen-schema"
+      ]
+    },
+    "gql-gen": {
+      "dependsOn": [
+        "gql-gen:client", "gql-gen:server"
+      ]
+    },
+    "gql-gen:client": {
+      "outputs": [
+        "./packages/ui/src/types/generated.ts"
+      ],
+      "dependsOn": [
+        "gen-schema", "^gql-gen:client"
+      ]
+    },
+    "gql-gen:server": {
+      "outputs": [
+        "./packages/api/src/graphql/typings/gql.ts"
+      ],
+      "dependsOn": [
+        "gen-schema", "^gql-gen:server"
+      ]
+    },
     "build": {
       "outputs": [
         "dist/**"
