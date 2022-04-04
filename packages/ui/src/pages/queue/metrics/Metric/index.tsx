@@ -18,7 +18,7 @@ import { MetricChart } from './chart';
 import { parseRelativeDate } from '@/lib/parse-relative-date';
 import { parseDate } from '@/lib';
 import { addMilliseconds } from 'date-fns';
-import { useMatch } from 'react-location';
+import { useMatch } from '@tanstack/react-location';
 import { LocationGenerics } from 'src/types';
 
 const Index: FunctionComponent = () => {

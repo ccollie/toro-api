@@ -8,7 +8,7 @@ import { SidebarSection } from './SidebarSection';
 import { useEscPressed } from '@/hooks/use-esc-pressed';
 
 import { QueueHost } from '@/types';
-import { Link } from 'react-location';
+import { Link } from '@tanstack/react-location';
 
 interface SidebarProps {
   className?: string;

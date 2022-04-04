@@ -7,7 +7,7 @@ import Workers from '@/pages/queue/Workers';
 import { useStore } from '@/stores/hosts';
 import type { LocationGenerics, Queue } from '@/types';
 import React from 'react';
-import { Route } from 'react-location';
+import { Route } from '@tanstack/react-location';
 
 export function useRouteBuilder(): Route<LocationGenerics>[] {
   const getHosts = useStore(x => x.getHosts);

@@ -1,6 +1,6 @@
 import { LoadingOverlay } from '@mantine/core';
 import React from 'react';
-import { useMatch } from 'react-location';
+import { useMatch } from '@tanstack/react-location';
 import type { LocationGenerics } from '@/types';
 import { useHostQuery } from '@/services/host/hooks/use-host-query';
 import QueueFilterToolbar from '../QueueFilterToolbar';

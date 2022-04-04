@@ -8,7 +8,7 @@ import { roundNumber } from '@/lib';
 import { JobCountsPieChart, StatsChart } from '@/components/charts';
 import { EmptyJobCounts } from '@/constants';
 import { HostStateBadge } from './HostStateBadge';
-import { useNavigate, Link } from 'react-location';
+import { useNavigate, Link } from '@tanstack/react-location';
 import Statistic from '@/components/Stats/Statistic';
 
 interface HostCardProps {

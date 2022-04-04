@@ -18,14 +18,14 @@
   "dependencies": {
     "@alpen/core": "^0.0.2",
     "@alpen/shared": "^0.0.2",
-    "bullmq": "^1.69.0",
+    "bullmq": "^1.78.2",
     "lodash-es": "^4.17.21",
     "unirand": "^2.12.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/node": "^17.0.15",
-    "ts-node": "^10.5.0",
-    "typescript": "^4.5.5"
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.3"
   }
 }

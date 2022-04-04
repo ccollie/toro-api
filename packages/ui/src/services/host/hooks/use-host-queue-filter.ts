@@ -1,6 +1,6 @@
 import { LocationGenerics, Queue, QueueFilter } from '@/types';
 import { useCallback } from 'react';
-import { useMatch, useNavigate } from 'react-location';
+import { useMatch, useNavigate } from '@tanstack/react-location';
 import { useStore } from 'src/stores';
 import {
   DefaultQueueFilter, filterQueues,

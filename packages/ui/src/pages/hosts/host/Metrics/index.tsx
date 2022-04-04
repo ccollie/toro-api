@@ -1,7 +1,7 @@
 import { ErrorChart, JobCountsPieChart, StatsChart } from '@/components/charts';
 import { LoadingOverlay } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
-import { useMatch } from 'react-location';
+import { useMatch } from '@tanstack/react-location';
 import type { ErrorDataItem } from '@/components/charts';
 import { calcErrorPercentage } from '@/lib/stats';
 import { StatisticCard } from '@/components/Stats';

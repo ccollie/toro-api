@@ -101,7 +101,7 @@ export async function processJobCommand(
   // NOTE!! - backdoor optimization especially for bulk actions
   let state = (job as any).state;
   if (!state) {
-    state = await Scripts.getJobState(queue, id);
+    state = await job.getState();
     (job as any).state = state;
   }
 

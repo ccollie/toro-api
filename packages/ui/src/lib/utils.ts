@@ -1,4 +1,5 @@
 import React from 'react';
+import { Maybe } from 'src/types';
 import { isObject, isString } from './assertion';
 import crypto from 'crypto';
 
@@ -256,4 +257,20 @@ export function areArraysEqual<T>(a: T[], b: T[]): boolean {
 export function randomId(): string {
   const uint32 = window.crypto.getRandomValues(new Uint32Array(1))[0];
   return uint32.toString(16);
+}
+
+export function stringEqual(
+  a: Maybe<string> | undefined,
+  b: Maybe<string> | undefined,
+): boolean {
+  if (!a && !b) return true;
+  return a === b;
+}
+
+export function stringsEqual(a?: string[], b?: string[]): boolean {
+  const a1 = new Set(a ?? []);
+  const b1 = new Set(b ?? []);
+  if (a1.size !== b1.size) return false;
+  for (const x of a1) if (!b1.has(x)) return false;
+  return true;
 }

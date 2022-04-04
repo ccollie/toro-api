@@ -1,7 +1,7 @@
 import { Center, Group, Paper } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import type { JobCounts, Queue, StatsSnapshot, Status } from '@/types';
-import { Link } from 'react-location';
+import { Link } from '@tanstack/react-location';
 import { JobCountsPieChart } from '@/components/charts';
 import Statistic from '@/components/Stats/Statistic';
 import { useWhyDidYouUpdate } from '@/hooks';
@@ -67,7 +67,7 @@ export const QueueCard = (props: QueueCardProps) => {
   useWhyDidYouUpdate('QueueCard', props);
 
   return (
-    <Paper shadow="lg" radius="md" padding="sm">
+    <Paper shadow="lg" radius="md" p="sm">
       <div className="p-5">
         <header className="flex justify-between items-start mb-2">
           {/* Icon */}

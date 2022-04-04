@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import CodeMirror, {
   EditorState,
-  EditorView,
   Extension,
   ReactCodeMirrorRef,
 } from '@uiw/react-codemirror';
@@ -11,7 +10,7 @@ import { bracketMatching } from '@codemirror/matchbrackets';
 import { closeBrackets } from '@codemirror/closebrackets';
 import { useCodeEditorStore } from '@/stores/code-editor';
 import { dimensionToString } from '@/components/utils';
-import { useUpdateEffect } from 'src/hooks';
+import { useUpdateEffect } from '@/hooks';
 
 export type EditorLanguage = 'javascript' | 'json';
 
@@ -41,9 +40,7 @@ const CodeEditor = (props: TProps) => {
     basicSetup = true,
     isSingleLine,
   } = props;
-  const [code, setCode] = useState(valueOrDefault(value));
   const [editorRef, setEditorRef] = useState<ReactCodeMirrorRef | null>();
-  const [view, setView] = useState<EditorView>();
   const [extensions, setExtensions] = useState<Extension[]>();
   const height = dimensionToString(props.height);
   const width = dimensionToString(props.width);
@@ -108,7 +105,7 @@ const CodeEditor = (props: TProps) => {
 
   return (
     <CodeMirror
-      value={code}
+      value={valueOrDefault(value)}
       height={height}
       width={width}
       theme={theme}

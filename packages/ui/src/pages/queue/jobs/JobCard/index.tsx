@@ -1,5 +1,5 @@
-import { Paper } from '@mantine/core';
-import React, { useEffect, useState } from 'react';
+import { Paper, Checkbox, Group } from '@mantine/core';
+import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import CircularProgress from 'src/components/CircularProgress';
 import { isJobFailed } from 'src/lib';
 import { Details } from './Details/Details';
@@ -28,10 +28,29 @@ export const JobCard = (props: JobCardProps) =>
   const isFailed = isJobFailed(job);
 
   const [progressColor, setProgressColor] = useState<string>('teal');
+  const [progress, setProgress] = useState<number>(0);
+
   useEffect(() => {
     const color = isFailed && !greenStatuses.includes(status) ? '#F56565' : 'teal';
     setProgressColor(color);
   }, [status]);
+
+  const handleChange = useCallback((evt: ChangeEvent<HTMLInputElement>) => {
+    const checked = evt.currentTarget.checked;
+    const id = job.id;
+    props.toggleSelected?.(id);
+  }, [job.id]);
+
+  useEffect(() => {
+    let progress = job.progress;
+    if (typeof progress === 'number') {
+      progress = Math.round(progress);
+      if (progress > 100) {
+        progress = 100;
+      }
+      setProgress(progress);
+    }
+  }, [job.progress]);
 
   return (
   <Paper
@@ -60,13 +79,16 @@ export const JobCard = (props: JobCardProps) =>
             </span>
           )}
         </h4>
-        <JobActions status={status} queueId={queue.id} job={job} />
+        <Group>
+          <Checkbox size="md" checked={isSelected} onChange={handleChange}/>
+          <JobActions status={status} queueId={queue.id} job={job} />
+        </Group>
       </div>
       <div className={s.content}>
         <Details status={status} job={job} />
         {typeof job.progress === 'number' && (
           <CircularProgress
-            percentage={job.progress}
+            percentage={progress}
             color={progressColor}
             className={s.progress}
           />

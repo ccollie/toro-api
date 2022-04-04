@@ -12,7 +12,7 @@ import {
   TableIcon,
   IdCardLightIcon,
 } from '@/components/Icons';
-import { useNavigate } from 'react-location';
+import { useNavigate } from '@tanstack/react-location';
 import { cleanQueue, useJobBulkActions } from '@/services';
 import type { BulkActionType } from '@/services';
 import { ReloadIcon } from '@radix-ui/react-icons';
@@ -24,6 +24,8 @@ import {
   Space,
   Tooltip,
 } from '@mantine/core';
+import { useJobsStore } from 'src/stores';
+import shallow from 'zustand/shallow';
 import { QueryBar } from './QueryBar';
 import ExportJobsModal from '../ExportJobsModal';
 import AddJobDialog from '../AddJobDialog';
@@ -44,7 +46,7 @@ interface BulkJobActionsProps {
 }
 
 export const JobsToolbar = (props: BulkJobActionsProps) => {
-  useWhyDidYouUpdate('JobsToolbar', props);
+  // useWhyDidYouUpdate('JobsToolbar', props);
 
   const { status, queueId, onBulkAction, view = 'card', pageCount } = props;
   const toast = useToast();
@@ -58,6 +60,16 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
     canRetry,
   } = useJobBulkActions(queueId, status, onBulkAction);
 
+  const [selectedJobs, selectAll, unselectAll] =
+    useJobsStore(
+      (state) => [
+        state.selectedJobs,
+        state.selectAll,
+        state.unselectAll,
+      ],
+      shallow,
+    );
+
   const [selectedIds, setSelectedIds] = useState(getSelectedIds());
   const [isPromoteDisabled, setIsPromoteDisabled] = useState(canPromote);
   const [isDeleteDisabled, setIsDeleteDisabled] = useState(canDelete);
@@ -67,27 +79,30 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
   const [isPromoting, setIsPromoting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const count = selectedIds.length;
+  const count = selectedJobs.length;
   const { queue } = useQueue(queueId);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const count = selectedIds.length;
+    const count = selectedJobs.length;
     setIsPromoteDisabled(!canPromote || count === 0);
     setIsDeleteDisabled(!canDelete || count === 0);
     setIsRetryDisabled(!canRetry || count === 0);
-    setIsClearDisabled(!canClear || count === 0);
-  }, [canPromote, canDelete, canRetry, canClear, selectedIds]);
+    setIsClearDisabled(!canClear);
+  }, [canPromote, canDelete, canRetry, canClear, selectedJobs]);
 
   useEffect(() => {
     setSelectedIds(getSelectedIds());
-  }, [props.selected]);
+  }, [selectedJobs]);
 
   function getSelectedIds() {
-    return Array.from(props.selected ?? []).map((x) => x.id);
+    return (selectedJobs ?? []).map((x) => x.id);
   }
 
-  useWhyDidYouUpdate('JobBulkActions', props);
+  useWhyDidYouUpdate('JobBulkActions', {
+    ...props,
+    selectedJobs
+  });
 
   const {
     isOpen: isCleanDialogOpen,
@@ -231,7 +246,7 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Export" withArrow>
-            <ActionIcon onClick={openExportDialog} disabled={!count}>
+            <ActionIcon onClick={openExportDialog} disabled={!pageCount}>
               <ExportIcon size={36} />
             </ActionIcon>
           </Tooltip>

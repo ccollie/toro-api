@@ -1,6 +1,6 @@
 import { LocationGenerics } from '@/types';
-import { useNavigate, useSearch } from 'react-location';
-import { usePreferencesStore } from 'src/stores';
+import { useNavigate, useSearch } from '@tanstack/react-location';
+import { usePreferencesStore } from '@/stores';
 
 export function usePagination() {
   const navigate = useNavigate();
@@ -20,9 +20,9 @@ export function usePagination() {
   const preferredPageSize = usePreferencesStore((state) => state.pageSize);
 
   const {
-    page = 1,
+    page: _page = 1,
     pageSize = preferredPageSize,
   } = useSearch<LocationGenerics>();
 
-  return { page, pageSize, gotoPage };
+  return { page: Math.min(_page, 1), pageSize, gotoPage };
 }

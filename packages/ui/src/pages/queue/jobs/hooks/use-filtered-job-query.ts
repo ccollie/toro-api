@@ -1,43 +1,148 @@
+import {
+  GetJobsByFilterQuery,
+  JobCounts,
+  useGetJobsByFilterLazyQuery,
+  useGetJobsByIdQuery,
+} from '@/types';
 import { useEffect, useState } from 'react';
 import type { JobFragment, JobState } from '@/types';
-import { usePagination, useToast } from 'src/hooks';
-import { getJobsByFilter } from '@/services/queue/api';
+import { useQueue, useToast } from '@/hooks';
+import { useJobsStore } from '@/stores';
+import shallow from 'zustand/shallow';
+import { useUpdateResults } from './use-update-results';
 
 interface UseFilteredJobQueryProps {
   queueId: string;
   status: JobState;
   filter?: string;
-  page?: number;
-  pageSize?: number;
+  page: number;
+  pageSize: number;
+  pollInterval?: number;
+  shouldFetch: boolean;
 }
 
 export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
-  const { page: _page = 1, pageSize: _pageSize = 10 } = usePagination();
   const toast = useToast();
-
   const {
     queueId,
     status,
     filter: _filter,
-    page = _page,
-    pageSize = _pageSize,
+    page,
+    pageSize = 10,
+    pollInterval,
+    shouldFetch,
   } = props;
 
-  const [loading, setLoading] = useState(true);
-  const [called, setCalled] = useState(false);
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(Math.min(page, 1));
   const [totalPages, setTotalPages] = useState(Math.min(page, 1));
-
-  const [data, setData] = useState<JobFragment[]>([]);
+  const [pageCount, setPageCount] = useState(0);
+  const [iterationEnded, setIterationEnded] = useState(false);
+  const [jobIds, setJobIds] = useState<string[]>([]);
 
   const [cursor, setCursor] = useState<string>();
   const [filter] = useState<string>((_filter ?? '').trim());
   const [hasNext, setHasNext] = useState<boolean>(false);
+  const [polling, setPolling] = useState<boolean>(false);
+
+  const [jobs, setJobs] = useJobsStore(
+    (state) => [state.data, state.setJobs],
+    shallow,
+  );
+
+  const { queue } = useQueue(queueId);
+  const { updateResults: updateFn } = useUpdateResults(queue, pageSize);
+
+  function updateResults(
+    status: JobState,
+    jobs: JobFragment[],
+    counts: JobCounts,
+  ) {
+    const { total: _total, pages: _pages } = updateFn(status, jobs, counts);
+    setTotal(_total);
+    setPageCount(_pages);
+  }
+
+  const [fetchJobs, { loading, called, refetch: _refetch }] =
+    useGetJobsByFilterLazyQuery({
+      variables: {
+        queueId,
+        status,
+        cursor,
+        count: pageSize,
+        criteria: cursor ? undefined : filter,
+      },
+      fetchPolicy: 'network-only',
+      pollInterval: filter ? pollInterval : undefined,
+      notifyOnNetworkStatusChange: true,
+      onCompleted,
+      onError: (err) => {
+        const msg = err.message ?? `${err}`;
+        toast.error(msg);
+      },
+    });
+
+  function onCompleted(data: GetJobsByFilterQuery) {
+    if (data.queue?.jobSearch) {
+      const { total, jobs, cursor: newCursor } = data.queue.jobSearch;
+      if (newCursor !== cursor) {
+        clearPagination();
+      }
+
+      setJobIds(jobs.map((job) => job.id));
+      const counts = data.queue.jobCounts;
+      updateResults(status, jobs, counts);
+      recalcPagination(total);
+      setCursor(newCursor ?? undefined);
+      storePageInSession(page);
+      if (newCursor) {
+        const last = lastPage + 1;
+        setLastPage(last);
+        // for ui purposes, set the last page just beyond the current page
+        setPageCount(last + 1);
+        // filteredPageHandlers.append(jobs);
+      } else {
+        // we've exhausted all results
+        setPageCount(lastPage);
+        setCursor(undefined);
+        setIterationEnded(true);
+      }
+    }
+  }
+
+  useGetJobsByIdQuery({
+    variables: {
+      queueId,
+      ids: jobIds,
+    },
+    displayName: 'useFilteredJobQuery:getJobsById',
+    skip: (!called || !polling || !jobIds.length) || !shouldFetch,
+    pollInterval,
+    onCompleted: (data) => {
+      if (data.getJobsById) {
+        const jobs = (data.getJobsById ?? []) as JobFragment[];
+        setJobs(jobs);
+      }
+    },
+  });
+
+  function refetch() {
+    return _refetch({
+      queueId,
+      status,
+      cursor,
+      count: pageSize,
+      criteria: cursor ? undefined : filter,
+    }).then((res) => {
+      onCompleted(res.data);
+      return jobs;
+    });
+  }
 
   useEffect(() => {
     if (cursor) {
       setHasNext(true);
+      setIterationEnded(false);
     } else if (!filter) {
       setHasNext(false);
     } else {
@@ -46,15 +151,20 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
   }, [cursor, page, totalPages]);
 
   useEffect(() => {
+    if (!filter) {
+      setPolling(false);
+    }
     setCursor(undefined);
     clearPagination();
     if (filter) {
-      fetchByCriteria();
+      fetchJobs().catch((err) => {
+        const msg = err.message ?? `${err}`;
+        toast.error(msg);
+      });
     } else {
-      setCalled(false);
-      setData([]);
+      setJobs([]);
     }
-  }, [filter, status]);
+  }, [filter, status, pageSize]);
 
   function getSessionKey(suffix: string): string {
     const rest = cursor ? [cursor] : [];
@@ -76,64 +186,29 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
 
   function clear() {
     setCursor(undefined);
+    setIterationEnded(false);
     clearPagination();
-    setData([]);
+    setJobs([]);
+    setPolling(false);
   }
-
-  useEffect(() => {
-    clear();
-    // refresh
-  }, [pageSize]);
 
   function refresh() {
     if (called && !loading) {
-      setCalled(false);
       clear();
-      fetchByCriteria();
+      refetch();
     }
   }
 
   async function fetch(): Promise<JobFragment[]> {
-    const { jobs, cursor: _cursor, total } = await getJobsByFilter(queueId, {
-      status,
-      count: pageSize,
-      cursor,
-      criteria: cursor ? undefined : filter,
-    });
-    if (_cursor !== cursor) {
-      clearPagination();
-    }
-    setLastPage(page);
-    recalcPagination(total);
-    setCursor(_cursor ?? undefined);
-    return jobs;
-  }
-
-  function fetchByCriteria(): void {
-    setLoading(true);
-    fetch()
-      .then(jobs => {
-        setData(jobs);
-        setCalled(true);
-        setLastPage(page);
-        recalcPagination(total);
-        storePageInSession(page);
-      })
-      .catch((err) => {
-        const msg = (err instanceof Error) ? err.message : `${err}`;
-        toast.error(msg);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    return refetch();
   }
 
   function storePageInSession(index: number): void {
     if (index > 0) {
       const key = getSessionKey(`page:${index}`);
-      if (data && data.length) {
+      if (jobs && jobs.length) {
         try {
-          const items = JSON.stringify(data);
+          const items = JSON.stringify(jobs);
           sessionStorage.setItem(key, items);
         } catch (e) {
           console.log(e);
@@ -150,7 +225,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
         try {
           const items = JSON.parse(data);
           if (Array.isArray(items)) {
-            setData(items as JobFragment[]);
+            setJobs(items as JobFragment[]);
             return;
           }
         } catch (e) {
@@ -158,7 +233,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
         }
       }
     }
-    setData([]);
+    setJobs([]);
   }
 
   async function getPage(index: number): Promise<JobFragment[]> {
@@ -166,50 +241,29 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
       return [];
     }
     if (index === page) {
-      return data;
+      return jobs;
     }
     if (index < page && index > 0) {
       getPageFromSession(index);
-      return data;
+      return jobs;
     }
     if (index === page + 1) {
-      await fetchByCriteria();
-      return data;
+      return fetch();
     }
     return [];
   }
 
-  function getPreviousPage() {
-    const index = Math.max(
-      0,
-      page - 1,
-    );
-    getPageFromSession(index);
-  }
-
-  function getNextPage() {
-    console.log('goto next, page = ' + page + ', lastPage = ' + lastPage);
-    if (page === lastPage) {
-      if (cursor) {
-        // console.log('fetching next from cursor....');
-        return fetchByCriteria();
-      }
-    }
-    const index = Math.min(lastPage, page + 1);
-    return getPageFromSession(index);
-  }
-
   return {
-    getPreviousPage,
-    getNextPage,
+    clear,
     getPage,
     hasNext,
     refresh,
     fetch,
     total,
-    data,
+    jobs,
     loading,
-    called
+    called,
+    pageCount,
   };
 };
 

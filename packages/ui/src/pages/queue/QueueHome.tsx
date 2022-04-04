@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useMatch } from 'react-location';
+import { Outlet, useMatch } from '@tanstack/react-location';
 import type { LocationGenerics } from '@/types';
 import { useWhyDidYouUpdate } from 'src/hooks';
 import Header from './Header';

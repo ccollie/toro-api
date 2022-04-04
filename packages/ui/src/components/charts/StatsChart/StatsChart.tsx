@@ -1,4 +1,4 @@
-import { stringEqual } from '@/services';
+import { stringEqual } from '@/lib';
 import React from 'react';
 import type { StatsSnapshot, StatsDataField } from '@/types';
 import { AxisOptions, Chart } from 'react-charts';

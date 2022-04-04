@@ -1,7 +1,7 @@
 import { JobState } from '@/types';
 import React, { Fragment, useEffect, useState } from 'react';
 import type { Job, JobFragment } from '@/types';
-import { useDisclosure, useQueue, useToast, useWhyDidYouUpdate } from '@/hooks';
+import { useDisclosure, useQueue, useToast } from '@/hooks';
 import { TrashIcon, ClearIcon, ExportIcon, AddIcon, ArrowUpIcon } from '@/components/Icons';
 import CleanJobsModal from '../CleanJobsModal';
 import AddJobDialog from '../AddJobDialog';
@@ -43,7 +43,7 @@ export const JobBulkActions = (props: BulkJobActionsProps) => {
     setIsPromoteDisabled(!canPromote || count === 0);
     setIsDeleteDisabled(!canDelete || count === 0);
     setIsRetryDisabled(!canRetry || count === 0);
-    setIsClearDisabled(!canClear || count === 0);
+    setIsClearDisabled(!canClear /* || count === 0 */);
   }, [canPromote, canDelete, canRetry, canClear, selectedIds]);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export const JobBulkActions = (props: BulkJobActionsProps) => {
     return Array.from(props.selected ?? []).map((x) => x.id);
   }
 
-  useWhyDidYouUpdate('JobBulkActions', props);
+  // useWhyDidYouUpdate('JobBulkActions', props);
 
   const {
     isOpen: isCleanDialogOpen,

@@ -1,7 +1,6 @@
-import { HostConfig } from '@alpen/core';
-
 process.env.NODE_ENV = 'example';
-import { Worker, QueueScheduler } from 'bullmq';
+import { HostConfig } from '@alpen/core';
+import { Worker, QueueScheduler, MetricsTime } from 'bullmq';
 import { tacos, widgets, backup, DemoHosts } from './processors/index';
 
 export class Consumer {
@@ -11,12 +10,23 @@ export class Consumer {
   private backupScheduler: QueueScheduler;
 
   constructor() {
-    this.tacoWorker = new Worker('tacos', tacos.process, { concurrency: 10 });
+    this.tacoWorker = new Worker('tacos', tacos.process, {
+      concurrency: 10,
+      metrics: {
+        maxDataPoints: MetricsTime.ONE_MONTH,
+      }
+    });
     this.widgetWorker = new Worker('widgets', widgets.process, {
       concurrency: 10,
+      metrics: {
+        maxDataPoints: MetricsTime.ONE_MONTH,
+      }
     });
     this.backupWorker = new Worker('backup', backup.process, {
       concurrency: 2,
+      metrics: {
+        maxDataPoints: MetricsTime.ONE_MONTH,
+      }
     });
     this.backupScheduler = new QueueScheduler('backup');
   }

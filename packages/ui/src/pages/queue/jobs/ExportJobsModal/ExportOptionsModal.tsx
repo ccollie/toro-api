@@ -171,10 +171,10 @@ export const ExportOptionsModal = (props: ExportOptionsProps) => {
 
         <div>
           <Group position="apart" mt="xl">
-            <Button type="button" color="gray" onClick={handleClose} ml="auto">
+            <Button variant="default" onClick={handleClose} ml="auto">
               Cancel
             </Button>
-            <Button color="blue" type="submit" disabled={!canExport} onClick={handleOk}>
+            <Button type="submit" disabled={!canExport} onClick={handleOk}>
               Export
             </Button>
           </Group>

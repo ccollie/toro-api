@@ -7,7 +7,7 @@ interface IPaginationProps {
   pageCount: number;
 }
 
-const InnerPagination = (props: IPaginationProps) => {
+export const Pagination = (props: IPaginationProps) => {
   const { page: _page, gotoPage } = usePagination();
   const { page = _page, pageCount = 0 } = props;
 
@@ -20,5 +20,4 @@ const InnerPagination = (props: IPaginationProps) => {
   return <Pager total={pageCount} page={pageIdx} onChange={gotoPage} />;
 };
 
-export const Pagination = InnerPagination;
 export default Pagination;

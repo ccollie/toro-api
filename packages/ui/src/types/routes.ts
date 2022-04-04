@@ -1,5 +1,5 @@
 import { JobState, JobView, QueueFilterStatus, SortOrderEnum } from '@/types';
-import type { MakeGenerics } from 'react-location';
+import type { MakeGenerics } from '@tanstack/react-location';
 import type { Queue, QueueHost, QueueWorker } from './generated';
 
 export type LocationGenerics = MakeGenerics<{

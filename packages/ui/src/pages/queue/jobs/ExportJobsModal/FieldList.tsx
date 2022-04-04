@@ -108,7 +108,7 @@ export const FieldList: React.FC<TProps> = (props) => {
               <th>
                 <Checkbox
                   id="select-all"
-                  aria-label={`Select all fields`}
+                  aria-label="Select all fields"
                   checked={isAllSelected}
                   onChange={onSelectAllClick}
                 />

@@ -27,9 +27,9 @@ export const JobLogs = ({ job }: JobLogsProps) => {
 
   if (called && !logs?.length) {
     return (
-      <Center>
+      <Center style={{ minHeight: 200 }}>
         <Group mt={25}>
-          <SadTearIcon size={36} style={{ opacity: 0.75 }}/>
+          <SadTearIcon size={36} style={{ opacity: 0.70 }}/>
           <Text>No logs found for job {job.name}#{job.id}.</Text>
         </Group>
       </Center>

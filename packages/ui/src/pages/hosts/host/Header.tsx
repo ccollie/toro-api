@@ -1,6 +1,6 @@
 import { Paper, Group, Tabs, ActionIcon } from '@mantine/core';
 import React, { useCallback, useState } from 'react';
-import { useNavigate, useResolvePath } from 'react-location';
+import { useNavigate, useResolvePath } from '@tanstack/react-location';
 import { QueueHost } from '@/types';
 import {
   QueueIcon,

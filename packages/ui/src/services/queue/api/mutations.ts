@@ -144,7 +144,7 @@ export function pauseQueue(id: Queue['id']): Promise<boolean> {
 
 export const resumeQueue = (id: Queue['id']): Promise<boolean> => {
   return client
-    .mutate({
+    .mutate<ResumeQueueMutation>({
       mutation: ResumeQueueDocument,
       variables: { id },
       update: (cache: ApolloCache<ResumeQueueMutation>, result) => {
@@ -165,7 +165,7 @@ export const resumeQueue = (id: Queue['id']): Promise<boolean> => {
 
 export const deleteQueue = (id: Queue['id']): Promise<number> => {
   return client
-    .mutate({
+    .mutate<DeleteQueueMutation>({
       mutation: DeleteQueueDocument,
       variables: { id },
       update: (cache) => {
@@ -179,7 +179,7 @@ export const deleteQueue = (id: Queue['id']): Promise<number> => {
 
 export const unregisterQueue = (id: Queue['id']): Promise<boolean> => {
   return client
-    .mutate({
+    .mutate<UnregisterQueueMutation>({
       mutation: UnregisterQueueDocument,
       variables: {
         queueId: id,
@@ -207,7 +207,7 @@ export function cleanQueue(
   };
 
   return client
-    .mutate({
+    .mutate<CleanQueueMutation>({
       mutation: CleanQueueDocument,
       variables: input,
     })
@@ -223,7 +223,7 @@ export function drainQueue(id: Queue['id'], delayed?: boolean): Promise<Queue> {
   };
 
   return client
-    .mutate({
+    .mutate<DrainQueueMutation>({
       mutation: DrainQueueDocument,
       variables: input,
     })

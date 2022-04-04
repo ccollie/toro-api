@@ -2,7 +2,6 @@ import { FetchResult } from '@apollo/client';
 import { client } from '@/providers/ApolloProvider';
 import type {
   Job,
-  MetricFragment,
   BulkStatusItem,
   CreateJobMutation,
   DeleteBulkJobsMutation,
@@ -10,6 +9,13 @@ import type {
   PromoteBulkJobsMutation,
   RetryBulkJobsMutation,
   Status,
+  JobFragment,
+  DeleteJobMutation,
+  MoveJobToCompletedMutation,
+  MoveJobToFailedMutation,
+  RetryJobMutation,
+  DiscardJobMutation,
+  PromoteJobMutation,
 } from '@/types';
 import {
   CreateJobDocument,
@@ -74,10 +80,10 @@ export async function createJob(
   queueId: Queue['id'],
   jobName: string,
   data: Record<string, any>,
-  opts: Record<string, any>
-): Promise<MetricFragment> {
+  opts: Record<string, any>,
+): Promise<JobFragment> {
   return client
-    .mutate({
+    .mutate<CreateJobMutation>({
       mutation: CreateJobDocument,
       variables: {
         queueId,
@@ -88,13 +94,16 @@ export async function createJob(
     })
     .then((value: FetchResult<CreateJobMutation>) => {
       checkError(value);
-      return value.data?.createJob as MetricFragment;
+      return value.data?.createJob as JobFragment;
     });
 }
 
-export async function deleteJob(queueId: string, jobId: Job['id']): Promise<void> {
+export async function deleteJob(
+  queueId: string,
+  jobId: Job['id'],
+): Promise<void> {
   await client
-    .mutate({
+    .mutate<DeleteJobMutation>({
       variables: { queueId, jobId },
       mutation: DeleteJobDocument,
       update() {
@@ -106,9 +115,12 @@ export async function deleteJob(queueId: string, jobId: Job['id']): Promise<void
     });
 }
 
-export async function moveJobToCompleted(queueId: string, jobId: Job['id']): Promise<void> {
+export async function moveJobToCompleted(
+  queueId: string,
+  jobId: Job['id'],
+): Promise<void> {
   await client
-    .mutate({
+    .mutate<MoveJobToCompletedMutation>({
       variables: { queueId, jobId },
       mutation: MoveJobToCompletedDocument,
       update() {
@@ -120,9 +132,12 @@ export async function moveJobToCompleted(queueId: string, jobId: Job['id']): Pro
     });
 }
 
-export async function moveJobToFailed(queueId: string, jobId: Job['id']): Promise<void> {
+export async function moveJobToFailed(
+  queueId: string,
+  jobId: Job['id'],
+): Promise<void> {
   await client
-    .mutate({
+    .mutate<MoveJobToFailedMutation>({
       variables: { queueId, jobId },
       mutation: MoveJobToFailedDocument,
       update() {
@@ -134,9 +149,12 @@ export async function moveJobToFailed(queueId: string, jobId: Job['id']): Promis
     });
 }
 
-export async function discardJob(queueId: string, jobId: Job['id']): Promise<void> {
+export async function discardJob(
+  queueId: string,
+  jobId: Job['id'],
+): Promise<void> {
   await client
-    .mutate({
+    .mutate<DiscardJobMutation>({
       variables: { queueId, jobId },
       mutation: DiscardJobDocument,
     })
@@ -151,25 +169,29 @@ export async function discardJob(queueId: string, jobId: Job['id']): Promise<voi
 
 export function bulkDeleteJobs(
   queueId: string,
-  jobIds: Array<Job['id']>
+  jobIds: Array<Job['id']>,
 ): Promise<BulkStatusItem[]> {
   return client
-    .mutate({
+    .mutate<DeleteBulkJobsMutation>({
       variables: { queueId, jobIds },
       mutation: DeleteBulkJobsDocument,
     })
     .then((value: FetchResult<DeleteBulkJobsMutation>) => {
       checkError(value);
-      const items = (value.data?.bulkDeleteJobs?.status || []) as BulkStatusItem[];
+      const items = (value.data?.bulkDeleteJobs?.status ||
+        []) as BulkStatusItem[];
       const removed = items.filter((x) => x.success).map((x) => x.id);
       evictJobs(queueId, removed);
       return items;
     });
 }
 
-export async function retryJob(queueId: string, jobId: Job['id']): Promise<void> {
+export async function retryJob(
+  queueId: string,
+  jobId: Job['id'],
+): Promise<void> {
   await client
-    .mutate({
+    .mutate<RetryJobMutation>({
       variables: { queueId, jobId },
       mutation: RetryJobDocument,
     })
@@ -182,9 +204,12 @@ export async function retryJob(queueId: string, jobId: Job['id']): Promise<void>
     });
 }
 
-export function bulkRetryJobs(queueId: string, jobIds: string[]): Promise<BulkStatusItem[]> {
+export function bulkRetryJobs(
+  queueId: string,
+  jobIds: string[],
+): Promise<BulkStatusItem[]> {
   return client
-    .mutate({
+    .mutate<RetryBulkJobsMutation>({
       variables: { queueId, jobIds },
       mutation: RetryBulkJobsDocument,
     })
@@ -194,18 +219,24 @@ export function bulkRetryJobs(queueId: string, jobIds: string[]): Promise<BulkSt
     });
 }
 
-export async function promoteJob(queueId: string, jobId: Job['id']): Promise<void> {
+export async function promoteJob(
+  queueId: string,
+  jobId: Job['id'],
+): Promise<void> {
   await client
-    .mutate({
+    .mutate<PromoteJobMutation>({
       variables: { queueId, jobId },
       mutation: PromoteJobDocument,
     })
     .then(checkError);
 }
 
-export function bulkPromoteJobs(queueId: string, jobIds: string[]): Promise<BulkStatusItem[]> {
+export function bulkPromoteJobs(
+  queueId: string,
+  jobIds: string[],
+): Promise<BulkStatusItem[]> {
   return client
-    .mutate({
+    .mutate<PromoteBulkJobsMutation>({
       variables: { queueId, jobIds },
       mutation: PromoteBulkJobsDocument,
     })
@@ -215,9 +246,12 @@ export function bulkPromoteJobs(queueId: string, jobIds: string[]): Promise<Bulk
     });
 }
 
-export function deleteRepeatableJobByKey(queueId: string, key: string): Promise<void> {
+export function deleteRepeatableJobByKey(
+  queueId: string,
+  key: string,
+): Promise<void> {
   return client
-    .mutate({
+    .mutate<DeleteRepeatableJobByKeyMutation>({
       variables: { queueId, key },
       mutation: DeleteRepeatableJobByKeyDocument,
     })

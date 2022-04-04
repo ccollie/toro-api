@@ -3759,7 +3759,7 @@ export type RepeatableJobFragment = {
 };
 
 export type FindJobsQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   status?: InputMaybe<JobState>;
   criteria: Scalars['String'];
   cursor?: InputMaybe<Scalars['String']>;
@@ -3776,7 +3776,7 @@ export type FindJobsQuery = {
 };
 
 export type GetJobsByFilterQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   status?: InputMaybe<JobState>;
   cursor?: InputMaybe<Scalars['String']>;
   criteria?: InputMaybe<Scalars['String']>;
@@ -3801,7 +3801,7 @@ export type GetJobsByFilterQuery = {
 };
 
 export type GetJobsByIdQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   ids: Array<Scalars['ID']> | Scalars['ID'];
 }>;
 
@@ -3811,7 +3811,7 @@ export type GetJobsByIdQuery = {
 };
 
 export type GetJobFiltersQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   ids?: InputMaybe<Array<Scalars['ID']> | Scalars['ID']>;
 }>;
 
@@ -3873,7 +3873,7 @@ export type DeleteJobFilterMutation = {
 };
 
 export type GetQueueJobCountsQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
 }>;
 
 export type GetQueueJobCountsQuery = {
@@ -3882,7 +3882,7 @@ export type GetQueueJobCountsQuery = {
 };
 
 export type GetQueueJobsQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   offset?: InputMaybe<Scalars['Int']>;
   limit?: InputMaybe<Scalars['Int']>;
   status?: InputMaybe<JobState>;
@@ -3901,7 +3901,7 @@ export type GetQueueJobsQuery = {
 };
 
 export type GetJobsQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   offset?: InputMaybe<Scalars['Int']>;
   limit?: InputMaybe<Scalars['Int']>;
   status?: InputMaybe<JobState>;
@@ -3914,7 +3914,7 @@ export type GetJobsQuery = {
 };
 
 export type GetRepeatableJobsQueryVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   offset?: InputMaybe<Scalars['Int']>;
   limit?: InputMaybe<Scalars['Int']>;
   sortOrder?: InputMaybe<SortOrderEnum>;
@@ -3970,7 +3970,7 @@ export type CreateJobMutation = {
 };
 
 export type DeleteJobMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobId: Scalars['ID'];
 }>;
 
@@ -3983,7 +3983,7 @@ export type DeleteJobMutation = {
 };
 
 export type DiscardJobMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobId: Scalars['ID'];
 }>;
 
@@ -3996,7 +3996,7 @@ export type DiscardJobMutation = {
 };
 
 export type MoveJobToCompletedMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobId: Scalars['ID'];
 }>;
 
@@ -4009,7 +4009,7 @@ export type MoveJobToCompletedMutation = {
 };
 
 export type MoveJobToFailedMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobId: Scalars['ID'];
 }>;
 
@@ -4022,7 +4022,7 @@ export type MoveJobToFailedMutation = {
 };
 
 export type DeleteRepeatableJobByKeyMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   key: Scalars['String'];
 }>;
 
@@ -4035,7 +4035,7 @@ export type DeleteRepeatableJobByKeyMutation = {
 };
 
 export type DeleteBulkJobsMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobIds: Array<Scalars['ID']> | Scalars['ID'];
 }>;
 
@@ -4053,7 +4053,7 @@ export type DeleteBulkJobsMutation = {
 };
 
 export type RetryJobMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobId: Scalars['ID'];
 }>;
 
@@ -4066,7 +4066,7 @@ export type RetryJobMutation = {
 };
 
 export type RetryBulkJobsMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobIds: Array<Scalars['ID']> | Scalars['ID'];
 }>;
 
@@ -4084,7 +4084,7 @@ export type RetryBulkJobsMutation = {
 };
 
 export type PromoteJobMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobId: Scalars['ID'];
 }>;
 
@@ -4097,7 +4097,7 @@ export type PromoteJobMutation = {
 };
 
 export type PromoteBulkJobsMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobIds: Array<Scalars['ID']> | Scalars['ID'];
 }>;
 
@@ -9389,7 +9389,10 @@ export const FindJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9456,7 +9459,7 @@ export const FindJobsDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -9623,7 +9626,7 @@ export const FindJobsDocument = {
  * @example
  * const { data, loading, error } = useFindJobsQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      status: // value for 'status'
  *      criteria: // value for 'criteria'
  *      cursor: // value for 'cursor'
@@ -9673,7 +9676,10 @@ export const GetJobsByFilterDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -9728,7 +9734,7 @@ export const GetJobsByFilterDocument = {
                 name: { kind: 'Name', value: 'id' },
                 value: {
                   kind: 'Variable',
-                  name: { kind: 'Name', value: 'id' },
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
             ],
@@ -9961,7 +9967,7 @@ export const GetJobsByFilterDocument = {
  * @example
  * const { data, loading, error } = useGetJobsByFilterQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      status: // value for 'status'
  *      cursor: // value for 'cursor'
  *      criteria: // value for 'criteria'
@@ -10018,7 +10024,10 @@ export const GetJobsByIdDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -10060,7 +10069,7 @@ export const GetJobsByIdDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -10201,7 +10210,7 @@ export const GetJobsByIdDocument = {
  * @example
  * const { data, loading, error } = useGetJobsByIdQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      ids: // value for 'ids'
  *   },
  * });
@@ -10251,7 +10260,10 @@ export const GetJobFiltersDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -10281,7 +10293,7 @@ export const GetJobFiltersDocument = {
                 name: { kind: 'Name', value: 'id' },
                 value: {
                   kind: 'Variable',
-                  name: { kind: 'Name', value: 'id' },
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
             ],
@@ -10338,7 +10350,7 @@ export const GetJobFiltersDocument = {
  * @example
  * const { data, loading, error } = useGetJobFiltersQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      ids: // value for 'ids'
  *   },
  * });
@@ -10696,7 +10708,10 @@ export const GetQueueJobCountsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -10715,7 +10730,7 @@ export const GetQueueJobCountsDocument = {
                 name: { kind: 'Name', value: 'id' },
                 value: {
                   kind: 'Variable',
-                  name: { kind: 'Name', value: 'id' },
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
             ],
@@ -10776,7 +10791,7 @@ export const GetQueueJobCountsDocument = {
  * @example
  * const { data, loading, error } = useGetQueueJobCountsQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *   },
  * });
  */
@@ -10829,7 +10844,10 @@ export const GetQueueJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -10888,7 +10906,7 @@ export const GetQueueJobsDocument = {
                 name: { kind: 'Name', value: 'id' },
                 value: {
                   kind: 'Variable',
-                  name: { kind: 'Name', value: 'id' },
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
             ],
@@ -11103,7 +11121,7 @@ export const GetQueueJobsDocument = {
  * @example
  * const { data, loading, error } = useGetQueueJobsQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      offset: // value for 'offset'
  *      limit: // value for 'limit'
  *      status: // value for 'status'
@@ -11160,7 +11178,10 @@ export const GetJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -11225,7 +11246,7 @@ export const GetJobsDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -11390,7 +11411,7 @@ export const GetJobsDocument = {
  * @example
  * const { data, loading, error } = useGetJobsQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      offset: // value for 'offset'
  *      limit: // value for 'limit'
  *      status: // value for 'status'
@@ -11438,7 +11459,10 @@ export const GetRepeatableJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -11486,7 +11510,7 @@ export const GetRepeatableJobsDocument = {
                 name: { kind: 'Name', value: 'id' },
                 value: {
                   kind: 'Variable',
-                  name: { kind: 'Name', value: 'id' },
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
             ],
@@ -11588,7 +11612,7 @@ export const GetRepeatableJobsDocument = {
  * @example
  * const { data, loading, error } = useGetRepeatableJobsQuery({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      offset: // value for 'offset'
  *      limit: // value for 'limit'
  *      sortOrder: // value for 'sortOrder'
@@ -12281,7 +12305,10 @@ export const DeleteJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12317,7 +12344,7 @@ export const DeleteJobDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -12371,7 +12398,7 @@ export type DeleteJobMutationFn = Apollo.MutationFunction<
  * @example
  * const [deleteJobMutation, { data, loading, error }] = useDeleteJobMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobId: // value for 'jobId'
  *   },
  * });
@@ -12406,7 +12433,10 @@ export const DiscardJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12442,7 +12472,7 @@ export const DiscardJobDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -12497,7 +12527,7 @@ export type DiscardJobMutationFn = Apollo.MutationFunction<
  * @example
  * const [discardJobMutation, { data, loading, error }] = useDiscardJobMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobId: // value for 'jobId'
  *   },
  * });
@@ -12533,7 +12563,10 @@ export const MoveJobToCompletedDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12569,7 +12602,7 @@ export const MoveJobToCompletedDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -12624,7 +12657,7 @@ export type MoveJobToCompletedMutationFn = Apollo.MutationFunction<
  * @example
  * const [moveJobToCompletedMutation, { data, loading, error }] = useMoveJobToCompletedMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobId: // value for 'jobId'
  *   },
  * });
@@ -12660,7 +12693,10 @@ export const MoveJobToFailedDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12696,7 +12732,7 @@ export const MoveJobToFailedDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -12751,7 +12787,7 @@ export type MoveJobToFailedMutationFn = Apollo.MutationFunction<
  * @example
  * const [moveJobToFailedMutation, { data, loading, error }] = useMoveJobToFailedMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobId: // value for 'jobId'
  *   },
  * });
@@ -12787,7 +12823,10 @@ export const DeleteRepeatableJobByKeyDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12823,7 +12862,7 @@ export const DeleteRepeatableJobByKeyDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -12868,7 +12907,7 @@ export type DeleteRepeatableJobByKeyMutationFn = Apollo.MutationFunction<
  * @example
  * const [deleteRepeatableJobByKeyMutation, { data, loading, error }] = useDeleteRepeatableJobByKeyMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      key: // value for 'key'
  *   },
  * });
@@ -12905,7 +12944,10 @@ export const DeleteBulkJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12950,7 +12992,7 @@ export const DeleteBulkJobsDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -13012,7 +13054,7 @@ export type DeleteBulkJobsMutationFn = Apollo.MutationFunction<
  * @example
  * const [deleteBulkJobsMutation, { data, loading, error }] = useDeleteBulkJobsMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobIds: // value for 'jobIds'
  *   },
  * });
@@ -13048,7 +13090,10 @@ export const RetryJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -13084,7 +13129,7 @@ export const RetryJobDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -13139,7 +13184,7 @@ export type RetryJobMutationFn = Apollo.MutationFunction<
  * @example
  * const [retryJobMutation, { data, loading, error }] = useRetryJobMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobId: // value for 'jobId'
  *   },
  * });
@@ -13172,7 +13217,10 @@ export const RetryBulkJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -13217,7 +13265,7 @@ export const RetryBulkJobsDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -13279,7 +13327,7 @@ export type RetryBulkJobsMutationFn = Apollo.MutationFunction<
  * @example
  * const [retryBulkJobsMutation, { data, loading, error }] = useRetryBulkJobsMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobIds: // value for 'jobIds'
  *   },
  * });
@@ -13315,7 +13363,10 @@ export const PromoteJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -13351,7 +13402,7 @@ export const PromoteJobDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -13406,7 +13457,7 @@ export type PromoteJobMutationFn = Apollo.MutationFunction<
  * @example
  * const [promoteJobMutation, { data, loading, error }] = usePromoteJobMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobId: // value for 'jobId'
  *   },
  * });
@@ -13442,7 +13493,10 @@ export const PromoteBulkJobsDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -13487,7 +13541,7 @@ export const PromoteBulkJobsDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -13549,7 +13603,7 @@ export type PromoteBulkJobsMutationFn = Apollo.MutationFunction<
  * @example
  * const [promoteBulkJobsMutation, { data, loading, error }] = usePromoteBulkJobsMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobIds: // value for 'jobIds'
  *   },
  * });

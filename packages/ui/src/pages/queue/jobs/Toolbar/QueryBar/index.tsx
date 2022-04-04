@@ -37,7 +37,7 @@ export const QueryBar = (props: QueryBarProps) => {
     defaultIsOpen: false,
   });
 
-  useWhyDidYouUpdate('QueryBar', props);
+  // useWhyDidYouUpdate('QueryBar', props);
 
   const { addToHistory } = useQueueJobFilters(props.queueId);
 

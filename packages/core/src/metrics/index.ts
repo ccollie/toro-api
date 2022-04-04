@@ -34,6 +34,7 @@ import type { ApdexMetricOptions } from './apdexMetric';
 export * from './aggregators';
 export * from './constants';
 export * from './metrics-listener';
+export * from './metrics-timeseries';
 export * from './metric-manager';
 export * from './sliding-window-counter';
 export * from './factory';

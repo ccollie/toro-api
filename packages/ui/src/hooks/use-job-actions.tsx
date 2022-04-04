@@ -33,6 +33,15 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
 
   type ActionType = 'delete' | 'retry' | 'promote' | 'discard' | 'moveToCompleted' | 'moveToFailed';
 
+  const actionText = {
+    delete: 'Delete',
+    retry: 'Retry',
+    promote: 'Promote',
+    discard: 'Discard',
+    moveToCompleted: 'Move to Completed',
+    moveToFailed: 'Move to Failed'
+  };
+
   const pastTenseActions: Record<ActionType, string> = {
     delete: 'Deleted',
     retry: 'Retried',
@@ -83,6 +92,7 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
   }
 
   const openConfirmModal = (action: ActionType, fn: JobHandlerFn) => {
+    const confirmText = actionText[action];
     return new Promise<void>((resolve, reject) => {
       return modals.openConfirmModal({
         centered: true,
@@ -92,7 +102,7 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
             This action cannot be undone !.
           </Text>
         ),
-        labels: { confirm: 'Delete Job', cancel: 'Cancel' },
+        labels: { confirm: confirmText, cancel: 'Cancel' },
         confirmProps: { color: 'red' },
         onClose: () => {
           resolve();

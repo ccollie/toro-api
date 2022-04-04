@@ -15,7 +15,7 @@ interface CardViewProps {
 }
 
 export const CardView = (props: CardViewProps) => {
-  const { status, jobs, queueId, isSelected, toggleSelected, removeSelected} = props;
+  const { status, jobs, queueId, isSelected, toggleSelected, removeSelected } = props;
 
   const { queue } = useQueue(queueId);
   return (

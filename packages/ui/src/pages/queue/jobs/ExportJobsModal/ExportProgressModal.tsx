@@ -112,7 +112,6 @@ export const ExportProgressModal: React.FC<ExportProgressProps> = (props) => {
               }
             />
           </p>
-          <p>You&rsquo;ll need spice to rule Arrakis, young Atreides.</p>
         </Fragment>
       </EmptyState>
     );
@@ -151,8 +150,10 @@ export const ExportProgressModal: React.FC<ExportProgressProps> = (props) => {
 
   return (
     <Modal opened={true} onClose={handleClose}>
-      {isProcessing && <ProgressForm key="progress-form" />}
-      {isCancelled && <CancelledResult key="cancel-result" />}
+      <Center>
+        {isProcessing && <ProgressForm key="progress-form" />}
+        {isCancelled && <CancelledResult key="cancel-result" />}
+      </Center>
     </Modal>
   );
 };

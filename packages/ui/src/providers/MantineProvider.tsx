@@ -4,7 +4,7 @@ import { NotificationsProvider } from '@mantine/notifications';
 import { useColorScheme } from '@mantine/hooks';
 
 import React from 'react';
-import { useThemeStore } from 'src/stores/theme';
+import { useThemeStore } from '@/stores/theme';
 
 const MantineProvider: React.FC = ({ children }) => {
   const setColorScheme = useThemeStore(x => x.setScheme);
@@ -13,8 +13,9 @@ const MantineProvider: React.FC = ({ children }) => {
   // and always 'light' during ssr as window.matchMedia is not available
   const preferredColorScheme = useColorScheme();
   setColorScheme(preferredColorScheme);
-  const toggleColorScheme = (value?: ColorScheme) =>
+  const toggleColorScheme = (value?: ColorScheme) => {
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+  };
 
   return (
     <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>

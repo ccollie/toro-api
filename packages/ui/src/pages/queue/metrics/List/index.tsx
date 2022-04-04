@@ -8,7 +8,7 @@ import {
 } from 'src/hooks';
 
 import DataTable from 'react-data-table-component';
-import { useNavigate } from 'react-location';
+import { useNavigate } from '@tanstack/react-location';
 import { AddIcon, SearchIcon } from 'src/components/Icons';
 import { useDebouncedCallback } from 'use-debounce';
 import {

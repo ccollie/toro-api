@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { useNavigate, useResolvePath } from 'react-location';
+import { useNavigate, useResolvePath } from '@tanstack/react-location';
 import QueueMenu from './QueueMenu';
 import QueueStateBadge from './QueueStateBadge';
 import type { Queue } from '@/types';

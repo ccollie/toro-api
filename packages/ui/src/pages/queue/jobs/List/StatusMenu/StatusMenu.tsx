@@ -1,16 +1,19 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { EmptyJobCounts } from '@/constants';
 import s from './StatusMenu.module.css';
 import type { Queue, Status } from 'src/types';
 import { STATUS_LIST } from 'src/constants/status-list';
-import { Link } from 'react-location';
+import { Link } from '@tanstack/react-location';
 
 // For ref
 
-export const StatusMenu = ({ queue, status }: {
+export const StatusMenu = ({ queue, status, page }: {
   queue: Queue;
   status: Status;
+  page?: number;
 }) => {
+
+  page = page || 1;
 
   function getJobTotal(): number {
     const keys = Object.keys(queue.jobCounts ?? {});
@@ -52,16 +55,15 @@ export const StatusMenu = ({ queue, status }: {
   return (
     <div className={s.statusMenu}>
       {STATUS_LIST.map((status) => {
-        const isLatest = status === 'latest';
+        const isLatest = status  === 'latest';
         const displayStatus = status.toLocaleUpperCase();
-        const search = useMemo(() => isLatest ? {} : { status }, [status]);
+        const search = isLatest ? { page } : { status, page };
         return (
           <Link
             to='.'
             search={search}
             className={getClassName(status)}
             key={`${queue.name}-${status}`}
-            replace={true}
           >
             <span title={displayStatus}>{displayStatus}</span>
             <CountBadge status={status} />

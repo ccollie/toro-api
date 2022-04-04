@@ -3,7 +3,7 @@ import Sidebar from '@/components/Sidebar/Sidebar';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useInterval } from '@/hooks';
 import { useStore } from '@/stores/hosts';
-import { Outlet } from 'react-location';
+import { Outlet } from '@tanstack/react-location';
 import { ErrorFallback } from 'src/components/App/ErrorFallback';
 import { useSidebarState } from 'src/stores';
 import shallow from 'zustand/shallow';

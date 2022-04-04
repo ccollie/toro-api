@@ -2,7 +2,7 @@ import type { LocationGenerics, QueueWorker } from '@/types';
 import { GetQueueWorkersDocument } from '@/types';
 import { useQuery } from '@apollo/client';
 import React, { useEffect, useState } from 'react';
-import { useMatch } from 'react-location';
+import { useMatch } from '@tanstack/react-location';
 import { Workers as WorkersTable } from '@/components';
 import { useNetworkSettingsStore } from '@/stores';
 

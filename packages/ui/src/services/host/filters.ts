@@ -1,6 +1,6 @@
 import { QueueFilterStatus, SortOrderEnum } from '@/types';
-import type { Queue, Maybe, HostQueuesFilter, QueueFilter } from '@/types';
-import { escapeRegExp } from '@/lib';
+import type { Queue, HostQueuesFilter, QueueFilter } from '@/types';
+import { escapeRegExp, stringEqual, stringsEqual } from '@/lib';
 import { get } from '@/lib/nodash';
 
 // these are just examples, we can sort by any field on a Queue
@@ -166,14 +166,6 @@ export function statusesEqual(
   return true;
 }
 
-export function stringsEqual(a?: string[], b?: string[]): boolean {
-  const a1 = new Set(a ?? []);
-  const b1 = new Set(b ?? []);
-  if (a1.size !== b1.size) return false;
-  for (const x of a1) if (!b1.has(x)) return false;
-  return true;
-}
-
 export function normalizeFilter(filter: QueueFilter): QueueFilter {
   const result: QueueFilter = {
     sortOrder: filter.sortOrder || SortOrderEnum.Asc,
@@ -246,14 +238,6 @@ export function normalizeFilterForSearchNavigation(
     delete result.include;
   }
   return result;
-}
-
-export function stringEqual(
-  a: Maybe<string> | undefined,
-  b: Maybe<string> | undefined,
-): boolean {
-  if (!a && !b) return true;
-  return a === b;
 }
 
 function sortFieldsEqual(

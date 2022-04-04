@@ -34,7 +34,8 @@ export const useNetworkSettingsStore = createStore<TNNetworkSettingsState>(
     }
   )
 );
+
 export const getPollingInterval = () => {
   const interval = useNetworkSettingsStore((state) => state.pollingInterval);
-  return interval ? interval : false;
+  return interval ? interval : 0;
 };

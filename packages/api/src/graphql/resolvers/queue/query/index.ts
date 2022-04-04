@@ -31,6 +31,7 @@ import { jobSearch } from './jobSearch';
 import { limiter } from './limiter';
 import { metricCount } from './metricCount';
 import { metrics } from './metrics';
+import { metricsData } from './metricsDateRange';
 import { pendingJobCount } from './pendingJobCount';
 import { repeatableJobCount, repeatableJobs } from './repeatables';
 import { ruleAlertCount } from './ruleAlertCount';
@@ -42,7 +43,7 @@ import { waitingChildrenCount } from './waitingChildrenCount';
 import { waitingCount } from './waitingCount';
 import { waitTimeAvg } from './waitTimeAvg';
 import { workerCount } from './worker-count';
-import { workers as workers } from './workers';
+import { workers } from './workers';
 
 const throughput = getQueueRatesResolver(StatsRateType.Throughput);
 const errorRate = getQueueRatesResolver(StatsRateType.Errors);
@@ -81,6 +82,7 @@ export const QueueTC = schemaComposer.createObjectTC({
     limiter,
     metrics,
     metricCount,
+    metricsData,
     pendingJobCount,
     percentileDistribution,
     repeatableJobs,

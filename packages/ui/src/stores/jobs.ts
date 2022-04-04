@@ -9,6 +9,8 @@ type TState = {
   isSelected: (id: JobOrId) => boolean;
   selectJob: (job: JobOrId) => void;
   selectJobs: (ids: Array<JobOrId>) => void;
+  selectAll: () => void;
+  unselectAll: () => void;
   unselectJob: (job: JobOrId) => void;
   toggleSelectJob: (job: JobOrId) => void;
   setJobs: (jobs: JobFragment[]) => void;
@@ -21,6 +23,7 @@ type JobOrId = JobFragment | string;
 export const useJobsStore = createStore<TState>((set, get) => ({
   selected: new Set(),
   data: [],
+  _selected: [],
   get selectedCount() {
     return get().selected.size;
   },
@@ -34,12 +37,27 @@ export const useJobsStore = createStore<TState>((set, get) => ({
       });
     }
   },
+  selectAll: () => {
+    const { data } = get();
+    const jobIds = new Set(data.map((job) => job.id));
+    set({
+      selected: jobIds,
+    });
+  },
+  unselectAll: () => {
+    set({
+      selected: new Set(),
+    });
+  },
   isSelected: (job: JobOrId) => get().selected.has(getId(job)),
   selectJob: (job: JobOrId) => {
+    const { selected } = get();
     const id = getId(job);
-    set({
-      selected: new Set(get().selected).add(id),
-    });
+    if (!selected.has(id)) {
+      set({
+        selected: new Set([...selected, id]),
+      });
+    }
   },
   toggleSelectJob: (job: JobOrId) => {
     const { selected } = get();

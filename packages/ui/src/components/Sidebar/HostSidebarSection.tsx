@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueueHost } from '@/types';
-import { useMatchRoute } from 'react-location';
+import { useMatchRoute } from '@tanstack/react-location';
 import { CloudServerIcon } from 'src/components/Icons';
 import SidebarSection from './SidebarSection';
 

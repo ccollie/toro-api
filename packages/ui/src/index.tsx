@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from 'react-dom';
 
-import "@unocss/reset/tailwind.css";
+import '@unocss/reset/tailwind.css';
 import 'uno:icons.css';
 import 'uno.css';
 import './styles/index.css';

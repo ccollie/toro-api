@@ -12,10 +12,8 @@ export function useDetailsTabs(currentStatus: JobState, isJobFailed: boolean) {
 
   useEffect(() => {
     const nextState: TabsType[] =
-      currentStatus === 'failed'
+      (currentStatus === 'failed') || isJobFailed
         ? ['Error', ...regularItems]
-        : isJobFailed
-        ? [...regularItems, 'Error']
         : [...regularItems];
 
     updateTabs(nextState);

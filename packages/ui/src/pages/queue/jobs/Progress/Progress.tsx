@@ -20,6 +20,7 @@ export const Progress = ({
   showText?: boolean;
 }) => {
   const color = status === 'failed' ? '#F56565' : 'teal';
+  const perc = percentage > 100 ? 100 : Math.floor(percentage);
   return (
     <RingProgress
       size={size}
@@ -29,7 +30,7 @@ export const Progress = ({
       label={
         showText && (
           <Text color={color} weight={700} align="center" size={textSize}>
-            {percentage}%
+            {perc}%
           </Text>
         )
       }

@@ -11,6 +11,7 @@ interface DetailsContentProps {
 
 function stringify(data: any) {
   if (typeof data === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { __typename, ...rest } = data;
     data = rest;
   }

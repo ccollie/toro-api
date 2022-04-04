@@ -1,5 +1,5 @@
 import React from 'react';
-import { useMatch } from 'react-location';
+import { useMatch } from '@tanstack/react-location';
 import { LocationGenerics } from 'src/types';
 import MetricList from 'src/pages/queue/metrics/List/metric-list';
 

@@ -25,7 +25,6 @@ import {
   filterQueues,
   normalizeExclusions,
   normalizeFilter,
-  stringEqual,
   useHost,
   useQueuePrefixes,
 } from 'src/services';
@@ -39,6 +38,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { stringEqual} from 'src/lib';
 
 interface FilterDropdownProps {
   isOpen?: boolean;

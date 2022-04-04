@@ -1,4 +1,4 @@
-import { stringEqual } from '@/services';
+import { stringEqual } from '@/lib';
 import React from 'react';
 import { AxisOptions, Chart } from 'react-charts';
 import { getErrorPercentage } from '@/lib/math';

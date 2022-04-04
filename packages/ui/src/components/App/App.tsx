@@ -1,10 +1,10 @@
 import { LoadingOverlay } from '@mantine/core';
 import React from 'react';
-import { ReactLocationDevtools } from 'react-location-devtools';
+import { ReactLocationDevtools } from '@tanstack/react-location-devtools';
 import Root from './Root';
 import type { LocationGenerics } from '@/types';
 import { useRouteBuilder } from './routes';
-import { ReactLocation, Router } from 'react-location';
+import { ReactLocation, Router, useRouter } from '@tanstack/react-location';
 
 // Set up a ReactLocation instance
 const location = new ReactLocation<LocationGenerics>();
@@ -22,7 +22,7 @@ export function App() {
       }>
 
       <Root />
-      <ReactLocationDevtools position="bottom-right" />
+      <ReactLocationDevtools position="bottom-right" useRouter={useRouter}/>
     </Router>
   );
 }

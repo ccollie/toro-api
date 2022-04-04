@@ -1,7 +1,8 @@
 import ms from 'ms';
-import { Job, JobJsonRaw, Queue, RedisClient } from 'bullmq';
+import { Job, JobJsonRaw, MinimalQueue, Queue, RedisClient } from 'bullmq';
 import { isEmpty } from '@alpen/shared';
 import { pack } from 'msgpackr';
+import { MetricsTimeseries } from 'packages/core/src/metrics/metrics-timeseries';
 import { translateReplyError } from '../redis';
 import { JobFinishedState, JobStatus } from '../types';
 import { nanoid } from '../lib';
@@ -399,6 +400,54 @@ export class Scripts {
     }
 
     return result;
+  }
+
+  static async getMetricsDateRange(
+    queue: MinimalQueue,
+    type: 'failed' | 'completed',
+    start: Date | number = 0,
+    end: Date| number = -1,
+  ): Promise<MetricsTimeseries> {
+    const client = await queue.client;
+
+    if (typeof start !== 'number') {
+      start = start.getDate();
+    }
+    if (typeof end !== 'number') {
+      end = end.getDate();
+    }
+    if (end !== -1 && end < start) {
+      throw new Error('End date must be greater than start date');
+    }
+
+    const metricsKey = queue.toKey(`metrics:${type}`);
+    const dataKey = `${metricsKey}:data`;
+
+    const args = [
+      metricsKey,
+      dataKey,
+      start,
+      end,
+    ];
+
+    const arr = await (<any>client).getMetricsDateRange(args);
+    const res = arr as Array<string>;
+    const [startDate, endDate, count] = res.slice(-3);
+    const dataPoints = res.slice(0, -3);
+    const startTs = parseInt(startDate, 10);
+    const data = dataPoints.map((v, i) => ({
+      ts: startTs + (i * 60000),
+      value: parseInt(v, 10),
+    }));
+
+    return {
+      meta: {
+        startTs,
+        endTs: parseInt(endDate, 10),
+        count: parseInt(count, 10),
+      },
+      data,
+    };
   }
 }
 

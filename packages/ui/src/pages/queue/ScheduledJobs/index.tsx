@@ -6,7 +6,7 @@ import React, {
 } from 'react';
 import type { RepeatableJob } from '@/types';
 import { deleteRepeatableJobByKey } from '@/services';
-import { useMatch } from 'react-location';
+import { useMatch } from '@tanstack/react-location';
 import { Pagination } from '@/components/Pagination';
 import { ScheduledJobsTable } from './JobsTable';
 import { getPollingInterval } from 'src/stores/network-settings';

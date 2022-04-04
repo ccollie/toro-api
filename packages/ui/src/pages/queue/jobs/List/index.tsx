@@ -1,13 +1,10 @@
 import { LoadingOverlay, ScrollArea } from '@mantine/core';
-import React, { useEffect } from 'react';
-import { useMatch } from 'react-location';
-import { LocationGenerics } from 'src/types';
+import React from 'react';
 import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
-import { useJobListQuery } from '../hooks/use-job-list-query2';
-import { useUpdateEffect, useWhyDidYouUpdate } from '@/hooks';
-import { useInterval } from '@mantine/hooks';
-import { useJobsStore, useNetworkSettingsStore } from '@/stores';
+import { useJobListQuery } from '../hooks/use-job-list-query';
+import { useWhyDidYouUpdate } from '@/hooks';
+import { useJobsStore } from '@/stores';
 import CardView from '../CardView';
 import TableView from '../TableView';
 import JobsToolbar from '../Toolbar';
@@ -15,6 +12,7 @@ import shallow from 'zustand/shallow';
 
 export const Jobs = () => {
   const {
+    queue,
     queueId,
     status,
     page,
@@ -22,22 +20,12 @@ export const Jobs = () => {
     jobFilter: filter,
   } = useJobQueryParameters();
 
-  const { data: { queue } } = useMatch<LocationGenerics>();
-
-  const pollingInterval = useNetworkSettingsStore((state) => state.pollingInterval);
-
-  useWhyDidYouUpdate('JobList', {
+  // todo: load
+  const { called, pageCount, jobs } = useJobListQuery({
     queueId,
     status,
-    filter,
     page,
-    jobView,
-  });
-
-  // todo: load
-  const { loading, called, jobs, fetchJobs, pageCount } = useJobListQuery({
-    queueId,
-    filter,
+    filter
   });
 
   const [selectedJobs, isSelected, toggleSelected, removeSelected] =
@@ -51,22 +39,13 @@ export const Jobs = () => {
       shallow,
     );
 
-  function exec() {
-    if (!loading) {
-      interval.stop();
-      fetchJobs(status, page).finally(() => interval.start());
-    }
-  }
-
-  const interval = useInterval(exec, pollingInterval);
-
-  useEffect(() => {
-    exec();
-    interval.start();
-    return () => interval.stop();
-  }, []);
-
-  useUpdateEffect(exec, [status, page]);
+  useWhyDidYouUpdate('JobList', {
+    status,
+    filter,
+    page,
+    jobView,
+    selectedJobs,
+  });
 
   // todo: error page
   if (!queue) {
@@ -78,7 +57,7 @@ export const Jobs = () => {
   return (
     <section className="flex-1">
       <div>
-        <StatusMenu queue={queue} status={status} />
+        <StatusMenu queue={queue} status={status} page={page}/>
         <JobsToolbar
           queueId={queueId}
           page={page}

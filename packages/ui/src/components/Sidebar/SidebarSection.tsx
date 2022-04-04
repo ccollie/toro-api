@@ -1,5 +1,5 @@
 import React, { ReactNode, useCallback } from 'react';
-import { Link, useMatchRoute, useNavigate } from 'react-location';
+import { Link, useMatchRoute, useNavigate } from '@tanstack/react-location';
 import { useDisclosure } from '@/hooks';
 import SidebarLinkGroup from './SidebarLinkGroup';
 
@@ -41,7 +41,7 @@ interface SidebarSimpleItemProps {
 export const SidebarLink: React.FC<SidebarSimpleItemProps> = (props) => {
   const { children, isActive = false, title, href = '#' } = props;
   const content: ReactNode = title ?? children;
-  const icon = props.icon ?? <span></span>; // todo: space properly
+  const icon = props.icon ?? <span/>; // todo: space properly
   return (
     <li
       className={`px-3 py-2 rounded-sm mb-0.5 last:mb-0 ${
