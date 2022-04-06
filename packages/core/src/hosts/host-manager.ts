@@ -13,6 +13,7 @@ import pSettle from 'p-settle';
 import pAll from 'p-all';
 import pMap from 'p-map';
 import { uniqBy } from '@alpen/shared';
+import { getQueueWorkersMulti } from '../loaders/queue-workers';
 import { ensureScriptsLoaded } from '../commands';
 import type { JobCounts, JobStatus } from '../types';
 import { QueueManager } from '../queues/queue-manager';
@@ -51,7 +52,7 @@ import {
 } from '../notifications';
 import { NotificationContext } from '../types';
 import { getHostUri } from '../lib';
-import { convertWorker, QueueWorker } from '../queues';
+import { QueueWorker } from '../queues';
 
 const queueConfigKey = (prefix: string, name: string): string => {
   return `${prefix}:${name}`;
@@ -283,40 +284,7 @@ export class HostManager {
 
   async getQueueWorkers(): Promise<Map<Queue, QueueWorker[]>> {
     const queues = this.getQueues();
-    const result = new Map<Queue, QueueWorker[]>();
-    const queueByClientName = new Map<string, Queue>();
-    queues.forEach((queue) => {
-      const clientName = (queue as any).clientName();
-      queueByClientName.set(clientName, queue);
-      result.set(queue, []);
-    });
-
-    function parseClientList(list: string): void {
-      const lines = list.split('\n');
-
-      lines.forEach((line: string) => {
-        const client: { [index: string]: string } = {};
-        const keyValues = line.split(' ');
-        keyValues.forEach(function (keyValue) {
-          const index = keyValue.indexOf('=');
-          const key = keyValue.substring(0, index);
-          client[key] = keyValue.substring(index + 1);
-        });
-        const name = client['name'];
-        if (!name) return;
-        const queue = queueByClientName.get(name);
-        if (queue) {
-          const workers = result.get(queue);
-          client['name'] = queue.name;
-          workers.push(convertWorker(client));
-        }
-      });
-    }
-
-    const clients = await this.client.client('list');
-    parseClientList(clients);
-
-    return result;
+    return getQueueWorkersMulti(queues);
   }
 
   async getWorkers(): Promise<QueueWorker[]> {
@@ -337,6 +305,7 @@ export class HostManager {
     const pipeline = this.client.pipeline();
     const queues = this.getQueues();
     queues.forEach((queue) => {
+      // todo: use loader
       getPipelinedCounts(pipeline, queue, states);
     });
     const responses = await pipeline.exec().then(checkMultiErrors);

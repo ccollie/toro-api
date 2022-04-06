@@ -28,6 +28,8 @@ export type JobStatus = JobState
   | 'paused'
   | 'unknown';
 
+export type JobSearchStatus = JobState | 'paused';
+
 export type JobFinishedState = 'completed' | 'failed';
 
 export type JobCounts = Record<JobState, number>;
@@ -75,9 +77,9 @@ export interface JobCreationOptions {
 export type JobFilter = {
   id: string;
   name: string;
-  status?: JobStatus;
-  hash: string;
+  status?: JobSearchStatus;
   expression: string;
+  pattern?: string;
   createdAt: number;
 };
 

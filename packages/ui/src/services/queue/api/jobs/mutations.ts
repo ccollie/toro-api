@@ -1,26 +1,30 @@
-import { FetchResult } from '@apollo/client';
 import { client } from '@/providers/ApolloProvider';
 import type {
-  Job,
   BulkStatusItem,
   CreateJobMutation,
   DeleteBulkJobsMutation,
-  DeleteRepeatableJobByKeyMutation,
-  PromoteBulkJobsMutation,
-  RetryBulkJobsMutation,
-  Status,
-  JobFragment,
   DeleteJobMutation,
+  DeleteJobsByFilterMutation,
+  DeleteJobsByPatternMutation,
+  DeleteRepeatableJobByKeyMutation,
+  DiscardJobMutation,
+  Job,
+  JobFragment,
+  JobSearchStatus,
+  JobStatus,
   MoveJobToCompletedMutation,
   MoveJobToFailedMutation,
-  RetryJobMutation,
-  DiscardJobMutation,
+  PromoteBulkJobsMutation,
   PromoteJobMutation,
+  RetryBulkJobsMutation,
+  RetryJobMutation,
 } from '@/types';
 import {
   CreateJobDocument,
   DeleteBulkJobsDocument,
   DeleteJobDocument,
+  DeleteJobsByFilterDocument,
+  DeleteJobsByPatternDocument,
   DeleteRepeatableJobByKeyDocument,
   DiscardJobDocument,
   MoveJobToCompletedDocument,
@@ -31,6 +35,7 @@ import {
   RetryBulkJobsDocument,
   RetryJobDocument,
 } from '@/types';
+import { FetchResult } from '@apollo/client';
 
 function evictJobs(queueId: string, ids: string[]): void {
   const cache = client.cache;
@@ -51,7 +56,7 @@ function evictJobs(queueId: string, ids: string[]): void {
   });
 }
 
-function updateStatus(jobId: string, state: Status): void {
+function updateStatus(jobId: string, state: JobStatus): void {
   const cache = client.cache;
   cache.modify({
     id: cache.identify({
@@ -162,7 +167,7 @@ export async function discardJob(
       checkError(value);
       const status = value.data?.discardJob?.job?.state;
       if (status) {
-        updateStatus(jobId, status as Status);
+        updateStatus(jobId, status as JobStatus);
       }
     });
 }
@@ -199,7 +204,7 @@ export async function retryJob(
       checkError(value);
       const state = value.data?.retryJob?.job?.state;
       if (state) {
-        updateStatus(jobId, state as Status);
+        updateStatus(jobId, state as JobStatus);
       }
     });
 }
@@ -257,5 +262,38 @@ export function deleteRepeatableJobByKey(
     })
     .then((value: FetchResult<DeleteRepeatableJobByKeyMutation>) => {
       checkError(value);
+    });
+}
+
+export function deleteJobsByPattern(
+  queueId: string,
+  pattern: string,
+  status?: JobSearchStatus,
+): Promise<number> {
+  return client
+    .mutate<DeleteJobsByPatternMutation>({
+      variables: { queueId, pattern, status },
+      mutation: DeleteJobsByPatternDocument,
+    })
+    .then((value: FetchResult<DeleteJobsByPatternMutation>) => {
+      checkError(value);
+      return value.data?.deleteJobsByPattern?.removed || 0;
+    });
+}
+
+export function deleteJobsByFilter(
+  queueId: string,
+  filter: string,
+  status?: JobSearchStatus,
+  pattern?: string,
+): Promise<number> {
+  return client
+    .mutate<DeleteJobsByFilterMutation>({
+      variables: { queueId, filter, status, pattern },
+      mutation: DeleteJobsByFilterDocument,
+    })
+    .then((value: FetchResult<DeleteJobsByFilterMutation>) => {
+      checkError(value);
+      return value.data?.deleteJobsByFilter?.removed || 0;
     });
 }

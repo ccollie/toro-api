@@ -25,6 +25,7 @@ export const JobState = new GraphQLEnumType({
   },
 });
 
+
 export const JobType = new GraphQLEnumType({
   name: 'JobType',
   values: {
@@ -40,6 +41,21 @@ export const JobType = new GraphQLEnumType({
     wait: { value: 'wait' },
   },
 });
+
+export const JobSearchStatus = new GraphQLEnumType({
+  name: 'JobSearchStatus',
+  values: {
+    completed: { value: 'completed' },
+    failed: { value: 'failed' },
+    active: { value: 'active' },
+    delayed: { value: 'delayed' },
+    waiting: { value: 'waiting' },
+    // eslint-disable-next-line camelcase
+    waiting_children: { value: 'waiting-children' },
+    paused: { value: 'paused' },
+  },
+});
+
 
 // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queue.clean.md
 export const CleanQueueJobType = new GraphQLEnumType({

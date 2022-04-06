@@ -1,8 +1,8 @@
+import { getJobsById } from '../loaders/job-by-id';
 import { isEmpty, uniq } from '@alpen/shared';
-import { Job, JobState, JobType, Queue, RedisClient } from 'bullmq';
+import { Job, JobState, Queue, RedisClient } from 'bullmq';
 import { getQueueConfig } from '../hosts/host-config';
 import { deleteByPattern, normalizePrefixGlob, scanKeys } from '../redis';
-import { systemClock } from '../lib';
 import { getQueueMetaKey, getQueueStatsPattern } from '../keys';
 import {
   getJobNamesWithSchemas,
@@ -10,7 +10,7 @@ import {
   validateBySchema,
   validateJobData,
 } from './job-schemas';
-import { JobCreationOptions, JobStatus } from '../types/queues';
+import { JobCreationOptions, JobSearchStatus, JobStatus } from '../types/queues';
 import { Pipeline } from 'ioredis';
 import { logger } from '../logger';
 import { Scripts } from '../commands';
@@ -42,43 +42,7 @@ export async function getMultipleJobsById(
   if (flat.length === 0) {
     return [];
   }
-  const client = await queue.client;
-  const multi = client.multi();
-  flat.forEach((jid) => {
-    multi.hgetall(queue.toKey(jid));
-  });
-  const res = await multi.exec();
-  const result: Job<any, any>[] = [];
-  const now = systemClock.getTime();
-  res.forEach((item, index) => {
-    if (item[0]) {
-      // err
-    } else {
-      const jobData = item[1];
-      const jid = flat[index];
-      if (!isEmpty(jobData)) {
-        const job = Job.fromJSON(queue, jobData, jid);
-        job.timestamp = parseInt(jobData.timestamp || now);
-        result.push(job);
-      }
-    }
-  });
-  return result;
-}
-
-export async function getJobCounts(
-  queue: Queue,
-  states?: JobType[],
-): Promise<Record<string, number>> {
-  states = (!states || states.length) === 0 ? JOB_STATES : states;
-  let result = await queue.getJobCounts(...states);
-  if (!result) result = {};
-  JOB_STATES.forEach((state) => {
-    if (typeof result[state] !== 'number') {
-      result[state] = 0;
-    }
-  });
-  return result;
+  return getJobsById(queue, flat);
 }
 
 export async function getQueueMeta(queue: Queue): Promise<Record<string, any>> {
@@ -277,7 +241,7 @@ export async function getPipelinePaused(
 
 export async function getJobCountByType(
   queue: Queue,
-  ...states: JobState[]
+  ...states: JobSearchStatus[]
 ): Promise<number> {
   const statuses = states.length ? states : JOB_STATES;
   const key = {

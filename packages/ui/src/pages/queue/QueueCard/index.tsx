@@ -1,6 +1,6 @@
 import { Center, Group, Paper } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
-import type { JobCounts, Queue, StatsSnapshot, Status } from '@/types';
+import type { JobCounts, Queue, StatsSnapshot, JobStatus } from '@/types';
 import { Link } from '@tanstack/react-location';
 import { JobCountsPieChart } from '@/components/charts';
 import Statistic from '@/components/Stats/Statistic';
@@ -28,7 +28,7 @@ export const QueueCard = (props: QueueCardProps) => {
     return keys.reduce((total, key) => total + ((counts as any)[key] ?? 0), 0);
   }
 
-  function getCount(status: Status): number {
+  function getCount(status: JobStatus): number {
     const counts = queue.jobCounts || {};
     if (status === 'latest') return getTotal(counts);
     return (counts as any)[status] ?? 0;

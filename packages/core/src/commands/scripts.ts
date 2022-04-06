@@ -2,7 +2,7 @@ import ms from 'ms';
 import { Job, JobJsonRaw, MinimalQueue, Queue, RedisClient } from 'bullmq';
 import { isEmpty } from '@alpen/shared';
 import { pack } from 'msgpackr';
-import { MetricsTimeseries } from 'packages/core/src/metrics/metrics-timeseries';
+import { MetricsTimeseries } from '../metrics/metrics-timeseries';
 import { translateReplyError } from '../redis';
 import { JobFinishedState, JobStatus } from '../types';
 import { nanoid } from '../lib';

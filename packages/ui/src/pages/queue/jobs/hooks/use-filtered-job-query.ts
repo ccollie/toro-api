@@ -1,11 +1,10 @@
 import {
-  GetJobsByFilterQuery,
-  JobCounts,
+  JobSearchStatus,
   useGetJobsByFilterLazyQuery,
   useGetJobsByIdQuery,
 } from '@/types';
 import { useEffect, useState } from 'react';
-import type { JobFragment, JobState } from '@/types';
+import type { JobFragment, JobCounts, GetJobsByFilterQuery } from '@/types';
 import { useQueue, useToast } from '@/hooks';
 import { useJobsStore } from '@/stores';
 import shallow from 'zustand/shallow';
@@ -13,7 +12,7 @@ import { useUpdateResults } from './use-update-results';
 
 interface UseFilteredJobQueryProps {
   queueId: string;
-  status: JobState;
+  status: JobSearchStatus;
   filter?: string;
   page: number;
   pageSize: number;
@@ -37,7 +36,6 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
   const [lastPage, setLastPage] = useState(Math.min(page, 1));
   const [totalPages, setTotalPages] = useState(Math.min(page, 1));
   const [pageCount, setPageCount] = useState(0);
-  const [iterationEnded, setIterationEnded] = useState(false);
   const [jobIds, setJobIds] = useState<string[]>([]);
 
   const [cursor, setCursor] = useState<string>();
@@ -54,7 +52,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
   const { updateResults: updateFn } = useUpdateResults(queue, pageSize);
 
   function updateResults(
-    status: JobState,
+    status: JobSearchStatus,
     jobs: JobFragment[],
     counts: JobCounts,
   ) {
@@ -83,8 +81,8 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
     });
 
   function onCompleted(data: GetJobsByFilterQuery) {
-    if (data.queue?.jobSearch) {
-      const { total, jobs, cursor: newCursor } = data.queue.jobSearch;
+    if (data.queue?.jobsByFilter) {
+      const { total, jobs, cursor: newCursor } = data.queue.jobsByFilter;
       if (newCursor !== cursor) {
         clearPagination();
       }
@@ -105,7 +103,6 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
         // we've exhausted all results
         setPageCount(lastPage);
         setCursor(undefined);
-        setIterationEnded(true);
       }
     }
   }
@@ -116,7 +113,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
       ids: jobIds,
     },
     displayName: 'useFilteredJobQuery:getJobsById',
-    skip: (!called || !polling || !jobIds.length) || !shouldFetch,
+    skip: !called || !polling || !jobIds.length || !shouldFetch,
     pollInterval,
     onCompleted: (data) => {
       if (data.getJobsById) {
@@ -142,7 +139,6 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
   useEffect(() => {
     if (cursor) {
       setHasNext(true);
-      setIterationEnded(false);
     } else if (!filter) {
       setHasNext(false);
     } else {
@@ -186,7 +182,6 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
 
   function clear() {
     setCursor(undefined);
-    setIterationEnded(false);
     clearPagination();
     setJobs([]);
     setPolling(false);

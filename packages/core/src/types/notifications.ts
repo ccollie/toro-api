@@ -4,7 +4,7 @@ export interface NotificationContext {
   host: {
     id: string;
     name: string;
-    uri: string;
+    uri?: string;
   };
   app: AppInfo;
   env: string;

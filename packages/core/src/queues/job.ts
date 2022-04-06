@@ -1,6 +1,6 @@
 import { isNumber } from '@alpen/shared';
 import {  notFound, badRequest } from '@hapi/boom';
-import { Job, Queue } from 'bullmq';
+import { Job, JobState, Queue } from 'bullmq';
 import type { JobJson } from 'bullmq';
 import pSettle, { PromiseRejectedResult } from 'p-settle';
 import { getMultipleJobsById } from './queue';
@@ -11,7 +11,7 @@ import { Scripts } from '../commands';
 // out of sync with bullmq's types.
 // eslint-disable-next-line max-len
 // see https://stackoverflow.com/questions/43909566/get-keys-of-a-typescript-interface-as-array-of-strings
-class MyJobJson implements JobJson {
+export class MyJobJson implements JobJson {
   attemptsMade: JobJson['attemptsMade'];
   data: JobJson['data'];
   failedReason: JobJson['failedReason'];
@@ -22,6 +22,10 @@ class MyJobJson implements JobJson {
   returnvalue: JobJson['returnvalue'];
   stacktrace: JobJson['stacktrace'];
   timestamp: JobJson['timestamp'];
+  finishedOn?: JobJson['finishedOn'];
+  processedOn?: JobJson['processedOn'];
+  parentKey?: JobJson['parentKey'];
+  state?: JobState;
 }
 
 // The properties of a Job object

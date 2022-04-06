@@ -73,9 +73,19 @@ async function getQueueWorkersBatch(queues: Queue[]): Promise<QueueWorker[][]> {
   return result;
 }
 
+export async function getQueueWorkersMulti(queues: Queue[]): Promise<Map<Queue, QueueWorker[]>> {
+  const result = new Map<Queue, QueueWorker[]>();
+  const workers = await getQueueWorkersBatch(queues);
+  workers.forEach((workers, index) => {
+    const queue = queues[index];
+    result.set(queue, workers);
+  });
+  return result;
+}
+
 export const workers = new DataLoader(getQueueWorkersBatch);
 
-async function getQueueWorkerCountBatch(
+export async function getQueueWorkerCountBatch(
   queues: Queue[],
 ): Promise<(number | Error)[]> {
   const loaded = (await workers.loadMany(queues)) as Array<

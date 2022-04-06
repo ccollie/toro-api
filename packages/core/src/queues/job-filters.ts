@@ -1,17 +1,28 @@
-import { badData, notFound, badRequest } from '@hapi/boom';
-import ms from 'ms';
-import LRUCache from 'lru-cache';
-import { getUniqueId, nanoid } from '../lib';
+import {
+  isEmpty,
+  isObject,
+  parse as parseExpression,
+  safeParse,
+  splitArray,
+  uniq,
+} from '@alpen/shared';
+import { isValidJobIdPattern } from '@alpen/shared';
+import boom, { badData, badRequest, notFound } from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
-import type { FilteredJobsResult, JobFilter, JobStatus } from '../types/queues';
-import { ScriptFilteredJobsResult, Scripts } from '../commands';
-import { checkMultiErrors } from '../redis';
-import { getMultipleJobsById } from './queue';
+import LRUCache from 'lru-cache';
+import ms from 'ms';
 import { getJobFiltersKey } from '../keys';
-import { parse as parseExpression, safeParse } from '@alpen/shared';
-import { isEmpty, isObject, uniq } from '@alpen/shared';
+import { getUniqueId, nanoid } from '../lib';
 import { getConfigNumeric } from '../lib/config-utils';
-import { compileExpression, ExpressionMeta, getExpressionHash } from '../lib/expr-utils';
+import { compileExpression, ExpressionMeta } from '../lib/expr-utils';
+import { checkMultiErrors } from '../redis';
+import type {
+  FilteredJobsResult,
+  JobFilter,
+  JobSearchStatus,
+} from '../types/queues';
+import { findJobsByFilter } from './job-search';
+import { getMultipleJobsById } from './queue';
 
 // cache to save expression parsing overhead
 const filterCache = new LRUCache({
@@ -19,12 +30,11 @@ const filterCache = new LRUCache({
   ttl: 60000,
 });
 
-function getCompiled(filter: string, hash?: string): ExpressionMeta {
-  hash = hash ?? getExpressionHash(filter);
-  let filterMeta = filterCache.get(hash) as ExpressionMeta;
+function getCompiled(filter: string): ExpressionMeta {
+  let filterMeta = filterCache.get(filter) as ExpressionMeta;
   if (!filterMeta) {
     filterMeta = compileExpression(filter);
-    filterCache.set(hash, filterMeta);
+    filterCache.set(filter, filterMeta);
   }
   return filterMeta;
 }
@@ -32,9 +42,7 @@ function getCompiled(filter: string, hash?: string): ExpressionMeta {
 function unserialize(data: string): JobFilter {
   const value = safeParse(data);
   if (!value || typeof value !== 'object') return null;
-  const filter = value as JobFilter;
-  filter.hash = filter.hash || getExpressionHash(filter.expression);
-  return filter;
+  return value as JobFilter;
 }
 
 function serialize(jobFilter: JobFilter): string {
@@ -53,6 +61,7 @@ function validateFilter(filter: JobFilter) {
     throw badData('Missing filter name');
   }
   validateFilterExpression(filter.expression);
+  validateJobIdPattern(filter.pattern);
 }
 
 async function storeFilter(queue: Queue, filter: JobFilter): Promise<void> {
@@ -65,16 +74,16 @@ async function storeFilter(queue: Queue, filter: JobFilter): Promise<void> {
 export async function addJobFilter(
   queue: Queue,
   name: string,
-  status: JobStatus | null,
+  status: JobSearchStatus | null,
   expression: string,
+  pattern?: string,
 ): Promise<JobFilter> {
-  const hash = getExpressionHash(expression);
   const filter: JobFilter = {
     id: getUniqueId(),
     name,
     status,
     expression,
-    hash,
+    pattern,
     createdAt: Date.now(),
   };
 
@@ -105,11 +114,11 @@ export async function updateJobFilter(
     oldFilter &&
     oldFilter.name === filter.name &&
     oldFilter.status === filter.status &&
-    oldFilter.hash === filter.hash
+    oldFilter.expression === filter.expression &&
+    oldFilter.pattern === filter.pattern
   ) {
     return false;
   }
-  filter.hash = getExpressionHash(filter.expression);
   await storeFilter(queue, filter);
   return true;
 }
@@ -176,14 +185,13 @@ export async function getJobsByFilterId(
       `No job filter with id "${id}" found for queue "${queue.name}"`,
     );
 
-  return processSearch(
-    queue,
-    filter.status,
-    filter.expression,
-    filter.hash,
+  return processSearch(queue, {
+    status: filter.status,
+    filter: filter.expression,
+    pattern: filter.pattern,
     cursor,
-    count,
-  );
+    count
+  });
 }
 
 const FilterCursorPrefix = '$filter-cursor';
@@ -192,24 +200,12 @@ function getCursorKey(queue: Queue, cursor: string): string {
   return queue.toKey(`${FilterCursorPrefix}:${cursor}`);
 }
 
-function splitArray<T = any>(source: T[], count: number): [T[], T[]] {
-  const len = source.length;
-  if (count >= len) {
-    return [source, []];
-  }
-  const toTake = Math.max(len, count);
-  const slice = source.slice(0, toTake - 1);
-  const remainder = toTake < len ? source.slice(toTake) : [];
-  return [slice, remainder];
-}
-
 const CursorExpiration = ms('10 mins');
 
 interface SearchCursorMeta {
-  cursor: number;
+  cursor: string;
   timestamp: number;
   filter: string;
-  hash: string;
   total: number;
   current: number;
   ids: string[];
@@ -220,11 +216,13 @@ const MAX_BATCH_COUNT = getConfigNumeric('JOB_MATCH_BATCH_SIZE', 200);
 
 export async function processSearch(
   queue: Queue,
-  status: JobStatus,
-  filter: string,
-  hash: string = null,
-  cursor: string,
-  count = 10,
+  options: {
+    status?: JobSearchStatus;
+    filter: string;
+    pattern?: string;
+    cursor?: string;
+    count?: number;
+  }
 ): Promise<FilteredJobsResult> {
   let jobs: Job[] = [];
   const client = await queue.client;
@@ -233,6 +231,11 @@ export async function processSearch(
   let firstRun: boolean;
   const idSet = new Set<string>();
 
+  const { status, filter: _filter, cursor: _cursor, pattern, count } = options;
+
+  let cursor = _cursor;
+  let filter = _filter;
+
   if (!cursor) {
     if (isEmpty(filter)) {
       throw badRequest('A filter must be specified if no cursor is given');
@@ -240,12 +243,11 @@ export async function processSearch(
     cursor = nanoid();
     meta = {
       filter,
-      cursor: 0,
+      cursor: null,
       current: 0,
       total: 0,
       ids: [],
       timestamp: Date.now(),
-      hash: getExpressionHash(filter),
     };
     firstRun = true;
   } else {
@@ -260,7 +262,6 @@ export async function processSearch(
   }
 
   filter = filter || meta.filter;
-  hash = hash || meta.hash || getExpressionHash(filter);
 
   if (meta.ids?.length) {
     const [slice, remainder] = splitArray(meta.ids, count);
@@ -272,20 +273,19 @@ export async function processSearch(
   if (jobs.length < count) {
     let requestCount = Math.min(count - jobs.length, MAX_BATCH_COUNT);
     let nullCount = 0;
-    const compiled = getCompiled(filter, hash);
+
     while ((firstRun || meta.cursor) && jobs.length < count) {
       const {
         cursor: nextCursor,
         jobs: _jobs = [],
         total,
-      } = await Scripts.getJobsByFilter(
-        queue,
+      } = await findJobsByFilter(queue, {
         status,
-        compiled.compiled,
-        compiled.globals,
-        meta.cursor,
-        requestCount,
-      );
+        filter,
+        cursor: meta.cursor,
+        pattern,
+        count,
+      });
 
       meta.cursor = nextCursor;
       meta.total = total;
@@ -349,21 +349,11 @@ export async function processSearch(
   };
 }
 
-export async function removeJobsByFilter(
-  queue: Queue,
-  type: string,
-  filter: any,
-  globals: Record<string, any> | undefined | null,
-  cursor: number,
-  count = 10,
-): Promise<ScriptFilteredJobsResult> {
-  return Scripts.execJobFilterAction(
-    queue,
-    type,
-    filter,
-    'remove',
-    globals,
-    cursor,
-    count,
-  );
+export function validateJobIdPattern(pattern: string, required?: boolean): void {
+  if (required && isEmpty(pattern)) {
+    throw badRequest('A pattern must be specified');
+  }
+  if (!isValidJobIdPattern(pattern)) {
+    throw boom.badRequest(`Invalid job id pattern: ${pattern}`);
+  }
 }

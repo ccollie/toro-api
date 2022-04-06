@@ -158,8 +158,8 @@ type Mutation {
   """Delete all stats associated with a queue"""
   deleteQueueStats(input: DeleteQueueStatsInput!): DeleteQueueStatsResult!
 
-  """Incrementally delete jobs filtered by query criteria"""
-  deleteJobsByFilter(filter: DeleteJobsByFilterInput!): DeleteJobsByFilterPayload!
+  """Delete jobs by filter expression"""
+  deleteJobsByFilter(input: DeleteJobsByFilterInput!): DeleteJobsByFilterPayload!
   retryJobs(input: RetryJobsInput!): RetryJobsPayload!
 
   """
@@ -169,6 +169,9 @@ type Mutation {
 
   """Trim the event stream to an approximately maxLength."""
   trimQueueEvents(id: ID!, maxLength: Int): Queue!
+
+  """Incrementally delete jobs filtered by pattern"""
+  deleteJobsByPattern(input: DeleteJobsByPatternInput!): DeleteJobsByPatternPayload!
 
   """Removes all alerts associated with a rule"""
   clearRuleAlerts(input: ClesrRuleAlertsInput!): ClearRuleAlertsResult!
@@ -396,6 +399,16 @@ enum HttpMethodEnum {
   POST
 }
 
+enum JobSearchStatus {
+  completed
+  failed
+  active
+  delayed
+  waiting
+  waiting_children
+  paused
+}
+
 enum JobState {
   completed
   failed
@@ -421,6 +434,11 @@ enum MetricCategory {
   Queue
   Host
   Redis
+}
+
+enum MetricStatusType {
+  failed
+  completed
 }
 
 enum MetricType {
@@ -694,11 +712,11 @@ type DeleteJobPayload {
 }
 
 type DeleteJobsByFilterPayload {
-  cursor: Int
+  """The number of jobs removed this iteration"""
+  removed: Int!
+}
 
-  """The total number of jobs to be removed"""
-  total: Int!
-
+type DeleteJobsByPatternPayload {
   """The number of jobs removed this iteration"""
   removed: Int!
 }
@@ -915,6 +933,9 @@ type JobFilter {
   """The job filter query"""
   expression: String!
 
+  """The job filter pattern"""
+  pattern: String
+
   """The date this filter was created"""
   createdAt: Date
 }
@@ -1021,6 +1042,20 @@ type JobRepeatOptions {
   every: String
 }
 
+type JobsByFilterPayload {
+  """The updated iteration cursor. Set to null when iteration is complete."""
+  cursor: String
+
+  """The jobs matching the filter for the current iteration"""
+  jobs: [Job!]!
+
+  """The approximate number of jobs to iterate over."""
+  total: Int!
+
+  """The number of jobs iterated over so far."""
+  current: Int!
+}
+
 """Options for validating job data"""
 type JobSchema {
   jobName: String!
@@ -1030,14 +1065,6 @@ type JobSchema {
 
   """Default options for jobs off this type created through the API"""
   defaultOpts: JSONObject
-}
-
-type JobSearchPayload {
-  cursor: String
-  hasNext: Boolean!
-  jobs: [Job!]!
-  total: Int!
-  current: Int!
 }
 
 type JobUpdateDelta {
@@ -1155,6 +1182,14 @@ type MetricInfo {
   valueType: MetricValueType!
   unit: String
   isPolling: Boolean!
+}
+
+type MetricsTimeseries {
+  """Metadata about the timeseries"""
+  meta: TimeseriesMeta!
+
+  """The data points for the timeseries."""
+  data: [TimeseriesDataPoint!]!
 }
 
 type MoveJobToCompletedResult {
@@ -1377,11 +1412,8 @@ type Queue {
   """
   jobSchemas(jobNames: [String!]): [JobSchema!]!
 
-  """Incrementally iterate over a list of jobs filtered by query criteria"""
-  jobSearch(filter: JobSearchInput!): JobSearchPayload!
-
-  """Fetch jobs based on a previously stored filter"""
-  jobsByFilter(filter: JobsByFilterIdInput!): JobSearchPayload!
+  """Fetch jobs based on a filter expression or a previously stored filter"""
+  jobsByFilter(input: JobsByFilterInput!): JobsByFilterPayload!
 
   """Get the average runtime duration of completed jobs in the queue"""
   jobDurationAvg(
@@ -1403,6 +1435,7 @@ type Queue {
   limiter: QueueLimiter
   metrics: [Metric!]!
   metricCount: Int!
+  metricsData(input: MetricsDataInput): MetricsTimeseries
 
   """Returns the number of jobs waiting to be processed."""
   pendingJobCount: Int!
@@ -1585,7 +1618,19 @@ type QueueJobCountDelta {
 }
 
 type QueueLimiter {
+  """The group key to be used by the limiter when limiting by group keys."""
   groupKey: String
+
+  """
+  The duration of the limiter in milliseconds. 
+  During this time, a maximum of "max" jobs will be processed.
+  """
+  duration: Int
+
+  """
+  The maximum number of jobs that can be processed during the period specified by "duration".
+  """
+  max: Int
 }
 
 """"""
@@ -1996,6 +2041,17 @@ type TimeseriesDataPoint implements TimeseriesDataPointInterface {
   value: Float!
 }
 
+type TimeseriesMeta {
+  """Unix timestamp (millis) of the first datapoint of the timeseries"""
+  startTs: Int!
+
+  """Unix timestamp (millis) of the last datapoint of the timeseries"""
+  endTs: Int!
+
+  """Number of total datapoints in the timeseries"""
+  count: Int!
+}
+
 type TimeSpan {
   startTime: DateTime!
   endTime: DateTime!
@@ -2136,8 +2192,11 @@ input CreateFlowInput {
 input CreateJobFilterInput {
   queueId: ID!
   name: String!
-  status: JobType
+  status: JobSearchStatus
   expression: String!
+
+  """A pattern to match against the job id e.g. email-*-job"""
+  pattern: String
 }
 
 input CreateJobInput {
@@ -2230,19 +2289,36 @@ input DeleteJobFilterInput {
 }
 
 input DeleteJobsByFilterInput {
+  """The id of the queue"""
+  queueId: ID!
+
   """Search for jobs having this status"""
-  status: JobType = completed
+  status: JobSearchStatus = completed
 
   """The job filter expression"""
-  criteria: String
+  expression: String!
 
   """
-  The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null
+  Optional job id pattern e.g. "j[?]b-*"
   """
-  cursor: Int = null
+  pattern: String
 
   """The maximum number of jobs to remove per iteration"""
-  count: Int! = 10
+  count: Int = 20
+}
+
+input DeleteJobsByPatternInput {
+  """The id of the queue"""
+  queueId: ID!
+
+  """Filter by jobs having this status"""
+  status: JobSearchStatus = completed
+
+  """The job pattern. e.g uploads:*"""
+  pattern: String
+
+  """The maximum number of jobs to remove per iteration"""
+  countPerIteration: Int = 10
 }
 
 input DeleteJobSchemaInput {
@@ -2301,7 +2377,12 @@ input FindJobsInput {
   """The id of the desired queue"""
   queueId: ID!
   scanCount: Int = 20
-  status: JobState
+
+  """Optionally filter jobs by id pattern e.g. foo?-*"""
+  pattern: String
+
+  """Optionally filter jobs by status"""
+  status: JobSearchStatus
 
   """The cursor to start from"""
   cursor: String
@@ -2591,17 +2672,30 @@ input JobRepeatOptionsCronInput {
   cron: String!
 }
 
-input JobsByFilterIdInput {
-  """The id of the filter"""
-  filterId: ID!
+input JobsByFilterInput {
+  """
+  The id of an existing filter. Specify this or the expression, but not both.
+  """
+  filterId: ID
+
+  """The filter expression. Specify this or the filterId, but not both."""
+  expression: String
 
   """
-  The iterator cursor. Iteration starts when the cursor is set to 0, and terminates when the cursor returned by the server is 0
+  Optional job status to filter on. One of "active", "completed", "failed", "paused", "waiting","delayed".
   """
-  cursor: Int = 0
+  status: JobSearchStatus
+
+  """Job id pattern e.g. "job-*"."""
+  pattern: String
+
+  """
+  The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null
+  """
+  cursor: String = ""
 
   """The maximum number of jobs to return per iteration"""
-  count: Int!
+  count: Int
 }
 
 input JobSchemaInput {
@@ -2609,22 +2703,6 @@ input JobSchemaInput {
   jobName: String!
   schema: JSONSchema!
   defaultOpts: JobOptionsInput
-}
-
-input JobSearchInput {
-  """Search for jobs having this status"""
-  status: JobState = completed
-
-  """The job filter expression"""
-  criteria: String
-
-  """
-  The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null
-  """
-  cursor: String = null
-
-  """The maximum number of jobs to return per iteration"""
-  count: Int! = 10
 }
 
 input JobsMemoryAvgInput {
@@ -2709,6 +2787,17 @@ input MetricPercentileDistributionInput {
 
   """The percentiles to get frequencies for"""
   percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
+}
+
+input MetricsDataInput {
+  """The type of metric to fetch"""
+  type: MetricStatusType!
+
+  """The start of the date range to query"""
+  start: DateTime
+
+  """The end of the date range to query"""
+  end: DateTime
 }
 
 """Compute a frequency distribution of a range of metric data."""
@@ -2818,7 +2907,7 @@ input QueueJobSchemaInput {
 input QueueJobsInput {
   offset: Int = 0
   limit: Int = 10
-  status: JobState = completed
+  status: JobSearchStatus = completed
   sortOrder: SortOrderEnum = ASC
 }
 

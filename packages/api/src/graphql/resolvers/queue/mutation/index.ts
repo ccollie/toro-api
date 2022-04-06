@@ -15,3 +15,4 @@ export { deleteJobsByFilter } from './deleteJobsByFilter';
 export { retryJobs } from './retryJobs';
 export { obliterateQueue } from './obliterateQueue';
 export { trimQueueEvents } from './trimQueueEvents';
+export { deleteJobsByPattern } from './deleteJobsByPattern';

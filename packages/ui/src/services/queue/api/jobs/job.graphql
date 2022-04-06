@@ -57,7 +57,7 @@ fragment RepeatableJob on RepeatableJob {
     descr
 }
 
-query FindJobs($queueId: ID!, $status: JobState, $criteria: String!, $cursor: String, $limit: Int = 10) {
+query FindJobs($queueId: ID!, $status: JobSearchStatus, $criteria: String!, $cursor: String, $limit: Int = 10) {
     findJobs(input: {queueId: $queueId, scanCount: $limit, expression: $criteria, status: $status}) {
         nextCursor,
         jobs {
@@ -66,10 +66,24 @@ query FindJobs($queueId: ID!, $status: JobState, $criteria: String!, $cursor: St
     }
 }
 
-query GetJobsByFilter($queueId: ID!, $status: JobState, $cursor: String, $criteria: String, $count: Int = 10) {
+query GetJobsByFilter(
+    $queueId: ID!,
+    $status: JobSearchStatus,
+    $cursor: String = "",
+    $criteria: String,
+    $count: Int = 10
+    $pattern: String,
+) {
     queue(id: $queueId) {
         id
-        jobSearch(filter: { cursor: $cursor, count: $count, status: $status, criteria: $criteria }) {
+        jobsByFilter(
+            input: {
+                cursor: $cursor,
+                count: $count,
+                status: $status,
+                expression: $criteria,
+                pattern: $pattern
+            }) {
             cursor
             total
             current
@@ -93,6 +107,8 @@ query GetJobFilters($queueId: ID!, $ids: [ID!]) {
             id
             name
             expression
+            pattern
+            status
             createdAt
         }
     }
@@ -132,9 +148,14 @@ query GetQueueJobCounts($queueId: ID!) {
     }
 }
 
-query GetQueueJobs($queueId: ID!, $offset: Int = 0, $limit: Int = 10, $status: JobState, $sortOrder: SortOrderEnum) {
+query GetQueueJobs(
+    $queueId: ID!,
+    $offset: Int = 0,
+    $limit: Int = 10,
+    $status: JobSearchStatus,
+    $sortOrder: SortOrderEnum
+) {
     queue(id: $queueId) {
-        id
         jobs(input: { offset: $offset, limit: $limit, status: $status, sortOrder: $sortOrder }) {
             ...Job
         }
@@ -272,5 +293,41 @@ mutation PromoteBulkJobs($queueId: ID!, $jobIds: [ID!]!) {
             success
             reason
         }
+    }
+}
+
+mutation DeleteJobsByFilter(
+    $queueId: ID!,
+    $status: JobSearchStatus,
+    $filter: String!,
+    $pattern: String,
+) {
+    deleteJobsByFilter(
+        input: {
+            queueId: $queueId
+            status: $status,
+            expression: $filter,
+            pattern: $pattern
+        }
+    )
+    {
+        removed
+    }
+}
+
+mutation DeleteJobsByPattern(
+    $queueId: ID!,
+    $status: JobSearchStatus,
+    $pattern: String,
+) {
+    deleteJobsByPattern(
+        input: {
+            queueId: $queueId
+            status: $status,
+            pattern: $pattern
+        }
+    )
+    {
+        removed
     }
 }

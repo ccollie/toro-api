@@ -14,6 +14,7 @@ import {
   JobRemoveOption,
   JobState,
   JobType,
+  JobSearchStatus,
   MetricCategory,
   OrderEnumType,
   PeakSignalDirectionEnum,
@@ -49,6 +50,7 @@ schemaComposer.add(JobProgress);
 schemaComposer.add(JobRemoveOption);
 schemaComposer.add(JobState);
 schemaComposer.add(JobType);
+schemaComposer.add(JobSearchStatus);
 schemaComposer.add(OrderEnumType);
 schemaComposer.add(PeakSignalDirectionEnum);
 schemaComposer.add(RuleOperatorEnum);

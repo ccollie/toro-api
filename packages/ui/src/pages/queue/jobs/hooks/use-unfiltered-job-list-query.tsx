@@ -1,8 +1,8 @@
 import type {
   JobFragment,
   JobCounts,
-  JobState,
-  GetQueueJobsQuery
+  GetQueueJobsQuery,
+  JobSearchStatus,
 } from '@/types';
 import { SortOrderEnum, useGetQueueJobsQuery } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,7 +13,7 @@ import shallow from 'zustand/shallow';
 
 interface UnfilteredJobQueryProps {
   queueId: string;
-  status: JobState;
+  status?: JobSearchStatus;
   page: number;
   pageSize: number;
   pollInterval?: number;
@@ -26,9 +26,8 @@ export const useUnfilteredJobListQuery = ({
   page,
   pageSize,
   pollInterval,
-  shouldFetch
+  shouldFetch,
 }: UnfilteredJobQueryProps) => {
-
   const [jobs, setJobs] = useJobsStore(
     (state) => [state.data, state.setJobs],
     shallow,
@@ -42,7 +41,7 @@ export const useUnfilteredJobListQuery = ({
   const { updateResults: updateFn } = useUpdateResults(queue, pageSize);
 
   function updateResults(
-    status: JobState,
+    status: JobSearchStatus | undefined,
     jobs: JobFragment[],
     counts: JobCounts,
   ) {
@@ -72,7 +71,7 @@ export const useUnfilteredJobListQuery = ({
     },
   });
 
-  function handleCompleted(status: JobState, data: GetQueueJobsQuery) {
+  function handleCompleted(status: JobSearchStatus | undefined, data: GetQueueJobsQuery) {
     const base = data.queue;
     const jobs = (base?.jobs || []) as JobFragment[];
     const { __typename, ...counts } = base?.jobCounts as JobCounts;
@@ -85,7 +84,6 @@ export const useUnfilteredJobListQuery = ({
     // todo: support "latest
     // const _status = status === 'latest' ? undefined : (status as JobStatus);
     // todo: eliminate this hack
-    const _status = status as JobState;
     const _page = Math.min(page, 1);
     const offset = (_page - 1) * pageSize;
 
@@ -93,18 +91,18 @@ export const useUnfilteredJobListQuery = ({
       queueId,
       offset,
       limit: pageSize,
-      status: _status,
+      status,
       sortOrder,
     }).then(({ data }) => {
       const base = data.queue;
       const jobs = (base?.jobs || []) as JobFragment[];
-      handleCompleted(_status, data);
+      handleCompleted(status, data);
       return jobs;
     });
   }
 
   useUpdateEffect(() => {
-    fetch().catch(e => console.error(e));
+    fetch().catch((e) => console.error(e));
   }, [queueId, offset]);
 
   function clear() {

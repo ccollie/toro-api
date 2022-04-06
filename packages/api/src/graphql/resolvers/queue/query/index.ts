@@ -27,7 +27,6 @@ import { jobs } from './jobs';
 import { jobsByFilter } from './jobsByFilter';
 import { jobsById } from './jobsById';
 import { jobSchemas } from './jobSchemas';
-import { jobSearch } from './jobSearch';
 import { limiter } from './limiter';
 import { metricCount } from './metricCount';
 import { metrics } from './metrics';
@@ -73,7 +72,6 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobNames,
     jobFilters,
     jobSchemas,
-    jobSearch,
     jobsByFilter,
     jobDurationAvg,
     jobMemoryAvg,

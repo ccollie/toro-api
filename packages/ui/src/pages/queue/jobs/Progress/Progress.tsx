@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Status } from '@/types';
+import type { JobStatus } from '@/types';
 import { RingProgress, Text, MantineSize } from '@mantine/core';
 
 export const Progress = ({
@@ -12,7 +12,7 @@ export const Progress = ({
   showText = true
 }: {
   percentage: number;
-  status: Status;
+  status: JobStatus;
   className?: string;
   size?: number;
   thickness?: number;

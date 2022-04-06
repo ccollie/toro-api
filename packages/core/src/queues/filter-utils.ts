@@ -6,7 +6,7 @@ import {
   isObject,
   safeParse,
 } from '@alpen/shared';
-import { array2obj, errorObject, JobState, Queue, tryCatch } from 'bullmq';
+import { array2obj, errorObject, Queue, tryCatch } from 'bullmq';
 import type { JobJson } from 'bullmq';
 import { logger } from '../logger';
 import {
@@ -14,12 +14,13 @@ import {
   calculateResponseTime,
   calculateWaitTime,
   JobProps,
+  MyJobJson,
 } from './job';
-import type { Maybe } from '../types';
+import type { JobSearchStatus, Maybe } from '../types';
 
 type ComputedFields = 'responseTime' | 'processTime' | 'waitTime' | 'runTime';
 
-type JobKey = keyof JobJson;
+type JobKey = keyof MyJobJson;
 const propSet = new Set<string>(JobProps);
 
 export type ContextType = Parameters<typeof ExprEval.evaluate>[1];
@@ -94,7 +95,7 @@ export function createContext(job: JobJson): ContextType {
 export function hydrateJobJson(
   jobId: string,
   fromRedis: string | Record<string, unknown>,
-): Maybe<JobJson> {
+): Maybe<MyJobJson> {
   const json = typeof fromRedis === 'string' ? safeParse(fromRedis) : fromRedis;
   if (!isObject(json)) {
     return null;
@@ -106,7 +107,7 @@ export function hydrateJobJson(
   const data = !json.data ? {} : JSON.parse(json.data);
   const opts = !json.data ? {} : JSON.parse(json.opts || '{}');
 
-  const job: JobJson = {
+  const job: MyJobJson = {
     attemptsMade: 0,
     failedReason: '',
     progress: undefined,
@@ -175,7 +176,7 @@ export async function extractJobsData(
   ids: string[],
   fields: JobKey[],
   ast?: Expression,
-): Promise<JobJson[]> {
+): Promise<MyJobJson[]> {
   if (ids.length === 0) return [];
   const client = await queue.client;
   const pipeline = client.pipeline();
@@ -190,8 +191,9 @@ export async function extractJobsData(
         acc.push(job);
       }
     }
+    // todo: load state if needed
     return acc;
-  }, [] as JobJson[]);
+  }, [] as MyJobJson[]);
 }
 
 function matchData(ast: Expression, data: JobJson): boolean {
@@ -231,7 +233,7 @@ export async function getListIds(queue: Queue, key: string): Promise<string[]> {
   return client.lrange(key, 0, -1);
 }
 
-export function getKeyType(state: JobState): string {
+export function getKeyType(state: JobSearchStatus): string {
   switch (state) {
     case 'completed':
     case 'failed':
@@ -240,6 +242,7 @@ export function getKeyType(state: JobState): string {
       return 'zset';
     case 'active':
     case 'waiting':
+    case 'paused':
       return 'list';
   }
   return 'unknown';

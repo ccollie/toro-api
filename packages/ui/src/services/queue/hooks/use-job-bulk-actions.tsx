@@ -1,5 +1,4 @@
-import { JobState } from '@/types';
-import type { BulkStatusItem, Queue } from '@/types';
+import type { BulkStatusItem, Queue, JobSearchStatus } from '@/types';
 import { useToast, useQueue } from '@/hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import React, { useCallback } from 'react';
@@ -14,7 +13,7 @@ export type OnBulkJobAction = (action: BulkActionType, ids: string[]) => void;
 
 export function useJobBulkActions(
   queueId: Queue['id'],
-  status: JobState,
+  status: JobSearchStatus,
   onBulkAction?: OnBulkJobAction,
 ) {
   const toast = useToast();
@@ -31,19 +30,19 @@ export function useJobBulkActions(
     clean: 'cleared',
   };
 
-  function validState(statuses: JobState[]): boolean {
+  function validState(statuses: JobSearchStatus[]): boolean {
     return !queue.isReadonly && statuses.includes(status);
   }
 
-  const canClear = validState(['completed', 'failed']);
+  const canClean = validState(['completed', 'failed']);
   const canRetry = validState(['completed', 'failed']);
   const canPromote = validState(['delayed']);
 
   const canDo: Record<BulkActionType, boolean> = {
-    delete: canClear,
+    delete: canClean,
     retry: canRetry,
     promote: canPromote,
-    clean: canClear,
+    clean: canClean,
   };
 
   function getSuccessMessage(action: BulkActionType, count: number) {
@@ -135,8 +134,8 @@ export function useJobBulkActions(
   const handlePromote = wrapHandler('promote', bulkPromoteJobs);
 
   return {
-    canDelete: canClear,
-    canClear,
+    canDelete: canClean,
+    canClean: canClean,
     canRetry,
     canPromote,
     handleDelete,

@@ -1,3 +1,4 @@
+import { client } from '@/providers/ApolloProvider';
 import type {
   CleanQueueMutation,
   DeleteJobSchemaMutation,
@@ -25,13 +26,12 @@ import {
   GetQueueByIdDocument,
   GetQueueJobCountsDocument,
   InferJobSchemaDocument,
-  JobState,
+  JobSearchStatus,
   PauseQueueDocument,
   ResumeQueueDocument,
   SetJobSchemaDocument,
   UnregisterQueueDocument,
 } from '@/types';
-import { client } from '@/providers/ApolloProvider';
 import { ApolloCache, ApolloError, FetchResult } from '@apollo/client';
 
 export function updateCached<T>(
@@ -197,13 +197,13 @@ export function cleanQueue(
   id: Queue['id'],
   grace: number,
   limit?: number,
-  status?: JobState,
+  status?: JobSearchStatus,
 ): Promise<number> {
   const input = {
     id,
     grace,
     limit: limit || 0,
-    status: status || JobState.Completed,
+    status: status || JobSearchStatus.Completed,
   };
 
   return client

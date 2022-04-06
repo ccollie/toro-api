@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import type {
   JobCounts,
   MetricFragment,
-  Status,
   JobStatus
 } from '@/types';
 
@@ -15,7 +14,7 @@ import { EmptyJobCounts } from '@/constants';
 
 interface JobListProps {
   queueId: string;
-  status: Status;
+  status: JobStatus;
   page?: number;
   pageSize?: number;
   skip?: boolean;

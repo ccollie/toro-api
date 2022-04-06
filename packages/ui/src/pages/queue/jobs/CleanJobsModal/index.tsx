@@ -1,4 +1,4 @@
-import { JobState } from '@/types';
+import { JobSearchStatus } from '@/types';
 import React, { useState, useEffect } from 'react';
 import { ucFirst } from '@/lib';
 import { parseDuration } from '@/lib/dates';
@@ -9,8 +9,8 @@ import { NumberInput, TextInput, Checkbox, Modal, Group, Button } from '@mantine
 type CleanJobsDialogProps = {
   max?: number;
   isOpen: boolean;
-  status: JobState;
-  onCleanJobs: (status: JobState, grace: number, limit?: number) => Promise<void>;
+  status: JobSearchStatus;
+  onCleanJobs: (status: JobSearchStatus, grace: number, limit?: number) => Promise<void>;
   onClose?: () => void;
 };
 
@@ -88,7 +88,7 @@ const CleanJobsModal = (props: CleanJobsDialogProps) => {
   const type = ucFirst(props.status);
 
   return (
-    <Modal title={`Clean ${type} Jobs`} onClose={handleClose} opened={props.isOpen}>
+    <Modal title={`Clean ${type} Jobs`} onClose={handleClose} opened={props.isOpen} centered>
       <p>Clean {type} jobs? You can&lsquo;t undo this action afterwards.</p>
       <form>
         <TextInput

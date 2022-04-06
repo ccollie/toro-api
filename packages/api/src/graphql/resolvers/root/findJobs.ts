@@ -1,8 +1,9 @@
-import { findJobs as search } from '@alpen/core';
+import { processSearch } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
+import { convertJobSearchStatus } from '../queue/utils';
 import { FieldConfig } from '../index';
 import { schemaComposer } from 'graphql-compose';
-import { JobState } from '../../scalars';
+import { JobSearchStatus } from '../../scalars';
 
 export const findJobs: FieldConfig = {
   type: schemaComposer.createObjectTC({
@@ -35,8 +36,14 @@ export const findJobs: FieldConfig = {
           type: 'Int',
           defaultValue: 20,
         },
+        pattern: {
+          type: 'String',
+          description: 'Optionally filter jobs by id pattern e.g. foo?-*',
+        },
         status: {
-          type: JobState,
+          type: JobSearchStatus,
+          makeOptional: true,
+          description: 'Optionally filter jobs by status',
         },
         cursor: {
           type: 'String',
@@ -52,15 +59,36 @@ export const findJobs: FieldConfig = {
     }).NonNull,
   },
   async resolve(_, { input }, { accessors }: EZContext) {
-    const { queueId, cursor, scanCount, status, expression } = input;
+    const {
+      queueId,
+      cursor,
+      scanCount,
+      status: _status,
+      expression,
+      pattern,
+    } = input;
     const queue = accessors.getQueueById(queueId);
-    // todo:
-    const result = await search(queue, status, expression, cursor, scanCount);
+
+    const status = convertJobSearchStatus(_status);
+
+    const {
+      jobs,
+      cursor: nextCursor,
+      total,
+      current,
+    } = await processSearch(queue, {
+      status,
+      filter: expression,
+      cursor,
+      count: scanCount,
+      pattern
+    });
+
     return {
-      nextCursor: result.cursor,
-      jobs: result.jobs,
-      current: result.current,
-      total: result.total,
+      nextCursor,
+      jobs,
+      current,
+      total,
     };
   },
 };

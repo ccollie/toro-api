@@ -1,7 +1,7 @@
 import React from 'react';
 import { EmptyJobCounts } from '@/constants';
 import s from './StatusMenu.module.css';
-import type { Queue, Status } from 'src/types';
+import type { Queue, JobStatus } from 'src/types';
 import { STATUS_LIST } from 'src/constants/status-list';
 import { Link } from '@tanstack/react-location';
 
@@ -9,7 +9,7 @@ import { Link } from '@tanstack/react-location';
 
 export const StatusMenu = ({ queue, status, page }: {
   queue: Queue;
-  status: Status;
+  status: JobStatus;
   page?: number;
 }) => {
 
@@ -47,7 +47,7 @@ export const StatusMenu = ({ queue, status, page }: {
     );
   }
 
-  function getClassName(linkStatus: Status): string | undefined {
+  function getClassName(linkStatus: JobStatus): string | undefined {
     const isActive = status === linkStatus;
     return isActive ? s.active : undefined;
   }

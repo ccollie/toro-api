@@ -4,7 +4,7 @@ import { EZContext } from 'graphql-ez';
 import {
   SortOrderEnum,
   OrderEnumType,
-  JobState,
+  JobSearchStatus,
 } from '../../../scalars';
 import { FieldConfig } from '../../utils';
 import { schemaComposer } from 'graphql-compose';
@@ -26,7 +26,7 @@ export const jobs: FieldConfig = {
           defaultValue: 10,
         },
         status: {
-          type: JobState,
+          type: JobSearchStatus,
           defaultValue: 'completed',
         },
         sortOrder: {

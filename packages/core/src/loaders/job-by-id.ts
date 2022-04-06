@@ -62,3 +62,26 @@ const batchGetJobsById = async (keys: JobByIdLoaderKey[]) => {
 export const jobById = new DataLoader(batchGetJobsById, {
   cacheKeyFn: jobLocatorCacheFn,
 });
+
+export const getJobById = async (
+  queue: Queue,
+  id: string
+): Promise<Job | null> => {
+  const job = await jobById.load({ queue, id });
+  return job || null;
+};
+
+export const getJobsById = async (
+  queue: Queue,
+  ids: string[]
+): Promise<Job[]> => {
+  const keys = ids.map((id) => ({ queue, id }));
+  const jobs = await jobById.loadMany(keys);
+  const result = [];
+  jobs.forEach((job) => {
+    if (!(job instanceof Error)) {
+      result.push(job);
+    }
+  });
+  return result;
+};

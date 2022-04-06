@@ -1,13 +1,13 @@
 import { StorageConfig } from 'src/config';
-import type { Queue, Status } from 'src/types';
+import type { Queue, JobStatus } from 'src/types';
 import createStore from 'zustand';
 import { persist } from 'zustand/middleware';
 
 // Store preferences/session data related to queues
 type TState = {
-  getQueueStatus: (id: Queue['id']) => Status;
-  selectedStatuses: Record<Queue['id'], Status>;  // these need to be in their own store
-  setQueueStatus: (id: string, status: Status) => void;
+  getQueueStatus: (id: Queue['id']) => JobStatus;
+  selectedStatuses: Record<Queue['id'], JobStatus>;  // these need to be in their own store
+  setQueueStatus: (id: string, status: JobStatus) => void;
   removeQueueStatus: (id: string) => void;
 };
 
@@ -15,7 +15,7 @@ export const useQueueSessionStore = createStore<TState>(
   persist(
     (set, get) => ({
       selectedStatuses: {},
-      getQueueStatus(id: Queue['id']): Status {
+      getQueueStatus(id: Queue['id']): JobStatus {
         return get().selectedStatuses[id] || 'active';
       },
       setQueueStatus: (id, status) => {

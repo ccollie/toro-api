@@ -1,6 +1,6 @@
-import type { Status } from '@/types';
+import type { JobStatus } from '@/types';
 
-export const STATUS_LIST: Readonly<Status[]> = [
+export const STATUS_LIST: Readonly<JobStatus[]> = [
   'latest',
   'active',
   'waiting',
@@ -10,7 +10,7 @@ export const STATUS_LIST: Readonly<Status[]> = [
   'paused',
 ] as const;
 
-export const JobCleanStatuses: Readonly<Status[]> = [
+export const JobCleanStatuses: Readonly<JobStatus[]> = [
   'completed',
   'waiting',
   'active',

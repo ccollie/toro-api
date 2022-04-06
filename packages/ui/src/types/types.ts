@@ -15,11 +15,11 @@ export const STATUSES = {
 // convert Enum values to type
 export type States = `${JobState}`;
 
-export type Status = keyof typeof STATUSES;
+export type JobStatus = keyof typeof STATUSES;
 
 export type CountStatus = Omit<keyof Queue['jobCounts'], '__typename'>;
 
-export type SelectedStatuses = Record<Queue['id'], Status>;
+export type SelectedStatuses = Record<Queue['id'], JobStatus>;
 
 export interface QueueFilter extends HostQueuesFilter {
   sortBy?: string;

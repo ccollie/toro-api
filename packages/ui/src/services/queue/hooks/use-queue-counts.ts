@@ -1,6 +1,6 @@
 import { useGetQueueJobCountsQuery } from '@/types';
 import { useCallback, useMemo } from 'react';
-import type { Status, Queue, CountStatus } from '@/types';
+import type { JobStatus, Queue, CountStatus } from '@/types';
 import { useNetworkSettingsStore } from 'src/stores';
 import { useQueueSessionStore } from '../stores';
 import { useQueue } from '@/hooks';
@@ -34,7 +34,7 @@ export const useQueueCounts = (queueId: Queue['id'], autoUpdate = false) => {
 
   const handleClick = useCallback((status: CountStatus) => {
     // todo: navigate ???
-      changeStatus(queueId, status as Status);
+      changeStatus(queueId, status as JobStatus);
   }, [queueId]);
 
   return useMemo(() => {

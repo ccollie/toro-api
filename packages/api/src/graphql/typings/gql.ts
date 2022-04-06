@@ -195,8 +195,10 @@ export type CreateFlowInput = {
 export type CreateJobFilterInput = {
   expression: Scalars['String'];
   name: Scalars['String'];
+  /** A pattern to match against the job id e.g. email-*-job */
+  pattern?: InputMaybe<Scalars['String']>;
   queueId: Scalars['ID'];
-  status?: InputMaybe<JobType>;
+  status?: InputMaybe<JobSearchStatus>;
 };
 
 export type CreateJobInput = {
@@ -298,21 +300,36 @@ export type DeleteJobSchemaResult = {
 
 export type DeleteJobsByFilterInput = {
   /** The maximum number of jobs to remove per iteration */
-  count?: Scalars['Int'];
+  count?: InputMaybe<Scalars['Int']>;
   /** The job filter expression */
-  criteria?: InputMaybe<Scalars['String']>;
-  /** The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null */
-  cursor?: InputMaybe<Scalars['Int']>;
+  expression: Scalars['String'];
+  /** Optional job id pattern e.g. "j[?]b-*" */
+  pattern?: InputMaybe<Scalars['String']>;
+  /** The id of the queue */
+  queueId: Scalars['ID'];
   /** Search for jobs having this status */
-  status?: InputMaybe<JobType>;
+  status?: InputMaybe<JobSearchStatus>;
 };
 
 export type DeleteJobsByFilterPayload = {
-  cursor?: Maybe<Scalars['Int']>;
   /** The number of jobs removed this iteration */
   removed: Scalars['Int'];
-  /** The total number of jobs to be removed */
-  total: Scalars['Int'];
+};
+
+export type DeleteJobsByPatternInput = {
+  /** The maximum number of jobs to remove per iteration */
+  countPerIteration?: InputMaybe<Scalars['Int']>;
+  /** The job pattern. e.g uploads:* */
+  pattern?: InputMaybe<Scalars['String']>;
+  /** The id of the queue */
+  queueId: Scalars['ID'];
+  /** Filter by jobs having this status */
+  status?: InputMaybe<JobSearchStatus>;
+};
+
+export type DeleteJobsByPatternPayload = {
+  /** The number of jobs removed this iteration */
+  removed: Scalars['Int'];
 };
 
 export type DeleteMetricInput = {
@@ -439,10 +456,13 @@ export type FindJobsInput = {
   cursor?: InputMaybe<Scalars['String']>;
   /** A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000) */
   expression: Scalars['String'];
+  /** Optionally filter jobs by id pattern e.g. foo?-* */
+  pattern?: InputMaybe<Scalars['String']>;
   /** The id of the desired queue */
   queueId: Scalars['ID'];
   scanCount?: InputMaybe<Scalars['Int']>;
-  status?: InputMaybe<JobState>;
+  /** Optionally filter jobs by status */
+  status?: InputMaybe<JobSearchStatus>;
 };
 
 export type FindJobsResult = {
@@ -725,6 +745,8 @@ export type JobFilter = {
   id: Scalars['ID'];
   /** A descriptive name of the filter */
   name: Scalars['String'];
+  /** The job filter pattern */
+  pattern?: Maybe<Scalars['String']>;
   /** Optional job status to filter jobs by */
   status?: Maybe<JobType>;
 };
@@ -873,24 +895,15 @@ export type JobSchemaInput = {
   schema: Scalars['JSONSchema'];
 };
 
-export type JobSearchInput = {
-  /** The maximum number of jobs to return per iteration */
-  count?: Scalars['Int'];
-  /** The job filter expression */
-  criteria?: InputMaybe<Scalars['String']>;
-  /** The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null */
-  cursor?: InputMaybe<Scalars['String']>;
-  /** Search for jobs having this status */
-  status?: InputMaybe<JobState>;
-};
-
-export type JobSearchPayload = {
-  current: Scalars['Int'];
-  cursor?: Maybe<Scalars['String']>;
-  hasNext: Scalars['Boolean'];
-  jobs: Array<Job>;
-  total: Scalars['Int'];
-};
+export enum JobSearchStatus {
+  Active = 'active',
+  Completed = 'completed',
+  Delayed = 'delayed',
+  Failed = 'failed',
+  Paused = 'paused',
+  Waiting = 'waiting',
+  WaitingChildren = 'waiting_children',
+}
 
 export enum JobState {
   Active = 'active',
@@ -932,13 +945,30 @@ export type JobUpdateDelta = {
   id: Scalars['String'];
 };
 
-export type JobsByFilterIdInput = {
+export type JobsByFilterInput = {
   /** The maximum number of jobs to return per iteration */
-  count: Scalars['Int'];
-  /** The iterator cursor. Iteration starts when the cursor is set to 0, and terminates when the cursor returned by the server is 0 */
-  cursor?: InputMaybe<Scalars['Int']>;
-  /** The id of the filter */
-  filterId: Scalars['ID'];
+  count?: InputMaybe<Scalars['Int']>;
+  /** The iterator cursor. Iteration starts when the cursor is set to null, and terminates when the cursor returned by the server is null */
+  cursor?: InputMaybe<Scalars['String']>;
+  /** The filter expression. Specify this or the filterId, but not both. */
+  expression?: InputMaybe<Scalars['String']>;
+  /** The id of an existing filter. Specify this or the expression, but not both. */
+  filterId?: InputMaybe<Scalars['ID']>;
+  /** Job id pattern e.g. "job-*". */
+  pattern?: InputMaybe<Scalars['String']>;
+  /** Optional job status to filter on. One of "active", "completed", "failed", "paused", "waiting","delayed". */
+  status?: InputMaybe<JobSearchStatus>;
+};
+
+export type JobsByFilterPayload = {
+  /** The number of jobs iterated over so far. */
+  current: Scalars['Int'];
+  /** The updated iteration cursor. Set to null when iteration is complete. */
+  cursor?: Maybe<Scalars['String']>;
+  /** The jobs matching the filter for the current iteration */
+  jobs: Array<Job>;
+  /** The approximate number of jobs to iterate over. */
+  total: Scalars['Int'];
 };
 
 export type JobsMemoryAvgInput = {
@@ -1124,6 +1154,11 @@ export type MetricPercentileDistributionInput = {
   to: Scalars['Date'];
 };
 
+export enum MetricStatusType {
+  Completed = 'completed',
+  Failed = 'failed',
+}
+
 export enum MetricType {
   ActiveJobs = 'ActiveJobs',
   Apdex = 'Apdex',
@@ -1158,6 +1193,15 @@ export enum MetricValueType {
   Rate = 'Rate',
 }
 
+export type MetricsDataInput = {
+  /** The end of the date range to query */
+  end?: InputMaybe<Scalars['DateTime']>;
+  /** The start of the date range to query */
+  start?: InputMaybe<Scalars['DateTime']>;
+  /** The type of metric to fetch */
+  type: MetricStatusType;
+};
+
 /** Compute a frequency distribution of a range of metric data. */
 export type MetricsHistogramInput = {
   /** The minimum date to consider */
@@ -1166,6 +1210,13 @@ export type MetricsHistogramInput = {
   outlierFilter?: InputMaybe<OutlierFilterInput>;
   /** The maximum date to consider */
   to: Scalars['Date'];
+};
+
+export type MetricsTimeseries = {
+  /** The data points for the timeseries. */
+  data: Array<TimeseriesDataPoint>;
+  /** Metadata about the timeseries */
+  meta: TimeseriesMeta;
 };
 
 export type MoveJobToCompletedResult = {
@@ -1237,8 +1288,10 @@ export type Mutation = {
   deleteJobFilter: DeleteJobFilterResult;
   /** Delete a schema associated with a job name on a queue */
   deleteJobSchema: DeleteJobSchemaResult;
-  /** Incrementally delete jobs filtered by query criteria */
+  /** Delete jobs by filter expression */
   deleteJobsByFilter: DeleteJobsByFilterPayload;
+  /** Incrementally delete jobs filtered by pattern */
+  deleteJobsByPattern: DeleteJobsByPatternPayload;
   /** Delete a queue metric */
   deleteMetric: DeleteMetricResult;
   deleteNotificationChannel: DeleteNotificationChannelResult;
@@ -1390,7 +1443,11 @@ export type MutationDeleteJobSchemaArgs = {
 };
 
 export type MutationDeleteJobsByFilterArgs = {
-  filter: DeleteJobsByFilterInput;
+  input: DeleteJobsByFilterInput;
+};
+
+export type MutationDeleteJobsByPatternArgs = {
+  input: DeleteJobsByPatternInput;
 };
 
 export type MutationDeleteMetricArgs = {
@@ -1916,17 +1973,16 @@ export type Queue = {
   jobNames: Array<Scalars['String']>;
   /** Get JSONSchema documents and job defaults previously set for a job names on a queue */
   jobSchemas: Array<JobSchema>;
-  /** Incrementally iterate over a list of jobs filtered by query criteria */
-  jobSearch: JobSearchPayload;
   jobs: Array<Job>;
-  /** Fetch jobs based on a previously stored filter */
-  jobsByFilter: JobSearchPayload;
+  /** Fetch jobs based on a filter expression or a previously stored filter */
+  jobsByFilter: JobsByFilterPayload;
   jobsById: Array<Job>;
   /** Gets the last recorded queue stats snapshot for a metric */
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
   limiter?: Maybe<QueueLimiter>;
   metricCount: Scalars['Int'];
   metrics: Array<Metric>;
+  metricsData?: Maybe<MetricsTimeseries>;
   name: Scalars['String'];
   /** Returns the number of jobs waiting to be processed. */
   pendingJobCount: Scalars['Int'];
@@ -1994,16 +2050,12 @@ export type QueueJobSchemasArgs = {
   jobNames?: InputMaybe<Array<Scalars['String']>>;
 };
 
-export type QueueJobSearchArgs = {
-  filter: JobSearchInput;
-};
-
 export type QueueJobsArgs = {
   input?: InputMaybe<QueueJobsInput>;
 };
 
 export type QueueJobsByFilterArgs = {
-  filter: JobsByFilterIdInput;
+  input: JobsByFilterInput;
 };
 
 export type QueueJobsByIdArgs = {
@@ -2012,6 +2064,10 @@ export type QueueJobsByIdArgs = {
 
 export type QueueLastStatsSnapshotArgs = {
   input?: InputMaybe<StatsLatestInput>;
+};
+
+export type QueueMetricsDataArgs = {
+  input?: InputMaybe<MetricsDataInput>;
 };
 
 export type QueuePercentileDistributionArgs = {
@@ -2226,7 +2282,15 @@ export type QueueJobsInput = {
 };
 
 export type QueueLimiter = {
+  /**
+   * The duration of the limiter in milliseconds.
+   * During this time, a maximum of "max" jobs will be processed.
+   */
+  duration?: Maybe<Scalars['Int']>;
+  /** The group key to be used by the limiter when limiting by group keys. */
   groupKey?: Maybe<Scalars['String']>;
+  /** The maximum number of jobs that can be processed during the period specified by "duration". */
+  max?: Maybe<Scalars['Int']>;
 };
 
 export type QueueObliterateInput = {
@@ -2963,6 +3027,15 @@ export type TimeseriesDataPointInterface = {
   ts: Scalars['Timestamp'];
   /** The value at the given timestamp */
   value: Scalars['Float'];
+};
+
+export type TimeseriesMeta = {
+  /** Number of total datapoints in the timeseries */
+  count: Scalars['Int'];
+  /** Unix timestamp (millis) of the last datapoint of the timeseries */
+  endTs: Scalars['Int'];
+  /** Unix timestamp (millis) of the first datapoint of the timeseries */
+  startTs: Scalars['Int'];
 };
 
 export type UnregisterQueueResult = {

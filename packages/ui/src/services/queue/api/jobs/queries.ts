@@ -104,7 +104,7 @@ export function getJobsByFilter(
       // todo: handle error
       if (results.error) throw results.error;
       const base = results.data?.queue;
-      const searchResult = base?.jobSearch;
+      const searchResult = base?.jobsByFilter;
       const jobs = (searchResult?.jobs || []) as JobFragment[];
       const counts = base?.jobCounts as JobCounts;
       const cursor = searchResult?.cursor || undefined;

@@ -19,6 +19,10 @@ export const JobFilterTC = schemaComposer.createObjectTC({
       makeRequired: true,
       description: 'The job filter query',
     },
+    pattern: {
+      type: 'String',
+      description: 'The job filter pattern',
+    },
     createdAt: {
       type: GraphQLDate,
       description: 'The date this filter was created',

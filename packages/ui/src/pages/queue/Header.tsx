@@ -56,7 +56,7 @@ export const Header = ({ queue }: TProps) => {
               icon={<CogsIcon size={36} style={{ display: 'inline-block' }} />}
             />
             <Tabs.Tab
-              label="Repeatable"
+              label="Scheduled"
               tabKey="scheduled-jobs"
               icon={<ClockIcon size={36} style={{ display: 'inline-block' }} />}
             />

@@ -23,14 +23,14 @@ interface BulkJobActionsProps {
 export const JobBulkActions = (props: BulkJobActionsProps) => {
   const { status, queueId, onBulkAction } = props;
   const toast = useToast();
-  const { handleDelete, handlePromote, handleRetry, canClear, canPromote, canDelete, canRetry } =
+  const { handleDelete, handlePromote, handleRetry, canClean, canPromote, canDelete, canRetry } =
     useJobBulkActions(queueId, status, onBulkAction);
 
   const [selectedIds, setSelectedIds] = useState(getSelectedIds());
   const [isPromoteDisabled, setIsPromoteDisabled] = useState(canPromote);
   const [isDeleteDisabled, setIsDeleteDisabled] = useState(canDelete);
   const [isRetryDisabled, setIsRetryDisabled] = useState(canRetry);
-  const [isClearDisabled, setIsClearDisabled] = useState(canClear);
+  const [isClearDisabled, setIsClearDisabled] = useState(canClean);
 
   const [isPromoting, setIsPromoting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -43,8 +43,8 @@ export const JobBulkActions = (props: BulkJobActionsProps) => {
     setIsPromoteDisabled(!canPromote || count === 0);
     setIsDeleteDisabled(!canDelete || count === 0);
     setIsRetryDisabled(!canRetry || count === 0);
-    setIsClearDisabled(!canClear /* || count === 0 */);
-  }, [canPromote, canDelete, canRetry, canClear, selectedIds]);
+    setIsClearDisabled(!canClean /* || count === 0 */);
+  }, [canPromote, canDelete, canRetry, canClean, selectedIds]);
 
   useEffect(() => {
     setSelectedIds(getSelectedIds());

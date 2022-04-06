@@ -137,3 +137,14 @@ async function getJobCountByTypes(
 export const jobCountsByType = new DataLoader(getJobCountByTypes, {
   cacheKeyFn: jobCountsLoaderCacheFn,
 });
+
+export async function getJobCounts(
+  queue: Queue,
+  states?: JobType[],
+): Promise<Record<string, number>> {
+  const key = {
+    queue,
+    types: states,
+  };
+  return (await jobCounts.load(key)) as Record<string, number>;
+}
