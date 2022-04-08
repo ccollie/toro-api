@@ -1,6 +1,6 @@
 import { getJobsById } from '../loaders/job-by-id';
 import { isEmpty, uniq } from '@alpen/shared';
-import { Job, JobState, Queue, RedisClient } from 'bullmq';
+import { Job, JobType, Queue, RedisClient } from 'bullmq';
 import { getQueueConfig } from '../hosts/host-config';
 import { deleteByPattern, normalizePrefixGlob, scanKeys } from '../redis';
 import { getQueueMetaKey, getQueueStatsPattern } from '../keys';
@@ -17,13 +17,14 @@ import { Scripts } from '../commands';
 import { StatsGranularity } from '../stats';
 import { JobMemoryLoaderKey, JobMemoryLoaderResult, loaders } from '../loaders';
 
-export const JOB_STATES: JobState[] = [
+export const JOB_STATES: JobType[] = [
   'completed',
   'failed',
   'delayed',
   'active',
   'waiting',
   'waiting-children',
+  'paused',
 ];
 
 /****
@@ -180,12 +181,7 @@ export async function deleteQueueStats(
 }
 
 export async function deleteAllQueueData(queue: Queue): Promise<void> {
-  const prefix = queue.opts.prefix;
-  const pattern = `${prefix}:${queue.name}:*`;
-  const client = await queue.client;
   await queue.obliterate();
-  // todo: need to delete data at the host level
-  await deleteByPattern(client, pattern);
 }
 
 export function getPipelinedCounts(
@@ -214,29 +210,6 @@ export function getPipelinedCounts(
   });
 
   return pipeline;
-}
-
-export async function getPipelinePaused(
-  client: RedisClient,
-  queues: Queue[],
-): Promise<boolean[]> {
-  const pipeline = client.pipeline();
-  queues.forEach((queue) => {
-    pipeline.hexists(queue.keys.meta, 'paused');
-  });
-  const res = await pipeline.exec();
-  const result: boolean[] = [];
-
-  res.forEach((item, index) => {
-    if (item[0]) {
-      // error. Todo: throw
-      result.push(false);
-    } else {
-      result.push(item[1] === 1);
-    }
-  });
-
-  return result;
 }
 
 export async function getJobCountByType(

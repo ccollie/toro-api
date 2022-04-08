@@ -299,41 +299,40 @@ export class StaticListIterator extends AbstractIterator {
 
 class ListIterator extends AbstractIterator {
   private _match: string;
+  private _index: number;
 
   constructor(queue: Queue, protected _key: string, config: TIteratorConfig) {
     super(queue, config);
     this._match = ensureEndsWith(_key, ':') + (config.pattern || '*');
+    const cursor = parseInt(this._cursor ?? '0');
+    if (Number.isInteger(cursor)) {
+      this._index = cursor;
+    } else {
+      this._index = 0;
+    }
   }
 
   async *generator() {
     const client = await this._queue.client;
-    // attempt a fast path
-    const count = await client.llen(this._key);
-    if (count < Math.max(this._scanCount * 10, 250)) {
-      // todo: make this configurable
-      if (count === 0) {
-        return;
+    do {
+      // attempt a fast path
+      let ids = await client.lrange(this._key, this._index, this._index + this._scanCount);
+
+      if (ids.length <= this._scanCount) {
+        this._cursor = null;
+      } else {
+        this._cursor = (this._index + ids.length).toString();
       }
-      const ids = await client.lrange(this._key, 0, -1);
-      // we could have had shenanigans in the interim
       if (ids.length === 0) {
         return;
       }
-      const staticIterator = new StaticListIterator(this._queue, ids, {
-        pattern: this._pattern,
-        scanCount: this._scanCount,
-        filter: this._filterFn,
-      });
+      ids.forEach((id) => this._seen.add(id));
+      ids = this.filterIdsByPattern(ids);
+      if (ids.length > 0) {
+        yield ids;
+      }
 
-      return staticIterator.generator();
-    }
-
-    const keyspaceIterator = new KeyspaceIterator(this._queue, this._key, {
-      pattern: this._pattern,
-      scanCount: this._scanCount,
-      filter: this._filterFn,
-    });
-    return keyspaceIterator.generator();
+    } while (!this.done);
   }
 }
 

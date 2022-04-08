@@ -1,3 +1,4 @@
+import { FindJobsByFilterOptions } from '@alpen/core';
 import { ApolloQueryResult } from '@apollo/client';
 import { client } from '@/providers/ApolloProvider';
 import {
@@ -6,7 +7,7 @@ import {
   GetJobsByFilterDocument,
   GetQueueJobsDocument,
   GetRepeatableJobsDocument,
-  JobState,
+  JobSearchStatus, Maybe,
   SortOrderEnum,
 } from '@/types';
 import type {
@@ -19,13 +20,12 @@ import type {
   JobCounts,
   JobFragment,
   JobLogs,
-  JobSearchInput,
   RepeatableJob,
 } from '@/types';
 
 export function getJobs(
   queueId: string,
-  status: JobState,
+  status: Maybe<JobSearchStatus>,
   page = 1,
   pageSize = 10,
   sortOrder: SortOrderEnum = SortOrderEnum.Desc,
@@ -37,7 +37,7 @@ export function getJobs(
       query: GetQueueJobsDocument,
       variables: {
         id: queueId,
-        status,
+        status: status ?? undefined,
         offset,
         limit,
         sortOrder,
@@ -57,9 +57,13 @@ export function getJobs(
     });
 }
 
-export function findJobs(
-  { queueId, status, expression, cursor, scanCount }: FindJobsInput,
-): Promise<{ nextCursor: string; jobs: JobFragment[] }> {
+export function findJobs({
+  queueId,
+  status,
+  expression,
+  cursor,
+  scanCount,
+}: FindJobsInput): Promise<{ nextCursor: string | null; jobs: JobFragment[] }> {
   return client
     .query<FindJobsQuery>({
       query: FindJobsDocument,
@@ -74,18 +78,25 @@ export function findJobs(
     })
     .then((results) => {
       const { data, error } = results;
-      if (error) throw results.error;
-      const { nextCursor, jobs } = data.findJobs;
+      if (error) throw error;
+      const searchResult = data?.queue?.jobsByFilter;
+      const jobs = (searchResult?.jobs || []) as JobFragment[];
+      const nextCursor = searchResult?.cursor || null;
       return {
-        jobs: (jobs as JobFragment[]),
-        nextCursor
+        jobs,
+        nextCursor,
       };
     });
 }
 
 export function getJobsByFilter(
   queueId: string,
-  { status = JobState.Completed, cursor, criteria, count }: JobSearchInput,
+  {
+    status = JobSearchStatus.Completed,
+    cursor,
+    filter,
+    count,
+  }: FindJobsByFilterOptions,
 ): Promise<FilteredJobsResult> {
   count = count ?? 10;
   return client
@@ -96,7 +107,7 @@ export function getJobsByFilter(
         status,
         cursor,
         count,
-        criteria,
+        criteria: filter,
       },
       fetchPolicy: 'network-only',
     })
@@ -129,7 +140,7 @@ export function getJobLogs(
     .query({
       query: GetJobLogsDocument,
       variables: {
-        queueId: queueId,
+        queueId,
         id: jobId,
         start,
         end,

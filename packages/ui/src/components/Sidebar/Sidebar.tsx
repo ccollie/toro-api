@@ -2,7 +2,7 @@ import { Center } from '@mantine/core';
 import React, { useEffect } from 'react';
 import { Logo } from '@/components/Icons/Logo';
 import { HostSidebarSection } from '@/components/Sidebar/HostSidebarSection';
-import { DarkModeSelectorIcon } from 'src/components/DarkModeSelectorIcon';
+import { DarkModeSelectorIcon } from '@/components/DarkModeSelectorIcon';
 import { SettingsItems } from './sidebar-items';
 import { SidebarSection } from './SidebarSection';
 import { useEscPressed } from '@/hooks/use-esc-pressed';

@@ -1,7 +1,7 @@
 import { DbExclamationIcon } from 'src/components/Icons';
 import { useJobsStore } from '@/stores';
 import { useWhyDidYouUpdate } from 'src/hooks';
-import { JobType } from 'src/types';
+import { JobSearchStatus, Queue } from 'src/types';
 import shallow from 'zustand/shallow';
 import { useRemoveJobSelectionOnUnmount } from '../hooks';
 import React from 'react';
@@ -12,14 +12,11 @@ import { Checkbox, Group, Text } from '@mantine/core';
 import type { Job, JobFragment } from 'src/types';
 
 interface TableProps {
-  queueId: string;
-  status: JobType;
+  queue: Queue;
+  status: JobSearchStatus;
   isReadOnly: boolean;
   jobs: Array<Job | JobFragment>;
   loading?: boolean;
-  isSelected: (job: string) => boolean;
-  toggleSelected: (id: string) => void;
-  removeSelected: (id: string) => void;
 }
 
 function Empty({ colSpan }: { colSpan: number }) {
@@ -44,12 +41,17 @@ interface JobRowProps {
 function JobRow(props: JobRowProps) {
   const { job, columns, isSelected, removeSelected, toggleSelected } = props;
 
+  const className =
+    'inline-flex justify-between items-center hover:bg-gray-200 ' +
+    'px-2 py-2 rounded-lg cursor-pointer';
+
   useRemoveJobSelectionOnUnmount(job.id, isSelected, removeSelected);
+
   return (
     <tr key={job.id}>
       <td className="border-dashed border-t border-gray-200 px-3" style={{ width: 18 }}>
         <label
-          className="inline-flex justify-between items-center hover:bg-gray-200 px-2 py-2 rounded-lg cursor-pointer">
+          className={className}>
           <Checkbox
             checked={isSelected}
             onChange={() => toggleSelected(job.id)}
@@ -64,10 +66,22 @@ function JobRow(props: JobRowProps) {
 }
 
 const InnerTableView: React.VFC<TableProps> = (props) => {
-  const { jobs, queueId, status, isSelected, toggleSelected, removeSelected } = props;
-  const columns = useColumns(queueId, status as JobType);
-  const [selectedCount, clearSelected, setSelected] = useJobsStore(
-    (state) => [state.selectedCount, state.clear, state.selectJobs],
+  const { jobs, queue, status } = props;
+  const columns = useColumns(queue.id, status);
+  const [
+    selected,
+    clearSelected,
+    setSelected,
+    removeSelected,
+    toggleSelected,
+  ] = useJobsStore(
+    (state) => [
+      state.selected,
+      state.clear,
+      state.selectJobs,
+      state.unselectJob,
+      state.toggleSelectJob
+    ],
     shallow
   );
 
@@ -75,6 +89,7 @@ const InnerTableView: React.VFC<TableProps> = (props) => {
 
   const jobsLength = jobs?.length ?? 0;
   const hasJobs = jobsLength > 0;
+  const selectedCount = selected.size;
   const isIndeterminate = selectedCount > 0 && selectedCount !== jobsLength;
   const allChecked = hasJobs && selectedCount === jobsLength;
 
@@ -87,6 +102,14 @@ const InnerTableView: React.VFC<TableProps> = (props) => {
     }
   };
 
+  function isSelected(job: JobFragment) {
+    return selected.has(job.id);
+  }
+
+  const className =
+    'inline-flex justify-between items-center ' +
+    'hover:bg-gray-200 py-2 cursor-pointer';
+
   return (
     <TableWrapper>
       <table className="min-w-full divide-y divide-gray-200 bg-gray-100">
@@ -94,7 +117,7 @@ const InnerTableView: React.VFC<TableProps> = (props) => {
           <tr>
             <th className="py-2 sticky top-0 border-b border-gray-200 bg-gray-100">
               <label
-                className="inline-flex justify-between items-center hover:bg-gray-200 py-2 cursor-pointer">
+                className={className}>
                 <Checkbox
                   checked={allChecked}
                   indeterminate={isIndeterminate}
@@ -115,7 +138,7 @@ const InnerTableView: React.VFC<TableProps> = (props) => {
               <JobRow
                 job={job}
                 columns={columns}
-                isSelected={isSelected(job.id)}
+                isSelected={isSelected(job)}
                 removeSelected={removeSelected}
                 toggleSelected={toggleSelected}
                 key={job.id}/>

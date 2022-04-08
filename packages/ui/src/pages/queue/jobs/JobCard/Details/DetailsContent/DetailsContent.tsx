@@ -33,7 +33,7 @@ export const DetailsContent = ({
       return (
         <>
           {stacktrace.length === 0 ? (
-            <div className="error">{!!failedReason ? `${failedReason}` : 'NA'}</div>
+            <div className="error mt-3">{!!failedReason ? `${failedReason}` : 'NA'}</div>
           ) : (
             <Highlight language="stacktrace" key="stacktrace">
               {stacktrace.join('\n')}

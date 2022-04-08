@@ -21,3 +21,15 @@ export function calcJobCountTotal(counts: JobCounts, status?: JobSearchStatus): 
   if (isNaN(total)) total = 0;
   return total;
 }
+
+const RegexRegex  = /(?:[^[/\\]|\\.|\[(?:[^\]\\]|\\.)*\])+/;
+
+// we could check that chars exist in a particular set, but Redis
+// keys are binary safe
+export function isValidJobIdPattern(pattern: string): boolean {
+  if (!pattern) {
+    return false;
+  }
+
+  return RegexRegex.test(pattern);
+}

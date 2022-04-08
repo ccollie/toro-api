@@ -21,6 +21,8 @@ type Query {
   """Load a flow"""
   flow(input: FlowNodeGetInput!): JobNode
   getJobs(input: GetJobsInput!): [Job!]!
+
+  """Get a list of jobs by id"""
   getJobsById(input: GetJobsByIdInput!): [Job!]!
 
   """Get a Host by id"""

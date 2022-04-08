@@ -1,4 +1,4 @@
-import { JobState } from '@/types';
+import { JobSearchStatus } from '@/types';
 import React, { useState } from 'react';
 import { useJobActions, useQueue } from '@/hooks';
 import type { Job, JobFragment } from '@/types';
@@ -14,7 +14,7 @@ import { Group, ActionIcon, Tooltip, Menu } from '@mantine/core';
 interface JobActionsProps {
   queueId: string;
   job: Job | JobFragment;
-  status?: JobState;
+  status?: JobSearchStatus;
   onSelect?: (job: Job) => void;
 }
 
@@ -50,17 +50,17 @@ function JobActionsMenu(props: JobMenuProps) {
           Queue again
         </Menu.Item>
       )}
-      {job.state === JobState.Failed && (
+      {job.state === JobSearchStatus.Failed && (
         <Menu.Item disabled={readonly} icon={<RetryIcon />} onClick={actions.retry}>
           Retry
         </Menu.Item>
       )}
-      {job.state === JobState.Waiting && (
+      {job.state === JobSearchStatus.Waiting && (
         <Menu.Item disabled={readonly} onClick={actions.moveToCompleted}>
           Move to completed
         </Menu.Item>
       )}
-      {job.state === JobState.Waiting && (
+      {job.state === JobSearchStatus.Waiting && (
         <Menu.Item disabled={readonly} onClick={actions.moveToFailed}>
           Move to failed
         </Menu.Item>
@@ -70,7 +70,7 @@ function JobActionsMenu(props: JobMenuProps) {
       </Menu.Item>
 
       {/*<Menu.Item onClick={() => shareJob(job.id)}>Share</Menu.Item>*/}
-      {job.state === JobState.Delayed && (
+      {job.state === JobSearchStatus.Delayed && (
         <Menu.Item disabled={readonly} icon={<PromoteIcon />} onClick={actions.promote}>
           Promote
         </Menu.Item>

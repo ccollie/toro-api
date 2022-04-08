@@ -1,6 +1,6 @@
 --[[
   Input:
-    KEYS[1]  Source key
+    KEYS[1]  Source key (completed)
     ARGV[1]  key prefix
     ARGV[2]  job name -- optional, can be nil or empty string
     ARGV[3]  limit
@@ -9,13 +9,16 @@
 ]]
 local key = KEYS[1]
 local prefix = ARGV[1]
-local jobName = ARGV[2]
+local jobNameFilter = ARGV[2]
 local limit = assert(tonumber(ARGV[3] or 500), 'Invalid value for limit')
-local amount = 0
+local total = 0
 local counter = 0
 
-if (jobName == '') then
-    jobName = nil
+local min = math.huge
+local max = -math.huge
+
+if (jobNameFilter == '') then
+    jobNameFilter = nil
 end
 
 local ids = redis.call('zrevrange', key, 0, limit)
@@ -27,18 +30,28 @@ if (#ids > 0) then
     local processedOn = tonumber(job[2])
     local name = job[3]
 
-    local timestampsValid = (finishedOn ~= nil and processedOn ~= nil);
-    local jobNameValid = (jobName == nil) or (name == jobName)
+    if (finishedOn ~= nil and processedOn ~= nil) then
+      local jobNameValid = (jobNameFilter == nil) or (name == jobNameFilter)
 
-    if (timestampsValid and jobNameValid) then
-      amount = amount + (finishedOn - processedOn)
-      counter = counter + 1
+      if (jobNameValid) then
+        local duration = finishedOn - processedOn
+        total = total + duration
+        counter = counter + 1
+
+        if (duration < min) then
+          min = duration
+        end
+
+        if (duration > max) then
+          max = duration
+        end
+      end
     end
   end
   if counter == 0 then
     return 0
   end
-  return (amount / counter)
+  return (total / counter)
 end
 
 return 0

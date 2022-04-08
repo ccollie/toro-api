@@ -8,7 +8,7 @@ import {
 import React from 'react';
 import { isJobFailed } from 'src/lib';
 import s from './Timeline.module.css';
-import type { Job as AppJob, JobFragment, JobState } from 'src/types';
+import type { Job as AppJob, JobFragment, JobSearchStatus } from 'src/types';
 
 type TimeStamp = string | number | Date;
 
@@ -42,7 +42,7 @@ export const Timeline = function Timeline({
   status,
 }: {
   job: AppJob | JobFragment;
-  status: JobState;
+  status: JobSearchStatus;
 }) {
   const isFailed = isJobFailed(job);
   return (

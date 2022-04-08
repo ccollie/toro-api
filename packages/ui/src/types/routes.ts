@@ -1,4 +1,4 @@
-import { JobState, JobView, QueueFilterStatus, SortOrderEnum } from '@/types';
+import { JobSearchStatus, JobView, QueueFilterStatus, SortOrderEnum } from '@/types';
 import type { MakeGenerics } from '@tanstack/react-location';
 import type { Queue, QueueHost, QueueWorker } from './generated';
 
@@ -16,7 +16,7 @@ export type LocationGenerics = MakeGenerics<{
     metricId: string;
   };
   Search: {
-    status: JobState;
+    status: JobSearchStatus;
     page: number;
     pageSize: number;
     sortBy: string;

@@ -4,11 +4,9 @@ import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
 import { useJobListQuery } from '../hooks/use-job-list-query';
 import { useWhyDidYouUpdate } from '@/hooks';
-import { useJobsStore } from '@/stores';
 import CardView from '../CardView';
 import TableView from '../TableView';
 import JobsToolbar from '../Toolbar';
-import shallow from 'zustand/shallow';
 
 export const Jobs = () => {
   const {
@@ -28,23 +26,11 @@ export const Jobs = () => {
     filter
   });
 
-  const [selectedJobs, isSelected, toggleSelected, removeSelected] =
-    useJobsStore(
-      (state) => [
-        state.selectedJobs,
-        state.isSelected,
-        state.toggleSelectJob,
-        state.unselectJob,
-      ],
-      shallow,
-    );
-
   useWhyDidYouUpdate('JobList', {
     status,
     filter,
     page,
     jobView,
-    selectedJobs,
   });
 
   // todo: error page
@@ -59,13 +45,13 @@ export const Jobs = () => {
       <div>
         <StatusMenu queue={queue} status={status} page={page}/>
         <JobsToolbar
-          queueId={queueId}
+          queue={queue}
           page={page}
+          jobs={jobs}
           pageCount={pageCount}
           status={status}
           view={jobView}
           filter={filter}
-          selected={selectedJobs}
         />
       </div>
       <div
@@ -74,30 +60,25 @@ export const Jobs = () => {
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
+          height: '100vh'
         }}
       >
         <LoadingOverlay visible={!called} />
         {jobView === 'card' && (
           <ScrollArea sx={{ flex: 1 }}>
             <CardView
-              queueId={queueId}
+              queue={queue}
               jobs={jobs}
               status={status}
-              isSelected={isSelected}
-              removeSelected={removeSelected}
-              toggleSelected={toggleSelected}
               isReadOnly={!!queue?.isReadonly}
             />
           </ScrollArea>
         )}
         {jobView === 'table' && (
           <TableView
-            queueId={queueId}
+            queue={queue}
             jobs={jobs}
             status={status}
-            isSelected={isSelected}
-            removeSelected={removeSelected}
-            toggleSelected={toggleSelected}
             isReadOnly={!!queue?.isReadonly}
           />
         )}

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { JobState } from '@/types';
+import type { JobSearchStatus } from '@/types';
 
 const regularItems = ['Data', 'Options', 'Logs'] as const;
 
 export type TabsType = typeof regularItems[number] | 'Error';
 
-export function useDetailsTabs(currentStatus: JobState, isJobFailed: boolean) {
+export function useDetailsTabs(currentStatus: JobSearchStatus, isJobFailed: boolean) {
   const [tabs, updateTabs] = useState<TabsType[]>([]);
   const [selectedTabIdx, setSelectedTabIdx] = useState(0);
   const selectedTab = tabs[selectedTabIdx];
@@ -13,7 +13,7 @@ export function useDetailsTabs(currentStatus: JobState, isJobFailed: boolean) {
   useEffect(() => {
     const nextState: TabsType[] =
       (currentStatus === 'failed') || isJobFailed
-        ? ['Error', ...regularItems]
+        ? [...regularItems, 'Error']
         : [...regularItems];
 
     updateTabs(nextState);

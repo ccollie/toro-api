@@ -68,7 +68,7 @@ export class StreamingPeakDetector {
 
     const oldValue = this.filteredY;
 
-    // todo: skip signaling if we go > this.lag since the last update
+    // todo: skip signaling if we (lastSave - now) > this.lag since the last update
 
     if (stats.count && Math.abs(value - mean) > threshold * std) {
       this.signal = value > mean ? 1 : -1;

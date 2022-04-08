@@ -1,13 +1,11 @@
 --[[
   Returns metric data based on a date range.
 ]]
--- From internet sleuthing. This is apparently not in the docs
-local MAX_INTEGER = 9007199254740994
 
 local metaKey = KEYS[1]
 local dataKey = KEYS[2]
 local rangeStart = assert(tonumber(ARGV[1] or 0), 'Numeric timestamp expected for range start')
-local endRange = assert(tonumber(ARGV[2] or MAX_INTEGER), 'Numeric timestamp expected for range end')
+local rangeEnd = assert(tonumber(ARGV[2] or -1), 'Numeric timestamp expected for range end')
 local msPerMinute = 60 * 1000
 
 local rcall = redis.call
@@ -19,43 +17,38 @@ function round(n, direction)
 end
 
 -- Get the latest timestamp
-local prevTS = rcall("HGET", metaKey, "prevTS")
+local prevTS = tonumber(rcall("HGET", metaKey, "prevTS"))
+local len = rcall("LLEN", dataKey)
 
+local firstTS = 0
 local result = {}
 
-local len = rcall("LLEN", dataKey)
-local firstTS = 0
-if len > 0 and prevTS and prevTS > 0 then
+if len > 0 and (prevTS ~= nil) and prevTS > 0 then
   firstTS = prevTS - (len * msPerMinute)
   -- firstTS does not seem to be already rounded to the nearest minute on save
   local first = round(firstTS, 'down')
-  if (rangeStart < first) then
-    rangeStart = first
-  else
-    rangeStart = round(rangeStart, 'down')
-  end
+  rangeStart = rangeStart < first and first or round(rangeStart, 'down')
 
   if (rangeEnd == -1 or rangeEnd > prevTS) then
-    endRange = prevTS
+    rangeEnd = prevTS
   end
-  endRange = round(endRange, 'up')
+  rangeEnd = round(rangeEnd, 'up')
 
   -- map timestamps to list indices
-  local startIndex = math.floor((rangeStart - first) / msPerMinute)
-  local endIndex = math.floor((endRange - first) / msPerMinute)
+  local startIndex = (rangeStart - first) / msPerMinute
+  local endIndex = (rangeEnd - first) / msPerMinute
 
   -- Get the metric data
-  local data = rcall("LRANGE", dataKey, startIndex, endIndex)
+  result = rcall("LRANGE", dataKey, startIndex, endIndex)
 
   -- TODO: error if we get back less than (endIndex - startIndex) + 1, since that
   -- means we have a gap in the data.
 
   -- add metadata at the end of result
-  len = #data
-  data[len + 1] = first
-  data[len + 2] = prevTS
-  data[len + 3] = len
-  return data
+  len = #result
+  result[len + 1] = first
+  result[len + 2] = prevTS
+  result[len + 3] = len
 else
   result[1] = 0
   result[2] = 0

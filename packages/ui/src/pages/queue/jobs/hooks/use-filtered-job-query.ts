@@ -68,7 +68,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
         status,
         cursor,
         count: pageSize,
-        criteria: cursor ? undefined : filter,
+        filter: cursor ? undefined : filter,
       },
       fetchPolicy: 'network-only',
       pollInterval: filter ? pollInterval : undefined,
@@ -129,7 +129,7 @@ export const useFilteredJobQuery = (props: UseFilteredJobQueryProps) => {
       status,
       cursor,
       count: pageSize,
-      criteria: cursor ? undefined : filter,
+      filter: cursor ? undefined : filter,
     }).then((res) => {
       onCompleted(res.data);
       return jobs;

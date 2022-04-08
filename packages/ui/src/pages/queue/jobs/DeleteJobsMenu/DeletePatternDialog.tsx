@@ -1,6 +1,7 @@
 import { Button, Group, Modal, Progress, Text, TextInput } from '@mantine/core';
 import React, { ChangeEvent, useEffect } from 'react';
 import { TrashIcon } from 'src/components/Icons';
+import { isValidJobIdPattern } from 'src/services';
 
 interface DeletePatternDialogProps {
   isOpen: boolean;
@@ -16,7 +17,7 @@ export const DeletePatternDialog = (props: DeletePatternDialogProps) => {
   function handleDelete() {
     setLoading(true);
     props.onDelete(pattern)
-      .then(() => props.onClose())
+      .then(handleClose)
       .catch((err: Error) => {
         const msg = err.message || `${err}`;
         setError(msg);
@@ -28,7 +29,11 @@ export const DeletePatternDialog = (props: DeletePatternDialogProps) => {
 
   function validate() {
     if (pattern.length > 0) {
-      // todo: validate pattern
+      if (!isValidJobIdPattern(pattern)) {
+        setError('Invalid pattern');
+      } else {
+        setError('');
+      }
     } else {
       setError('');
     }
@@ -36,19 +41,21 @@ export const DeletePatternDialog = (props: DeletePatternDialogProps) => {
 
   useEffect(validate, [pattern]);
 
-
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const val = (event.target.value ?? '').trim();
     setPattern(val);
   }
 
+  function handleClose() {
+    props?.onClose();
+  }
 
   return (
       <Modal
         opened={props.isOpen}
         centered={true}
         withCloseButton
-        onClose={() => props.onClose()}
+        onClose={handleClose}
         size="lg"
         shadow="md"
         radius="md"
@@ -60,13 +67,20 @@ export const DeletePatternDialog = (props: DeletePatternDialogProps) => {
             placeholder="Pattern"
             style={{ flex: 1 }}
             onChange={handleChange} />
-          <Button
-            disabled={loading || !pattern?.length}
-            leftIcon={<TrashIcon />}
-            loading={loading}
-            onClick={handleDelete}>
-            Delete
-          </Button>
+          <Group spacing={3}>
+            <Button
+              variant="default"
+              onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              disabled={loading || !pattern?.length}
+              leftIcon={<TrashIcon />}
+              loading={loading}
+              onClick={handleDelete}>
+              Delete
+            </Button>
+          </Group>
         </Group>
         {loading &&
           <Progress

@@ -2,7 +2,7 @@ import { jobById } from './job-by-id';
 import { jobCounts, jobCountsByType } from './job-counts';
 import { jobState } from './job-state';
 import { jobInState } from './job-in-state';
-import { queuePaused } from './queue-paused';
+import { queuePausedLoader } from './queue-paused';
 import { workerCount, workers } from './queue-workers';
 import { jobMemoryUsage } from './job-memory';
 import { queueRepeatableCount } from './queue-repeatable-count';
@@ -25,7 +25,7 @@ export const loaders = {
   metricData,
   metricDateRange,
   queueAlertCount,
-  queuePaused,
+  queuePaused: queuePausedLoader,
   queueRepeatableCount,
   workers,
   workerCount,

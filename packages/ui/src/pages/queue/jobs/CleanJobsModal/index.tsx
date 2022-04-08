@@ -89,7 +89,7 @@ const CleanJobsModal = (props: CleanJobsDialogProps) => {
 
   return (
     <Modal title={`Clean ${type} Jobs`} onClose={handleClose} opened={props.isOpen} centered>
-      <p>Clean {type} jobs? You can&lsquo;t undo this action afterwards.</p>
+      <p>You can&lsquo;t undo this action afterwards.</p>
       <form>
         <TextInput
           label={'Grace Period'}
@@ -122,11 +122,10 @@ const CleanJobsModal = (props: CleanJobsDialogProps) => {
         </div>
         <div>
           <Group position="apart" mt="xl">
-            <Button type="button" color="gray" onClick={handleClose} ml="auto">
+            <Button type="button" onClick={handleClose} ml="auto">
               Cancel
             </Button>
             <Button
-              color="blue"
               type="submit"
               disabled={!canClean}
               loading={isPending}

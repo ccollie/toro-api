@@ -1,21 +1,22 @@
 import { Paper, Checkbox, Group } from '@mantine/core';
-import React, { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import CircularProgress from 'src/components/CircularProgress';
+import { useWhyDidYouUpdate } from 'src/hooks';
 import { isJobFailed } from 'src/lib';
 import { Details } from './Details/Details';
 import JobActions from '../JobActions';
 import { Timeline } from './Timeline/Timeline';
-import type { Job, Queue, JobFragment, JobState } from '@/types';
+import type { Job, Queue, JobFragment, JobSearchStatus } from '@/types';
 
 import s from './JobCard.module.css';
 
-const greenStatuses: JobState[] = ['active', 'completed'];
+const greenStatuses: JobSearchStatus[] = ['active', 'completed'];
 
 interface JobCardProps {
   job: Job | JobFragment;
   queue: Queue;
   isReadOnly?: boolean;
-  status: JobState;
+  status: JobSearchStatus;
   onClick?: (job: Job | JobFragment) => void;
   isSelected?: boolean;
   toggleSelected?: (id: string) => void;
@@ -30,13 +31,14 @@ export const JobCard = (props: JobCardProps) =>
   const [progressColor, setProgressColor] = useState<string>('teal');
   const [progress, setProgress] = useState<number>(0);
 
+  useWhyDidYouUpdate('JobCard', { job, queue, status, isSelected });
+
   useEffect(() => {
     const color = isFailed && !greenStatuses.includes(status) ? '#F56565' : 'teal';
     setProgressColor(color);
   }, [status]);
 
-  const handleChange = useCallback((evt: ChangeEvent<HTMLInputElement>) => {
-    const checked = evt.currentTarget.checked;
+  const handleChange = useCallback(() => {
     const id = job.id;
     props.toggleSelected?.(id);
   }, [job.id]);

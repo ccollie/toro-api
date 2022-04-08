@@ -1,7 +1,8 @@
 import React from 'react';
 import { EmptyJobCounts } from '@/constants';
+import { calcJobCountTotal } from 'src/services';
 import s from './StatusMenu.module.css';
-import type { Queue, JobStatus } from 'src/types';
+import type { Queue, JobStatus, JobSearchStatus } from 'src/types';
 import { STATUS_LIST } from 'src/constants/status-list';
 import { Link } from '@tanstack/react-location';
 
@@ -9,18 +10,14 @@ import { Link } from '@tanstack/react-location';
 
 export const StatusMenu = ({ queue, status, page }: {
   queue: Queue;
-  status: JobStatus;
+  status: JobSearchStatus;
   page?: number;
 }) => {
 
   page = page || 1;
 
   function getJobTotal(): number {
-    const keys = Object.keys(queue.jobCounts ?? {});
-    return keys.reduce((acc, key) => {
-      const count = (queue.jobCounts as any)[key] ?? 0;
-      return acc + (Number.isInteger(count) ? count : 0);
-    }, 0);
+    return calcJobCountTotal(queue.jobCounts ?? {}, status);
   }
 
   function getJobCount(status: string): number {

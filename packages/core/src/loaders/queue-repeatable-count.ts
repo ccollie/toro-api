@@ -30,7 +30,9 @@ async function getRepeatableCounts(queues: Queue[]): Promise<number[]> {
 
   await pMap(hostQueues, async ([client, queues]) => {
     const pipeline = client.pipeline();
-    queues.forEach((queue) => void enqueueFetch(pipeline, queue));
+    queues.forEach((queue) => {
+      enqueueFetch(pipeline, queue);
+    });
     const res = await pipeline.exec();
 
     let i = 0;

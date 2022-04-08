@@ -1,4 +1,4 @@
-import { JobState } from 'src/types';
+import { JobSearchStatus } from 'src/types';
 export type JobExportFormat = 'json' | 'csv';
 
 export enum ExportStage {
@@ -10,7 +10,7 @@ export enum ExportStage {
 
 export interface JobExportOptions {
   maxJobs?: number;
-  status: JobState;
+  status: JobSearchStatus;
   format: JobExportFormat;
   filter?: string;
   fields: string[];

@@ -1,7 +1,7 @@
-import { JobState } from '@/types';
+import { Job, JobFragment, JobSearchStatus, Queue } from '@/types';
 import React, { useCallback, useEffect, useState } from 'react';
-import type { Job, JobFragment, JobView, LocationGenerics } from '@/types';
-import { useDisclosure, useWhyDidYouUpdate, useQueue } from '@/hooks';
+import type { JobView, LocationGenerics } from '@/types';
+import { useDisclosure, useWhyDidYouUpdate } from '@/hooks';
 import {
   ExportIcon,
   AddIcon,
@@ -17,6 +17,7 @@ import { ReloadIcon } from '@radix-ui/react-icons';
 import {
   ActionIcon,
   Button,
+  Checkbox,
   Collapse,
   Group,
   Space,
@@ -32,10 +33,10 @@ import JobSchemaModal from '../JobSchemaModal';
 import Pagination from '@/components/Pagination';
 import FilteredPager from '../FilteredPager';
 
-interface BulkJobActionsProps {
-  queueId: string;
-  status: JobState;
-  selected: Array<JobFragment | Job>;
+interface JobsToolbarProps {
+  queue: Queue;
+  status: JobSearchStatus;
+  jobs: Array<Job | JobFragment>;
   filter?: string;
   page?: number;
   pageCount?: number;
@@ -43,55 +44,52 @@ interface BulkJobActionsProps {
   onBulkAction?: (action: BulkActionType, ids: string[]) => void;
 }
 
-export const JobsToolbar = (props: BulkJobActionsProps) => {
+export const JobsToolbar = (props: JobsToolbarProps) => {
   // useWhyDidYouUpdate('JobsToolbar', props);
 
-  const { status, queueId, onBulkAction, view = 'card', pageCount } = props;
-  const {
-    handlePromote,
-    handleRetry,
-    canPromote,
-    canDelete,
-    canRetry,
-  } = useJobBulkActions(queueId, status, onBulkAction);
+  const { status, queue, jobs, onBulkAction, view = 'card', pageCount } = props;
+  const queueId = queue.id;
 
-  const [selectedJobs, selectAll, unselectAll] =
-    useJobsStore(
-      (state) => [
-        state.selectedJobs,
-        state.selectAll,
-        state.unselectAll,
-      ],
-      shallow,
-    );
+  const { handlePromote, handleRetry, canPromote, canDelete, canRetry } =
+    useJobBulkActions(queueId, status, onBulkAction);
 
-  const [selectedIds, setSelectedIds] = useState(getSelectedIds());
+  const [_selected, selectedJobs, selectAll, unselectAll] = useJobsStore(
+    (state) => [
+      state.selected,
+      state.selectedJobs,
+      state.selectAll,
+      state.unselectAll
+    ],
+    shallow,
+  );
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isPromoteDisabled, setIsPromoteDisabled] = useState(canPromote);
   const [isRetryDisabled, setIsRetryDisabled] = useState(canRetry);
 
   const [isPromoting, setIsPromoting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [indeterminate, setIndeterminate] = useState(false);
 
-  const { queue } = useQueue(queueId);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const count = selectedJobs.length;
+    const count = _selected.size;
     setIsPromoteDisabled(!canPromote || count === 0);
     setIsRetryDisabled(!canRetry || count === 0);
-  }, [canPromote, canDelete, canRetry, selectedJobs]);
+  }, [canPromote, canDelete, canRetry, _selected]);
 
   useEffect(() => {
-    setSelectedIds(getSelectedIds());
-  }, [selectedJobs]);
-
-  function getSelectedIds() {
-    return (selectedJobs ?? []).map((x) => x.id);
-  }
+    const count = _selected.size;
+    setSelectedIds(Array.from(_selected));
+    const isIndeterminate = count > 0 && count < jobs.length;
+    setIndeterminate(isIndeterminate);
+  }, [_selected]);
 
   useWhyDidYouUpdate('JobBulkActions', {
     ...props,
-    selectedJobs
+    selectedJobs,
+    indeterminate,
   });
 
   const {
@@ -158,18 +156,31 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
     updateSearchParams({ jobFilter: '' });
   }, []);
 
-  const onApplyFilter = useCallback(
-    (filter: string) => {
-      console.log('filter was applied', filter);
-      updateSearchParams({ jobFilter: filter });
-    },
-    [],
-  );
+  const onApplyFilter = useCallback((filter: string) => {
+    console.log('filter was applied', filter);
+    updateSearchParams({ jobFilter: filter });
+  }, []);
+
+  const onSelectAllClick = useCallback(() => {
+    const checkedCount = _selected.size;
+    const jobCount = jobs.length;
+    if (checkedCount === jobCount) {
+      unselectAll();
+    } else {
+      selectAll();
+    }
+  }, [selectAll, unselectAll]);
 
   return (
     <div style={{ marginBottom: '9px' }}>
       <Group grow={false} spacing="sm" position="apart">
         <Group grow={false} spacing="xs" position="left">
+          <Checkbox
+            onChange={onSelectAllClick}
+            indeterminate={indeterminate}
+            disabled={!jobs.length}
+            checked={_selected.size > 0}
+          />
           <Tooltip label="Retry" withArrow>
             <ActionIcon
               onClick={onRetry}
@@ -191,8 +202,7 @@ export const JobsToolbar = (props: BulkJobActionsProps) => {
           </Tooltip>
           <Tooltip label="Delete" withArrow>
             <DeleteJobsMenu
-              queueId={queueId}
-              selectedIds={selectedIds}
+              queue={queue}
               status={status}
               onBulkAction={onBulkAction}
             />

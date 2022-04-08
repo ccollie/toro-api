@@ -14,7 +14,7 @@ async function getPipelinePaused(
   const res = await pipeline.exec();
   const result: boolean[] = [];
 
-  res.forEach((item, index) => {
+  res.forEach((item) => {
     if (item[0]) {
       // error. Todo: throw
       result.push(false);
@@ -46,8 +46,8 @@ async function getQueuePausedBatch(queues: Queue[]): Promise<boolean[]> {
   return result;
 }
 
-export const queuePaused = new DataLoader(getQueuePausedBatch);
+export const queuePausedLoader = new DataLoader(getQueuePausedBatch);
 
 export function getQueuePaused(queue: Queue): Promise<boolean> {
-  return queuePaused.load(queue);
+  return queuePausedLoader.load(queue);
 }

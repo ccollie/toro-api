@@ -1,4 +1,8 @@
-import { FilteredJobsResult, getJobFilter, processSearch } from '@alpen/core';
+import {
+  FilteredJobsResult,
+  findJobsByFilter,
+  getJobFilter,
+} from '@alpen/core';
 import boom, { notFound } from '@hapi/boom';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
@@ -112,7 +116,7 @@ export const jobsByFilter: FieldConfig = {
       cursor: nextCursor,
       total,
       current,
-    } = await processSearch(queue, {
+    } = await findJobsByFilter(queue, {
       status,
       filter: expression,
       cursor,

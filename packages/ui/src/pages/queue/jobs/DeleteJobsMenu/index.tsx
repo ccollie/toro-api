@@ -1,5 +1,5 @@
 import { ActionIcon, Badge, createStyles, Group, Menu } from '@mantine/core';
-import React, { useState } from 'react';
+import React from 'react';
 import { ClearIcon, FilterIcon, TrashIcon } from 'src/components/Icons';
 import { useDisclosure, useToast } from 'src/hooks';
 import { ucFirst } from 'src/lib';
@@ -10,7 +10,8 @@ import {
   deleteJobsByPattern,
   useJobBulkActions,
 } from 'src/services';
-import { JobSearchStatus } from 'src/types';
+import { useJobsStore } from 'src/stores';
+import { JobSearchStatus, Queue } from 'src/types';
 import CleanJobsModal from '../CleanJobsModal';
 import { DeletePatternDialog } from './DeletePatternDialog';
 
@@ -54,20 +55,25 @@ const useStyles = createStyles((theme) => ({
 }));
 
 interface TProps {
-  queueId: string;
+  queue: Queue;
   jobCount?: number;
-  selectedIds: string[];
-  filtered?: boolean;
+  filter?: string;
   status: JobSearchStatus;
   onBulkAction?: (action: BulkActionType, ids: string[]) => void;
 }
 
 export function DeleteJobsMenu(props: TProps) {
-  const { filtered, onBulkAction, queueId, status, selectedIds = [] } = props;
+  const { filter, onBulkAction, queue, status } = props;
   const { classes, theme } = useStyles();
   const menuIconColor =
     theme.colors[theme.primaryColor][theme.colorScheme === 'dark' ? 5 : 6];
-  const [loading, setLoading] = useState(false);
+
+  const filtered = (filter ?? '').length > 0;
+
+  const selected = useJobsStore(state => state.selected);
+  const selectedIds = Array.from(selected);
+
+  const isReadonly = queue.isReadonly;
 
   const {
     isOpen: isPatternDialogOpen,
@@ -85,12 +91,24 @@ export function DeleteJobsMenu(props: TProps) {
     defaultIsOpen: false,
   });
 
+  const queueId = queue.id;
+
   const toast = useToast();
   const { canClean, handleDelete } = useJobBulkActions(
     queueId,
     status,
     onBulkAction,
   );
+
+  function displaySuccess(title: string, description: string) {
+    toast.success({
+      title,
+      description,
+      status: 'success',
+      duration: 5000,
+      isClosable: true,
+    });
+  }
 
   function displayError(title: string, description: string) {
     toast.error({
@@ -102,48 +120,34 @@ export function DeleteJobsMenu(props: TProps) {
   }
 
   async function handleDeleteByPattern(pattern: string) {
-    setLoading(true);
     deleteJobsByPattern(queueId, pattern, status)
       .then((removed) => {
-        toast.success({
-          title: 'Jobs deleted',
-          description: `${removed} Jobs matching ${pattern} have been deleted`,
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
+        displaySuccess('Success', `${removed} jobs deleted`);
       })
       .catch((err) => {
         displayError('Error deleting jobs', err.message);
-      })
-      .finally(() => {
-        setLoading(false);
       });
   }
 
-  async function handleDeleteByFilter(filter: string, pattern?: string) {
-    setLoading(true);
-    deleteJobsByFilter(queueId, filter, status, pattern)
+  async function handleDeleteByFilter() {
+    // todo: pattern
+    deleteJobsByFilter(queueId, filter!, status)
       .then((removed) => {
-        toast.success({
-          title: 'Jobs deleted',
-          description: `${removed} Jobs matching filter have been deleted`,
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
+        displayError('Jobs deleted', `${removed} Jobs matching ${filter} have been deleted`);
       })
       .catch((err) => {
         displayError('Error deleting jobs by filter', err.message);
-      })
-      .finally(() => {
-        setLoading(false);
       });
   }
 
   async function handleDeleteSelected() {
-    setLoading(true);
-    handleDelete(selectedIds).finally(() => setLoading(false));
+    handleDelete(selectedIds)
+      .then((removed) => {
+        displaySuccess('Jobs deleted', `${removed} Jobs have been deleted`);
+      })
+      .catch((err) => {
+        displayError('Error deleting jobs', err.message);
+      });
   }
 
   function cleanJobs(
@@ -151,14 +155,10 @@ export function DeleteJobsMenu(props: TProps) {
     grace?: number,
     limit?: number,
   ): Promise<void> {
-    setLoading(true);
     // Status is a subset of JobStatus so the cast is safe
     return cleanQueue(queueId, grace ?? 0, limit, status)
       .then((count: number | undefined) => {
         toast.success('Cleaned ' + (count ?? 0) + ' jobs');
-      })
-      .finally(() => {
-        setLoading(false);
       });
   }
 
@@ -171,7 +171,7 @@ export function DeleteJobsMenu(props: TProps) {
           placement="end"
           withArrow
           control={
-            <ActionIcon color="red">
+            <ActionIcon color="red" disabled={isReadonly}>
               <TrashIcon className={classes.menuControl} />
             </ActionIcon>
           }
@@ -183,24 +183,25 @@ export function DeleteJobsMenu(props: TProps) {
                 color={menuIconColor}
               />
             }
-            disabled={!selectedIds.length}
+            disabled={isReadonly || !selectedIds.length}
             onClick={handleDeleteSelected}
           >
             <Group position="apart">
               <div>Delete Selected</div>
-              {props.selectedIds.length && (
+              {selectedIds.length && (
                 <Badge
                   size="sm"
                   variant="filled"
                   className={classes.selectedBadge}
                 >
-                  {props.selectedIds.length}
+                  {selectedIds.length}
                 </Badge>
               )}
             </Group>
           </Menu.Item>
           <Menu.Item
             onClick={openPatternDialog}
+            disabled={isReadonly}
             icon={
               <i
                 className={`la i-la-asterisk ${classes.icon}`}
@@ -212,13 +213,14 @@ export function DeleteJobsMenu(props: TProps) {
           </Menu.Item>
           <Menu.Item
             icon={<FilterIcon color={menuIconColor} />}
-            disabled={!filtered}
+            disabled={isReadonly || !filtered}
+            onClick={handleDeleteByFilter}
           >
             Delete By Filter
           </Menu.Item>
           <Menu.Item
             icon={<ClearIcon color={menuIconColor} />}
-            disabled={!canClean}
+            disabled={isReadonly || !canClean}
             onClick={openCleanDialog}
           >
             Clean {ucFirst(`${props.status}`)} Jobs

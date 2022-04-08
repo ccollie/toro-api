@@ -4,6 +4,7 @@ import {
   FlowJob,
   FlowProducer,
   JobNode,
+  JobState,
   NodeOpts,
   Queue,
   RedisClient,
@@ -38,7 +39,8 @@ import {
 import { env as environment, appInfo } from '../config';
 import { logger } from '../logger';
 import {
-  fixupQueueConfig, generateHostId,
+  fixupQueueConfig,
+  generateHostId,
   generateQueueId,
   getHostConfig,
   HostConfig,
@@ -46,10 +48,7 @@ import {
   removeQueueConfig,
 } from './host-config';
 import { getHostBusKey, getHostKey, getLockKey } from '../keys';
-import {
-  Channel,
-  NotificationManager,
-} from '../notifications';
+import { Channel, NotificationManager } from '../notifications';
 import { NotificationContext } from '../types';
 import { getHostUri } from '../lib';
 import { QueueWorker } from '../queues';
@@ -296,7 +295,7 @@ export class HostManager {
     return values;
   }
 
-  async getJobCounts(states?: JobStatus[]): Promise<JobCounts> {
+  async getJobCounts(states?: JobState[]): Promise<JobCounts> {
     states = states?.length === 0 ? JOB_STATES : states;
     const counts: JobCounts = Object.create(null);
     states.forEach((state) => {
@@ -472,9 +471,10 @@ export class HostManager {
   }
 }
 
-
 function queueComparator(a: Queue, b: Queue): number {
-  const prefixCompare = (a.opts.prefix ?? '').localeCompare(b.opts.prefix ?? '');
+  const prefixCompare = (a.opts.prefix ?? '').localeCompare(
+    b.opts.prefix ?? '',
+  );
   if (prefixCompare !== 0) return prefixCompare;
   return a.name.localeCompare(b.name);
 }

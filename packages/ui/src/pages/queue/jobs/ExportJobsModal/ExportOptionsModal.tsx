@@ -1,6 +1,9 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { JobState } from 'src/types';
-import type { JobExportFormat, JobExportOptions } from 'src/types';
+import type {
+  JobExportFormat,
+  JobExportOptions,
+  JobSearchStatus,
+} from 'src/types';
 import {
   Group,
   Checkbox,
@@ -16,7 +19,7 @@ import { FieldList, AllFieldNames } from './FieldList';
 
 interface ExportOptionsProps {
   queueId: string;
-  status: JobState;
+  status: JobSearchStatus;
   filter?: string;
   isOpen: boolean;
   onConfirm: (evt: JobExportOptions) => void;
@@ -97,7 +100,13 @@ export const ExportOptionsModal = (props: ExportOptionsProps) => {
   }
 
   return (
-    <Modal centered opened={isOpen} title="Export Jobs" size="lg" onClose={handleClose}>
+    <Modal
+      centered
+      opened={isOpen}
+      title="Export Jobs"
+      size="lg"
+      onClose={handleClose}
+    >
       <form name="export-jobs-modal">
         <TextInput
           style={{ width: '100%' }}
@@ -137,8 +146,7 @@ export const ExportOptionsModal = (props: ExportOptionsProps) => {
         <Space h="md" />
         <div>
           <Text>Select Fields to Export</Text>
-          <FieldList
-            onChange={handleSelectionChange}/>
+          <FieldList onChange={handleSelectionChange} />
         </div>
         <Space h="md" />
         <Group align="center" grow={false}>

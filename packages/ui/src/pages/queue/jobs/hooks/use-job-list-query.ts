@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useJobsStore, useRefetchJobsLockStore } from '@/stores';
 import { usePagination, useWhyDidYouUpdate } from '@/hooks';
-import { JobState } from 'src/types';
+import { JobSearchStatus } from 'src/types';
 import { useUnfilteredJobListQuery } from './use-unfiltered-job-list-query';
 import useFilteredJobQuery from './use-filtered-job-query';
 import { useNetworkSettingsStore } from '@/stores/network-settings';
@@ -9,7 +9,7 @@ import shallow from 'zustand/shallow';
 
 type TProps = {
   queueId: string;
-  status: JobState;
+  status: JobSearchStatus;
   page: number;
   filter?: string;
 };
@@ -29,7 +29,7 @@ export const useJobListQuery = (props: TProps) => {
   const [called, setCalled] = useState(false);
 
   const isFetchLocked = useRefetchJobsLockStore((state) => state.isLocked);
-  const [shouldFetchData, textSearchPollingDisabled, refetchInterval] =
+  const [shouldFetchData, refetchInterval] =
     useNetworkSettingsStore(
       (state) => [
         state.shouldFetchData ?? true, // BAD !!!
@@ -52,6 +52,14 @@ export const useJobListQuery = (props: TProps) => {
     pageSize,
   });
 
+  let interval: number | undefined;
+
+  if (typeof pollInterval === 'number') {
+    interval = pollInterval;
+  } else if (pollInterval === false) {
+    interval = undefined;
+  }
+
   const {
     fetch: filteredFetch,
     loading: filteredLoading,
@@ -62,7 +70,7 @@ export const useJobListQuery = (props: TProps) => {
     pageCount: filteredPageCount,
   } = useFilteredJobQuery({
     queueId,
-    pollInterval,
+    pollInterval: interval,
     status,
     filter,
     page,
@@ -80,10 +88,10 @@ export const useJobListQuery = (props: TProps) => {
     pageCount: basicPageCount,
   } = useUnfilteredJobListQuery({
     queueId,
-    pollInterval,
     status,
     page,
     pageSize,
+    pollInterval: interval,
     shouldFetch: shouldFetch && !filter,
   });
 

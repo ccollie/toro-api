@@ -1,23 +1,37 @@
 import React from 'react';
+import { useJobsStore } from 'src/stores';
+import shallow from 'zustand/shallow';
 import { JobCard } from '../JobCard';
-import type { JobFragment, JobState, Queue } from 'src/types';
-import { useQueue } from '@/hooks';
+import type { JobFragment, JobSearchStatus, Queue } from 'src/types';
 
 interface CardViewProps {
-  queueId: Queue['id'];
+  queue: Queue;
   jobs: JobFragment[];
-  status: JobState;
+  status: JobSearchStatus;
   isReadOnly: boolean;
   onClick?: (job: JobFragment) => void;
-  isSelected: (id: string) => boolean;
-  toggleSelected: (id: string) => void;
-  removeSelected: (id: string) => void;
 }
 
 export const CardView = (props: CardViewProps) => {
-  const { status, jobs, queueId, isSelected, toggleSelected, removeSelected } = props;
+  const { status, jobs, queue } = props;
 
-  const { queue } = useQueue(queueId);
+  const [
+    selected,
+    removeSelected,
+    toggleSelected,
+  ] = useJobsStore(
+    (state) => [
+      state.selected,
+      state.unselectJob,
+      state.toggleSelectJob
+    ],
+    shallow
+  );
+
+  function isSelected(job: JobFragment) {
+    return selected.has(job.id);
+  }
+
   return (
     <section>
       {jobs.map((job) => (
@@ -25,7 +39,7 @@ export const CardView = (props: CardViewProps) => {
           key={job.id}
           job={job}
           status={status}
-          isSelected={isSelected(job.id)}
+          isSelected={isSelected(job)}
           toggleSelected={toggleSelected}
           removeSelected={removeSelected}
           queue={queue}/>

@@ -3,6 +3,7 @@ import type {
   JobFragment
 } from '@/types';
 import { EmptyJobCounts } from 'src/constants';
+import { calcJobCountTotal } from 'src/services/queue/utils';
 import create from 'zustand';
 import { makeArray } from '@/lib';
 
@@ -172,8 +173,7 @@ export const useJobsStore = create<TJobListState>((set, get) => ({
   },
   get totalJobs(): number {
     const counts = get().jobCounts ?? EmptyJobCounts;
-    const keys = Object.keys(counts);
-    return keys.reduce((acc, key) => acc + (counts as any)[key] ?? 0, 0);
+    return calcJobCountTotal(counts);
   },
   get selectedCount(): number {
     const { selectedJobIds } = get();

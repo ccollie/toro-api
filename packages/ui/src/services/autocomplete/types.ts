@@ -1,4 +1,4 @@
-
+// eslint-disable max-len
 export type DefinitionType =
   | 'class'
   | 'constant'
@@ -13,7 +13,6 @@ export type DefinitionType =
   | 'variable'
   | 'param'
   | 'union';
-
 
 export interface TypingResultBase {
   readonly type: DefinitionType;
@@ -66,81 +65,94 @@ export type Definition = TypeDefinition | UnionType;
 export type ClassMember = Method | Property;
 export type Suggestible = TypeDefinition | ClassMember | Variable | FunctionDef;
 
-export const isType = (x: unknown, t: DefinitionType): boolean => !!x && (x as TypingResultBase).type === t;
-export const isTypeDefinition = (x: unknown): x is TypeDefinition => isType(x, 'type');
+export const isType = (x: unknown, t: DefinitionType): boolean =>
+  !!x && (x as TypingResultBase).type === t;
+export const isTypeDefinition = (x: unknown): x is TypeDefinition =>
+  isType(x, 'type');
 export const isUnionType = (x: unknown): x is UnionType => isType(x, 'union');
 export const isMethodType = (x: unknown): x is Method => isType(x, 'method');
-export const isCallable = (x: unknown): x is Callable => isType(x, 'method') || isType(x, 'function');
+export const isCallable = (x: unknown): x is Callable =>
+  isType(x, 'method') || isType(x, 'function');
 export const isProperty = (x: unknown): x is Property => isType(x, 'property');
 export const isVariable = (x: unknown): x is Variable => isType(x, 'variable');
-export const isClassType = (x: unknown): x is TypeDefinition => isType(x, 'class');
-export const isParam = (x: unknown): x is FunctionParameter => isType(x, 'param');
+export const isClassType = (x: unknown): x is TypeDefinition =>
+  isType(x, 'class');
+export const isParam = (x: unknown): x is FunctionParameter =>
+  isType(x, 'param');
 
-
-function _method(m : Partial<Method>) : Method {
+function _method(m: Partial<Method>): Method {
   return {
     type: 'method',
     name: '',
     returnType: 'string',
     params: [],
-    ...m
-  }
+    ...m,
+  };
 }
 
-function _defun(m : Partial<FunctionDef>) : FunctionDef {
+function _defun(m: Partial<FunctionDef>): FunctionDef {
   return {
     type: 'function',
     name: '',
     returnType: 'string',
     params: [],
-    ...m
+    ...m,
   };
 }
 
 const StringDefinition: TypeDefinition = {
   type: 'type',
   name: 'string',
-  fields: [{
-    type: 'property',
-    name: 'length',
-    typeName: 'string',
-    description: 'The length of the string.',
-  }],
+  fields: [
+    {
+      type: 'property',
+      name: 'length',
+      typeName: 'string',
+      description: 'The length of the string.',
+    },
+  ],
   methods: [
     _method({
       name: 'charAt',
-      params: [{
-        name: 'index',
-        typeName: 'number',
-        description: 'The index of the character to retrieve.',
-        type: 'param'
-      }],
+      params: [
+        {
+          name: 'index',
+          typeName: 'number',
+          description: 'The index of the character to retrieve.',
+          type: 'param',
+        },
+      ],
       returnType: 'string',
       description: 'return the character at a given position in a string.',
     }),
     _method({
       name: 'concat',
-      params: [{
-        name: 'arg1',
-        typeName: 'string',
-        description: 'value to append to the string.',
-        type: 'param'
-      },{
-        name: 'arg2',
-        typeName: 'string',
-        description: 'value to append to the string.',
-        type: 'param'
-      },{
-        name: 'arg3',
-        typeName: 'string',
-        description: 'value to append to the string.',
-        type: 'param'
-      },{
-        name: 'arg4',
-        typeName: 'string',
-        description: 'value to append to the string.',
-        type: 'param'
-      }],
+      params: [
+        {
+          name: 'arg1',
+          typeName: 'string',
+          description: 'value to append to the string.',
+          type: 'param',
+        },
+        {
+          name: 'arg2',
+          typeName: 'string',
+          description: 'value to append to the string.',
+          type: 'param',
+        },
+        {
+          name: 'arg3',
+          typeName: 'string',
+          description: 'value to append to the string.',
+          type: 'param',
+        },
+        {
+          name: 'arg4',
+          typeName: 'string',
+          description: 'value to append to the string.',
+          type: 'param',
+        },
+      ],
       returnType: 'string',
       description:
         'combines one or more strings(argv1,v2 etc) into this existing one.',
@@ -148,7 +160,8 @@ const StringDefinition: TypeDefinition = {
     _method({
       name: 'toUpperCase',
       returnType: 'string',
-      description: 'return the string with all of its characters converted to uppercase.',
+      description:
+        'return the string with all of its characters converted to uppercase.',
     }),
     _method({
       name: 'toLowerCase',
@@ -281,26 +294,30 @@ const NumberDefinition: TypeDefinition = {
   type: 'type',
   name: 'number',
   fields: [],
-  methods: [{
-    name: 'toString',
-    type: 'method',
-    returnType: 'string',
-    description: 'return the value as a string.',
-    params: [],
-  }],
+  methods: [
+    {
+      name: 'toString',
+      type: 'method',
+      returnType: 'string',
+      description: 'return the value as a string.',
+      params: [],
+    },
+  ],
 };
 
 const BooleanDefinition: TypeDefinition = {
   type: 'type',
   name: 'boolean',
   fields: [],
-  methods: [{
-    name: 'toString',
-    type: 'method',
-    returnType: 'string',
-    description: 'return the value as a string.',
-    params: [],
-  }],
+  methods: [
+    {
+      name: 'toString',
+      type: 'method',
+      returnType: 'string',
+      description: 'return the value as a string.',
+      params: [],
+    },
+  ],
 };
 
 const ArrayDefinition: TypeDefinition = {
@@ -322,42 +339,41 @@ const ArrayDefinition: TypeDefinition = {
     _method({
       name: 'concat',
       returnType: 'array',
-      description:
-        'combines one or more arrays(argv1,v2 etc).',
+      description: 'combines one or more arrays(argv1,v2 etc).',
       params: [
         { name: 'value0', typeName: 'any', type: 'param' },
         { name: 'value1', typeName: 'any', type: 'param' },
         { name: 'value2', typeName: 'any', type: 'param' },
-        { name: 'value3', typeName: 'any', type: 'param' }
+        { name: 'value3', typeName: 'any', type: 'param' },
       ],
     }),
     _method({
       name: 'join',
       returnType: 'string',
       description:
-      // eslint-disable-next-line max-len
+        // eslint-disable-next-line max-len
         'creates and returns a new string by concatenating all of the elements in an array (or an array-like object), separated by commas or a specified separator string.',
-      params: [
-        { name: 'separator', typeName: 'string', type: 'param' },
-      ],
+      params: [{ name: 'separator', typeName: 'string', type: 'param' }],
     }),
     _method({
       name: 'shift',
       returnType: 'any',
       description:
-      // eslint-disable-next-line max-len
-        'The shift() method removes the first element from an array and returns that removed element. This method changes the length of the array.',
+        // eslint-disable-next-line max-len
+        'The shift() method removes the first element from an array and returns that ' +
+        'removed element. This method changes the length of the array.',
     }),
     _method({
       name: 'unshift',
       returnType: 'number',
       description:
-        'The unshift() method adds one or more elements to the beginning of an array and returns the new length of the array.',
+        'The unshift() method adds one or more elements to the beginning of an array ' +
+        'and returns the new length of the array.',
     }),
     _method({
       name: 'keys',
       returnType: 'array',
-      description:'return the keys for each index in the array',
+      description: 'return the keys for each index in the array',
     }),
     _method({
       name: 'includes',
@@ -407,12 +423,14 @@ const ArrayDefinition: TypeDefinition = {
         'returns the average value of the numeric elements in the array',
     }),
   ],
-  fields: [{
-    type: 'property',
-    name: 'length',
-    typeName: 'number',
-    description: 'The length of the array.',
-  }],
+  fields: [
+    {
+      type: 'property',
+      name: 'length',
+      typeName: 'number',
+      description: 'The length of the array.',
+    },
+  ],
 };
 
 const DateDefinition: TypeDefinition = {
@@ -547,13 +565,15 @@ const MathVarargParams: FunctionParameter[] = [
 const MathGlobalDefinition: TypeDefinition = {
   type: 'type',
   name: 'Math',
-  fields: [{
-    type: 'property',
-    name: 'PI',
-    isConstant: true,
-    typeName: 'number',
-    description: '3.124....',
-  }],
+  fields: [
+    {
+      type: 'property',
+      name: 'PI',
+      isConstant: true,
+      typeName: 'number',
+      description: '3.124....',
+    },
+  ],
   methods: [
     _method({
       name: 'abs',
@@ -577,41 +597,31 @@ const MathGlobalDefinition: TypeDefinition = {
       name: 'ceil',
       returnType: 'number',
       description: 'rounds a number up to the next largest integer.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'cos',
       returnType: 'number',
       description: 'returns the cosine of the argument.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'exp',
       returnType: 'number',
       description: 'returns e to the power of the argument.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'floor',
       returnType: 'number',
       description: 'rounds a number down to the next largest integer.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'log',
       returnType: 'number',
       description: 'returns the natural logarithm (base e) of a number.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'max',
@@ -628,7 +638,8 @@ const MathGlobalDefinition: TypeDefinition = {
     _method({
       name: 'pow',
       returnType: 'number',
-      description: 'returns the base to the exponent power, that is, base^exponent.',
+      description:
+        'returns the base to the exponent power, that is, base^exponent.',
       params: [
         { name: 'base', typeName: 'number', type: 'param' },
         { name: 'exponent', typeName: 'number', type: 'param' },
@@ -647,33 +658,25 @@ const MathGlobalDefinition: TypeDefinition = {
       name: 'sin',
       returnType: 'number',
       description: 'returns the sine of the argument.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'sqrt',
       returnType: 'number',
       description: 'returns the square root of a number.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'tan',
       returnType: 'number',
       description: 'returns the tangent of the argument.',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'log10',
       returnType: 'number',
       description: 'returns the log10 of a number',
-      params: [
-        { name: 'x', typeName: 'number', type: 'param' },
-      ],
+      params: [{ name: 'x', typeName: 'number', type: 'param' }],
     }),
     _method({
       name: 'trunc',
@@ -722,7 +725,7 @@ const DateGlobal: TypeDefinition = {
         { name: 'ms', typeName: 'number', type: 'param' },
       ],
     }),
-  ]
+  ],
 };
 
 const JSONGlobalDefinition: TypeDefinition = {
@@ -752,20 +755,23 @@ const ObjectDefinition: TypeDefinition = {
     _method({
       name: 'keys',
       returnType: 'array',
-      // eslint-disable-next-line max-len
-      description: 'Returns an array containing the names of all of the given object\'s own enumerable string properties.',
+      description:
+        'Returns an array containing the names of all of the given object\'s own ' +
+        'enumerable string properties.',
     }),
     _method({
       name: 'values',
       returnType: 'array',
-      // eslint-disable-next-line max-len
-      description: 'Returns an array containing the values that correspond to all of a given object\'s own string properties.',
+      description:
+        'Returns an array containing the values that correspond to all of a given object\'s ' +
+        'own string properties.',
     }),
     _method({
       name: 'entries',
       returnType: 'array',
-      // eslint-disable-next-line max-len
-      description: 'Returns an array containing all of the [key, value] pairs of a given object\'s own enumerable string properties.',
+      description:
+        'Returns an array containing all of the [key, value] pairs of a given object\'s ' +
+        'own enumerable string properties.',
     }),
   ],
   fields: [],
@@ -775,18 +781,19 @@ const JobDefinition: TypeDefinition = {
   type: 'type',
   name: 'Job',
   methods: [],
-  fields: [{
-    type: 'property',
-    name: 'id',
-    typeName: 'string',
-    description: 'The job id.',
-  },
+  fields: [
+    {
+      type: 'property',
+      name: 'id',
+      typeName: 'string',
+      description: 'The job id.',
+    },
     {
       type: 'property',
       name: 'name',
       typeName: 'string',
       description: 'The job name.',
-  },
+    },
     {
       type: 'property',
       name: 'timestamp',
@@ -815,7 +822,8 @@ const JobDefinition: TypeDefinition = {
       type: 'property',
       name: 'waitTime',
       typeName: 'number',
-      description: 'the time between between becoming active and starting processing.',
+      description:
+        'the time between between becoming active and starting processing.',
     },
     {
       type: 'property',
@@ -877,7 +885,8 @@ const JobRepeatOptions: TypeDefinition = {
       type: 'property',
       name: 'startDate',
       typeName: 'string',
-      description: 'Start date when the repeat job should start repeating (only with cron).',
+      description:
+        'Start date when the repeat job should start repeating (only with cron).',
     },
     {
       type: 'property',
@@ -895,7 +904,9 @@ const JobRepeatOptions: TypeDefinition = {
       type: 'property',
       name: 'every',
       typeName: 'number',
-      description: 'Repeat after this amount of milliseconds (cron setting cannot be used together with this setting.)',
+      description:
+        'Repeat after this amount of milliseconds (cron setting cannot be used ' +
+        'together with this setting)',
     },
     {
       type: 'property',
@@ -951,15 +962,16 @@ const JobOptionsDefinition: TypeDefinition = {
       type: 'property',
       name: 'backoff',
       typeName: 'number',
-      description:
-        'Backoff setting for automatic retries if the job fails.',
+      description: 'Backoff setting for automatic retries if the job fails.',
     },
     {
       type: 'property',
       name: 'delay',
       typeName: 'number',
-      description: 'An amount of milliseconds to wait until this job can be processed.\n ' +
-        'Note that for accurate delays, worker and producers should have their clocks synchronized.',
+      description:
+        'An amount of milliseconds to wait until this job can be processed.\n ' +
+        'Note that for accurate delays, worker and producers should have their ' +
+        'clocks synchronized.',
     },
     {
       type: 'property',
@@ -977,13 +989,15 @@ const JobOptionsDefinition: TypeDefinition = {
       type: 'property',
       name: 'timestamp',
       typeName: 'number',
-      description: 'Timestamp when the job was created. Defaults to Date.now().',
+      description:
+        'Timestamp when the job was created. Defaults to Date.now().',
     },
     {
       type: 'property',
       name: 'priority',
       typeName: 'number',
-      description: 'Ranges from 1 (highest priority) to MAX_INT (lowest priority).'
+      description:
+        'Ranges from 1 (highest priority) to MAX_INT (lowest priority).',
     },
     {
       type: 'property',
@@ -1007,20 +1021,24 @@ const JobOptionsDefinition: TypeDefinition = {
       type: 'property',
       name: 'removeOnFail',
       typeName: 'string',
-      description: 'If true, removes the job when it fails after all attempts. When given an number, it specifies the maximum amount of jobs to keep.',
+      description:
+        'If true, removes the job when it fails after all attempts. When given a ' +
+        'number, it specifies the maximum amount of jobs to keep.',
     },
     {
       type: 'property',
       name: 'sizeLimit',
       typeName: 'string',
-      description: 'Limits the size in bytes of the job\'s data payload (as a JSON serialized string)..',
+      description:
+        'Limits the size in bytes of the job\'s data payload (as a JSON serialized string)..',
     },
     {
       type: 'property',
       name: 'stackTraceLimit',
       typeName: 'string',
-      description: ' Limits the amount of stack trace lines that will be recorded in the stacktrace.',
-    }
+      description:
+        ' Limits the amount of stack trace lines that will be recorded in the stacktrace.',
+    },
   ],
 };
 
@@ -1037,7 +1055,7 @@ export const TypesInformation = [
   MathGlobalDefinition,
   JSONGlobalDefinition,
   DateGlobal,
-  ObjectDefinition
+  ObjectDefinition,
 ];
 
 export const Functions: FunctionDef[] = [
@@ -1107,11 +1125,11 @@ export const Functions: FunctionDef[] = [
     name: 'strcasecmp',
     returnType: 'number',
     params: [
-      { name: 'str1', typeName: 'string', type: 'param'},
+      { name: 'str1', typeName: 'string', type: 'param' },
       { name: 'str2', typeName: 'string', type: 'param' },
     ],
     description: 'compare strings without case sensitivity.',
-  })
+  }),
 ];
 
 export const Variables: Record<string, Variable> = {
@@ -1119,7 +1137,9 @@ export const Variables: Record<string, Variable> = {
     type: 'variable',
     name: 'Object',
     typeName: 'object',
-    description: 'The Object class represents one of JavaScript\'s data types. It is used to store various keyed collections and more complex entities. .',
+    description:
+      'The Object class represents one of JavaScript\'s data types. ' +
+      'It is used to store various keyed collections and more complex entities. .',
   },
   Date: {
     type: 'variable',
@@ -1133,7 +1153,7 @@ export const Variables: Record<string, Variable> = {
     typeName: 'Job',
     description: 'represents the job being filtered.',
   },
-  'this': {
+  this: {
     type: 'variable',
     name: 'job',
     typeName: 'Job',
@@ -1148,11 +1168,13 @@ export const Variables: Record<string, Variable> = {
     type: 'variable',
     name: 'Math',
     typeName: 'Math',
-    description: 'Math is a built-in object that has properties and methods for mathematical constants and functions. It’s not a function object.',
-  }
-}
+    description:
+      'Math is a built-in object that has properties and methods for mathematical ' +
+      'constants and functions. It’s not a function object.',
+  },
+};
 
-export const ClassMap: Record<string, TypeDefinition>= {
+export const ClassMap: Record<string, TypeDefinition> = {
   Job: JobDefinition,
   JobOptions: JobOptionsDefinition,
   JobRepeatOptions,
@@ -1167,9 +1189,9 @@ export const ClassMap: Record<string, TypeDefinition>= {
 };
 
 export const GlobalsMap: Record<string, Suggestible> = {
-  ...Variables
+  ...Variables,
 };
 
-Functions.forEach(f => {
+Functions.forEach((f) => {
   GlobalsMap[f.name] = f;
 });

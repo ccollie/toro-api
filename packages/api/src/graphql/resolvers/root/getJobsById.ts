@@ -7,6 +7,7 @@ import { JobTC } from '../job/query';
 
 export const getJobsById: FieldConfig = {
   type: JobTC.NonNull.List.NonNull,
+  description: 'Get a list of jobs by id',
   args: {
     input: schemaComposer.createInputTC({
       name: 'GetJobsByIdInput',

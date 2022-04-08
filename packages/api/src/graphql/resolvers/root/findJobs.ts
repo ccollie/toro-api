@@ -1,4 +1,4 @@
-import { processSearch } from '@alpen/core';
+import { findJobsByFilter } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { convertJobSearchStatus } from '../queue/utils';
 import { FieldConfig } from '../index';
@@ -50,7 +50,7 @@ export const findJobs: FieldConfig = {
           description: 'The cursor to start from',
         },
         expression: {
-          type: 'String!',
+          type: 'String',
           description:
             // eslint-disable-next-line max-len
             'A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000)',
@@ -67,8 +67,8 @@ export const findJobs: FieldConfig = {
       expression,
       pattern,
     } = input;
-    const queue = accessors.getQueueById(queueId);
 
+    const queue = accessors.getQueueById(queueId);
     const status = convertJobSearchStatus(_status);
 
     const {
@@ -76,7 +76,7 @@ export const findJobs: FieldConfig = {
       cursor: nextCursor,
       total,
       current,
-    } = await processSearch(queue, {
+    } = await findJobsByFilter(queue, {
       status,
       filter: expression,
       cursor,

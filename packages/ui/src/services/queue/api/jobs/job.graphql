@@ -57,11 +57,30 @@ fragment RepeatableJob on RepeatableJob {
     descr
 }
 
-query FindJobs($queueId: ID!, $status: JobSearchStatus, $criteria: String!, $cursor: String, $limit: Int = 10) {
-    findJobs(input: {queueId: $queueId, scanCount: $limit, expression: $criteria, status: $status}) {
-        nextCursor,
-        jobs {
-            ...Job
+query FindJobs(
+    $queueId: ID!,
+    $status: JobSearchStatus,
+    $filter: String,
+    $cursor: String,
+    $pattern: String,
+    $limit: Int = 10)
+{
+    queue(id: $queueId) {
+        id
+        jobsByFilter(
+            input: {
+                cursor: $cursor,
+                count: $limit,
+                status: $status,
+                expression: $filter,
+                pattern: $pattern
+            }) {
+            cursor
+            total
+            current
+            jobs {
+                ...Job
+            }
         }
     }
 }
@@ -70,7 +89,7 @@ query GetJobsByFilter(
     $queueId: ID!,
     $status: JobSearchStatus,
     $cursor: String = "",
-    $criteria: String,
+    $filter: String,
     $count: Int = 10
     $pattern: String,
 ) {
@@ -81,7 +100,7 @@ query GetJobsByFilter(
                 cursor: $cursor,
                 count: $count,
                 status: $status,
-                expression: $criteria,
+                expression: $filter,
                 pattern: $pattern
             }) {
             cursor
@@ -118,7 +137,9 @@ mutation CreateJobFilter($input: CreateJobFilterInput!) {
     createJobFilter(input: $input) {
         id
         name
+        status
         expression
+        pattern
         createdAt
     }
 }
@@ -128,7 +149,9 @@ mutation UpdateJobFilter($input: UpdateJobFilterInput!) {
         filter {
             id
             name
+            status
             expression
+            pattern
             createdAt
         }
         isUpdated

@@ -51,13 +51,13 @@ while (count < limit and iterations < MAX_ITERATIONS) do
         for _, jobId in ipairs(jobs) do
             iterations = iterations + 1
             local jobKey = prefix .. jobId
-            local logsKey = prefix .. jobId .. ':logs'
             isValidName = true
             if (isFiltered) then
                 local name = rcall('hget', jobKey, 'name')
                 isValidName = (name == jobName)
             end
             if (isValidName) then
+                local logsKey = prefix .. jobId .. ':logs'
                 byteCount = byteCount + (rcall('memory', 'usage', jobKey) or 0)
                 byteCount = byteCount + (rcall('memory', 'usage', logsKey) or 0)
                 count = count + 1

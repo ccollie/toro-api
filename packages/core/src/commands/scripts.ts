@@ -449,6 +449,53 @@ export class Scripts {
       data,
     };
   }
+
+  static async getJobDurationValues(
+    queue: MinimalQueue,
+    start: Date | number = 0,
+    end: Date| number = -1,
+    jobName = '',
+  ): Promise<{  processingTime: number[]; waitTime: number[] }> {
+    const client = await queue.client;
+
+    if (typeof start !== 'number') {
+      start = start.getDate();
+    }
+    if (typeof end !== 'number') {
+      end = end.getDate();
+    }
+    if (end !== -1 && end < start) {
+      throw new Error('End date must be greater than start date');
+    }
+
+    const key = queue.toKey('completed');
+    const keyPrefix = queue.toKey('');
+
+    const args = [
+      key,
+      keyPrefix,
+      start,
+      end,
+      jobName,
+    ];
+
+    // we alternate between processingTime and waitTime
+    const waitTime: number[] = [];
+    const processingTime: number[] = [];
+
+    const arr = await (<any>client).getDurationValues(args);
+    if (Array.isArray(arr)) {
+      for(let i = 0; i < arr.length; i += 2) {
+        waitTime.push(parseInt(arr[i], 10));
+        processingTime.push(parseInt(arr[i + 1], 10));
+      }
+    }
+
+    return {
+      processingTime,
+      waitTime,
+    };
+  }
 }
 
 async function parseListPipeline<T = any>(pipeline: Pipeline) {

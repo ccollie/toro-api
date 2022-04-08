@@ -4,26 +4,35 @@ import { isJobFailed } from 'src/lib';
 import s from './Details.module.css';
 import { DetailsContent } from './DetailsContent/DetailsContent';
 import { Tabs } from '@mantine/core';
-import type { Job, JobFragment, JobState } from 'src/types';
+import type { Job, JobFragment, JobSearchStatus } from 'src/types';
 
 interface DetailsProps {
   job: Job | JobFragment;
-  status: JobState;
+  status: JobSearchStatus;
 }
 
 export const Details = ({ status, job }: DetailsProps) => {
   const isFailed = isJobFailed(job);
   const { tabs } = useDetailsTabs(status, isFailed);
-  const [activeTab, setActiveTab] = useState(0);
-  const [selectedTab, setSelectedTab] = useState<TabsType>(tabs[0]?.title ?? 'Data');
+  const [activeTab, setActiveTab] = useState(getTabIndex(status));
+  const [selectedTab, setSelectedTab] = useState<TabsType>(getTab(status));
 
-  if (tabs.length === 0) {
-    return null;
+  function getTab(status: JobSearchStatus): TabsType {
+    return (status === 'failed') ? 'Error' : 'Data';
+  }
+
+  function getTabIndex(status: JobSearchStatus): number {
+    const tab = getTab(status);
+    return tabs.findIndex(t => t.title === tab);
   }
 
   function handleTabClick(index: number, tabKey: TabsType) {
     setActiveTab(index);
     setSelectedTab(tabKey);
+  }
+
+  if (!tabs.length) {
+    return null;
   }
 
   return (

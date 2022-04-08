@@ -1949,6 +1949,7 @@ export type Query = {
   /** Load a flow */
   flow?: Maybe<JobNode>;
   getJobs: Array<Job>;
+  /** Get a list of jobs by id */
   getJobsById: Array<Job>;
   /** Get a Host by id */
   host?: Maybe<QueueHost>;
@@ -3841,25 +3842,32 @@ export type RepeatableJobFragment = {
 export type FindJobsQueryVariables = Exact<{
   queueId: Scalars['ID'];
   status?: InputMaybe<JobSearchStatus>;
-  criteria: Scalars['String'];
+  filter?: InputMaybe<Scalars['String']>;
   cursor?: InputMaybe<Scalars['String']>;
+  pattern?: InputMaybe<Scalars['String']>;
   limit?: InputMaybe<Scalars['Int']>;
 }>;
 
 export type FindJobsQuery = {
   __typename?: 'Query';
-  findJobs: {
-    __typename?: 'FindJobsResult';
-    nextCursor: string;
-    jobs: Array<{ __typename?: 'Job' } & JobFragment>;
-  };
+  queue?: {
+    __typename?: 'Queue';
+    id: string;
+    jobsByFilter: {
+      __typename?: 'JobsByFilterPayload';
+      cursor?: string | null;
+      total: number;
+      current: number;
+      jobs: Array<{ __typename?: 'Job' } & JobFragment>;
+    };
+  } | null;
 };
 
 export type GetJobsByFilterQueryVariables = Exact<{
   queueId: Scalars['ID'];
   status?: InputMaybe<JobSearchStatus>;
   cursor?: InputMaybe<Scalars['String']>;
-  criteria?: InputMaybe<Scalars['String']>;
+  filter?: InputMaybe<Scalars['String']>;
   count?: InputMaybe<Scalars['Int']>;
   pattern?: InputMaybe<Scalars['String']>;
 }>;
@@ -3922,7 +3930,9 @@ export type CreateJobFilterMutation = {
     __typename?: 'JobFilter';
     id: string;
     name: string;
+    status?: JobType | null;
     expression: string;
+    pattern?: string | null;
     createdAt?: any | null;
   };
 };
@@ -3940,7 +3950,9 @@ export type UpdateJobFilterMutation = {
       __typename?: 'JobFilter';
       id: string;
       name: string;
+      status?: JobType | null;
       expression: string;
+      pattern?: string | null;
       createdAt?: any | null;
     } | null;
   };
@@ -9524,21 +9536,23 @@ export const FindJobsDocument = {
           kind: 'VariableDefinition',
           variable: {
             kind: 'Variable',
-            name: { kind: 'Name', value: 'criteria' },
+            name: { kind: 'Name', value: 'filter' },
           },
-          type: {
-            kind: 'NonNullType',
-            type: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'String' },
-            },
-          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
         {
           kind: 'VariableDefinition',
           variable: {
             kind: 'Variable',
             name: { kind: 'Name', value: 'cursor' },
+          },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'pattern' },
           },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
@@ -9557,63 +9571,99 @@ export const FindJobsDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'findJobs' },
+            name: { kind: 'Name', value: 'queue' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
+                name: { kind: 'Name', value: 'id' },
                 value: {
-                  kind: 'ObjectValue',
-                  fields: [
-                    {
-                      kind: 'ObjectField',
-                      name: { kind: 'Name', value: 'queueId' },
-                      value: {
-                        kind: 'Variable',
-                        name: { kind: 'Name', value: 'queueId' },
-                      },
-                    },
-                    {
-                      kind: 'ObjectField',
-                      name: { kind: 'Name', value: 'scanCount' },
-                      value: {
-                        kind: 'Variable',
-                        name: { kind: 'Name', value: 'limit' },
-                      },
-                    },
-                    {
-                      kind: 'ObjectField',
-                      name: { kind: 'Name', value: 'expression' },
-                      value: {
-                        kind: 'Variable',
-                        name: { kind: 'Name', value: 'criteria' },
-                      },
-                    },
-                    {
-                      kind: 'ObjectField',
-                      name: { kind: 'Name', value: 'status' },
-                      value: {
-                        kind: 'Variable',
-                        name: { kind: 'Name', value: 'status' },
-                      },
-                    },
-                  ],
+                  kind: 'Variable',
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
             ],
             selectionSet: {
               kind: 'SelectionSet',
               selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'nextCursor' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 {
                   kind: 'Field',
-                  name: { kind: 'Name', value: 'jobs' },
+                  name: { kind: 'Name', value: 'jobsByFilter' },
+                  arguments: [
+                    {
+                      kind: 'Argument',
+                      name: { kind: 'Name', value: 'input' },
+                      value: {
+                        kind: 'ObjectValue',
+                        fields: [
+                          {
+                            kind: 'ObjectField',
+                            name: { kind: 'Name', value: 'cursor' },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'cursor' },
+                            },
+                          },
+                          {
+                            kind: 'ObjectField',
+                            name: { kind: 'Name', value: 'count' },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'limit' },
+                            },
+                          },
+                          {
+                            kind: 'ObjectField',
+                            name: { kind: 'Name', value: 'status' },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'status' },
+                            },
+                          },
+                          {
+                            kind: 'ObjectField',
+                            name: { kind: 'Name', value: 'expression' },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'filter' },
+                            },
+                          },
+                          {
+                            kind: 'ObjectField',
+                            name: { kind: 'Name', value: 'pattern' },
+                            value: {
+                              kind: 'Variable',
+                              name: { kind: 'Name', value: 'pattern' },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
                   selectionSet: {
                     kind: 'SelectionSet',
                     selections: [
                       {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'Job' },
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'cursor' },
+                      },
+                      { kind: 'Field', name: { kind: 'Name', value: 'total' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'current' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'jobs' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            {
+                              kind: 'FragmentSpread',
+                              name: { kind: 'Name', value: 'Job' },
+                            },
+                          ],
+                        },
                       },
                     ],
                   },
@@ -9739,8 +9789,9 @@ export const FindJobsDocument = {
  *   variables: {
  *      queueId: // value for 'queueId'
  *      status: // value for 'status'
- *      criteria: // value for 'criteria'
+ *      filter: // value for 'filter'
  *      cursor: // value for 'cursor'
+ *      pattern: // value for 'pattern'
  *      limit: // value for 'limit'
  *   },
  * });
@@ -9820,7 +9871,7 @@ export const GetJobsByFilterDocument = {
           kind: 'VariableDefinition',
           variable: {
             kind: 'Variable',
-            name: { kind: 'Name', value: 'criteria' },
+            name: { kind: 'Name', value: 'filter' },
           },
           type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
         },
@@ -9901,7 +9952,7 @@ export const GetJobsByFilterDocument = {
                             name: { kind: 'Name', value: 'expression' },
                             value: {
                               kind: 'Variable',
-                              name: { kind: 'Name', value: 'criteria' },
+                              name: { kind: 'Name', value: 'filter' },
                             },
                           },
                           {
@@ -10098,7 +10149,7 @@ export const GetJobsByFilterDocument = {
  *      queueId: // value for 'queueId'
  *      status: // value for 'status'
  *      cursor: // value for 'cursor'
- *      criteria: // value for 'criteria'
+ *      filter: // value for 'filter'
  *      count: // value for 'count'
  *      pattern: // value for 'pattern'
  *   },
@@ -10575,7 +10626,9 @@ export const CreateJobFilterDocument = {
               selections: [
                 { kind: 'Field', name: { kind: 'Name', value: 'id' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'expression' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'pattern' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
               ],
             },
@@ -10680,7 +10733,15 @@ export const UpdateJobFilterDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       {
                         kind: 'Field',
+                        name: { kind: 'Name', value: 'status' },
+                      },
+                      {
+                        kind: 'Field',
                         name: { kind: 'Name', value: 'expression' },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'pattern' },
                       },
                       {
                         kind: 'Field',

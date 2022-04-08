@@ -1,4 +1,4 @@
-import { JobState } from 'src/types';
+import { JobSearchStatus } from 'src/types';
 import type { JobExportOptions } from 'src/types';
 import { useCallbackRef, useDisclosure } from 'src/hooks';
 import ExportProgressModal from './ExportProgressModal';
@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 interface ExporterProps {
   queueId: string;
   filter: string;
-  status: JobState;
+  status: JobSearchStatus;
   onClose?: () => void;
 }
 

@@ -16,7 +16,7 @@ import React, { useCallback } from 'react';
 import { useToast, useQueue } from '@/hooks';
 import { useUpdateEffect } from '@/hooks/use-update-effect';
 import { removeTypename } from '@/lib';
-import { usePreferencesStore } from '@/stores';
+import { usePreferencesStore, useJobsStore } from '@/stores';
 
 // TODO: Move this to a separate file
 const DEFAULT_JOB_NAME = '__default__';
@@ -28,6 +28,7 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
   const clipboard = useClipboard({ timeout: 500 });
 
   const confirmDangerousActions = usePreferencesStore(state => state.confirmDangerousActions);
+  const removeJobFromStore = useJobsStore(state => state.removeJob);
 
   const description = getJobDescriptor();
 
@@ -127,7 +128,11 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
     }, [action, queueId, fn]);
   }
 
-  const handleDelete = wrapHandler('delete', deleteJob);
+  const handleDelete = wrapHandler('delete', (queueId, jobId) => {
+    return deleteJob(queueId, jobId).then(() => {
+      removeJobFromStore(jobId);
+    });
+  });
   const handleRetry = wrapHandler('retry', retryJob);
   const handlePromote = wrapHandler('promote', promoteJob);
   const handleDiscard = wrapHandler('discard', discardJob);
