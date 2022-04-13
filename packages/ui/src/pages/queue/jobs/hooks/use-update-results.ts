@@ -1,16 +1,14 @@
 // utility hooks for updating the results of a job query.
 // used to share code between other hooks
-
-import produce from 'immer';
 import { useCallback } from 'react';
-import { useQueue } from 'src/hooks';
+import { EmptyJobCounts } from 'src/constants';
 import { calcJobCountTotal } from 'src/services';
-import { useJobsStore } from 'src/stores';
+import { useJobsStore, useStore } from 'src/stores';
 import { JobCounts, JobFragment, JobSearchStatus, Queue } from 'src/types';
 
 export function useUpdateResults(queue: Queue, pageSize: number) {
   const setJobs = useJobsStore((state) => state.setJobs);
-  const { updateQueue } = useQueue(queue.id);
+  const queueUpdate = useStore(state => state.updateQueue);
 
   const updateResults = useCallback(
     (status: JobSearchStatus | undefined, jobs: JobFragment[], counts?: JobCounts) => {
@@ -20,14 +18,11 @@ export function useUpdateResults(queue: Queue, pageSize: number) {
       if (counts) {
         total = calcJobCountTotal(counts, status);
         pages = total === 0 ? 0 : Math.floor(total / pageSize);
-        updateQueue(
-          produce(queue, (draft) => {
-            Object.assign(draft.jobCounts, {
-              ...(draft.jobCounts ?? {}),
-              ...counts,
-            });
-          }),
-        );
+        const jobCounts = {
+          ...(queue.jobCounts ?? EmptyJobCounts),
+          ...counts,
+        };
+        queueUpdate(queue.id, { jobCounts });
       }
       return { total, pages };
     },

@@ -166,6 +166,11 @@ export function statusesEqual(
   return true;
 }
 
+export function hasStatusFilter(filter?: QueueFilterStatus[] | null | undefined): boolean {
+  if (!filter || filter.length === 0) return false;
+  return !statusesEqual(filter, AllStatuses);
+}
+
 export function normalizeFilter(filter: QueueFilter): QueueFilter {
   const result: QueueFilter = {
     sortOrder: filter.sortOrder || SortOrderEnum.Asc,

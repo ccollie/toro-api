@@ -1,3 +1,4 @@
+import { Center, Text } from '@mantine/core';
 import { DataItem } from 'src/components/charts/common/models';
 import { JobState } from '@/types';
 import { arePropsEqual, Colors, PieChartDataProps } from './utils';
@@ -112,9 +113,9 @@ export const JobCountsPieChart: React.FC<TProps> = (props) => {
           <Chart />
         )
       ) : (
-        <div className="items-center" style={{ height: height }}>
-          <span>No Jobs Available</span>
-        </div>
+        <Center className="items-center" style={{ height: height }}>
+          <Text size="lg" color="dimmed" align="center">No Jobs Available</Text>
+        </Center>
       )}
     </div>
   );

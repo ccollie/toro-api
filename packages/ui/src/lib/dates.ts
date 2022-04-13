@@ -7,6 +7,7 @@ import {
   parseJSON,
   toDate,
 } from 'date-fns';
+import day from 'dayjs';
 import ms from 'ms';
 import prettyMilliseconds from 'pretty-ms';
 import closestTo from 'date-fns/closestTo';
@@ -22,6 +23,7 @@ import endOfDay from 'date-fns/endOfDay';
 import endOfHour from 'date-fns/endOfHour';
 import endOfMinute from 'date-fns/endOfMinute';
 import endOfSecond from 'date-fns/endOfSecond';
+import { Maybe } from 'src/types';
 
 const ONE_SECOND = 1000;
 export const ONE_MINUTE = ONE_SECOND * 60;
@@ -280,3 +282,13 @@ export function convertUTCDateToLocalDate(date: DateLike): Date {
 
   return newDate;
 }
+
+export const formatDateTime = (
+  date?: Maybe<day.ConfigType>,
+  format = 'YYYY-MM-DD HH:mm:ss'
+): Maybe<string> => {
+  if (!date) {
+    return null;
+  }
+  return day(date).format(format);
+};

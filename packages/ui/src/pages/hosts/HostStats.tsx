@@ -1,5 +1,11 @@
 import React from 'react';
-import { Statistic, StatisticCard, StatisticsGroup, statsDurationFormat, statsRateFormat } from '@/components/Stats';
+import {
+  Statistic,
+  StatisticCard,
+  StatisticsGroup,
+  statsDurationFormat,
+  statsRateFormat,
+} from '@/components/Stats';
 import type { QueueHost } from 'src/types';
 
 interface HostStatsProps {
@@ -24,12 +30,18 @@ export const HostStats: React.FC<HostStatsProps> = ({ host }) => {
       </StatisticCard>
       <div className="divider divider-vertical" />
       <StatisticCard>
-        <Statistic title="Throughput" value={statsRateFormat(host?.throughput.m1Rate, 'min')} />
+        <Statistic
+          title="Throughput"
+          value={statsRateFormat(host?.throughput.m1Rate, 'min')}
+        />
       </StatisticCard>
       <div className="divider divider-vertical" />
       <StatisticCard>
-        <Statistic title="Error Rate" value={statsRateFormat(host?.errorRate.m1Rate, 'min')} />
+        <Statistic
+          title="Error Rate"
+          value={statsRateFormat(host?.errorRate.m1Rate, 'min')}
+        />
       </StatisticCard>
     </StatisticsGroup>
-  )
+  );
 };

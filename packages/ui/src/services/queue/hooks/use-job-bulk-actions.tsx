@@ -3,7 +3,7 @@ import { useToast, useQueue } from '@/hooks';
 import { Cross1Icon } from '@radix-ui/react-icons';
 import React, { useCallback } from 'react';
 import { bulkDeleteJobs, bulkPromoteJobs, bulkRetryJobs } from '@/services';
-import { usePreferencesStore } from '@/stores';
+import { useJobsStore, usePreferencesStore } from '@/stores';
 import { useModals } from '@mantine/modals';
 import { Text } from '@mantine/core';
 
@@ -17,11 +17,14 @@ export function useJobBulkActions(
   onBulkAction?: OnBulkJobAction,
 ) {
   const toast = useToast();
-  const { queue } = useQueue(queueId);
+  const { queue, decreaseJobCount } = useQueue(queueId);
   const modals = useModals();
   const confirmDangerousActions = usePreferencesStore(
     (state) => state.confirmDangerousActions,
   );
+
+  const removeJobFromStore = useJobsStore(state => state.removeJob);
+  const getJob = useJobsStore(state => state.getJob);
 
   const ActionPastTense: Record<BulkActionType, string> = {
     delete: 'deleted',
@@ -129,7 +132,22 @@ export function useJobBulkActions(
     );
   }
 
-  const handleDelete = wrapHandler('delete', bulkDeleteJobs);
+  function onDelete(queueId: string, ids: string[]): Promise<BulkStatusItem[]> {
+    return bulkDeleteJobs(queueId, ids).then((items) => {
+      const removed = items.filter((x) => x.success).map((x) => x.id);
+      removed.forEach((jobId) => {
+        const job = getJob(jobId);
+        removeJobFromStore(jobId);
+        if (job && job.state) {
+          decreaseJobCount(job.state);
+        }
+      });
+      return items;
+    });
+  }
+
+
+  const handleDelete = wrapHandler('delete', onDelete);
   const handleRetry = wrapHandler('retry', bulkRetryJobs);
   const handlePromote = wrapHandler('promote', bulkPromoteJobs);
 

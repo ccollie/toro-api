@@ -6,17 +6,17 @@ import type { Queue, JobStatus, JobSearchStatus } from 'src/types';
 import { STATUS_LIST } from 'src/constants/status-list';
 import { Link } from '@tanstack/react-location';
 
-// For ref
-
-export const StatusMenu = ({ queue, status, page }: {
+type BadgeProps = {
   queue: Queue;
-  status: JobSearchStatus;
-  page?: number;
-}) => {
+  status: JobSearchStatus | 'latest';
+};
 
-  page = page || 1;
+function CountBadge({queue, status} : BadgeProps) {
 
   function getJobTotal(): number {
+    if (status === 'latest') {
+      return calcJobCountTotal(queue.jobCounts ?? {});
+    }
     return calcJobCountTotal(queue.jobCounts ?? {}, status);
   }
 
@@ -34,15 +34,22 @@ export const StatusMenu = ({ queue, status, page }: {
     return count;
   }
 
-  function CountBadge({status} : {status: string}) {
-    const count = getJobCount(status);
-    if (count === 0) {
-      return null;
-    }
-    return (
-      <span className={s.badge}>{count}</span>
-    );
+  const count = getJobCount(status);
+  if (count === 0) {
+    return null;
   }
+  return (
+    <span className={s.badge}>{count}</span>
+  );
+}
+
+export const StatusMenu = ({ queue, status, page }: {
+  queue: Queue;
+  status: JobSearchStatus;
+  page?: number;
+}) => {
+
+  page = page || 1;
 
   function getClassName(linkStatus: JobStatus): string | undefined {
     const isActive = status === linkStatus;
@@ -63,7 +70,7 @@ export const StatusMenu = ({ queue, status, page }: {
             key={`${queue.name}-${status}`}
           >
             <span title={displayStatus}>{displayStatus}</span>
-            <CountBadge status={status} />
+            <CountBadge queue={queue} status={status} />
           </Link>
         );
       })}

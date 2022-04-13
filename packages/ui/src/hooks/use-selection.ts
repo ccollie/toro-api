@@ -61,6 +61,16 @@ function useSelection<T extends Item>(
     return selection.size !== 0 && selection.size === data.length;
   }, [data, selection]);
 
+  const [isIndeterminate, setIsIndeterminate] = useState(false);
+
+  useEffect(() => {
+    if (selection.size === 0 || selection.size === data.length) {
+      setIsIndeterminate(false);
+    } else {
+      setIsIndeterminate(true);
+    }
+  }, [data, selection]);
+
   useEffect(() => {
     // check if items and current selection are in sync
     // for example when removing item
@@ -113,6 +123,7 @@ function useSelection<T extends Item>(
     toggleSelection,
     toggleSelectionAll,
     isAllSelected,
+    isIndeterminate,
     clearSelection,
     selectedItems,
     totalSelected: selection.size,

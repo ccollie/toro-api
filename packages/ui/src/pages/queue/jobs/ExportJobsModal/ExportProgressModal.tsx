@@ -4,7 +4,7 @@ import { toPrecision } from 'src/lib';
 import { CheckIcon } from '@radix-ui/react-icons';
 import React, { useEffect, useRef, useState, Fragment } from 'react';
 import { useToast, useUnmountEffect } from 'src/hooks';
-import EmptyState from 'src/components/EmptyState';
+import EmptyState from 'src/components/EmptyStates';
 import { Button, Center, Modal, RingProgress, Text, ThemeIcon } from '@mantine/core';
 import { ExportIcon } from 'src/components/Icons/ExportIcon';
 

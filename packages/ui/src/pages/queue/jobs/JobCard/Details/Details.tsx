@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TabsType, useDetailsTabs } from 'src/hooks/useDetailsTabs';
+import React, { useEffect, useState } from 'react';
+import { TabsType, useDetailsTabs } from 'src/pages/queue/jobs/hooks/useDetailsTabs';
 import { isJobFailed } from 'src/lib';
 import s from './Details.module.css';
 import { DetailsContent } from './DetailsContent/DetailsContent';
@@ -14,10 +14,14 @@ interface DetailsProps {
 export const Details = ({ status, job }: DetailsProps) => {
   const isFailed = isJobFailed(job);
   const { tabs } = useDetailsTabs(status, isFailed);
-  const [activeTab, setActiveTab] = useState(getTabIndex(status));
-  const [selectedTab, setSelectedTab] = useState<TabsType>(getTab(status));
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState<TabsType>('Data');
+  const [firstPass, setFirstPass] = useState(false);
 
   function getTab(status: JobSearchStatus): TabsType {
+    if (status === 'completed') {
+      return 'Return Value';
+    }
     return (status === 'failed') ? 'Error' : 'Data';
   }
 
@@ -30,6 +34,14 @@ export const Details = ({ status, job }: DetailsProps) => {
     setActiveTab(index);
     setSelectedTab(tabKey);
   }
+
+  useEffect(() => {
+    if (!firstPass) {
+      setFirstPass(true);
+      setActiveTab(getTabIndex(status));
+      setSelectedTab(getTab(status));
+    }
+  }, [status, tabs]);
 
   if (!tabs.length) {
     return null;

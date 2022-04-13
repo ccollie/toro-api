@@ -1,9 +1,11 @@
 import type { LocationGenerics, QueueWorker } from '@/types';
 import { GetQueueWorkersDocument } from '@/types';
 import { useQuery } from '@apollo/client';
+import { Group } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import { useMatch } from '@tanstack/react-location';
-import { Workers as WorkersTable } from '@/components';
+import { Pagination } from 'src/components';
+import { Workers as WorkersTable } from './Workers';
 import { useNetworkSettingsStore } from '@/stores';
 
 export const Workers = () => {
@@ -38,6 +40,9 @@ export const Workers = () => {
   return (
     <section>
       <WorkersTable workers={workers} loading={isLoading && !called}/>
+      <Group position="right" sx={{ marginTop: 5 }} mx={10}>
+        <Pagination pageCount={1} />
+      </Group>
     </section>
   );
 };

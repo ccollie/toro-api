@@ -182,7 +182,7 @@ export const ExportOptionsModal = (props: ExportOptionsProps) => {
             <Button variant="default" onClick={handleClose} ml="auto">
               Cancel
             </Button>
-            <Button type="submit" disabled={!canExport} onClick={handleOk}>
+            <Button variant="filled" disabled={!canExport} onClick={handleOk}>
               Export
             </Button>
           </Group>

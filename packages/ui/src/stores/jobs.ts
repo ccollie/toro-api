@@ -5,6 +5,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 type TState = {
   selected: Set<string>;
   data: JobFragment[];
+  getJob: (id: JobOrId) => JobFragment | null;
   selectedCount: number;
   selectedJobs: JobFragment[];
   isSelected: (id: JobOrId) => boolean;
@@ -27,6 +28,10 @@ export const useJobsStore = createStore<TState>(
   subscribeWithSelector((set, get) => ({
     selected: new Set(),
     data: [],
+    getJob: (id: JobOrId): JobFragment | null => {
+      const { data } = get();
+      return data.find(job => job.id === id) ?? null;
+    },
     get selectedCount() {
       return get().selected.size;
     },

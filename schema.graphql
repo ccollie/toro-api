@@ -99,7 +99,7 @@ type Mutation {
   bulkDeleteJobs(input: BulkJobActionInput!): BulkJobActionPayload
   retryJob(input: JobLocatorInput!): RetryJobResult!
   updateJob(input: UpdateJobInput!): UpdateJobResult!
-  addJobLog(queueId: String!, id: String!, row: String!): AddJobLogResult!
+  addJobLog(input: AddJobLogInput!): AddJobLogResult!
   moveJobToCompleted(input: JobLocatorInput!): MoveJobToCompletedResult!
 
   """Moves job from active to delayed."""
@@ -644,12 +644,8 @@ type ActivateRuleResult {
 }
 
 type AddJobLogResult {
-  """The job id"""
-  id: String!
-
   """The number of log entries after adding"""
   count: Int!
-  state: JobType
 }
 
 type AggregateInfo {
@@ -944,7 +940,7 @@ type JobFilter {
 
 type JobLogs {
   count: Int!
-  items: [String!]!
+  messages: [String!]!
 }
 
 type JobMemoryUsagePayload {
@@ -2137,6 +2133,17 @@ input ActivateRuleInput {
   ruleId: ID!
 }
 
+input AddJobLogInput {
+  """The id of the queue the job belongs to"""
+  queueId: ID!
+
+  """The id of the job"""
+  id: ID!
+
+  """The message to log"""
+  message: String!
+}
+
 input AggregatorInput {
   type: AggregateTypeEnum!
   options: JSONObject
@@ -2392,7 +2399,7 @@ input FindJobsInput {
   """
   A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000)
   """
-  expression: String!
+  expression: String
 }
 
 """Values needed to create a FlowJob"""

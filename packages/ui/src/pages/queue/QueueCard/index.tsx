@@ -1,11 +1,12 @@
 import { Center, Group, Paper } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
-import type { JobCounts, Queue, StatsSnapshot, JobStatus } from '@/types';
+import type { Queue, StatsSnapshot, JobStatus } from '@/types';
 import { Link } from '@tanstack/react-location';
 import { JobCountsPieChart } from '@/components/charts';
 import Statistic from '@/components/Stats/Statistic';
 import { useWhyDidYouUpdate } from '@/hooks';
 import { calcErrorPercentage } from '@/lib/stats';
+import { calcJobCountTotal } from 'src/services';
 import QueueMenu from '../QueueMenu';
 import QueueStateBadge from '../QueueStateBadge';
 import prettyMilliseconds from 'pretty-ms';
@@ -16,22 +17,17 @@ interface QueueCardProps {
   statsSummary?: StatsSnapshot | null;
 }
 
+const formatter = Intl.NumberFormat('en', { notation: 'compact' });
+
 export const QueueCard = (props: QueueCardProps) => {
   const { queue, statsSummary } = props;
   const [errorPercentage, setErrorPercentage] = useState(0);
   // const navigate = useNavigate();
 
-  // const gotoWorkers = () => navigate({ to: `/queues/${queue.id}/workers`} );
-
-  function getTotal(counts: JobCounts): number {
-    const keys = Object.keys(counts);
-    return keys.reduce((total, key) => total + ((counts as any)[key] ?? 0), 0);
-  }
-
-  function getCount(status: JobStatus): number {
+  function getCount(status: JobStatus): string {
     const counts = queue.jobCounts || {};
-    if (status === 'latest') return getTotal(counts);
-    return (counts as any)[status] ?? 0;
+    const value = calcJobCountTotal(counts, (status === 'latest') ? undefined : status);
+    return formatter.format(value);
   }
 
   useEffect(() => {
@@ -85,7 +81,9 @@ export const QueueCard = (props: QueueCardProps) => {
             <div className="text-xs font-semibold text-gray-400 uppercase mb-1">Completed</div>
             <div className="flex items-start">
               <div className="text-3xl font-semibold text-gray-600 mr-2">
-                {getCount('completed')}
+                <Link to={`/queues/${queue.id}/jobs?status=completed`}>
+                  {getCount('completed')}
+                </Link>
               </div>
             </div>
           </div>
@@ -93,7 +91,9 @@ export const QueueCard = (props: QueueCardProps) => {
             <div className="text-xs font-semibold text-gray-400 uppercase mb-1">Failed</div>
             <div className="flex items-start">
               <div className="text-3xl font-semibold text-gray-600 mr-2">
-                {getCount('failed')}
+                <Link to={`/queues/${queue.id}/jobs?status=failed`}>
+                  {getCount('failed')}
+                </Link>
               </div>
             </div>
           </div>

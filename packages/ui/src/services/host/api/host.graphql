@@ -105,6 +105,7 @@ query HostQueues($id: ID!, $range: String!, $filter: HostQueuesFilter) {
     queues(filter: $filter) {
       id
       name
+      prefix
       isPaused
       isReadonly
       ...JobCounts

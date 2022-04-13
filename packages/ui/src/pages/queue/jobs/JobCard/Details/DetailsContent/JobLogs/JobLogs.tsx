@@ -1,5 +1,5 @@
 import { Center, Group, LoadingOverlay, Text } from '@mantine/core';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Job, JobFragment } from '@/types';
 import { SadTearIcon } from 'src/components/Icons';
 import { useGetJobLogsQuery } from 'src/types';
@@ -13,44 +13,39 @@ export const JobLogs = ({ job }: JobLogsProps) => {
   const { queueId, id } = job;
   const [logs, setLogs] = useState<string[]>([]);
 
-  const { loading, called } = useGetJobLogsQuery({
+  const { loading, data, called } = useGetJobLogsQuery({
     variables: {
       queueId,
       id,
-    },
-    onCompleted: (data) => {
-      if (data && data.job.logs?.items) {
-        setLogs(data.job.logs?.items);
-      }
-    },
+      start: 0,
+      end: -1,
+    }
   });
 
-  if (called && !logs?.length) {
-    return (
-      <Center style={{ minHeight: 200 }}>
-        <Group mt={25}>
-          <SadTearIcon size={36} style={{ opacity: 0.70 }}/>
-          <Text>No logs found for job {job.name}#{job.id}.</Text>
-        </Group>
-      </Center>
-    );
-  }
+  useEffect(() => {
+    const items = !called ? [] : ((data && data.job.logs?.messages) || []) as string[];
+    setLogs(items);
+  }, [called, data]);
 
   return (
-    <div style={{ display: 'flex' }}>
+    <div>
       <LoadingOverlay visible={loading} />
-      {(called && !logs?.length) ?
-        <Center>
-          <Group mt={10}>
+      {(called && !logs.length && !loading) ?
+        <Center style={{ minHeight: 200 }}>
+          <Group mt={20}>
             <SadTearIcon size={36} style={{ opacity: 0.75 }}/>
             <Text>No logs found for job {job.name}#{job.id}.</Text>
           </Group>
         </Center> :
-        <ul className={s.jobLogs}>
-          {logs.map((log, idx) => (
-            <li key={idx}>{log}</li>
-          ))}
-        </ul>
+        <pre>
+          <code>
+            <ul className={s.jobLogs} style={{ marginTop: 5 }}>
+              {logs.map((log, idx) => (
+                <li key={idx}>{log}</li>
+              ))}
+            </ul>
+          </code>
+        </pre>
       }
     </div>
   );

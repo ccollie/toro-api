@@ -13,7 +13,7 @@ export const useQueueCounts = (queueId: Queue['id'], autoUpdate = false) => {
 
   useGetQueueJobCountsQuery({
     variables: {
-      id: queueId
+      queueId
     },
     pollInterval,
     nextFetchPolicy: 'cache-and-network',

@@ -9,7 +9,7 @@ export function runIfFn<T, U = unknown>(
   if (isFunction(valueOrFn) && !Array.isArray(valueOrFn)) {
     return (valueOrFn as any)(...args);
   }
-  return valueOrFn as T
+  return valueOrFn as T;
 }
 
 
@@ -18,18 +18,18 @@ export function callAllHandlers<T extends (event: any) => void>(
 ) {
   return function func(event: FunctionArguments<T>[0]) {
     fns.some((fn) => {
-      fn?.(event)
-      return event?.defaultPrevented
-    })
-  }
+      fn?.(event);
+      return event?.defaultPrevented;
+    });
+  };
 }
 
 export function callAll<T extends AnyFunction>(...fns: (T | undefined)[]) {
   return function mergedFn(arg: FunctionArguments<T>[0]) {
     fns.forEach((fn) => {
-      fn?.(arg)
-    })
-  }
+      fn?.(arg);
+    });
+  };
 }
 
 export function once(fn?: Function | null) {

@@ -46,7 +46,7 @@ export const JobProgress: React.FC<JobProgressProps> = ({
       }
       return (
         <div className="progress-wrapper">
-          <Progress style={{ width: 36 }} value={value} size="md" label={`${value}%`}/>
+          <Progress value={value} size="lg" label={`${value}%`}/>
         </div>
       );
     case 'string':

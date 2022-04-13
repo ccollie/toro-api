@@ -295,22 +295,22 @@ export class HostManager {
     return values;
   }
 
-  async getJobCounts(states?: JobState[]): Promise<JobCounts> {
+  async getJobCounts(states?: Omit<JobStatus, 'unknown'>[]): Promise<JobCounts> {
     states = states?.length === 0 ? JOB_STATES : states;
     const counts: JobCounts = Object.create(null);
     states.forEach((state) => {
-      counts[state] = 0;
+      counts['' + state] = 0;
     });
     const pipeline = this.client.pipeline();
     const queues = this.getQueues();
     queues.forEach((queue) => {
       // todo: use loader
-      getPipelinedCounts(pipeline, queue, states);
+      getPipelinedCounts(pipeline, queue, states.map(x => '' + x));
     });
     const responses = await pipeline.exec().then(checkMultiErrors);
     let stateIndex = 0;
     for (let i = 0; i < responses.length; i++) {
-      const state = states[stateIndex++];
+      const state = '' + states[stateIndex++];
       counts[state] = counts[state] + (responses[i] || 0);
       stateIndex = stateIndex % states.length;
     }

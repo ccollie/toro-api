@@ -209,11 +209,17 @@ query GetJobById($queueId: ID!, $id: ID!) {
 }
 
 query GetJobLogs($queueId: ID!, $id: ID!, $start: Int = 0, $end: Int = -1) {
-    job(queueId: $id, id: $id) {
+    job(queueId: $queueId, id: $id) {
         logs(start: $start, end: $end) {
             count
-            items
+            messages
         }
+    }
+}
+
+mutation AddJobLog($queueId: ID!, $id: ID!, $message: String!) {
+    addJobLog(input: { queueId: $queueId, id: $id, message: $message }) {
+        count
     }
 }
 

@@ -1,9 +1,16 @@
-import { ExportMimeTypes, ExportStage, JobExportOptions, JobFragment, JobState } from '@/types';
+import {
+  ExportMimeTypes,
+  ExportStage,
+  JobExportOptions,
+  JobFragment,
+  JobSearchStatus,
+  JobState,
+} from '@/types';
 import { useCallbackRef } from '@/hooks';
 import { download, noop } from '@/lib';
 import { useRef } from 'react';
 import { json2csv } from 'json-2-csv';
-import { getJobs, getJobsByFilter } from 'src/services';
+import { calcJobCountTotal, getJobs, getJobsByFilter } from 'src/services';
 
 export type DownloadProgressEvent = {
   total: number;
@@ -48,8 +55,8 @@ export function useJobDownloads(props: DownloadJobProps) {
 
   function fetchByCriteria(
     filter: string,
-    status: JobState,
-    state: UpdateState
+    status: JobSearchStatus,
+    state: UpdateState,
   ): Promise<JobFragment[]> {
     const { cursor, remainder } = state;
     const fetchCount = Math.min(count, remainder);
@@ -66,15 +73,11 @@ export function useJobDownloads(props: DownloadJobProps) {
     });
   }
 
-  function fetch(
-    status: JobState,
-    state: UpdateState
-  ): Promise<JobFragment[]> {
+  function fetch(status: JobState, state: UpdateState): Promise<JobFragment[]> {
     state.pageNumber++;
     return getJobs(queueId, status, state.pageNumber, pageSize) // calculate this !!
       .then(({ counts, jobs }) => {
-        let total = parseInt((counts as any)[status], 10);
-        if (isNaN(total)) total = 0;
+        const total = calcJobCountTotal(counts, status);
         state.total = total;
         state.current += jobs.length;
         return jobs;
@@ -87,7 +90,7 @@ export function useJobDownloads(props: DownloadJobProps) {
 
   async function saveResults(
     data: JobFragment[],
-    options: JobExportOptions
+    options: JobExportOptions,
   ): Promise<void> {
     const { format, showHeaders, filename, fields } = options;
 
@@ -96,12 +99,12 @@ export function useJobDownloads(props: DownloadJobProps) {
       download(content, filename, contentType);
     }
 
-    const prepped = data.map(item => {
+    const prepped = data.map((item) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { __typename, ...rest } = item;
       if (fields && fields.length) {
         const value = Object.create(null);
-        fields.forEach(name => {
+        fields.forEach((name) => {
           value[name] = (rest as any)[name];
         });
         return value;
@@ -127,7 +130,7 @@ export function useJobDownloads(props: DownloadJobProps) {
             csv && emitContent(csv);
             return resolve();
           },
-          opts
+          opts,
         );
       });
     }

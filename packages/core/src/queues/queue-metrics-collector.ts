@@ -58,6 +58,7 @@ function deserializeSketch(buf: Buffer): DDSketch | null {
   if (!buf || buf.length === 0) {
     return null;
   }
+  // todo: compress based on a threshold
   return DDSketch.fromProto(buf);
 }
 
@@ -98,7 +99,8 @@ export class QueueMetricsCollector {
   ) {
 
   }
-  public async loadSketches(
+
+  public async getSketchRange(
     metric: StatsMetricType,
     start = 0,
     end = -1,
@@ -124,6 +126,17 @@ export class QueueMetricsCollector {
       }
     }
     return map;
+  }
+
+  async getSketch(
+    metric: StatsMetricType,
+    timestamp = 0,
+    granularity: StatsGranularity = StatsGranularity.Hour,
+  ): Promise<DDSketch> {
+    const start = startOf(timestamp, granularity).getTime();
+    const map = await this.getSketchRange(metric, start, start, granularity);
+    const items = Array.from(map.values());
+    return items.length > 0 ? items[0] : new DDSketch();
   }
 
   private _clear(jobName: string) {
@@ -168,7 +181,7 @@ export class QueueMetricsCollector {
     end: number,
     granularity: StatsGranularity,
   ): Promise<DDSketch> {
-    const map = await this.loadSketches(metric, start, end, granularity);
+    const map = await this.getSketchRange(metric, start, end, granularity);
 
     const result = new DDSketch();
     map.forEach((sketch, ts) => {
@@ -179,6 +192,16 @@ export class QueueMetricsCollector {
     });
 
     return result;
+  }
+
+  async getAggregateMetrics(
+    metric: StatsMetricType,
+    start: number,
+    end: number,
+    granularity: StatsGranularity,
+  ): Promise<TMetrics> {
+    const sketch = await this.aggregate(metric, start, end, granularity);
+    return convertSketchToMetrics(sketch, start);
   }
 
   // write minute stats
@@ -200,7 +223,9 @@ export class QueueMetricsCollector {
 
     const key = this.getKey(jobName, metric, unit);
 
-    const time = typeof start === 'number' ? start : start.getTime();
+    let time = typeof start === 'number' ? start : start.getTime();
+    // round to unit
+    time = startOf(time, unit).getTime();
     (this.pipeline as any).zaddBuffer(key, time, serializeSketch(stats));
 
     if (unit === StatsGranularity.Minute) {

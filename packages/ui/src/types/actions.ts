@@ -4,14 +4,12 @@ import type {
   JobCounts,
   JobLogs,
   JobSchema,
-  JobSearchInput,
-  Queue, JobFragment,
+  JobsByFilterInput,
+  Queue,
+  JobFragment,
 } from './generated';
 
-import {
-  JobState,
-  SortOrderEnum
-} from './generated';
+import { JobState, SortOrderEnum } from './generated';
 
 export type BulkJobAction = (ids: string[]) => Promise<BulkStatusItem[]>;
 
@@ -56,7 +54,7 @@ export interface QueueJobActions extends BulkJobActions {
   ) => Promise<{ jobs: JobFragment[]; counts: JobCounts }>;
   getJobsByFilter: (
     queueId: string,
-    filter: JobSearchInput,
+    filter: JobsByFilterInput,
   ) => Promise<FilteredJobsResult>;
 }
 
@@ -65,10 +63,7 @@ export interface HostActions {
     prefix?: string,
     unregisteredOnly?: boolean,
   ) => Promise<DiscoverQueuesPayload[]>;
-  registerQueue: (
-    prefix: string,
-    name: string,
-  ) => Promise<Queue>;
+  registerQueue: (prefix: string, name: string) => Promise<Queue>;
   unregisterQueue: (id: string) => Promise<boolean>;
 }
 

@@ -51,7 +51,7 @@ export class MetricsCollector {
     granularity: StatsGranularity = StatsGranularity.Minute,
   ): Promise<Map<number, DDSketch>> {
     const collector = this._getCollector(queue);
-    return collector.loadSketches(metric, start, end, granularity);
+    return collector.getSketchRange(metric, start, end, granularity);
   }
 
   async clear(queue: Queue | string): Promise<void> {

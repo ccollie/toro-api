@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { JobSearchStatus } from '@/types';
+import type { JobSearchStatus } from 'src/types';
 
-const regularItems = ['Data', 'Options', 'Logs'] as const;
+const regularItems = ['Data', 'Options', 'Logs', 'Return Value'] as const;
 
 export type TabsType = typeof regularItems[number] | 'Error';
 

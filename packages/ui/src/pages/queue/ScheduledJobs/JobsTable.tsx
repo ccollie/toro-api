@@ -1,4 +1,4 @@
-import { LoadingOverlay, Tooltip } from '@mantine/core';
+import { Center, LoadingOverlay, Tooltip } from '@mantine/core';
 import React, { Fragment, useCallback, useMemo } from 'react';
 import type { RepeatableJob } from '@/types';
 import { ActionIcon } from '@/components/ActionIcon';
@@ -6,7 +6,7 @@ import { normalizeJobName } from 'src/lib';
 import { JobId } from '../jobs/JobId';
 import { RelativeDateFormat } from '@/components/RelativeDateFormat';
 import { formatDate } from '@/lib/dates';
-import { parseJSON } from 'date-fns';
+import { formatDistance, parseJSON } from 'date-fns';
 import { CalendarIcon, TrashIcon } from '@/components/Icons';
 import {
   EmptyBody,
@@ -75,9 +75,21 @@ const columns: ColumnDef<RepeatableJob>[] = [
   {
     title: 'Next',
     dataIndex: 'next',
-    render: (job: RepeatableJob) => (
-      <span>{formatDate(new Date((job.next as number) || 0))}</span>
-    ),
+    render: (job: RepeatableJob) => {
+      const next = new Date((job.next as number) || 0);
+      const now = new Date();
+      if (next > now) {
+        const formatted = formatDate(next);
+        return (
+          <Tooltip position="top" withArrow label={formatted}>
+            <span>
+              {formatDistance(now, next, { addSuffix: true })}
+            </span>
+          </Tooltip>
+        );
+      }
+      return <Center>-</Center>;
+    },
   },
   {
     title: 'Timezone',

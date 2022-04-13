@@ -17,7 +17,7 @@ export type States = `${JobState}`;
 
 export type JobStatus = keyof typeof STATUSES;
 
-export type CountStatus = Omit<keyof Queue['jobCounts'], '__typename'>;
+export type CountStatus = Omit<JobStatus, 'latest'>;
 
 export type SelectedStatuses = Record<Queue['id'], JobStatus>;
 

@@ -54,13 +54,19 @@ export type ActivateRuleResult = {
   rule: Rule;
 };
 
+export type AddJobLogInput = {
+  /** The id of the job */
+  id: Scalars['ID'];
+  /** The message to log */
+  message: Scalars['String'];
+  /** The id of the queue the job belongs to */
+  queueId: Scalars['ID'];
+};
+
 export type AddJobLogResult = {
   __typename?: 'AddJobLogResult';
   /** The number of log entries after adding */
   count: Scalars['Int'];
-  /** The job id */
-  id: Scalars['String'];
-  state?: Maybe<JobType>;
 };
 
 export type AggregateInfo = {
@@ -495,7 +501,7 @@ export type FindJobsInput = {
   /** The cursor to start from */
   cursor?: InputMaybe<Scalars['String']>;
   /** A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000) */
-  expression: Scalars['String'];
+  expression?: InputMaybe<Scalars['String']>;
   /** Optionally filter jobs by id pattern e.g. foo?-* */
   pattern?: InputMaybe<Scalars['String']>;
   /** The id of the desired queue */
@@ -812,7 +818,7 @@ export type JobLocatorInput = {
 export type JobLogs = {
   __typename?: 'JobLogs';
   count: Scalars['Int'];
-  items: Array<Scalars['String']>;
+  messages: Array<Scalars['String']>;
 };
 
 export type JobMemoryUsagePayload = {
@@ -1438,9 +1444,7 @@ export type MutationActivateRuleArgs = {
 };
 
 export type MutationAddJobLogArgs = {
-  id: Scalars['String'];
-  queueId: Scalars['String'];
-  row: Scalars['String'];
+  input: AddJobLogInput;
 };
 
 export type MutationBulkCreateJobsArgs = {
@@ -3693,6 +3697,7 @@ export type HostQueuesQuery = {
         __typename?: 'Queue';
         id: string;
         name: string;
+        prefix: string;
         isPaused: boolean;
         isReadonly: boolean;
         workerCount: number;
@@ -4047,8 +4052,19 @@ export type GetJobLogsQuery = {
   __typename?: 'Query';
   job: {
     __typename?: 'Job';
-    logs: { __typename?: 'JobLogs'; count: number; items: Array<string> };
+    logs: { __typename?: 'JobLogs'; count: number; messages: Array<string> };
   };
+};
+
+export type AddJobLogMutationVariables = Exact<{
+  queueId: Scalars['ID'];
+  id: Scalars['ID'];
+  message: Scalars['String'];
+}>;
+
+export type AddJobLogMutation = {
+  __typename?: 'Mutation';
+  addJobLog: { __typename?: 'AddJobLogResult'; count: number };
 };
 
 export type CreateJobMutationVariables = Exact<{
@@ -8571,6 +8587,10 @@ export const HostQueuesDocument = {
                       { kind: 'Field', name: { kind: 'Name', value: 'name' } },
                       {
                         kind: 'Field',
+                        name: { kind: 'Name', value: 'prefix' },
+                      },
+                      {
+                        kind: 'Field',
                         name: { kind: 'Name', value: 'isPaused' },
                       },
                       {
@@ -12128,7 +12148,7 @@ export const GetJobLogsDocument = {
                 name: { kind: 'Name', value: 'queueId' },
                 value: {
                   kind: 'Variable',
-                  name: { kind: 'Name', value: 'id' },
+                  name: { kind: 'Name', value: 'queueId' },
                 },
               },
               {
@@ -12168,7 +12188,10 @@ export const GetJobLogsDocument = {
                     kind: 'SelectionSet',
                     selections: [
                       { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'items' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'messages' },
+                      },
                     ],
                   },
                 },
@@ -12235,6 +12258,145 @@ export type GetJobLogsQueryResult = Apollo.QueryResult<
 export function refetchGetJobLogsQuery(variables: GetJobLogsQueryVariables) {
   return { query: GetJobLogsDocument, variables: variables };
 }
+export const AddJobLogDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'AddJobLog' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'message' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'String' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'addJobLog' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'queueId' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'id' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'id' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'message' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'message' },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+export type AddJobLogMutationFn = Apollo.MutationFunction<
+  AddJobLogMutation,
+  AddJobLogMutationVariables
+>;
+
+/**
+ * __useAddJobLogMutation__
+ *
+ * To run a mutation, you first call `useAddJobLogMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAddJobLogMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [addJobLogMutation, { data, loading, error }] = useAddJobLogMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      id: // value for 'id'
+ *      message: // value for 'message'
+ *   },
+ * });
+ */
+export function useAddJobLogMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    AddJobLogMutation,
+    AddJobLogMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<AddJobLogMutation, AddJobLogMutationVariables>(
+    AddJobLogDocument,
+    options,
+  );
+}
+export type AddJobLogMutationHookResult = ReturnType<
+  typeof useAddJobLogMutation
+>;
+export type AddJobLogMutationResult = Apollo.MutationResult<AddJobLogMutation>;
+export type AddJobLogMutationOptions = Apollo.BaseMutationOptions<
+  AddJobLogMutation,
+  AddJobLogMutationVariables
+>;
 export const CreateJobDocument = {
   kind: 'Document',
   definitions: [

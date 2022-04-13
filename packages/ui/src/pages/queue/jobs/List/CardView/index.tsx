@@ -1,7 +1,7 @@
 import React from 'react';
 import { useJobsStore } from 'src/stores';
 import shallow from 'zustand/shallow';
-import { JobCard } from '../JobCard';
+import { JobCard } from 'src/pages/queue/jobs/JobCard';
 import type { JobFragment, JobSearchStatus, Queue } from 'src/types';
 
 interface CardViewProps {

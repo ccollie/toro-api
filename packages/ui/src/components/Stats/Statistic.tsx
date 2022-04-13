@@ -1,6 +1,6 @@
 import { Box, MantineColor, MantineSize } from '@mantine/core';
 import cx from 'clsx';
-import React, { ElementType, ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { isEmpty } from 'src/lib';
 
 import {
@@ -18,7 +18,7 @@ export const VERTICAL_ALIGNMENTS = ['bottom', 'middle', 'top'];
 
 export interface StatisticProps {
   /** An element type to render as (string or function). */
-  as?: ElementType;
+  as?: string;
 
   /** Additional classes. */
   className?: string;
@@ -57,7 +57,6 @@ interface StatisticComponent extends React.FC<StatisticProps> {
   Value: typeof StatisticValue;
 }
 
-
 const defaultComponent = 'div';
 
 /**
@@ -93,21 +92,21 @@ const Statistic: StatisticComponent = (props) => {
 
   if (!isEmpty(children)) {
     return (
-      <Box component={as} {...rest} className={classes}>
+      <Box {...rest} className={classes}>
         {children}
       </Box>
     );
   }
   if (!isEmpty(content)) {
     return (
-      <Box component={as} {...rest} className={classes}>
+      <Box {...rest} className={classes}>
         {content}
       </Box>
     );
   }
 
   return (
-    <Box component={as} {...rest} className={classes}>
+    <Box {...rest} className={classes}>
       {value && <StatisticValue text={text}>{value}</StatisticValue>}
       {label && <StatisticLabel>{label}</StatisticLabel>}
     </Box>

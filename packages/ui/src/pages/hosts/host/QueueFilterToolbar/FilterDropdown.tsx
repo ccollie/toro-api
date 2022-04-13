@@ -11,6 +11,7 @@ import {
   Space,
   MultiSelect,
   Button,
+  LoadingOverlay,
 } from '@mantine/core';
 import { FilterIcon } from 'src/components/Icons';
 import { QueueStateBadge } from '@/pages/queue/QueueStateBadge';
@@ -23,14 +24,13 @@ import {
 import {
   AllStatuses,
   filterQueues,
+  hasStatusFilter,
   normalizeExclusions,
   normalizeFilter,
   useHost,
-  useQueuePrefixes,
 } from 'src/services';
-import { useStore } from 'src/stores';
 import type { Queue, QueueFilter, QueueHost } from 'src/types';
-import { QueueFilterStatus } from 'src/types';
+import { QueueFilterStatus, useGetHostQueuesQuery } from 'src/types';
 import React, {
   ChangeEvent,
   useCallback,
@@ -38,7 +38,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { stringEqual} from 'src/lib';
+import { stringEqual } from 'src/lib';
 
 interface FilterDropdownProps {
   isOpen?: boolean;
@@ -49,25 +49,22 @@ interface FilterDropdownProps {
 
 const QueuesForm = (props: FilterDropdownProps) => {
   const { hostId, filter } = props;
-  const [filtered, setFiltered] = useState<Queue[]>([]);
-  const [queues, setQueues] = useState<Queue[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  const getHostQueues = useStore((state) => state.getHostQueues);
   const { host } = useHost(hostId);
   const [searchTerm, setSearchTerm] = useState(filter.search);
   const [statuses, setStatuses] = useState<QueueFilterStatus[]>(
     filter.statuses ?? AllStatuses,
   );
   const [prefixes, setPrefixes] = useState<string[]>(filter.prefixes ?? []);
-
-  // todo: we may need to go to server to get all prefixes, since we may be filtered
-  const allPrefixes = useQueuePrefixes(hostId);
+  const [queues, setQueues] = useState<Queue[]>(host?.queues ?? []);
+  const [filtered, setFiltered] = useState<Queue[]>([]);
+  const [allPrefixes, setAllPrefixes] = useState<string[]>([]);
 
   const {
     selectedItems,
     toggleSelection,
     isSelected,
+    isIndeterminate,
     selectItem,
     unselectItem,
     isAllSelected,
@@ -75,21 +72,23 @@ const QueuesForm = (props: FilterDropdownProps) => {
     setSelected,
   } = useSelection<Queue>(queues);
 
+  const { loading } = useGetHostQueuesQuery({
+    variables: {
+      id: hostId,
+    },
+    onCompleted: (data) => {
+      const queues = (data.host?.queues || []) as Queue[];
+      setQueues(queues);
+      const selected = calculateSelected(queues);
+      setSelected(selected ?? []);
+    },
+  });
+
   useEffect(() => {
-    const queues = host?.queues || [];
-    setQueues(queues);
-    setFiltered(queues);
-    if (!loading) {
-      setLoading(true);
-      getHostQueues(hostId).then((queues) => {
-        setQueues(queues);
-        setFiltered(queues);
-        const selected = calculateSelected(queues);
-        setSelected(selected ?? []);
-        setLoading(false);
-      });
-    }
-  }, [hostId]);
+    const values = new Set<string>(queues.map(x => x.prefix).filter(Boolean));
+    const uniq = [...values].sort();
+    setAllPrefixes(uniq);
+  }, [queues]);
 
   function handleNotify() {
     if (props.onFilterUpdated) {
@@ -125,7 +124,7 @@ const QueuesForm = (props: FilterDropdownProps) => {
   // todo: debounce this
   function filterOptions() {
     let filtered: Queue[];
-    if (statuses.length === 0 && !prefixes.length && !searchTerm) {
+    if (!hasStatusFilter(statuses) && !prefixes.length && !searchTerm) {
       filtered = [...queues];
     } else {
       const filter: QueueFilter = {
@@ -140,7 +139,7 @@ const QueuesForm = (props: FilterDropdownProps) => {
 
   useEffect(() => {
     filterOptions();
-  }, [statuses, prefixes, searchTerm]);
+  }, [statuses, prefixes, searchTerm, queues]);
 
   useWhyDidYouUpdate('QueuesSelectable', props);
 
@@ -236,7 +235,7 @@ const QueuesForm = (props: FilterDropdownProps) => {
           <Space h="md" />
           <MultiSelect
             width="100%"
-            value={prefixes}
+            defaultValue={prefixes}
             data={allPrefixes}
             onChange={setPrefixes}
             label="Queue prefixes"
@@ -247,6 +246,7 @@ const QueuesForm = (props: FilterDropdownProps) => {
             <div className="border border-gray-400 flex-shrink">
               <Checkbox
                 defaultChecked={isAllSelected}
+                indeterminate={isIndeterminate}
                 onChange={onSelectAllClicked}
               />
             </div>
@@ -256,6 +256,7 @@ const QueuesForm = (props: FilterDropdownProps) => {
           </div>
           <div id="queue-list">
             <ScrollArea aria-label="Queue selections">
+              <LoadingOverlay visible={loading} />
               <div className="pl-2">
                 <ul className="list-reset flex-row">
                   {filtered.map((queue) => (

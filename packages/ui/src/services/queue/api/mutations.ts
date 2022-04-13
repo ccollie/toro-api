@@ -6,6 +6,7 @@ import type {
   DrainQueueMutation,
   GetHostsAndQueuesQuery,
   GetJobSchemaQuery,
+  GetJobSchemaQueryVariables,
   GetQueueByIdQuery,
   InferJobSchemaQuery,
   JobOptionsInput,
@@ -237,9 +238,9 @@ export const getJobSchema = (
   jobName: string,
 ): Promise<JobSchema> => {
   return client
-    .query<GetJobSchemaQuery>({
+    .query<GetJobSchemaQuery, GetJobSchemaQueryVariables>({
       query: GetJobSchemaDocument,
-      variables: { queueId, jobName },
+      variables: { id: queueId, jobName },
     })
     .then((result) => {
       if (result.error) throw result.error;

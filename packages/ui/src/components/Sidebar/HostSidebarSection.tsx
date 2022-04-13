@@ -21,14 +21,14 @@ export const HostSidebarSection = (props: HostSidebarSectionProps) => {
 
   const items = host.queues.map((queue) =>({
     title: queue.name,
-    href: `/queues/${queue.id}`,
+    href: `/queues/${queue.id}/jobs`, // use overview ??
   }));
 
   // todo: need handler for title click
   return (
     <SidebarSection
       title={host.name}
-      href={`/hosts/${host.id}`}
+      href={`/hosts/${host.id}/queues`}
       isSidebarExpanded={isSidebarOpen}
       setSidebarExpanded={setSidebarOpen}
       items={items}

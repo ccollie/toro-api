@@ -11,20 +11,21 @@ type HostStateBadgeProps = {
   variant?: BadgeProps<any>['variant'];
 };
 
-export const HostStateBadge: React.FC<HostStateBadgeProps> = props => {
-  const { host, size = 'sm',  variant = 'light', ...rest } = props;
+export const HostStateBadge: React.FC<HostStateBadgeProps> = (props) => {
+  const { host, size = 'sm', variant = 'light', ...rest } = props;
   // todo: from theme
   let color = 'blue';
   let state = 'Active';
-  if (!host.workerCount) {
+  // HACK: !!!
+  const count =
+    host.workerCount +
+    (host.queues ?? []).reduce((acc, q) => acc + q.workerCount, 0);
+  if (!count) {
     color = 'red';
     state = 'Inactive';
   }
   return (
-    <Badge
-      color={color as StatusColor}
-      size={size}
-      variant={variant} {...rest}>
+    <Badge color={color as StatusColor} size={size} variant={variant} {...rest}>
       {state}
     </Badge>
   );

@@ -16,6 +16,7 @@ export interface JobExportOptions {
   fields: string[];
   filename: string;
   showHeaders?: boolean;
+  exportSelected?: boolean;
 }
 
 export const ExportMimeTypes: Record<JobExportFormat, string> = {

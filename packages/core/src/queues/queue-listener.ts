@@ -258,7 +258,7 @@ export class QueueListener extends Emittery {
     this._clock.set(timestamp);
     this.lastStreamId = id;
     this.lastTimestamp = timestamp.getTime();
-    this.cache.del(args.jobId);
+    this.cache.delete(args.jobId);
   }
 
   protected stalledListener(args: { jobId: string }, id: string): void {

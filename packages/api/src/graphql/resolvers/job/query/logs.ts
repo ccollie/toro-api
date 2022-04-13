@@ -7,7 +7,7 @@ export const logs: FieldConfig = {
     name: 'JobLogs',
     fields: {
       count: 'Int!',
-      items: '[String!]!',
+      messages: '[String!]!',
     },
   }).NonNull,
   args: {
@@ -24,9 +24,9 @@ export const logs: FieldConfig = {
     // `queue` is private property of Job instance
     // so here we are not guaranteed that log will be available in the future
     const queue = (job as any).queue as Queue<any>;
-    const { logs: items, count } = await queue.getJobLogs(job.id, start, end);
+    const { logs: messages, count } = await queue.getJobLogs(job.id, start, end);
     return {
-      items,
+      messages,
       count,
     };
   },

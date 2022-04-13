@@ -1,5 +1,7 @@
+import { Center, Group, Text } from '@mantine/core';
 import React from 'react';
-import { TabsType } from 'src/hooks/useDetailsTabs';
+import { SadTearIcon } from 'src/components/Icons';
+import { TabsType } from 'src/pages/queue/jobs/hooks/useDetailsTabs';
 import { Highlight } from 'src/components/Highlight/Highlight';
 import { JobLogs } from './JobLogs/JobLogs';
 import type { Job, JobFragment } from 'src/types';
@@ -18,14 +20,51 @@ function stringify(data: any) {
   return JSON.stringify(data, null, 2);
 }
 
-export const DetailsContent = ({
-  selectedTab, job }: DetailsContentProps) => {
+interface ReturnValueProps {
+  value: any;
+}
+
+const ReturnValue = ({ value }: ReturnValueProps) => {
+  const hasValue = !(value === null || value === undefined);
+  if (!hasValue) {
+    value = {};
+  } else if (typeof (value) === 'string') {
+    try {
+      value = JSON.parse(value);
+    } catch (e) {
+      // do nothing
+    }
+  }
+  const isObj = typeof value === 'object';
+  const code = isObj ? JSON.stringify(value, null, 2) : null;
+  if (!hasValue)
+    return (
+      <Center style={{ minHeight: 200 }}>
+        <Group mt={20}>
+          <SadTearIcon size={36} style={{ opacity: 0.75 }}/>
+          <Text>No Return Value.</Text>
+        </Group>
+      </Center>
+    );
+
+  return (
+    <>
+      {isObj ? (
+        <Highlight language="json">{code}</Highlight>
+      ) : (
+        <div>{value}</div>
+      )}
+    </>
+  );
+};
+
+export const DetailsContent = ({ selectedTab, job }: DetailsContentProps) => {
   const { stacktrace, data, returnvalue, opts, failedReason } = job;
 
   switch (selectedTab) {
     case 'Data':
       return (
-        <Highlight language="json">{stringify({ data, returnvalue }) }</Highlight>
+        <Highlight language="json">{stringify(data)}</Highlight>
       );
     case 'Options':
       return <Highlight language="json">{stringify(opts)}</Highlight>;
@@ -43,6 +82,9 @@ export const DetailsContent = ({
       );
     case 'Logs':
       return <JobLogs job={job} />;
+    case 'Return Value': {
+      return <ReturnValue value={returnvalue} />;
+    }
     default:
       return null;
   }

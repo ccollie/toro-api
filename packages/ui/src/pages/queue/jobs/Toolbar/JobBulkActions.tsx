@@ -1,4 +1,4 @@
-import { JobState } from '@/types';
+import { JobSearchStatus, JobState } from '@/types';
 import React, { Fragment, useEffect, useState } from 'react';
 import type { Job, JobFragment } from '@/types';
 import { useDisclosure, useQueue, useToast } from '@/hooks';
@@ -80,7 +80,7 @@ export const JobBulkActions = (props: BulkJobActionsProps) => {
     defaultIsOpen: false,
   });
 
-  function cleanJobs(status: JobState, grace?: number, limit?: number): Promise<void> {
+  function cleanJobs(status: JobSearchStatus, grace?: number, limit?: number): Promise<void> {
     // Status is a subset of JobStatus so the cast is safe
     return cleanQueue(queueId, grace ?? 0, limit, status).then(
       (count: number | undefined) => {

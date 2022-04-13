@@ -124,7 +124,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
     const { prevState, lastSeen, id, ...data } = delta;
     const isFinished = isFinishedStatus(eventName);
     if (isFinished) {
-      cache.del(key);
+      cache.delete(key);
     }
     if (!isEmpty(data)) {
       const result = data;

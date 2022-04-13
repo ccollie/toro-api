@@ -1,10 +1,17 @@
 import { useStore } from '@/stores/hosts';
-import { useCallback } from 'react';
-import { Queue } from '@/types';
+import { useCallback, useEffect, useState } from 'react';
+import { CountStatus, Queue } from '@/types';
 
 export function useQueue(queueId: Queue['id']) {
-  const queue = useStore(useCallback(state => state.findQueue(queueId), [queueId]));
+  const findQueue = useStore(store => store.findQueue);
   const update = useStore(state => state.updateQueue);
+  const [queue, setQueue] = useState<Queue | null>(findQueue(queueId) ?? null);
+
+  useEffect(() => {
+    if (queueId) {
+      setQueue(findQueue(queueId) ?? null);
+    }
+  }, [queueId]);
 
   const updateQueue = useCallback(
     (delta: Partial<Queue>) => {
@@ -20,5 +27,18 @@ export function useQueue(queueId: Queue['id']) {
     );
   }
 
-  return { queue, updateQueue };
+  const decreaseJobCount = useCallback((status: CountStatus) => {
+    // @ts-ignore
+    const count = (queue.jobCounts[status] || 0) - 1;
+    if (count >= 0) {
+      updateQueue({
+        jobCounts: {
+          ...queue.jobCounts,
+          [''+status]: count,
+        },
+      });
+    }
+  }, [queue]);
+
+  return { queue, updateQueue, decreaseJobCount };
 }

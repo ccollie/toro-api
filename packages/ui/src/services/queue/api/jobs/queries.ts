@@ -36,7 +36,7 @@ export function getJobs(
     .query({
       query: GetQueueJobsDocument,
       variables: {
-        id: queueId,
+        queueId,
         status: status ?? undefined,
         offset,
         limit,

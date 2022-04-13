@@ -22,13 +22,14 @@ import { usePreferencesStore, useJobsStore } from '@/stores';
 const DEFAULT_JOB_NAME = '__default__';
 
 export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): SingleJobActions {
-  const { queue } = useQueue(queueId);
+  const { queue, decreaseJobCount } = useQueue(queueId);
   const toast = useToast();
   const modals = useModals();
   const clipboard = useClipboard({ timeout: 500 });
 
   const confirmDangerousActions = usePreferencesStore(state => state.confirmDangerousActions);
   const removeJobFromStore = useJobsStore(state => state.removeJob);
+  const getJob = useJobsStore(state => state.getJob);
 
   const description = getJobDescriptor();
 
@@ -61,7 +62,6 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
       icon: <Cross1Icon />,
     });
   }
-
 
   type JobHandlerFn = (queueId: string, ids: string) => Promise<void>;
 
@@ -130,9 +130,14 @@ export function useJobActions(queueId: Queue['id'], job: Job | JobFragment): Sin
 
   const handleDelete = wrapHandler('delete', (queueId, jobId) => {
     return deleteJob(queueId, jobId).then(() => {
+      const job = getJob(jobId);
       removeJobFromStore(jobId);
+      if (job && job.state) {
+        decreaseJobCount(job.state);
+      }
     });
   });
+
   const handleRetry = wrapHandler('retry', retryJob);
   const handlePromote = wrapHandler('promote', promoteJob);
   const handleDiscard = wrapHandler('discard', discardJob);

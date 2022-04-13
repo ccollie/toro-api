@@ -8,7 +8,8 @@ export const useQueuePrefixes = (hostId: QueueHost['id']) =>{
     if (!host) return [];
     const { queues } = host;
     if (!queues) return [];
-    const uniq = Array.from(new Set<string>(queues.map(x => x.prefix)));
+    const values = new Set<string>(queues.map(x => x.prefix).filter(Boolean));
+    const uniq = [...values];
     return uniq.sort();
   }, [host?.queues]);
 };

@@ -34,8 +34,8 @@ export const ScheduledJobs = () => {
 
   const { loading, refetch } = useGetRepeatableJobsQuery({
     variables: {
-      id: queueId,
-      offset: offset,
+      queueId,
+      offset,
       limit: pageSize,
     },
     fetchPolicy: 'cache-and-network',

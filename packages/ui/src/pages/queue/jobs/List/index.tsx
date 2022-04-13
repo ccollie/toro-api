@@ -4,8 +4,8 @@ import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
 import { useJobListQuery } from '../hooks/use-job-list-query';
 import { useWhyDidYouUpdate } from '@/hooks';
-import CardView from '../CardView';
-import TableView from '../TableView';
+import CardView from './CardView';
+import TableView from './TableView';
 import JobsToolbar from '../Toolbar';
 
 export const Jobs = () => {
@@ -19,7 +19,7 @@ export const Jobs = () => {
   } = useJobQueryParameters();
 
   // todo: load
-  const { called, pageCount, jobs } = useJobListQuery({
+  const { called, pageCount, jobs, loading } = useJobListQuery({
     queueId,
     status,
     page,
@@ -63,7 +63,7 @@ export const Jobs = () => {
           height: '100vh'
         }}
       >
-        <LoadingOverlay visible={!called} />
+        <LoadingOverlay visible={loading} />
         {jobView === 'card' && (
           <ScrollArea sx={{ flex: 1 }}>
             <CardView

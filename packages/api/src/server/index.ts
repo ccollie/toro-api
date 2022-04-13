@@ -41,6 +41,7 @@ import type {
   InferContext,
   NullableEnvelopPlugin,
 } from 'graphql-ez';
+import { IncomingMessage } from 'http';
 import ms from 'ms';
 import pMap from 'p-map';
 import { getSchema, publish, pubsub } from '../graphql';
@@ -203,16 +204,27 @@ export const formatError: FormatErrorHandler = (err): GraphQLError => {
   return err as GraphQLError;
 };
 
-function buildContext({ req }: BuildContextArgs) {
+interface TContext {
+  req: IncomingMessage;
+  supervisor: Supervisor;
+  publish: typeof publish;
+  pubsub: typeof pubsub;
+  accessors: typeof accessors;
+  loaders: typeof loaders;
+  logger: typeof logger;
+  [key: string]: any;
+}
+
+function buildContext({ req }: BuildContextArgs): TContext {
   const supervisor = Supervisor.getInstance();
   return {
-    // IncomingMessage
     req,
     supervisor,
     publish,
     pubsub,
     accessors,
     loaders,
+    logger
   };
 }
 

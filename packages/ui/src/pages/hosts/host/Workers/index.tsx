@@ -4,7 +4,7 @@ import { LoadingOverlay } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 import { useMatch } from '@tanstack/react-location';
 import { useNetworkSettingsStore } from 'src/stores';
-import { Workers as WorkersTable } from '@/components';
+import { Workers as WorkersTable } from '@/pages/queue/Workers/Workers';
 
 import type { LocationGenerics } from '@/types';
 
