@@ -23,7 +23,7 @@ import {
 import { RelativeDateFormat } from 'src/components';
 import { CalendarIcon, TrashIcon } from 'src/components/Icons';
 import { Timestamp } from 'src/components/Timestamp';
-import { formatDate, normalizeJobName } from 'src/lib';
+import { normalizeJobName } from 'src/lib';
 import JobId from '../jobs/JobId';
 import { ActionIcon } from 'src/components/ActionIcon';
 import { RepeatableJob } from 'src/types';

@@ -19,7 +19,7 @@ export const Jobs = () => {
   } = useJobQueryParameters();
 
   // todo: load
-  const { called, pageCount, jobs, loading } = useJobListQuery({
+  const { pageCount, jobs, loading } = useJobListQuery({
     queueId,
     status,
     page,
@@ -79,6 +79,7 @@ export const Jobs = () => {
             queue={queue}
             jobs={jobs}
             status={status}
+            loading={loading}
             isReadOnly={!!queue?.isReadonly}
           />
         )}

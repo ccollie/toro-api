@@ -1,7 +1,7 @@
 import { ViewUpdate } from '@codemirror/view';
 import { Button, Tooltip } from '@mantine/core';
 import React, { useCallback, useState } from 'react';
-import { useCallbackRef, useDisclosure, useWhyDidYouUpdate } from '@/hooks';
+import { useCallbackRef, useDisclosure } from '@/hooks';
 import { validateQuery } from '@/services/job-filter/query-parser';
 import { BackspaceIcon } from 'src/components/Icons';
 import FilterEditor from './FilterEditor';

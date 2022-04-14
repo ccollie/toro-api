@@ -59,7 +59,7 @@ const useInterval = (
     setIsActive(false);
     if (timeout.current) {
       clearTimeout(timeout.current);
-      timeout.current = 0;
+      timeout.current = undefined;
     }
   }
 
@@ -76,7 +76,7 @@ const useInterval = (
     // if we're started, reset with the new delay
     if (isActive) {
       clearTimeout(timeout.current);
-      timeout.current = 0;
+      timeout.current = undefined;
       start();
     }
   }, [milliseconds]);
