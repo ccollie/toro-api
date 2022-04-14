@@ -1,5 +1,5 @@
 import { BaseMetric, QueueBasedMetric } from './baseMetric';
-import { MetricValueType, QueueMetricOptions } from './types';
+import { MetricValueType, QueueMetricOptions } from '../types';
 import { JobFinishedEventData } from '../queues';
 
 export class CounterBasedMetric extends BaseMetric {

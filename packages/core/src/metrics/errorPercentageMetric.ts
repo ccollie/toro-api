@@ -1,7 +1,7 @@
 import { Events } from './constants';
 import { JobFinishedEventData } from '../queues';
 import { round } from '@alpen/shared';
-import { MetricTypes, MetricValueType, QueueMetricOptions } from './types';
+import { MetricTypes, MetricValueType, QueueMetricOptions } from '../types';
 import { QueueCounterBasedMetric } from './counterBasedMetric';
 
 // todo: can we set initial counts ?

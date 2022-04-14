@@ -1,4 +1,5 @@
-import { LatencyMetric, SumAggregator, AggregatorTypes } from '../../';
+import { LatencyMetric, SumAggregator } from '../../';
+import { AggregatorTypes } from '../../../types';
 import { random } from '@alpen/shared';
 import { validateCounts } from './helpers';
 

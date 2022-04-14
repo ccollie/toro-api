@@ -4,7 +4,7 @@ import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
 
 import { Queue, RedisClient } from 'bullmq';
-import { MetricsEventsEnum, SerializedMetric } from './types';
+import { MetricsEventsEnum, SerializedMetric } from '../types';
 import { Clock, getUniqueId, nanoid } from '../lib';
 import { PossibleTimestamp, TimeSeries } from '../commands';
 import { createMetricFromJSON, serializeMetric } from './factory';

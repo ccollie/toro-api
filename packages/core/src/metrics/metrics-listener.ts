@@ -22,7 +22,7 @@ import { roundDown, roundUp } from '@alpen/shared';
 import { isAfter } from 'date-fns';
 import ms from 'ms';
 import { logger } from '../logger';
-import { SerializedMetric } from './types';
+import { SerializedMetric } from '../types';
 
 const MAX_INTERVAL = ms('2d');
 const DEFAULT_INTERVAL = ms('1 hr');

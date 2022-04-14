@@ -1,5 +1,4 @@
-import { HostsPageDataDocument, HostsPageDataQuery, QueueHost } from '@/types';
-import { useQuery } from '@apollo/client';
+import { QueueHost, useHostsPageDataQuery } from '@/types';
 import { LoadingOverlay } from '@mantine/core';
 import React, { useState } from 'react';
 import { useNetworkSettingsStore } from '@/stores/network-settings';
@@ -11,7 +10,7 @@ const HostsPage: React.FC = () => {
   const pollInterval = useNetworkSettingsStore(state => state.pollingInterval);
   const [hosts, setHosts] = useState<QueueHost[]>([]);
 
-  const { loading, called } = useQuery<HostsPageDataQuery>(HostsPageDataDocument,{
+  const { loading, called } = useHostsPageDataQuery({
     variables: {
       range,
     },

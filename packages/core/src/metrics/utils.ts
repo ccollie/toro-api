@@ -1,5 +1,5 @@
-import { MetricTypeName, MetricTypes } from './types';
-import { Predicate } from '../types';
+import { MetricTypeName, MetricTypes } from '../types';
+import type { Predicate } from '../types';
 
 export function createJobNameFilter(
   jobNames?: string | string[],

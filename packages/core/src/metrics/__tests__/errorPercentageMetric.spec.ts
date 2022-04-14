@@ -3,11 +3,13 @@ import {
   BaseMetric,
   ErrorPercentageMetric,
   Events,
+} from '../';
+import {
   MetricCategory,
   MetricTypes,
   MetricValueType,
   QueueMetricOptions,
-} from '../';
+} from '../../types';
 import { createJobEvent } from '../../__tests__/factories';
 import { validateJobNamesFilter } from './helpers';
 import { MetricTestHelper } from './metricTestHelper';

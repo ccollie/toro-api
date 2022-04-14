@@ -8,11 +8,11 @@ import {
   metricsMap,
   MetricConstructor,
   ApdexMetric,
-  MetricTypes,
   isTypeOfMetric,
   QueueBasedMetric,
   RateMetric,
 } from '../';
+import { MetricTypes } from '../../types';
 import type { RateMetricOptions } from '../';
 import { random } from '@alpen/shared';
 import { systemClock, delay } from '../../lib';

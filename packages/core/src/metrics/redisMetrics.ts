@@ -6,7 +6,7 @@ import {
   MetricValueType,
   MetricTypes,
   MetricOptions,
-} from './types';
+} from '../types';
 
 export class RedisMetric extends PollingMetric {
   private readonly fieldName: string;

@@ -1,3 +1,4 @@
+import { PeakMemoryMetric } from '../';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../redis';
 import {
@@ -5,8 +6,7 @@ import {
   MetricOptions,
   MetricTypes,
   MetricValueType,
-  PeakMemoryMetric,
-} from '../';
+} from '../../types';
 
 describe('PeakMemoryMetric', () => {
   describe('static properties', () => {

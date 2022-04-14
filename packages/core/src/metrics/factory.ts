@@ -27,7 +27,6 @@ import {
   PendingCountMetric,
   WaitingChildrenCountMetric,
 } from './jobSpotCountMetric';
-import { Constructor } from '../types';
 import { createAggregator } from './aggregators';
 import { ApdexMetric } from './apdexMetric';
 import { parseTimestamp, hashObject, parseBool } from '@alpen/shared';
@@ -35,10 +34,11 @@ import { isNil, isObject, isString } from '@alpen/shared';
 import { logger } from '../logger';
 import {
   AggregatorTypes,
+  Constructor,
   MetricInfo,
   MetricTypes,
   SerializedAggregator,
-} from './types';
+} from '../types';
 
 export type MetricConstructor = Constructor<BaseMetric>;
 

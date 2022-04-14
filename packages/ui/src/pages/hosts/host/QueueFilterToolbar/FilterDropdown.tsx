@@ -243,13 +243,11 @@ const QueuesForm = (props: FilterDropdownProps) => {
           />
           <Space h="md" />
           <div className="flex flex-row justify-between mb-3 ml-2 mt-1">
-            <div className="border border-gray-400 flex-shrink">
-              <Checkbox
-                defaultChecked={isAllSelected}
-                indeterminate={isIndeterminate}
-                onChange={onSelectAllClicked}
-              />
-            </div>
+            <Checkbox
+              defaultChecked={isAllSelected}
+              indeterminate={isIndeterminate}
+              onChange={onSelectAllClicked}
+            />
             <div className="flex-1">
               <span className="ml-2">{totalSelected}</span> queues selected
             </div>

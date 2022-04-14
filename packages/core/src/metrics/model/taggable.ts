@@ -44,18 +44,18 @@ export interface Taggable {
   /**
    * Sets tags set.
    *
-   * @param {Map<string, string>} name
    * @returns {this}
    * @memberof Taggable
+   * @param tags
    */
   setTags(tags: Map<string, string>): this;
 
   /**
    * Adds the specified tags to metric's tags.
    *
-   * @param {Map<string, string>} name
    * @returns {this}
    * @memberof Taggable
+   * @param tags
    */
   addTags(tags: Map<string, string>): this;
 

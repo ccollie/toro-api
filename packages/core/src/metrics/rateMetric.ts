@@ -4,7 +4,7 @@ import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation';
 import { MetricsListener } from './metrics-listener';
-import { MetricValueType, QueueMetricOptions } from './types';
+import { MetricValueType, QueueMetricOptions } from '../types';
 import { IMovingAverage, MovingAverage } from '../stats/moving-average';
 import { JobEventData } from '../queues';
 import { systemClock } from '../lib';

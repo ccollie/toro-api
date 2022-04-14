@@ -177,7 +177,7 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
             />
           </div>
           <Button
-            variant="filled"
+            type={'submit'}
             compact={true}
             aria-label="Add Queue"
             id="add-queue-button"

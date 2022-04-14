@@ -2,12 +2,14 @@
 import pMap from 'p-map';
 import {
   Events,
-  QueueMetricOptions,
-  WaitTimeMetric,
+  WaitTimeMetric
+} from '../';
+import {
   MetricCategory,
   MetricTypes,
   MetricValueType,
-} from '../';
+  QueueMetricOptions,
+} from '../../types';
 import { MetricTestHelper } from './metricTestHelper';
 import { createJobEvent } from '../../__tests__/factories';
 import { validateJobNamesFilter } from './helpers';

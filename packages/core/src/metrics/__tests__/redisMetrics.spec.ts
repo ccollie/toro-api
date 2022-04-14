@@ -1,7 +1,7 @@
 import { RedisMetric } from '../../metrics/redisMetrics';
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../redis';
-import { MetricCategory, MetricOptions, MetricValueType } from '../../metrics';
+import { MetricCategory, MetricOptions, MetricValueType } from '../../types';
 import { createQueue } from '../../__tests__/factories';
 
 describe('RedisMetric', () => {

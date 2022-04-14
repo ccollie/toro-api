@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react';
 import reactRefresh from '@vitejs/plugin-react-refresh';
 import tsConfigPath from 'vite-tsconfig-paths';
 import Unocss from 'unocss/vite';
-import { presetUno, presetAttributify } from 'unocss';
+import transformerDirective from '@unocss/transformer-directives';
+import { presetUno, presetAttributify, presetMini } from 'unocss';
 import presetIcons from '@unocss/preset-icons';
 
 // https://vitejs.dev/config/
@@ -12,6 +13,9 @@ export default defineConfig({
     (process.env.USE_REFRESH === 'true') ? reactRefresh() : react(),
     tsConfigPath(),
     Unocss({
+      transformers: [
+        transformerDirective(),
+      ],
       presets: [
         presetAttributify({ /* preset options */}),
         presetUno(),

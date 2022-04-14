@@ -4,7 +4,7 @@ import { Events } from './constants';
 import { DurationSchema } from '../validation/schemas';
 import { JobFinishedEventData } from '../queues';
 import { ApdexCalculator } from '../stats';
-import { MetricTypes, QueueMetricOptions } from './types';
+import { MetricTypes, QueueMetricOptions } from '../types';
 
 export interface ApdexMetricOptions extends QueueMetricOptions {
   threshold: number;

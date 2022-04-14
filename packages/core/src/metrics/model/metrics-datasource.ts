@@ -7,15 +7,15 @@ import { Events } from '../constants';
 import { createAsyncIterator, systemClock } from '../../lib';
 import { MetricsListener } from '../metrics-listener';
 import { DurationSchema } from '../../validation';
-import { MetricCategory, MetricValueType, MetricTypes } from '../types';
+import { MetricCategory, MetricValueType, MetricTypes } from '../../types';
 import type {
   QueueMetricOptions,
   MetricOptions,
-} from '../types';
+  Predicate
+} from '../../types';
 import { createJobNameFilter, metricNameByEnum } from '../utils';
 import { getConfigDuration } from '../../lib/config-utils';
 import { getStaticProp } from '@alpen/shared';
-import { Predicate } from '../../types';
 import { TimeseriesDataPoint } from '../../stats/types';
 
 export interface MetricUpdateEvent {

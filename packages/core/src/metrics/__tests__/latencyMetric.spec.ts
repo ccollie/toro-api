@@ -3,10 +3,12 @@ import pMap from 'p-map';
 import {
   Events,
   LatencyMetric,
+} from '../';
+import {
   MetricCategory,
   MetricTypes,
   QueueMetricOptions,
-} from '../';
+} from '../../types';
 import { MetricTestHelper } from './metricTestHelper';
 import { createJobEvent } from '../../__tests__/factories';
 import { validateJobNamesFilter } from './helpers';

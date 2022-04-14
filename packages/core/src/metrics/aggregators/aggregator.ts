@@ -1,7 +1,7 @@
 import * as boom from '@hapi/boom';
 import { isEqual } from '@alpen/shared';
 import { ObjectSchema } from 'joi';
-import { AggregatorTypes, SerializedAggregator } from '../types';
+import { AggregatorTypes, SerializedAggregator } from '../../types';
 import { aggregatorTypeNameMap, getMetricTypeName } from './utils';
 import { getStaticProp } from '@alpen/shared';
 

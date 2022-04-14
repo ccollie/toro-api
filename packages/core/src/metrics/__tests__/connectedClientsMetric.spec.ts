@@ -1,9 +1,5 @@
-import {
-  ConnectedClientsMetric,
-  MetricCategory,
-  MetricOptions,
-  MetricTypes,
-} from '../';
+import { ConnectedClientsMetric } from '../../metrics';
+import { MetricCategory, MetricOptions, MetricTypes } from '../../types';
 import { getRedisInfo } from '../../redis';
 import { delay } from '../../lib/utils';
 import { MetricTestHelper } from './metricTestHelper';

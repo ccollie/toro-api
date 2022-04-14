@@ -1,12 +1,11 @@
 import { random } from '@alpen/shared';
 import {
-  Events,
-  FinishedCountMetric,
   MetricCategory,
   MetricTypes,
   MetricValueType,
   QueueMetricOptions,
-} from '../';
+} from '../../types';
+import { FinishedCountMetric, Events } from '../';
 import { createJobEvent } from '../../__tests__/factories';
 import { validateJobNamesFilter } from './helpers';
 import { MetricTestHelper } from './metricTestHelper';

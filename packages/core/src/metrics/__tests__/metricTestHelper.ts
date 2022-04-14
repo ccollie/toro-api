@@ -1,7 +1,8 @@
 import { Queue, RedisClient } from 'bullmq';
 import { UnsubscribeFn } from 'emittery';
 import { Clock } from '../../lib';
-import { BaseMetric, MetricsListener, MetricTypes } from '../../metrics';
+import { BaseMetric, MetricsListener } from '../../metrics';
+import { MetricTypes } from '../../types';
 import { QueueListener } from '../../queues';
 import { createQueue, createQueueListener, QueueListenerHelper } from '../../__tests__/factories';
 

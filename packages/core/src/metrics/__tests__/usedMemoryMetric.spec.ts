@@ -1,12 +1,14 @@
 import nanoid from 'nanoid';
 import {
+  MinAggregator,
+  UsedMemoryMetric,
+} from '../';
+import {
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType,
-  MinAggregator,
-  UsedMemoryMetric,
-} from '../';
+} from '../../types'
 import { getRedisInfo } from '../../redis';
 import { validateMetricToJSON } from './helpers';
 import { MetricTestHelper } from './metricTestHelper';

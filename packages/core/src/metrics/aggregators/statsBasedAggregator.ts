@@ -1,4 +1,4 @@
-import { SlidingWindowOptions } from '../types';
+import { SlidingWindowOptions } from '../../types';
 import { ObjectSchema } from 'joi';
 import {
   SlidingTimeWindowAggregator,

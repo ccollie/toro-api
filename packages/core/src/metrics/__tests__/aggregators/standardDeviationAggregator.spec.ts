@@ -1,7 +1,7 @@
 import { LatencyMetric, StandardDeviationAggregator } from '../../';
 import { random } from '@alpen/shared';
-import { OnlineNormalEstimator } from '../../../stats/online-normal-estimator';
-import { AggregatorTypes } from '../../types';
+import { OnlineNormalEstimator } from '../../../stats';
+import { AggregatorTypes } from '../../../types';
 import { validateCounts } from './helpers';
 
 describe('StandardDeviationAggregator', () => {

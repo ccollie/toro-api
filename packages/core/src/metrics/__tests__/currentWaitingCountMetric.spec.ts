@@ -1,13 +1,13 @@
 import {Job, Queue} from 'bullmq';
 import { random } from '@alpen/shared';
-import { getUniqueId } from 'packages/core/src/ids';
+import { CurrentWaitingCountMetric } from '../';
+import { getUniqueId } from '../../ids';
 import {
-  CurrentWaitingCountMetric,
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType
-} from '../';
+} from '../../types';
 import { clearDb, createQueue } from '../../__tests__/factories';
 import { MetricTestHelper } from './metricTestHelper';
 

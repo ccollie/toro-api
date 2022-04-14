@@ -4176,6 +4176,13 @@ bob-esbuild-plugin@^3.1.4:
   dependencies:
     "@rollup/pluginutils" "^4.2.0"
 
+bob-esbuild-plugin@^3.1.5:
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/bob-esbuild-plugin/-/bob-esbuild-plugin-3.1.5.tgz#c4d03193aa581723ee1e1cc80affc083e23d0310"
+  integrity sha512-UOZqW2BPtzc+VuyAbnLghQtZgYst2bc0KzE2qC9RmXJocNoABTSMsVR0MCBrBtvaw4CWG2Ja9UvMAdpUmw99uQ==
+  dependencies:
+    "@rollup/pluginutils" "^4.2.0"
+
 bob-ts@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/bob-ts/-/bob-ts-1.2.2.tgz#ef24f2509ae699d6ea22326bef964c5e1a9d6bce"
@@ -4190,6 +4197,14 @@ bob-ts@^3.1.1:
   integrity sha512-D6X1d/g/mTQ7oBPdvF1i2/PcXpHUDZcbHsVBj6tfuAJBmwnJ7MsxL63yvuuyLm/3A/mKvdS/h1fUJ3Q6OTGY3A==
   dependencies:
     bob-esbuild-plugin "^3.1.4"
+    rollup "^2.70.1"
+
+bob-ts@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/bob-ts/-/bob-ts-3.1.2.tgz#013cd01a910c302adbacbc65355d0c9af7b2c4b2"
+  integrity sha512-qFzALgeb4wEDClZc1qe3S6TAXp8jcHaQ8zfG5KPwjNjVI1VApSeO1Uo1OLQnqM48AT5/m33OfG4afzMidsV8NQ==
+  dependencies:
+    bob-esbuild-plugin "^3.1.5"
     rollup "^2.70.1"
 
 body-parser@1.19.2, body-parser@^1.18.2:
@@ -4299,10 +4314,10 @@ buffer@^5.5.0, buffer@^5.7.0:
     base64-js "^1.3.1"
     ieee754 "^1.1.13"
 
-bullmq@^1.80.0:
-  version "1.80.0"
-  resolved "https://registry.yarnpkg.com/bullmq/-/bullmq-1.80.0.tgz#ae56e6410983a3f9518cdd81bee62a02e686016f"
-  integrity sha512-oz7GZIg7gAGIIlLQ3KdpYSA5WSz5205pQHyGwOtQof9MmkOf+Kmo6sxqr+BiQrjhFOrB6JLSCqS3EGEbMA34MA==
+bullmq@^1.80.1:
+  version "1.80.1"
+  resolved "https://registry.yarnpkg.com/bullmq/-/bullmq-1.80.1.tgz#8358cf4f728d7350f03cdfe6657c89ab1591c432"
+  integrity sha512-n4pmRVZefKVOXvV6Hok9KBagABLHxffzbVFwFCL6yQemey/D+6F7tZi2UREMS3y4voo6R1lG/0D0xEMg6dVSwA==
   dependencies:
     cron-parser "^4.2.1"
     get-port "^5.1.1"
@@ -8289,10 +8304,10 @@ jsdom@^16.6.0:
     ws "^7.4.6"
     xml-name-validator "^3.0.0"
 
-jse-eval@1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/jse-eval/-/jse-eval-1.3.0.tgz#4a787e47795a360011e81838223b0d6a6d4d1da3"
-  integrity sha512-r+oU+lvwY3OTrzP8z9mvLovFTrlTyB33CZUVphUxY6FvktRgEXLjuaqiqt4quMDQmEcXgmEXaDXzuF3eK7F+NA==
+jse-eval@1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/jse-eval/-/jse-eval-1.4.1.tgz#5411fccb414fcd46d58fc8e89a77d2c43134e57f"
+  integrity sha512-pa2NeAagPazTjUGbQGNlGcrDHphoTid72CkosLjP1aq0W4dd23jTbzg1svFHcdZvatYqDZdAY7GLiY0Zy6x9JA==
   dependencies:
     jsep "^1.2.0"
 

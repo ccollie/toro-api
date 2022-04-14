@@ -1,17 +1,23 @@
-import { clearDb, createHostManager, QueueListenerHelper } from '../../__tests__/factories';
+import {
+  clearDb,
+  createHostManager,
+  QueueListenerHelper,
+} from '../../__tests__/factories';
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueListener, QueueManager } from '../../queues';
 import {
-  AggregatorTypes,
-  MetricsEventsEnum,
-  MetricManager,
-  MetricTypes,
-  SerializedMetric,
   BaseMetric,
   InstantaneousOpsMetric,
   LatencyMetric,
   P90Aggregator,
+  MetricManager,
 } from '../';
+import {
+  AggregatorTypes,
+  MetricsEventsEnum,
+  MetricTypes,
+  SerializedMetric,
+} from '../../types';
 import { delay, getUniqueId } from '../../lib';
 import ms from 'ms';
 import { nanoid } from 'nanoid';
@@ -58,6 +64,7 @@ describe('MetricManager', () => {
   });
 
   describe('start', () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     it('loads all metrics', async () => {});
   });
 
@@ -187,7 +194,6 @@ describe('MetricManager', () => {
 
         await delay(150);
         expect(eventData).not.toBeNull();
-
       });
     });
 

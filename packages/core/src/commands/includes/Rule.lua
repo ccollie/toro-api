@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Rule Class
 --
--- It returns an object that represents a Rule with the provided JID
+-- An object that represents a Rule with the provided JID
 -------------------------------------------------------------------------------
 
 --- @include "toBool"

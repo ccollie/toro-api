@@ -7,7 +7,7 @@ import {
   MetricTypes,
   MetricValueType,
   QueueMetricOptions,
-} from './types';
+} from '../types';
 import type { JobStatus } from '../types';
 
 /**

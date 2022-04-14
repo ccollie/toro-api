@@ -1,5 +1,5 @@
 'use strict';
-import { AggregatorTypes, SlidingWindowOptions } from '../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../../types';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
 import { getMetricTypeName } from './utils';
 

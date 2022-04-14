@@ -1,11 +1,6 @@
 import { MetricTestHelper } from './metricTestHelper';
-import {
-  ConsecutiveFailuresMetric,
-  Events,
-  MetricCategory,
-  MetricTypes,
-  QueueMetricOptions,
-} from '../';
+import { ConsecutiveFailuresMetric, Events } from '../../metrics';
+import { MetricCategory, MetricTypes, QueueMetricOptions } from '../../types';
 import { createJobEvent } from '../../__tests__/factories';
 import { validateJobNamesFilter } from './helpers';
 

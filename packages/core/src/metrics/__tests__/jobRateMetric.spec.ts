@@ -6,11 +6,13 @@ import {
   DefaultRateMetricOptions,
   Events,
   JobRateMetric,
-  MetricCategory,
-  MetricTypes,
-  MetricValueType,
   RateMetricOptions,
 } from '../';
+import {
+  MetricCategory,
+  MetricTypes,
+  MetricValueType
+} from '../../types';
 import {getRandomNumberArray} from './helpers';
 import {MetricTestHelper} from './metricTestHelper';
 

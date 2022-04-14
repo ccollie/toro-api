@@ -1,4 +1,4 @@
-import { AggregatorTypeName, AggregatorTypes, MetricTypes } from '../types';
+import { AggregatorTypeName, AggregatorTypes, MetricTypes } from '../../types';
 import { getStaticProp } from '@alpen/shared';
 import { metricNameByEnum } from '../utils';
 

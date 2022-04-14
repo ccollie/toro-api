@@ -1,11 +1,11 @@
+import { CurrentActiveCountMetric } from '../';
 import { getUniqueId } from 'packages/core/src/ids';
 import {
-  CurrentActiveCountMetric,
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType,
-} from '../';
+} from '../../types';
 import { clearDb, createQueue, createWorker } from '../../__tests__/factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';

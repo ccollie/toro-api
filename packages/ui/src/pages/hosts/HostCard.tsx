@@ -48,7 +48,7 @@ const HostCard = (props: HostCardProps) => {
     }
   }, [host.lastStatsSnapshot]);
 
-  const DetailLink = `/hosts/${host.id}`;
+  const DetailLink = `/hosts/${host.id}/queues`;
 
   const selectHost = () => {
     navigate({ to: DetailLink });
@@ -110,7 +110,11 @@ const HostCard = (props: HostCardProps) => {
       shadow="lg"
       radius="md"
       onClick={selectHost}
-      className="px-6 pt-6 pb-2 transition duration-500"
+      pl={6}
+      pr={6}
+      pt={6}
+      pb={2}
+      className="transition duration-500"
     >
       <div>{title}</div>
       <div>

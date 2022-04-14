@@ -1,8 +1,8 @@
 import {
   LatestAggregator,
   LatencyMetric,
-  AggregatorTypes,
 } from '../../';
+import { AggregatorTypes } from '../../../types';
 import { random } from '@alpen/shared';
 
 describe('LatestAggregator', () => {

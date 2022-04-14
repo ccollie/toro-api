@@ -1,10 +1,10 @@
+import { InstantaneousOpsMetric } from '../';
 import {
-  InstantaneousOpsMetric,
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType,
-} from '../';
+} from '../../types';
 import { getRedisInfo } from '../../redis';
 import { MetricTestHelper } from './metricTestHelper';
 

@@ -1,18 +1,18 @@
 import { useShallowEffect } from '@mantine/hooks';
 import { useMatchedBreakpoints, useWhyDidYouUpdate } from '@/hooks';
-import { formatDateTime, getJobDuration, getJobWaitTime, normalizeJobName } from '@/lib';
+import { getJobDuration, getJobWaitTime, normalizeJobName } from '@/lib';
 import { Breakpoint, JobSearchStatus, Queue } from '@/types';
-import { Checkbox, Group, Tooltip } from '@mantine/core';
+import { Checkbox } from '@mantine/core';
 import { TableNode } from '@table-library/react-table-library';
 import { Column } from '@table-library/react-table-library/compact';
 import { Select } from '@table-library/react-table-library/select';
-import { format, isToday } from 'date-fns';
 import React, { Fragment, useMemo, useState } from 'react';
 import type { Job, JobFragment } from '@/types';
 import { JobProgress, RelativeDateFormat } from '@/components';
+import { Timestamp } from 'src/components/Timestamp';
 import JobId from '../../JobId';
 import JobActions from '../../JobActions';
-import { formatDuration, parseDate, relativeFormat } from '@/lib/dates';
+import { formatDuration } from '@/lib/dates';
 import { CalendarIcon, ClockIcon } from '@/components/Icons';
 
 export type JobNode = TableNode & {
@@ -34,53 +34,6 @@ const FIELDS: Record<JobSearchStatus, string[]> = {
   paused: [...baseFields, 'started'],
   waiting: [...baseFields, 'completed'],
   'waiting_children': [...baseFields, 'completed'],
-};
-
-const ONE_HOUR = 60 * 60 * 1000;
-
-const JobDate = (
-  {
-    value, relative = false
-  }: { value: number | string; relative?: boolean }) => {
-  if (!value) {
-    return null;
-  }
-
-  const dt = parseDate(value);
-  const _today = isToday(dt);
-  const label = relativeFormat(dt);
-  const time = format(dt, 'HH:mm:ss');
-
-  if (relative) {
-    const diff = Math.abs(Date.now() - dt.getTime());
-    let strValue = '';
-    let strLabel = label;
-    if (diff > ONE_HOUR) {
-      if (_today) {
-        strValue = time;
-      } else {
-        strValue = formatDateTime(dt) ?? '';
-      }
-    } else {
-      strValue = label;
-      strLabel = formatDateTime(dt) ?? '';
-    }
-    return (
-      <Tooltip position="top" label={strLabel} aria-label={strLabel}>
-        {strValue}
-      </Tooltip>
-    );
-  }
-
-  return (
-    <Tooltip position="top" label={label} aria-label={label}>
-      {_today ? (
-        <span>{time}</span>
-      ) : (
-        <span>{formatDateTime(dt)}</span>
-      )}
-    </Tooltip>
-  );
 };
 
 const Duration = ({
@@ -180,7 +133,7 @@ export function getColumns(
       cellProps: {
         width: DateTimeWidth,
       },
-      renderCell: (node: TableNode) => <JobDate value={node.job.timestamp} />,
+      renderCell: (node: TableNode) => <Timestamp value={node.job.timestamp} />,
     },
     {
       label: 'Waited',
@@ -199,7 +152,7 @@ export function getColumns(
       cellProps: {
         width: DateTimeWidth,
       },
-      renderCell: (node: TableNode) => <JobDate value={node.job.processedOn} relative={true} />,
+      renderCell: (node: TableNode) => <Timestamp value={node.job.processedOn} relative={true} />,
     },
     {
       label: 'Completed',
@@ -207,7 +160,7 @@ export function getColumns(
       cellProps: {
         width: DateTimeWidth,
       },
-      renderCell: (node: TableNode) => <JobDate value={node.job.finishedOn} relative={true}/>,
+      renderCell: (node: TableNode) => <Timestamp value={node.job.finishedOn} relative={true}/>,
     },
     {
       label: 'Runtime',
@@ -254,7 +207,7 @@ export function getColumns(
       key: 'attempts',
       cellProps: {
         width: '38px',
-        'text-align': 'center',
+        'text-align': 'right',
       },
       renderCell: (node: TableNode) => <Attempts job={node.job} />,
     },

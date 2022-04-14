@@ -8,8 +8,8 @@ import type { RepeatableJob } from '@/types';
 import { deleteRepeatableJobByKey } from '@/services';
 import { useMatch } from '@tanstack/react-location';
 import { Pagination } from '@/components/Pagination';
-import { ScheduledJobsTable } from './JobsTable';
-import { getPollingInterval } from 'src/stores/network-settings';
+import { ScheduledJobsTable } from './Table';
+import { getPollingInterval } from '@/stores/network-settings';
 
 export const ScheduledJobs = () => {
   const {

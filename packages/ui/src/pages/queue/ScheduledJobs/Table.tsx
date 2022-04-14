@@ -22,6 +22,7 @@ import {
 } from '@mantine/core';
 import { RelativeDateFormat } from 'src/components';
 import { CalendarIcon, TrashIcon } from 'src/components/Icons';
+import { Timestamp } from 'src/components/Timestamp';
 import { formatDate, normalizeJobName } from 'src/lib';
 import JobId from '../jobs/JobId';
 import { ActionIcon } from 'src/components/ActionIcon';
@@ -54,7 +55,7 @@ function DeleteIcon({
   );
 }
 
-export const JobsTable = (props: JobsTableProps) => {
+export const ScheduledJobsTable = (props: JobsTableProps) => {
   const { jobs, loading, onDelete, isReadonly } = props;
   const [data, setData] = React.useState<Data>({ nodes: [] });
   const [nodes, setNodes] = React.useState<TableNode[]>([]);
@@ -185,7 +186,7 @@ export const JobsTable = (props: JobsTableProps) => {
       {
         label: 'Next',
         renderCell: (node: TableNode) => (
-          <span>{formatDate(new Date((node.job.next as number) || 0))}</span>
+          <Timestamp value={node.job.next} relative={true}/>
         ),
         resize,
       },
@@ -224,13 +225,15 @@ export const JobsTable = (props: JobsTableProps) => {
         pagination={pagination}
       />
 
-      <Group position="right" mx={10}>
-        <Pagination
-          total={pagination.state.getTotalPages(nodes.length)}
-          page={pagination.state.page + 1}
-          onChange={(page) => pagination.fns.onSetPage(page - 1)}
-        />
-      </Group>
+      {(jobs.length > 10) && (
+        <Group position="right" mx={10}>
+          <Pagination
+            total={pagination.state.getTotalPages(nodes.length)}
+            page={pagination.state.page + 1}
+            onChange={(page) => pagination.fns.onSetPage(page - 1)}
+          />
+        </Group>
+      )}
     </>
   );
 };

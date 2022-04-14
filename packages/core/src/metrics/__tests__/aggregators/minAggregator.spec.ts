@@ -1,8 +1,8 @@
 import {
   LatencyMetric,
   MinAggregator,
-  AggregatorTypes,
 } from '../../';
+import { AggregatorTypes } from '../../../types';
 import { random } from '@alpen/shared';
 import { validateCounts } from './helpers';
 

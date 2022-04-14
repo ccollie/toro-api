@@ -1,11 +1,11 @@
-import { getUniqueId } from 'packages/core/src/ids';
+import { CurrentFailedCountMetric } from '../';
+import { getUniqueId } from '../../ids';
 import {
-  CurrentFailedCountMetric,
   QueueMetricOptions,
   MetricCategory,
   MetricTypes,
   MetricValueType,
-} from '../';
+} from '../../types';
 import { clearDb, createQueue, createWorker } from '../../__tests__/factories';
 import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';

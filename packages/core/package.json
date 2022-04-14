@@ -81,7 +81,7 @@
     "@hapi/boom": "^9.1.4",
     "ajv": "^8.11.0",
     "ajv-errors": "^3.0.0",
-    "bullmq": "^1.80.0",
+    "bullmq": "^1.80.1",
     "core-js": "^3.21.1",
     "cronstrue": "^2.2.0",
     "dataloader": "^2.1.0",

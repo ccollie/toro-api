@@ -1,12 +1,12 @@
 import { MetricTestHelper } from './metricTestHelper';
 import { getRedisInfo } from '../../redis';
+import { FragmentationRatioMetric } from '../';
 import {
-  FragmentationRatioMetric,
   MetricCategory,
   MetricOptions,
   MetricTypes,
   MetricValueType,
-} from '../';
+} from '../../types';
 
 describe('FragmentationRatioMetric', () => {
   describe('static properties', () => {

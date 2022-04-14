@@ -5,7 +5,7 @@ import {
   AggregatorTypes,
   SerializedAggregator,
   SlidingWindowOptions,
-} from '../types';
+} from '../../types';
 import { DDSketch } from '@datadog/sketches-js';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
 import { ordinal, round } from '@alpen/shared';
