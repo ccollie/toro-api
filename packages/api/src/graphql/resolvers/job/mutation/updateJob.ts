@@ -4,29 +4,28 @@ import { JobTC, FieldConfig } from '../../index';
 import { validateJobData } from '@alpen/core';
 import boom from '@hapi/boom';
 
-const JobUpdateInput = schemaComposer.createInputTC({
-  name: 'UpdateJobInput',
+const UpdateJobInput = schemaComposer.createInputTC({
+  name: 'UpdateJobDataInput',
   fields: {
-    queueId: 'String!',
-    jobId: 'String!',
-    data: 'JSONObject!',
+    queueId: 'ID!',
+    jobId: 'ID!',
+    data: {
+      type: 'JSONObject!',
+      description: 'the data that will replace the current jobs data.',
+    },
   },
 });
 
 export const updateJob: FieldConfig = {
-  type: schemaComposer.createObjectTC({
-    name: 'UpdateJobResult',
-    fields: {
-      job: JobTC.NonNull,
-    },
-  }).NonNull,
+  description: 'Update job data',
+  type: JobTC.NonNull,
   args: {
-    input: JobUpdateInput.NonNull,
+    input: UpdateJobInput.NonNull,
   },
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, jobId, data } = input;
     const queue = accessors.getQueueById(queueId, true);
-    let job = await queue.getJob(jobId);
+    const job = await queue.getJob(jobId);
     if (!job) {
       throw boom.notFound(`Job #${jobId} not found!`);
     }
@@ -34,10 +33,6 @@ export const updateJob: FieldConfig = {
     await validateJobData(queue, job.name, data);
     await job.update(data); // Data is completely replaced
 
-    job = await queue.getJob(jobId);
-
-    return {
-      job,
-    };
+    return job;
   },
 };

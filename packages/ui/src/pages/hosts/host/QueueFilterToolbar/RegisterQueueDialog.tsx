@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import type { DiscoverQueuesPayload, HostActions, Queue } from 'src/types';
-import { Button, Checkbox, Modal, Select, Space, Text } from '@mantine/core';
+import {
+  Box,
+  Button,
+  Checkbox,
+  Group,
+  LoadingOverlay,
+  Modal,
+  Select,
+  Space,
+  Text,
+} from '@mantine/core';
 import { useToast } from 'src/hooks';
 
 interface RegisterQueueDialogProps {
@@ -21,6 +31,8 @@ const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
   const [queue, setQueue] = useState<DiscoverQueuesPayload | null>(null);
   const [formValid, setFormValid] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [called, setCalled] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [prefixValues, setPrefixValues] = useState<SelectValue[]>([]);
   const [queueValues, setQueueValues] = useState<SelectValue[]>([]);
@@ -49,7 +61,10 @@ const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
         setPrefixValues(prefixValues);
         setFiltered(queueValues);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setCalled(true);
+      });
   }
 
   function onChange(value: any) {
@@ -70,6 +85,16 @@ const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
   useEffect(() => {
     isOpen && fetch();
   }, [isOpen]);
+
+  useEffect(() => {
+    if (called) {
+      if (!queueValues.length) {
+        setError('No unregistered queues found');
+      } else {
+        setError(null);
+      }
+    }
+  }, [queueValues, called]);
 
   useEffect(() => {
     if (!prefix || prefix.length === 0) {
@@ -126,7 +151,8 @@ const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
       title={'Register A Queue'}
       centered
     >
-      <Text>Register an existing queue with the current host.</Text>
+      <LoadingOverlay visible={loading} />
+      <Text mb={2}>Register an existing queue with the current host.</Text>
       <div>
         <form>
           <Select
@@ -136,6 +162,7 @@ const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
             disabled={loading}
             className="w-full"
             data={prefixValues}
+            mb={2}
           />
           <div>
             <Select
@@ -151,18 +178,24 @@ const RegisterQueueDialog = (props: RegisterQueueDialogProps) => {
           </div>
           <Space h="md" />
           <div className="flex items-center">
-            <Checkbox defaultChecked label="Track Statistics" id="c1" />
+            <Checkbox defaultChecked label="Track Metrics" id="c1" />
           </div>
         </form>
-        <div className="flex mt-25 justify-end">
-          <Button
-            disabled={loading || !formValid}
-            aria-label="Add"
-            onClick={registerQueue}
-            loading={loading}
-          >
-            Add Queue
-          </Button>
+        <Space h="xl" />
+        <div className="align-right justify-end flex">
+          <Group position="apart">
+            <Box className="text-red-500 text-sm justify-center" mt={2}>
+              {error && <Text>{error}</Text>}
+            </Box>
+            <Button
+              disabled={loading || !formValid}
+              aria-label="Add"
+              onClick={registerQueue}
+              loading={loading}
+            >
+              Add Queue
+            </Button>
+          </Group>
         </div>
       </div>
     </Modal>

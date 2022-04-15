@@ -1,4 +1,3 @@
-import { FindJobsByFilterOptions } from '@alpen/core';
 import { ApolloQueryResult } from '@apollo/client';
 import { client } from '@/providers/ApolloProvider';
 import {
@@ -7,7 +6,8 @@ import {
   GetJobsByFilterDocument,
   GetQueueJobsDocument,
   GetRepeatableJobsDocument,
-  JobSearchStatus, Maybe,
+  JobSearchStatus,
+  Maybe,
   SortOrderEnum,
 } from '@/types';
 import type {
@@ -96,7 +96,14 @@ export function getJobsByFilter(
     cursor,
     filter,
     count,
-  }: FindJobsByFilterOptions,
+    pattern,
+  }: {
+    status?: JobSearchStatus;
+    cursor?: string;
+    filter?: string;
+    count?: number;
+    pattern?: string;
+  },
 ): Promise<FilteredJobsResult> {
   count = count ?? 10;
   return client
@@ -108,6 +115,7 @@ export function getJobsByFilter(
         cursor,
         count,
         criteria: filter,
+        pattern,
       },
       fetchPolicy: 'network-only',
     })

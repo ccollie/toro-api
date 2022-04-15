@@ -1,3 +1,4 @@
+import { HostManager } from '../hosts';
 import { Job, Queue, RedisClient } from 'bullmq';
 import { JobLocator } from './types';
 import { notFound, notImplemented } from '@hapi/boom';
@@ -6,6 +7,7 @@ import { QueueManager } from '../queues';
 export interface IAccessorHelper {
   getJobQueue: (job: JobLocator) => Queue;
   getQueueId: (queue: Queue) => string;
+  getHostById: (id: string) => HostManager;
   getQueueById: (queue: string) => Queue;
   getQueueHostClient: (queue: Queue) => RedisClient;
   getQueueManager: (queue: Queue | string) => QueueManager;
@@ -35,6 +37,9 @@ const DefaultAccessor: IAccessorHelper = {
   getQueueById(id: string): Queue {
     throw notImplemented('"getQueueById" not implemented');
   },
+  getHostById(id: string): HostManager {
+    throw notImplemented('"getHostById" not implemented');
+  },
   getQueueHostClient(queue: Queue): RedisClient {
     throw notImplemented('"getQueueHostClient" not implemented');
   },
@@ -60,6 +65,10 @@ export function getQueueId(queue: Queue): string {
 
 export function getQueueById(id: string): Queue {
   return accessor.getQueueById(id);
+}
+
+export function getHostById(id: string): HostManager {
+  return accessor.getHostById(id);
 }
 
 export function getQueueHostClient(queue: Queue): RedisClient {

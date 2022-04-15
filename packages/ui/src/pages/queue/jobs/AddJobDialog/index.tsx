@@ -2,7 +2,8 @@ import { useQuery } from '@apollo/client';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   GetJobOptionsSchemaDocument,
-  GetJobSchemasDocument
+  GetJobSchemasDocument,
+  useCreateJobMutation,
 } from '@/types';
 import { DEFAULT_JOB_NAME } from 'src/constants';
 import type { JobSchema } from 'src/types';
@@ -12,8 +13,14 @@ import CodeEditor from 'src/components/CodeEditor';
 import { RetryIcon } from '@/components/Icons';
 import { useToast } from '@/hooks';
 import JobNamesSelect from 'src/components/jobs/JobNamesSelect';
-import { createJob } from 'src/services';
-import { Button, Drawer, Group, LoadingOverlay, Space, Text } from '@mantine/core';
+import {
+  Button,
+  Drawer,
+  Group,
+  LoadingOverlay,
+  Space,
+  Text,
+} from '@mantine/core';
 
 interface AddJobDialogOpts {
   queueId: string;
@@ -21,16 +28,14 @@ interface AddJobDialogOpts {
   onClose: () => void;
 }
 
-export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
+export const AddJobDialog: React.FC<AddJobDialogOpts> = (props) => {
   const { queueId, isOpen, onClose } = props;
-  const [isSaving, setIsSaving] = useState(false);
   const [isNewItem, setIsNewItem] = useState(false);
   const [jobName, setJobName] = useState<string | null>(null);
   const [schemas, setSchemas] = useState<JobSchema[]>([]);
   const [jobSchema, setJobSchema] = useState<JobSchema>();
   const [jobData, setJobData] = useState<Record<string, unknown>>({});
   const [jobOptions, setJobOptions] = useState<Record<string, unknown>>({});
-  const [isChanged, setChanged] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [jobOptionsSchema, setJobOptionsSchema] =
     useState<Record<string, unknown>>();
@@ -55,6 +60,16 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
     },
   });
 
+  const [createJob, { loading: isSaving }] = useCreateJobMutation({
+    onCompleted(data) {
+      setIsNewItem(false);
+      const { id, name } = data.createJob;
+      const descr = `Job ${name}:(${id}) created`;
+      toast.success(descr);
+      // onClose();
+    },
+  });
+
   useEffect(() => {
     let schema, defaultOpts: Record<string, unknown> | null | undefined;
     if (jobSchema) {
@@ -66,7 +81,7 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
   }, [jobSchema]);
 
   useEffect(() => {
-    const found = schemas.find(x => x.jobName === jobName);
+    const found = schemas.find((x) => x.jobName === jobName);
     if (found) {
       setJobSchema(found);
     } else {
@@ -90,26 +105,16 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
   function saveJob(): void {
     const keys = Object.keys(jobData);
     if (keys.length > 0) {
-      setIsSaving(true);
-      createJob(
-        queueId,
-        jobName || DEFAULT_JOB_NAME,
-        jobData,
-        jobOptions,
-      )
-        .then((job) => {
-          const { id, name } = job;
-          const descr = `Job ${name}:(${id}) created`;
-          setIsSaving(false);
-          toast.success(descr);
-        }).catch((err) => {
-          const msg = (err instanceof Error) ? err.message : err;
-          setIsSaving(false);
-          toast.error(msg);
-        })
-        .finally(() => {
-          setIsSaving(false);
-        });
+      createJob({
+        variables: {
+          queueId,
+          jobName: jobName || DEFAULT_JOB_NAME,
+          data: jobData,
+          options: jobOptions,
+        },
+      }).catch((error) => {
+        toast.error(error.message);
+      });
     }
   }
 
@@ -133,9 +138,12 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
     setJobData(toObj(value));
   }, []);
 
-  const onOptionsUpdate = useCallback((value: string) => {
-    setJobOptions(toObj(value));
-  }, [queueId]);
+  const onOptionsUpdate = useCallback(
+    (value: string) => {
+      setJobOptions(toObj(value));
+    },
+    [queueId],
+  );
 
   function handleClose() {
     onClose();
@@ -144,7 +152,7 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
   return (
     <>
       <Drawer
-        size={520}
+        size={640}
         onClose={onClose}
         opened={isOpen}
         position={'right'}
@@ -185,23 +193,20 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
             language={'json'}
             onChange={onOptionsUpdate}
           />
-
         </div>
 
         <Space h="md" />
 
         <div style={{ textAlign: 'right' }}>
           <Group position="right" spacing="sm">
-            <Button
-              onClick={saveJob}
-              loading={isSaving}
-              disabled={!isValid}>
+            <Button onClick={saveJob} loading={isSaving} disabled={!isValid}>
               Save
             </Button>
             <Button
               leftIcon={<RetryIcon />}
               disabled={!isNewItem}
-              onClick={revertJob}>
+              onClick={revertJob}
+            >
               Revert
             </Button>
           </Group>
@@ -210,7 +215,8 @@ export const AddJobDialog: React.FC<AddJobDialogOpts> = props => {
         <div
           style={{
             textAlign: 'right',
-          }}>
+          }}
+        >
           <Button onClick={handleClose} style={{ marginRight: 8 }}>
             Close
           </Button>

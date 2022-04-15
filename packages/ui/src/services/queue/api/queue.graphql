@@ -124,7 +124,6 @@ mutation DeleteJobSchema($id: ID!, $jobName: String!) {
   }
 }
 
-
 query InferJobSchema($queueId: ID!, $jobName: String!) {
   inferJobSchema(input: { queueId: $queueId, jobName: $jobName}) {
     jobName,

@@ -223,13 +223,24 @@ mutation AddJobLog($queueId: ID!, $id: ID!, $message: String!) {
     }
 }
 
-mutation CreateJob($id: ID!, $jobName: String!, $data: JSONObject, $options: JobOptionsInput) {
+mutation CreateJob($queueId: ID!, $jobName: String!, $data: JSONObject, $options: JobOptionsInput) {
     createJob(
         input: {
-            queueId: $id,
+            queueId: $queueId,
             jobName: $jobName,
             data: $data,
             options: $options
+        }) {
+        ...Job
+    }
+}
+
+mutation UpdateJob($queueId: ID!, $jobId: ID!, $data: JSONObject!) {
+    updateJob(
+        input: {
+            queueId: $queueId,
+            jobId: $jobId,
+            data: $data,
         }) {
         ...Job
     }

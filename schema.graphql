@@ -98,7 +98,9 @@ type Mutation {
   """Bulk deletes a list of jobs by id"""
   bulkDeleteJobs(input: BulkJobActionInput!): BulkJobActionPayload
   retryJob(input: JobLocatorInput!): RetryJobResult!
-  updateJob(input: UpdateJobInput!): UpdateJobResult!
+
+  """Update job data"""
+  updateJob(input: UpdateJobDataInput!): Job!
   addJobLog(input: AddJobLogInput!): AddJobLogResult!
   moveJobToCompleted(input: JobLocatorInput!): MoveJobToCompletedResult!
 
@@ -845,14 +847,32 @@ type Job {
   id: ID!
   name: String!
   data: JSONObject!
+
+  """The progress a job has performed so far."""
   progress: JobProgress
   delay: Int!
+
+  """
+  Timestamp when the job was added to the queue (unless overridden with job options).
+  """
   timestamp: Date!
+
+  """Number of attempts after the job has failed."""
   attemptsMade: Int!
+
+  """The reason why the job failed."""
   failedReason: JSON
+
+  """Stacktrace for the error (for failed jobs)."""
   stacktrace: [String!]!
+
+  """The value returned by the processor when processing this job."""
   returnvalue: JSON
+
+  """Timestamp when the job was finished (completed or failed)."""
   finishedOn: Date
+
+  """Timestamp when the job was processed."""
   processedOn: Date
   opts: JobOptions!
   state: JobState
@@ -862,6 +882,13 @@ type Job {
   """
   fullId: String!
   queueId: String!
+
+  """The name of the queue this job belongs to"""
+  queueName: String!
+
+  """
+  Fully qualified key (including the queue prefix) pointing to the parent of this job.
+  """
   parentKey: String
   logs(start: Int! = 0, end: Int! = -1): JobLogs!
 
@@ -1399,9 +1426,17 @@ type Queue {
   histogram(input: HistogramInput!): HistogramPayload!
   host: String!
   hostId: ID!
+
+  """Returns true if the queue is currently paused."""
   isPaused: Boolean!
+
+  """Returns true if the queue is readonly"""
   isReadonly: Boolean!
   jobCounts: JobCounts!
+
+  """
+  Returns a list of all job names in the queue, including those that are have schemas.
+  """
   jobNames: [String!]!
   jobFilters(ids: [ID!]): [JobFilter!]!
 
@@ -1440,6 +1475,8 @@ type Queue {
 
   """Compute a percentile distribution."""
   percentileDistribution(input: PercentileDistributionInput!): PercentileDistribution!
+
+  """Get repeatable meta jobs."""
   repeatableJobs(input: RepeatableJobsInput): [RepeatableJob!]!
 
   """Returns the number of repeatable jobs"""
@@ -2064,10 +2101,6 @@ type UnregisterQueueResult {
 type UpdateJobFilterResult {
   filter: JobFilter
   isUpdated: Boolean!
-}
-
-type UpdateJobResult {
-  job: Job!
 }
 
 type ValidateJobDataResult {
@@ -2977,8 +3010,15 @@ input RegisterQueueInput {
 }
 
 input RepeatableJobsInput {
+  """Offset of first job to return."""
   offset: Int = 0
+
+  """Maximum number of jobs to return."""
   limit: Int = 20
+
+  """
+  Determine the order in which jobs are returned based on their next execution time.
+  """
   order: SortOrderEnum = DESC
 }
 
@@ -3181,18 +3221,20 @@ input ThresholdConditionInput {
   operator: RuleOperator!
 }
 
+input UpdateJobDataInput {
+  queueId: ID!
+  jobId: ID!
+
+  """the data that will replace the current jobs data."""
+  data: JSONObject!
+}
+
 input UpdateJobFilterInput {
   queueId: ID!
   filterId: ID!
   name: String
   status: JobType
   expression: String!
-}
-
-input UpdateJobInput {
-  queueId: String!
-  jobId: String!
-  data: JSONObject!
 }
 
 input UpdateMailNotificationChannelInput {

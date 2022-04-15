@@ -10,7 +10,7 @@ interface MutationButtonProps<TData = any, TVariables = OperationVariables>
   icon?: ReactNode;
   isDisabled?: boolean;
   mutation: DocumentNode | TypedDocumentNode<TData, TVariables>;
-  variables?: () => TVariables | TVariables;
+  variables?: (() => TVariables) | TVariables;
   onSuccess?: (data: TData) => void;
   onError?: (err: Error) => void;
 }
@@ -26,7 +26,6 @@ export function MutationButton<TData = any, TVariables = OperationVariables>(
     onSuccess,
     onError,
     icon,
-    iconType,
     children,
     ...rest
   } = props;
@@ -46,6 +45,7 @@ export function MutationButton<TData = any, TVariables = OperationVariables>(
     let vars: TVariables | undefined = undefined;
     if (variables !== undefined) {
       if (typeof variables === 'function') {
+        // @ts-ignore
         vars = variables();
       } else {
         vars = variables;
@@ -71,7 +71,7 @@ export function MutationButton<TData = any, TVariables = OperationVariables>(
 
   return (
     <Button
-      leftIcon={iconType ? iconType : Icon}
+      leftIcon={Icon}
       disabled={disabled}
       onClick={handler}
       loading={loading}

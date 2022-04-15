@@ -1,5 +1,5 @@
 import { QueueHost, useHostsPageDataQuery } from '@/types';
-import { LoadingOverlay } from '@mantine/core';
+import { LoadingOverlay, Space } from '@mantine/core';
 import React, { useState } from 'react';
 import { useNetworkSettingsStore } from '@/stores/network-settings';
 import HostCard from './HostCard';
@@ -24,6 +24,7 @@ const HostsPage: React.FC = () => {
     <div>
       <LoadingOverlay visible={!called && loading} />
       <Header />
+      <Space h="xl" />
       <div className="flex flex-wrap flex-start gap-2 gap-y-2">
         {hosts.map(host => (
           <HostCard host={host} key={host.id} />

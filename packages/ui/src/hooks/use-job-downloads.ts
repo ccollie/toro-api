@@ -4,7 +4,6 @@ import {
   JobExportOptions,
   JobFragment,
   JobSearchStatus,
-  JobState,
 } from '@/types';
 import { useCallbackRef } from '@/hooks';
 import { download, noop } from '@/lib';
@@ -43,7 +42,7 @@ interface UpdateState {
   isCancelled: boolean;
   cursor?: string;
   remainder: number;
-  status: JobState;
+  status: JobSearchStatus;
 }
 
 export function useJobDownloads(props: DownloadJobProps) {
@@ -64,7 +63,7 @@ export function useJobDownloads(props: DownloadJobProps) {
       status,
       count: fetchCount,
       cursor,
-      criteria: cursor ? undefined : filter,
+      filter: cursor ? undefined : filter,
     }).then(({ jobs, cursor, total, current }) => {
       state.total = total;
       state.current = current;
@@ -73,7 +72,7 @@ export function useJobDownloads(props: DownloadJobProps) {
     });
   }
 
-  function fetch(status: JobState, state: UpdateState): Promise<JobFragment[]> {
+  function fetch(status: JobSearchStatus, state: UpdateState): Promise<JobFragment[]> {
     state.pageNumber++;
     return getJobs(queueId, status, state.pageNumber, pageSize) // calculate this !!
       .then(({ counts, jobs }) => {

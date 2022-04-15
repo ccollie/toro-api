@@ -135,6 +135,21 @@ export async function createJob(
   return queue.add(name, validated, options);
 }
 
+export async function updateJobData(
+  queue: Queue,
+  job: Job,
+  data: Record<string, any>,
+): Promise<void> {
+  const { name } = job;
+  const { data: validated } = await validateJobData(
+    queue,
+    name,
+    data,
+  );
+
+  return job.update(validated);
+}
+
 export async function validateJobs(
   queue: Queue,
   jobs: JobCreationOptions[],

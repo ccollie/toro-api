@@ -9,6 +9,7 @@ import { queueRepeatableCount } from './queue-repeatable-count';
 import { metricDateRange } from './metric-date-range';
 import { metricData } from './metric-data';
 import { queueAlertCount } from './queue-alert-count';
+import { redisInfoByHostId, redisInfoByHost } from './redis-info';
 
 export type { JobByIdLoaderKey, JobInStateLoaderKey } from './types';
 export type { JobCountsLoaderKey } from './job-counts';
@@ -27,6 +28,8 @@ export const loaders = {
   queueAlertCount,
   queuePaused: queuePausedLoader,
   queueRepeatableCount,
+  redisInfoByHost,
+  redisInfoByHostId,
   workers,
   workerCount,
 };

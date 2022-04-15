@@ -3,7 +3,7 @@ import { useNavigate, useResolvePath } from '@tanstack/react-location';
 import QueueMenu from './QueueMenu';
 import QueueStateBadge from './QueueStateBadge';
 import type { Queue } from '@/types';
-import { Group, Paper, Tabs } from '@mantine/core';
+import { Center, Group, Paper, Tabs } from '@mantine/core';
 import { WorkerIcon, QueueIcon, ClockIcon, CogsIcon } from '@/components/Icons';
 
 interface TProps {
@@ -37,15 +37,20 @@ export const Header = ({ queue }: TProps) => {
         p="xl"
         shadow="sm"
         radius="md"
-        className="md:flex dark:bg-gray-800 mb-5 items-center justify-between px-4 py-6 sticky top-0"
+        px={4}
+        py={6}
+        mb={5}
+        className="md:flex dark:bg-gray-800 items-center justify-between sticky top-0"
       >
-        <div className="flex items-center text-gray-400">
+        <div className="flex items-center text-gray-400 ml-4">
           <QueueIcon size={36} style={{ display: 'inline-block' }} />
           <p
             className="focus:outline-none text-gray-600 dark:text-gray-100 text-base ml-3"
           >
-            <span className="text-3xl mr-2">{queue.name}</span>{' '}
-            {queue && <QueueStateBadge queue={queue} />}
+            <Center>
+              <span className="text-3xl mr-2">{queue.name}</span>{' '}
+              {queue && <QueueStateBadge queue={queue} />}
+            </Center>
           </p>
         </div>
         <Group position="center" mt={4}>

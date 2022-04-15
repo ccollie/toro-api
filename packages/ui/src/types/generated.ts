@@ -692,6 +692,7 @@ export type InferJobSchemaInput = {
 
 export type Job = {
   __typename?: 'Job';
+  /** Number of attempts after the job has failed. */
   attemptsMade: Scalars['Int'];
   /** Get this jobs children result values as an object indexed by job key, if any. */
   childrenValues: Scalars['JSONObject'];
@@ -701,7 +702,9 @@ export type Job = {
   dependencies: JobDependenciesPayload;
   /** Get children job counts if this job is a parent and has children. */
   dependenciesCount: JobDependenciesCountPayload;
+  /** The reason why the job failed. */
   failedReason?: Maybe<Scalars['JSON']>;
+  /** Timestamp when the job was finished (completed or failed). */
   finishedOn?: Maybe<Scalars['Date']>;
   /** Returns the fully qualified id of a job, including the queue prefix and queue name */
   fullId: Scalars['String'];
@@ -717,15 +720,23 @@ export type Job = {
   opts: JobOptions;
   /** Returns the parent of a job that is part of a flow */
   parent?: Maybe<Job>;
+  /** Fully qualified key (including the queue prefix) pointing to the parent of this job. */
   parentKey?: Maybe<Scalars['String']>;
   /** Returns the parent queue of a job that is part of a flow */
   parentQueue?: Maybe<Queue>;
+  /** Timestamp when the job was processed. */
   processedOn?: Maybe<Scalars['Date']>;
+  /** The progress a job has performed so far. */
   progress?: Maybe<Scalars['JobProgress']>;
   queueId: Scalars['String'];
+  /** The name of the queue this job belongs to */
+  queueName: Scalars['String'];
+  /** The value returned by the processor when processing this job. */
   returnvalue?: Maybe<Scalars['JSON']>;
+  /** Stacktrace for the error (for failed jobs). */
   stacktrace: Array<Scalars['String']>;
   state?: Maybe<JobState>;
+  /** Timestamp when the job was added to the queue (unless overridden with job options). */
   timestamp: Scalars['Date'];
 };
 
@@ -1423,7 +1434,8 @@ export type Mutation = {
   trimQueueEvents: Queue;
   /** Stop tracking a queue */
   unregisterQueue: UnregisterQueueResult;
-  updateJob: UpdateJobResult;
+  /** Update job data */
+  updateJob: Job;
   /** Update a job filter */
   updateJobFilter: UpdateJobFilterResult;
   updateMailNotificationChannel: MailNotificationChannel;
@@ -1649,7 +1661,7 @@ export type MutationUnregisterQueueArgs = {
 };
 
 export type MutationUpdateJobArgs = {
-  input: UpdateJobInput;
+  input: UpdateJobDataInput;
 };
 
 export type MutationUpdateJobFilterArgs = {
@@ -2078,7 +2090,9 @@ export type Queue = {
   host: Scalars['String'];
   hostId: Scalars['ID'];
   id: Scalars['String'];
+  /** Returns true if the queue is currently paused. */
   isPaused: Scalars['Boolean'];
+  /** Returns true if the queue is readonly */
   isReadonly: Scalars['Boolean'];
   jobCounts: JobCounts;
   /** Get the average runtime duration of completed jobs in the queue */
@@ -2088,6 +2102,7 @@ export type Queue = {
   jobMemoryAvg: Scalars['Float'];
   /** Get the average memory used by jobs in the queue */
   jobMemoryUsage: JobMemoryUsagePayload;
+  /** Returns a list of all job names in the queue, including those that are have schemas. */
   jobNames: Array<Scalars['String']>;
   /** Get JSONSchema documents and job defaults previously set for a job names on a queue */
   jobSchemas: Array<JobSchema>;
@@ -2109,6 +2124,7 @@ export type Queue = {
   prefix: Scalars['String'];
   /** Returns the number of repeatable jobs */
   repeatableJobCount: Scalars['Int'];
+  /** Get repeatable meta jobs. */
   repeatableJobs: Array<RepeatableJob>;
   /** Returns the count of rule alerts associated with a Queue */
   ruleAlertCount: Scalars['Int'];
@@ -2552,8 +2568,11 @@ export type RepeatableJob = {
 };
 
 export type RepeatableJobsInput = {
+  /** Maximum number of jobs to return. */
   limit?: InputMaybe<Scalars['Int']>;
+  /** Offset of first job to return. */
   offset?: InputMaybe<Scalars['Int']>;
+  /** Determine the order in which jobs are returned based on their next execution time. */
   order?: InputMaybe<SortOrderEnum>;
 };
 
@@ -3199,6 +3218,13 @@ export type UnregisterQueueResult = {
   queue: Queue;
 };
 
+export type UpdateJobDataInput = {
+  /** the data that will replace the current jobs data. */
+  data: Scalars['JSONObject'];
+  jobId: Scalars['ID'];
+  queueId: Scalars['ID'];
+};
+
 export type UpdateJobFilterInput = {
   expression: Scalars['String'];
   filterId: Scalars['ID'];
@@ -3211,17 +3237,6 @@ export type UpdateJobFilterResult = {
   __typename?: 'UpdateJobFilterResult';
   filter?: Maybe<JobFilter>;
   isUpdated: Scalars['Boolean'];
-};
-
-export type UpdateJobInput = {
-  data: Scalars['JSONObject'];
-  jobId: Scalars['String'];
-  queueId: Scalars['String'];
-};
-
-export type UpdateJobResult = {
-  __typename?: 'UpdateJobResult';
-  job: Job;
 };
 
 export type UpdateMailNotificationChannelInput = {
@@ -4068,7 +4083,7 @@ export type AddJobLogMutation = {
 };
 
 export type CreateJobMutationVariables = Exact<{
-  id: Scalars['ID'];
+  queueId: Scalars['ID'];
   jobName: Scalars['String'];
   data?: InputMaybe<Scalars['JSONObject']>;
   options?: InputMaybe<JobOptionsInput>;
@@ -4077,6 +4092,17 @@ export type CreateJobMutationVariables = Exact<{
 export type CreateJobMutation = {
   __typename?: 'Mutation';
   createJob: { __typename?: 'Job' } & JobFragment;
+};
+
+export type UpdateJobMutationVariables = Exact<{
+  queueId: Scalars['ID'];
+  jobId: Scalars['ID'];
+  data: Scalars['JSONObject'];
+}>;
+
+export type UpdateJobMutation = {
+  __typename?: 'Mutation';
+  updateJob: { __typename?: 'Job' } & JobFragment;
 };
 
 export type DeleteJobMutationVariables = Exact<{
@@ -12407,7 +12433,10 @@ export const CreateJobDocument = {
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
           type: {
             kind: 'NonNullType',
             type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
@@ -12465,7 +12494,7 @@ export const CreateJobDocument = {
                       name: { kind: 'Name', value: 'queueId' },
                       value: {
                         kind: 'Variable',
-                        name: { kind: 'Name', value: 'id' },
+                        name: { kind: 'Name', value: 'queueId' },
                       },
                     },
                     {
@@ -12627,7 +12656,7 @@ export type CreateJobMutationFn = Apollo.MutationFunction<
  * @example
  * const [createJobMutation, { data, loading, error }] = useCreateJobMutation({
  *   variables: {
- *      id: // value for 'id'
+ *      queueId: // value for 'queueId'
  *      jobName: // value for 'jobName'
  *      data: // value for 'data'
  *      options: // value for 'options'
@@ -12653,6 +12682,246 @@ export type CreateJobMutationResult = Apollo.MutationResult<CreateJobMutation>;
 export type CreateJobMutationOptions = Apollo.BaseMutationOptions<
   CreateJobMutation,
   CreateJobMutationVariables
+>;
+export const UpdateJobDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UpdateJob' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'queueId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: {
+            kind: 'Variable',
+            name: { kind: 'Name', value: 'jobId' },
+          },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'data' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'NamedType',
+              name: { kind: 'Name', value: 'JSONObject' },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'updateJob' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'input' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'queueId' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'queueId' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'jobId' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'jobId' },
+                      },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'data' },
+                      value: {
+                        kind: 'Variable',
+                        name: { kind: 'Name', value: 'data' },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'Job' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobRepeatOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobRepeatOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'cron' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'tz' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'startDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'endDate' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'every' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'JobOptions' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'JobOptions' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'priority' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attempts' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'repeat' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobRepeatOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'backoff' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'lifo' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timeout' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'jobId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnComplete' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'removeOnFail' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stackTraceLimit' } },
+        ],
+      },
+    },
+    {
+      kind: 'FragmentDefinition',
+      name: { kind: 'Name', value: 'Job' },
+      typeCondition: {
+        kind: 'NamedType',
+        name: { kind: 'Name', value: 'Job' },
+      },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'timestamp' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'state' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'data' } },
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'opts' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'FragmentSpread',
+                  name: { kind: 'Name', value: 'JobOptions' },
+                },
+              ],
+            },
+          },
+          { kind: 'Field', name: { kind: 'Name', value: 'delay' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'progress' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'attemptsMade' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'processedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'finishedOn' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'failedReason' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'stacktrace' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'returnvalue' } },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode;
+export type UpdateJobMutationFn = Apollo.MutationFunction<
+  UpdateJobMutation,
+  UpdateJobMutationVariables
+>;
+
+/**
+ * __useUpdateJobMutation__
+ *
+ * To run a mutation, you first call `useUpdateJobMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateJobMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateJobMutation, { data, loading, error }] = useUpdateJobMutation({
+ *   variables: {
+ *      queueId: // value for 'queueId'
+ *      jobId: // value for 'jobId'
+ *      data: // value for 'data'
+ *   },
+ * });
+ */
+export function useUpdateJobMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    UpdateJobMutation,
+    UpdateJobMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions };
+  return Apollo.useMutation<UpdateJobMutation, UpdateJobMutationVariables>(
+    UpdateJobDocument,
+    options,
+  );
+}
+export type UpdateJobMutationHookResult = ReturnType<
+  typeof useUpdateJobMutation
+>;
+export type UpdateJobMutationResult = Apollo.MutationResult<UpdateJobMutation>;
+export type UpdateJobMutationOptions = Apollo.BaseMutationOptions<
+  UpdateJobMutation,
+  UpdateJobMutationVariables
 >;
 export const DeleteJobDocument = {
   kind: 'Document',

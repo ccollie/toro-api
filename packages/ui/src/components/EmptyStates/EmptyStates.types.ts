@@ -8,9 +8,9 @@ export enum EmptyStatesSize {
 export type EmptyStatesProps = {
   size?: EmptyStatesSize;
   fontSize?: EmptyStatesSize;
-  text?: string | React.ReactNode;
+  title?: string | React.ReactNode;
   button?: string | React.ReactNode;
-  label?: string | React.ReactNode;
+  content?: string | React.ReactNode;
   labelPosition?: 'bottom' | 'right';
   mode?: 'absolute';
   customIcon?: React.ReactElement;

@@ -1,3 +1,5 @@
+import { Maybe } from 'src/types';
+
 export const JsonService = {
   maybeStringify(data?: any, space = 2) {
     if (data && typeof data === 'object') {
@@ -10,7 +12,7 @@ export const JsonService = {
     return data;
   },
   maybeParse(data?: null | string) {
-    if (data && typeof data === 'string') {
+    if (data) {
       try {
         return JSON.parse(data);
       } catch (_e) {
@@ -19,4 +21,7 @@ export const JsonService = {
     }
     return data;
   },
+  format(value: Maybe<string>): string {
+    return JsonService.maybeStringify(JsonService.maybeParse(value));
+  }
 };

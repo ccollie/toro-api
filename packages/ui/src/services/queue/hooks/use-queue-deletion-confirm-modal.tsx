@@ -52,7 +52,7 @@ const ConfirmationForm: React.FC<ConfirmProps> = (props) => {
           onChange={handleInputChange}
           required={true}
           error={error}
-          className={`w-full py-2`}
+          className={'w-full py-2'}
         />
       </div>
     </>

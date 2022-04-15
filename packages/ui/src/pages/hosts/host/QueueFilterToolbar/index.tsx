@@ -192,7 +192,7 @@ const QueueFilterToolbar: React.FC<FilterToolbarProps> = (props) => {
 
   function Actions() {
     return (
-      <div className="flex justify-between sm:items-center mb-8">
+      <div className="flex justify-between sm:items-center">
         <div/>
         {/* Right: Actions */}
         <div className="flex justify-start gap-2">

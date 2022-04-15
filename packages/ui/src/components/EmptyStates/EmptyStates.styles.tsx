@@ -102,7 +102,7 @@ interface EmptyStateWrapperProps {
 }
 
 export const EmptyStatesWrapper: React.FC<EmptyStateWrapperProps> = (props) => {
-  const { size, labelPosition, mode, children, ...rest } = props;
+  const { labelPosition, mode, children, ...rest } = props;
   const direction = labelPosition
     ? mapElementsPosition[labelPosition]
     : undefined;

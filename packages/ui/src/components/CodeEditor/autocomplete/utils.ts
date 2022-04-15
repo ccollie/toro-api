@@ -1,5 +1,5 @@
-import { getFuzzyRegex, isEqual } from '@/lib';
-import { flatMap, initial, uniqWith } from '@/lib/nodash';
+import { getFuzzyRegex, isEqual } from 'src/lib';
+import { flatMap, initial, uniqWith } from 'src/lib/nodash';
 import {
   ClassMap,
   GlobalsMap, isCallable,
@@ -11,7 +11,7 @@ import {
   isVariable,
   TypesInformation,
   Variables,
-} from './types';
+} from 'src/components/CodeEditor/autocomplete/types';
 import type {
   ClassMember,
   FunctionParameter,
@@ -21,7 +21,7 @@ import type {
   Definition,
   UnionType,
   Variable
-} from './types';
+} from 'src/components/CodeEditor/autocomplete/types';
 
 const typeCache = new Map<string, Definition>();
 const memberCache = new Map<Definition, ClassMember[] | undefined>();

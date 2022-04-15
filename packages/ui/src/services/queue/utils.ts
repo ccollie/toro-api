@@ -22,7 +22,7 @@ export function calcJobCountTotal(counts: JobCounts, status?: JobSearchStatus): 
   return total;
 }
 
-const RegexRegex  = /(?:[^[/\\]|\\.|\[(?:[^\]\\]|\\.)*\])+/;
+const RegexRegex = /(?:[^[/\\]|\\.|\[(?:[^\]\\]|\\.)*\])+/;
 
 // we could check that chars exist in a particular set, but Redis
 // keys are binary safe

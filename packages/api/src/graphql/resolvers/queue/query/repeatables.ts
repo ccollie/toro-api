@@ -41,6 +41,7 @@ export const repeatableJob = schemaComposer.createObjectTC({
 });
 
 export const repeatableJobs: FieldConfig = {
+  description: 'Get repeatable meta jobs.',
   type: repeatableJob.NonNull.List.NonNull,
   args: {
     input: schemaComposer.createInputTC({
@@ -48,15 +49,19 @@ export const repeatableJobs: FieldConfig = {
       fields: {
         offset: {
           type: 'Int',
+          description: 'Offset of first job to return.',
           defaultValue: 0,
         },
         limit: {
           type: 'Int',
+          description: 'Maximum number of jobs to return.',
           defaultValue: 20,
         },
         order: {
           type: OrderEnumType,
           defaultValue: SortOrderEnum.DESC,
+          description: 'Determine the order in which jobs are returned based on their ' +
+            'next execution time.',
         },
       },
     }),

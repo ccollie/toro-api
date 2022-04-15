@@ -13,7 +13,7 @@ import {
   TextInput,
   NumberInput,
   SegmentedControl,
-  Button,
+  Button, Box,
 } from '@mantine/core';
 import { FieldList, AllFieldNames } from './FieldList';
 
@@ -144,10 +144,10 @@ export const ExportOptionsModal = (props: ExportOptionsProps) => {
           </div>
         </div>
         <Space h="md" />
-        <div>
+        <Box sx={{ height: 230 }}>
           <Text>Select Fields to Export</Text>
           <FieldList onChange={handleSelectionChange} />
-        </div>
+        </Box>
         <Space h="md" />
         <Group align="center" grow={false}>
           <Checkbox

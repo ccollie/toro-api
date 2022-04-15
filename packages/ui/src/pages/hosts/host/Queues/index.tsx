@@ -1,4 +1,4 @@
-import { LoadingOverlay } from '@mantine/core';
+import { LoadingOverlay, Space } from '@mantine/core';
 import React from 'react';
 import { useMatch } from '@tanstack/react-location';
 import type { LocationGenerics } from '@/types';
@@ -29,6 +29,8 @@ export const HostQueues = () => {
         filter={filter}
         onFilterUpdated={navigate}
       />
+
+      <Space h="sm" />
 
       <div className="mx-auto grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 

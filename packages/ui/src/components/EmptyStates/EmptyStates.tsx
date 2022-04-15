@@ -17,13 +17,14 @@ const mapSizeToPx = {
 
 const EmptyStates: React.FC<EmptyStatesProps> = ({
   size = EmptyStatesSize.SMALL,
-  label,
+  content,
   labelPosition = 'right',
-  text,
+  title,
   button,
   fontSize,
   customIcon,
   mode,
+  children
 }) => {
   return (
     <EmptyStatesWrapper
@@ -36,12 +37,13 @@ const EmptyStates: React.FC<EmptyStatesProps> = ({
           <Icon component={customIcon} size={mapSizeToPx[size]} />
         </StatusIconContainer>
       </EmptyStatesIconContainer>
-      {text && (
+      {title && (
         <HeaderWrapper size={size} fontSize={fontSize}>
-          {text}
+          {title}
         </HeaderWrapper>
       )}
-      <TextWrapper labelPosition={labelPosition}>{label}</TextWrapper>
+      <TextWrapper labelPosition={labelPosition}>{content}</TextWrapper>
+      {children}
       {button && <ButtonWrapper>{button}</ButtonWrapper>}
     </EmptyStatesWrapper>
   );

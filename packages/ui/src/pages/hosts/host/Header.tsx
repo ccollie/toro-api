@@ -1,4 +1,4 @@
-import { Paper, Group, Tabs, ActionIcon } from '@mantine/core';
+import { Paper, Group, Tabs, ActionIcon, Center } from '@mantine/core';
 import React, { useCallback, useState } from 'react';
 import { useNavigate, useResolvePath } from '@tanstack/react-location';
 import { QueueHost } from '@/types';
@@ -6,7 +6,8 @@ import {
   QueueIcon,
   AnalyticsIcon,
   CloudServerIcon,
-  WorkerIcon, RedisLogo,
+  WorkerIcon,
+  RedisLogo,
 } from '@/components/Icons';
 import { useRedisInfoModalStore } from 'src/stores';
 import shallow from 'zustand/shallow';
@@ -19,10 +20,11 @@ interface TProps {
 const TabKeys = ['queues', 'workers', 'metrics'];
 
 export const Header = ({ host }: TProps) => {
-  const [isRedisModalOpen, onOpenRedisModal, onCloseRedisModal] = useRedisInfoModalStore(
-    (state) => [state.isOpen, state.open, state.close],
-    shallow
-  );
+  const [isRedisModalOpen, onOpenRedisModal, onCloseRedisModal] =
+    useRedisInfoModalStore(
+      (state) => [state.isOpen, state.open, state.close],
+      shallow,
+    );
   const resolvePath = useResolvePath();
   const [activeTab, setActiveTab] = useState(getActiveTab());
   const navigate = useNavigate();
@@ -43,26 +45,35 @@ export const Header = ({ host }: TProps) => {
     }
   }, [host?.id]);
 
-  const onTabChange = useCallback((tabIndex: number, tabKey: string) => {
-    setActiveTab(tabIndex);
-    const route = `/hosts/${host?.id}/${tabKey}`;
-    navigate({ to: route });
-  }, [host?.id]);
+  const onTabChange = useCallback(
+    (tabIndex: number, tabKey: string) => {
+      setActiveTab(tabIndex);
+      const route = `/hosts/${host?.id}/${tabKey}`;
+      navigate({ to: route });
+    },
+    [host?.id],
+  );
 
   return (
     <div>
       <Paper
-        shadow="md"
         id="check"
+        p="xl"
+        shadow="sm"
+        radius="md"
+        px={4}
+        py={6}
         mb={5}
-        className="md:flex dark:bg-gray-800 mb-5 items-center justify-between px-4 visible py-6"
+        className="md:flex dark:bg-gray-800 items-center justify-between"
       >
-        <div className="flex items-center text-gray-400">
-          <CloudServerIcon size={48} />
-          <div className="focus:outline-none text-gray-900 dark:text-gray-100 text-base ml-3">
-            <span className="text-3xl">{host?.name}</span>{' '}
-            {host && <HostStateBadge host={host} />}
-          </div>
+        <div className="flex items-center text-gray-400 ml-4">
+          <Center>
+            <CloudServerIcon size={48} />
+            <div className="text-gray-900 dark:text-gray-100 text-base ml-3">
+              <span className="text-3xl">{host?.name}</span>{' '}
+              {host && <HostStateBadge host={host} />}
+            </div>
+          </Center>
         </div>
         <Group position="center" mt={4} mr={10} className="dark:text-gray-400">
           <Tabs variant="pills" active={activeTab} onTabChange={onTabChange}>
@@ -88,8 +99,8 @@ export const Header = ({ host }: TProps) => {
               }
             />
           </Tabs>
-          <ActionIcon onClick={onToggleRedisModal}>
-            <RedisLogo size={48} />
+          <ActionIcon onClick={onToggleRedisModal} mr={4}>
+            <RedisLogo size={48} color="red"/>
           </ActionIcon>
         </Group>
       </Paper>

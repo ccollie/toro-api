@@ -228,27 +228,28 @@ export const JobsToolbar = (props: JobsToolbarProps) => {
               <FilterIcon size={36} />
             </ActionIcon>
           </Tooltip>
-        </Group>
 
-        <Group grow={false} spacing="xs" position="center">
-          <Tooltip label="Table View" withArrow>
-            <ActionIcon
-              size="md"
-              disabled={view === 'table'}
-              onClick={showTable}
-            >
-              <TableIcon size={36} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="Card View" withArrow>
-            <ActionIcon
-              size="md"
-              disabled={view === 'card'}
-              onClick={showCards}
-            >
-              <IdCardLightIcon size={36} />
-            </ActionIcon>
-          </Tooltip>
+          <Group grow={false} spacing="xs" position="left">
+            <Tooltip label="Table View" withArrow>
+              <ActionIcon
+                size="md"
+                disabled={view === 'table'}
+                onClick={showTable}
+              >
+                <TableIcon size={36} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label="Card View" withArrow>
+              <ActionIcon
+                size="md"
+                disabled={view === 'card'}
+                onClick={showCards}
+              >
+                <IdCardLightIcon size={36} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+
         </Group>
 
         <div>

@@ -119,7 +119,7 @@ export function useJobBulkActions(
           return;
         }
         if (!canDo[action]) {
-          toast.warn(`You can't ${action} jobs in this state`);
+          toast.warn(`You can't ${action} ${status} jobs`);
           return;
         }
         if (!confirmDangerousActions) {
@@ -128,7 +128,7 @@ export function useJobBulkActions(
         }
         openConfirmModal(action, fn, selectedIds);
       },
-      [action, queueId, fn],
+      [action, queueId, fn, status],
     );
   }
 

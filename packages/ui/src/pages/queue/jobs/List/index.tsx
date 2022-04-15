@@ -1,5 +1,6 @@
-import { LoadingOverlay, ScrollArea } from '@mantine/core';
+import { Center, LoadingOverlay, ScrollArea, Space } from '@mantine/core';
 import React from 'react';
+import { NoJobsData } from 'src/pages/queue/jobs/List/NoJobsData';
 import { useJobQueryParameters } from '../hooks';
 import { StatusMenu } from './StatusMenu/StatusMenu';
 import { useJobListQuery } from '../hooks/use-job-list-query';
@@ -63,8 +64,14 @@ export const Jobs = () => {
           height: '100vh'
         }}
       >
-        <LoadingOverlay visible={loading} />
-        {jobView === 'card' && (
+        <LoadingOverlay visible={loading} radius="xl"/>
+        {(jobs.length === 0 && !loading) && (
+         <Center>
+           <Space h="xl" />
+           <NoJobsData />
+         </Center>
+        )}
+        {jobView === 'card' && !!jobs.length && (
           <ScrollArea sx={{ flex: 1 }}>
             <CardView
               queue={queue}
@@ -74,7 +81,7 @@ export const Jobs = () => {
             />
           </ScrollArea>
         )}
-        {jobView === 'table' && (
+        {jobView === 'table' && !!jobs.length && (
           <TableView
             queue={queue}
             jobs={jobs}

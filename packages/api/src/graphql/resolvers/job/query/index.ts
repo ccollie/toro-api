@@ -22,32 +22,68 @@ export const JobTC = schemaComposer.createObjectTC({
     id: 'ID!',
     name: 'String!',
     data: 'JSONObject!',
-    progress: JobProgress,
+    progress: {
+      type: JobProgress,
+      description: 'The progress a job has performed so far.',
+    },
     delay: {
       type: 'Int!',
       resolve(parent: Job): number {
         return parent.opts.delay || 0;
       },
     },
-    timestamp: 'Date!',
-    attemptsMade: 'Int!',
-    failedReason: 'JSON',
+    timestamp: {
+      type: 'Date!',
+      // eslint-disable-next-line max-len
+      description:
+        'Timestamp when the job was added to the queue (unless overridden with job options).',
+    },
+    attemptsMade: {
+      type: 'Int!',
+      description: 'Number of attempts after the job has failed.',
+    },
+    failedReason: {
+      type: 'JSON',
+      description: 'The reason why the job failed.',
+    },
     stacktrace: {
       type: '[String!]!',
+      description: 'Stacktrace for the error (for failed jobs).',
       resolve(parent: Job): string[] {
         return parent.stacktrace || [];
       },
     },
-    returnvalue: 'JSON',
-    finishedOn: 'Date',
-    processedOn: 'Date',
+    returnvalue: {
+      type: 'JSON',
+      description:
+        'The value returned by the processor when processing this job.',
+    },
+    finishedOn: {
+      type: 'Date',
+      description: 'Timestamp when the job was finished (completed or failed).',
+    },
+    processedOn: {
+      type: 'Date',
+      description: 'Timestamp when the job was processed.',
+    },
     opts: {
       type: JobOptionsTC.NonNull,
     },
     state: jobStateFC,
     fullId: jobFullIdFC,
     queueId: jobQueueIdFC,
-    parentKey: 'String',
+    queueName: {
+      type: 'String!',
+      description: 'The name of the queue this job belongs to',
+      resolve(parent: Job): string {
+        return parent.queueName;
+      },
+    },
+    parentKey: {
+      type: 'String',
+      description:
+        'Fully qualified key (including the queue prefix) pointing to the parent of this job.',
+    },
     logs: logs,
     isInFlow: {
       description:
@@ -65,12 +101,7 @@ export const JobTC = schemaComposer.createObjectTC({
       type: 'Boolean!',
       description: 'returns true if this job is waiting.',
       resolve(job: Job, args, context): Promise<boolean> {
-        return checkState(
-          context,
-          job,
-          'waiting',
-          'paused',
-        );
+        return checkState(context, job, 'waiting', 'paused');
       },
     },
     isWaitingChildren: {

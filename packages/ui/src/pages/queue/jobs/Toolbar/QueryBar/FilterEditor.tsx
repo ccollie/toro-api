@@ -11,7 +11,7 @@ import { defaultHighlightStyle } from '@codemirror/highlight';
 import { lintKeymap } from '@codemirror/lint';
 
 import { EditorState, EditorView, keymap, useCodeMirror } from '@uiw/react-codemirror';
-import { completeFromGlobalScope } from '@/services/autocomplete';
+import { completeFromGlobalScope } from '@/components/CodeEditor/autocomplete';
 import { useUnmountEffect } from 'src/hooks';
 import { useCodeEditorStore } from 'src/stores/code-editor';
 import { useDebouncedCallback } from 'use-debounce';

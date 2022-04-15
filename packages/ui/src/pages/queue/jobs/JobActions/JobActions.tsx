@@ -1,6 +1,6 @@
 import { JobSearchStatus } from '@/types';
-import React, { useState } from 'react';
-import { useJobActions, useQueue } from '@/hooks';
+import React, { Fragment, useState } from 'react';
+import { useDisclosure, useJobActions, useQueue } from '@/hooks';
 import type { Job, JobFragment } from '@/types';
 import {
   RetryIcon,
@@ -10,6 +10,7 @@ import {
   EllipsisVerticalIcon,
 } from '@/components/Icons';
 import { Group, ActionIcon, Tooltip, Menu } from '@mantine/core';
+import EditDataModal from 'src/pages/queue/jobs/EditDataModal';
 
 interface JobActionsProps {
   queueId: string;
@@ -96,6 +97,14 @@ export const JobActions = (props: JobActionsProps) => {
 
   const { delete: deleteJob, promote, retry, copyToClipboard } = useJobActions(queueId, job);
 
+  const {
+    isOpen: isUpdateDataOpen,
+    onClose: closeEditData,
+    onOpen: openEditDataDialog,
+  } = useDisclosure({
+    defaultIsOpen: false,
+  });
+
   function handleRetry(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     setIsRetrying(true);
@@ -126,35 +135,51 @@ export const JobActions = (props: JobActionsProps) => {
   }
 
   return (
-    <Group spacing="xs" grow={false} className="actions">
-      {isDelayed && (
-        <Tooltip label="Promote Job" withArrow>
-          <ActionIcon onClick={handlePromote} disabled={isReadonly} loading={isPromoting}>
-            <PromoteIcon />
+    <Fragment>
+      <Group spacing="xs" grow={false} className="actions">
+        <Tooltip label="Edit Data">
+          <ActionIcon
+            onClick={openEditDataDialog}
+            disabled={isReadonly || (status === 'active')}>
+            <i className="la-pencil-alt"/>
           </ActionIcon>
         </Tooltip>
-      )}
-      {isFinished && (
-        <Tooltip label="Retry Job" withArrow>
-          <ActionIcon onClick={handleRetry} disabled={isReadonly} loading={isRetrying}>
-            <RetryIcon />
+        {isDelayed && (
+          <Tooltip label="Promote Job" withArrow>
+            <ActionIcon onClick={handlePromote} disabled={isReadonly} loading={isPromoting}>
+              <PromoteIcon />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        {isFinished && (
+          <Tooltip label="Retry Job" withArrow>
+            <ActionIcon onClick={handleRetry} disabled={isReadonly} loading={isRetrying}>
+              <RetryIcon />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        <Tooltip label="Delete Job" withArrow>
+          <ActionIcon onClick={handleDelete} color="red" disabled={isReadonly} loading={isDeleting}>
+            <TrashIcon />
           </ActionIcon>
         </Tooltip>
+        <Tooltip label="Copy to clipboard" withArrow>
+          <ActionIcon onClick={handleCopy}>
+            <ClipboardCopyIcon />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="More" withArrow>
+          <JobActionsMenu readonly={queue.isReadonly} queueId={queueId} job={job} />
+        </Tooltip>
+      </Group>
+      {isUpdateDataOpen && (
+        <EditDataModal
+          isOpen={isUpdateDataOpen}
+          onClose={closeEditData}
+          job={job}
+          queueId={queueId}/>
       )}
-      <Tooltip label="Delete Job" withArrow>
-        <ActionIcon onClick={handleDelete} color="red" disabled={isReadonly} loading={isDeleting}>
-          <TrashIcon />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label="Copy to clipboard" withArrow>
-        <ActionIcon onClick={handleCopy}>
-          <ClipboardCopyIcon />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label="More" withArrow>
-        <JobActionsMenu readonly={queue.isReadonly} queueId={queueId} job={job} />
-      </Tooltip>
-    </Group>
+    </Fragment>
   );
 };
 

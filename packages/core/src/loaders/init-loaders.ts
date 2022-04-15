@@ -5,6 +5,7 @@ import {
   getQueueHost,
   getQueueId,
   getQueueManager,
+  getHost as getHostById,
 } from '../supervisor/accessors';
 import { Queue, RedisClient } from 'bullmq';
 
@@ -17,6 +18,7 @@ export function initLoaders(): void {
     getJobQueue,
     getQueueId,
     getQueueById,
+    getHostById,
     getQueueManager,
     getQueueHostClient(queue: Queue): RedisClient {
       const host = getQueueHost(queue);
