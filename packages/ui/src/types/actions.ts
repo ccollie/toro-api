@@ -7,6 +7,7 @@ import type {
   JobsByFilterInput,
   Queue,
   JobFragment,
+  JobSearchStatus,
 } from './generated';
 
 import { JobState, SortOrderEnum } from './generated';
@@ -47,7 +48,7 @@ export interface FilteredJobsResult {
 export interface QueueJobActions extends BulkJobActions {
   getJobs: (
     queueId: string,
-    status: JobState,
+    status: JobSearchStatus,
     page: number,
     pageSize: number,
     sortOrder?: SortOrderEnum,

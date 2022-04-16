@@ -41,7 +41,7 @@ export function getJobDuration(job: Job | JobFragment): number {
   if (job.finishedOn) {
     return subtract(job.finishedOn, job.processedOn);
   } else if (job.state === JobState.Active) {
-    if (!job.processedOn) {
+    if (job.processedOn) {
       const processedOn = parseJSON(job.processedOn);
       return Date.now() - processedOn.getTime();
     }

@@ -17,6 +17,7 @@ import type {
   GetQueueJobsQuery,
   GetJobsByFilterQuery,
   GetRepeatableJobsQuery,
+  JobsByFilterInput,
   JobCounts,
   JobFragment,
   JobLogs,
@@ -94,16 +95,10 @@ export function getJobsByFilter(
   {
     status = JobSearchStatus.Completed,
     cursor,
-    filter,
+    expression: filter,
     count,
     pattern,
-  }: {
-    status?: JobSearchStatus;
-    cursor?: string;
-    filter?: string;
-    count?: number;
-    pattern?: string;
-  },
+  }: JobsByFilterInput,
 ): Promise<FilteredJobsResult> {
   count = count ?? 10;
   return client

@@ -84,8 +84,7 @@ const useInterval = (
   useEffect(() => {
     // see if we need to execute on the leading edge
     if (opts.immediate) {
-      run();
-      start();
+      run().then(start);
     }
     return () => {
       // when component unmount clear the timeout

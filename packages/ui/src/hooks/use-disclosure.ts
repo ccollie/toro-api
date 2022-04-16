@@ -59,7 +59,7 @@ export function useDisclosure(props: UseDisclosureProps = {}) {
   }, [isOpen, onToggle]);
 
   return {
-    isOpen: !!isOpen,
+    isOpen: Boolean(isOpen),
     onOpen,
     onClose,
     onToggle,
