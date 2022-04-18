@@ -1,4 +1,4 @@
-import { CurrentActiveCountMetric } from '../';
+import { ActiveCountMetric } from '../';
 import { getUniqueId } from 'packages/core/src/ids';
 import {
   MetricCategory,
@@ -15,23 +15,23 @@ import { delay } from '../../lib';
 describe('CurrentActiveCountMetric', () => {
   describe('static properties', () => {
     it('exposes a "description" property', () => {
-      expect(CurrentActiveCountMetric.description).toBe('Active Jobs');
+      expect(ActiveCountMetric.description).toBe('Active Jobs');
     });
 
     it('exposes a "key" property', () => {
-      expect(CurrentActiveCountMetric.key).toBe(MetricTypes.ActiveJobs);
+      expect(ActiveCountMetric.key).toBe(MetricTypes.ActiveJobs);
     });
 
     it('exposes a "unit" property', () => {
-      expect(CurrentActiveCountMetric.unit).toBe('jobs');
+      expect(ActiveCountMetric.unit).toBe('jobs');
     });
 
     it('exposes a "category" property', () => {
-      expect(CurrentActiveCountMetric.category).toBe(MetricCategory.Queue);
+      expect(ActiveCountMetric.category).toBe(MetricCategory.Queue);
     });
 
     it('exposes a "type" property', () => {
-      expect(CurrentActiveCountMetric.type).toBe(MetricValueType.Gauge);
+      expect(ActiveCountMetric.type).toBe(MetricValueType.Gauge);
     });
   });
 
@@ -40,7 +40,7 @@ describe('CurrentActiveCountMetric', () => {
       const options: MetricOptions = {
         sampleInterval: 250,
       };
-      const sut = new CurrentActiveCountMetric(options);
+      const sut = new ActiveCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
     });
@@ -67,7 +67,7 @@ describe('CurrentActiveCountMetric', () => {
       const options: MetricOptions = {
         sampleInterval: interval,
       };
-      const sut = new CurrentActiveCountMetric(options);
+      const sut = new ActiveCountMetric(options);
       const helper = await MetricTestHelper.forMetric(sut, queue);
 
       let jobCount: number;

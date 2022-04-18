@@ -1,84 +1,112 @@
-import { random } from '@alpen/shared';
-import { CompletedCountMetric, Events } from '../../metrics';
+import { CurrentCompletedCountMetric } from '../';
+import { getUniqueId } from '../../ids';
 import {
   MetricCategory,
+  MetricOptions,
   MetricTypes,
   MetricValueType,
-  QueueMetricOptions,
 } from '../../types';
-import { createJobEvent } from '../../__tests__/factories';
-import { validateJobNamesFilter } from './helpers';
+import { clearDb, createQueue, createWorker } from '../../__tests__/factories';
 import { MetricTestHelper } from './metricTestHelper';
+import { Job, Queue, RedisClient } from 'bullmq';
+import { random } from '@alpen/shared';
+
+
+// see https://github.com/facebook/jest/issues/11543
+jest.setTimeout(10000);
 
 describe('CompletedCountMetric', () => {
-  let testHelper: MetricTestHelper;
-
-  afterEach(async () => {
-    if (testHelper) {
-      await testHelper.destroy();
-    }
-  });
-
-  const defaultOptions: QueueMetricOptions = {
-    jobNames: [],
-  };
-
   describe('static properties', () => {
     it('exposes a "description" property', () => {
-      expect(CompletedCountMetric.description).toBe('Completed Jobs');
+      expect(CurrentCompletedCountMetric.description).toBe(
+        'Current COMPLETED Jobs',
+      );
     });
 
     it('exposes a "key" property', () => {
-      expect(CompletedCountMetric.key).toBe(MetricTypes.Completed);
+      expect(CurrentCompletedCountMetric.key).toBe(
+        MetricTypes.Completed,
+      );
     });
 
     it('exposes a "unit" property', () => {
-      expect(CompletedCountMetric.unit).toBe('jobs');
+      expect(CurrentCompletedCountMetric.unit).toBe('jobs');
     });
 
     it('exposes a "category" property', () => {
-      expect(CompletedCountMetric.category).toBe(MetricCategory.Queue);
+      expect(CurrentCompletedCountMetric.category).toBe(MetricCategory.Queue);
     });
 
     it('exposes a "type" property', () => {
-      expect(CompletedCountMetric.type).toBe(MetricValueType.Count);
+      expect(CurrentCompletedCountMetric.type).toBe(MetricValueType.Gauge);
     });
   });
 
   describe('constructor', () => {
-    test('can create with default options', () => {
-      const subject = new CompletedCountMetric(defaultOptions);
-      expect(subject).not.toBeUndefined();
-    });
-
-    test('subscribes to correct queueListener events', () => {
-      const subject = new CompletedCountMetric(defaultOptions);
-      expect(subject.validEvents).toStrictEqual([Events.COMPLETED]);
+    it('constructs a CurrentCompletedCountMetric', () => {
+      const options: MetricOptions = {
+        sampleInterval: 250,
+      };
+      const sut = new CurrentCompletedCountMetric(options);
+      expect(sut).toBeDefined();
     });
   });
 
-  describe('accept', () => {
-    it('allows all jobs if no job names is specified', () => {
-      const event = createJobEvent(Events.FAILED);
-      const metric = new CompletedCountMetric({});
-      expect(metric.accept(event)).toBeTruthy();
+  describe('.checkUpdate', () => {
+    let queue: Queue;
+    let client: RedisClient;
+
+    beforeEach(async () => {
+      await clearDb();
+      queue = await createQueue();
+      client = await queue.client;
     });
 
-    it('filters events according to job names', () => {
-      const metric = new CompletedCountMetric({});
-      validateJobNamesFilter(metric);
-    });
-  });
+    function generateJobs(queue: Queue, options = {}): Promise<Job[]> {
+      const datas = [];
+      const count = random(5, 10);
+      const name = 'names-' + getUniqueId();
+      for (let i = 0; i < count; i++) datas.push({ name, data: random(0, 99) });
 
-  describe('Updates', () => {
-    test('can update count on success', async () => {
-      const subject = new CompletedCountMetric(defaultOptions);
-      testHelper = await MetricTestHelper.forMetric(subject);
-      const count = random(2, 10);
-      for (let i = 0; i < count; i++) {
-        await testHelper.emitCompletedEvent();
-      }
-      expect(subject.value).toBe(count);
+      return queue.addBulk(datas);
+    }
+
+    it('should get the correct number of completed jobs', async () => {
+      const sut = new CurrentCompletedCountMetric({ sampleInterval: 1000 });
+      const helper = await MetricTestHelper.forMetric(sut, queue);
+      const listener = helper.metricsListener;
+
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const worker = createWorker(queue.name, async (job) => {}, {
+        connection: client,
+      });
+
+      let counter = 0;
+      let expected: number;
+
+      const completed = new Promise<void>((resolve) => {
+        worker.on('completed', async function () {
+          counter--;
+
+          if (counter === 0) {
+            const jobs = await queue.getFailed();
+            expect(Array.isArray(jobs)).toBe(true);
+
+            await sut.checkUpdate(listener, 1000);
+            expect(sut.value).toBe(expected);
+
+            await worker.close();
+            resolve();
+          }
+        });
+      }).finally(() => {
+        Promise.all([helper.destroy(), queue.close(), worker.close()]);
+      });
+
+      const jobs = await generateJobs(queue);
+      counter = expected = jobs.length;
+
+      await completed;
     });
   });
 });

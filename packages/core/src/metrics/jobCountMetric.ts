@@ -9,6 +9,7 @@ import {
   QueueMetricOptions,
 } from '../types';
 import type { JobStatus } from '../types';
+import { getJobCounts } from '../loaders/job-counts';
 
 /**
  * Base class to provide spot/instant values of job counts from a queue.
@@ -30,7 +31,9 @@ export class JobSpotCountMetric extends PollingMetric {
   }
 
   async checkUpdate(listener: MetricsListener, ts: number): Promise<void> {
-    const count = await listener.queue.getJobCountByTypes(...this._statuses);
+    const queue = listener.queue;
+    const countsByKey = await getJobCounts(queue, this._statuses);
+    const count = Object.values(countsByKey).reduce((sum, count) => sum + count);
     this.update(count, ts);
   }
 
@@ -50,7 +53,7 @@ export class JobSpotCountMetric extends PollingMetric {
 /**
  * A metric tracking the number of currently ACTIVE jobs in a queue
  */
-export class CurrentActiveCountMetric extends JobSpotCountMetric {
+export class ActiveCountMetric extends JobSpotCountMetric {
   constructor(options: QueueMetricOptions) {
     super(options, ['active']);
   }
@@ -67,7 +70,7 @@ export class CurrentActiveCountMetric extends JobSpotCountMetric {
 /**
  * A metric tracking the number of currently WAITING jobs in a queue
  */
-export class CurrentWaitingCountMetric extends JobSpotCountMetric {
+export class WaitingCountMetric extends JobSpotCountMetric {
   constructor(options: MetricOptions) {
     super(options, ['waiting']);
   }
@@ -107,11 +110,11 @@ export class CurrentCompletedCountMetric extends JobSpotCountMetric {
   }
 
   static get key(): MetricTypes {
-    return MetricTypes.CurrentCompletedCount;
+    return MetricTypes.Completed;
   }
 
   static get description(): string {
-    return 'Current COMPLETED Jobs';
+    return 'Completed Jobs';
   }
 }
 
@@ -124,7 +127,7 @@ export class CurrentFailedCountMetric extends JobSpotCountMetric {
   }
 
   static get key(): MetricTypes {
-    return MetricTypes.CurrentFailedCount;
+    return MetricTypes.Failures;
   }
 
   static get description(): string {

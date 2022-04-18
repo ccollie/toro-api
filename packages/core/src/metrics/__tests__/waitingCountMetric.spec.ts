@@ -1,6 +1,6 @@
 import {Job, Queue} from 'bullmq';
 import { random } from '@alpen/shared';
-import { CurrentWaitingCountMetric } from '../';
+import { WaitingCountMetric } from '../';
 import { getUniqueId } from '../../ids';
 import {
   MetricCategory,
@@ -14,23 +14,23 @@ import { MetricTestHelper } from './metricTestHelper';
 describe('CurrentWaitingCountMetric', () => {
   describe('static properties', () => {
     it('exposes a "description" property', () => {
-      expect(CurrentWaitingCountMetric.description).toBe('Waiting Jobs');
+      expect(WaitingCountMetric.description).toBe('Waiting Jobs');
     });
 
     it('exposes a "key" property', () => {
-      expect(CurrentWaitingCountMetric.key).toBe(MetricTypes.Waiting);
+      expect(WaitingCountMetric.key).toBe(MetricTypes.Waiting);
     });
 
     it('exposes a "unit" property', () => {
-      expect(CurrentWaitingCountMetric.unit).toBe('jobs');
+      expect(WaitingCountMetric.unit).toBe('jobs');
     });
 
     it('exposes a "category" property', () => {
-      expect(CurrentWaitingCountMetric.category).toBe(MetricCategory.Queue);
+      expect(WaitingCountMetric.category).toBe(MetricCategory.Queue);
     });
 
     it('exposes a "type" property', () => {
-      expect(CurrentWaitingCountMetric.type).toBe(MetricValueType.Gauge);
+      expect(WaitingCountMetric.type).toBe(MetricValueType.Gauge);
     });
   });
 
@@ -39,7 +39,7 @@ describe('CurrentWaitingCountMetric', () => {
       const options: MetricOptions = {
         sampleInterval: 250,
       };
-      const sut = new CurrentWaitingCountMetric(options);
+      const sut = new WaitingCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
     });
@@ -67,7 +67,7 @@ describe('CurrentWaitingCountMetric', () => {
       const options: MetricOptions = {
         sampleInterval: 1000,
       };
-      const sut = new CurrentWaitingCountMetric(options);
+      const sut = new WaitingCountMetric(options);
       const helper = await MetricTestHelper.forMetric(sut, queue);
 
       const listener = helper.metricsListener;
