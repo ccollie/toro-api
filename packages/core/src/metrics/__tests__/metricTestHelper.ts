@@ -1,7 +1,7 @@
 import { Queue, RedisClient } from 'bullmq';
 import { UnsubscribeFn } from 'emittery';
 import { Clock } from '../../lib';
-import { BaseMetric, MetricsListener } from '../../metrics';
+import { Metric, MetricsListener } from '../../metrics';
 import { MetricTypes } from '../../types';
 import { QueueListener } from '../../queues';
 import { createQueue, createQueueListener, QueueListenerHelper } from '../../__tests__/factories';
@@ -36,36 +36,36 @@ export class MetricTestHelper {
     return this.isReady;
   }
 
-  static async forMetric(metric: BaseMetric, queue?: Queue): Promise<MetricTestHelper> {
+  static async forMetric(metric: Metric, queue?: Queue): Promise<MetricTestHelper> {
     const helper = new MetricTestHelper(queue);
     await helper.waitUntilReady();
     helper.registerMetric(metric);
     return helper;
   }
 
-  static getStaticProp(metric: BaseMetric, name: string): any {
+  static getStaticProp(metric: Metric, name: string): any {
     return (metric.constructor as any)[name];
   }
 
-  static getKey(metric: BaseMetric): string {
+  static getKey(metric: Metric): string {
     return this.getStaticProp(metric, 'key');
   }
 
-  static hasKey(metric: BaseMetric): boolean {
+  static hasKey(metric: Metric): boolean {
     const key = this.getStaticProp(metric, 'key');
     return key && key !== getBaseKey();
   }
 
-  static getUnit(metric: BaseMetric): string {
+  static getUnit(metric: Metric): string {
     return this.getStaticProp(metric, 'unit');
   }
 
-  static hasUnit(metric: BaseMetric): boolean {
+  static hasUnit(metric: Metric): boolean {
     const unit = this.getStaticProp(metric, 'unit');
     return unit && unit !== BASE_UNIT;
   }
 
-  static hasDescription(metric: BaseMetric): boolean {
+  static hasDescription(metric: Metric): boolean {
     const descr = this.getStaticProp(metric, 'description');
     return descr && descr !== BASE_DESCRIPTION;
   }
@@ -95,11 +95,11 @@ export class MetricTestHelper {
     return this.isReady.then(q => q.client);
   }
 
-  registerMetric(metric: BaseMetric): void {
+  registerMetric(metric: Metric): void {
     this.metricsListener.registerMetric(metric);
   }
 
-  unregisterMetric(metric: BaseMetric): void {
+  unregisterMetric(metric: Metric): void {
     this.metricsListener.unregisterMetric(metric);
   }
 

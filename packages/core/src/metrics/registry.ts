@@ -1,16 +1,26 @@
-import { EventSource } from './events';
 import { Metric } from './metric';
 import { MetricName, MetricType, Tags } from './metric-name';
 import { Snapshot } from './snapshot';
-import { packageInfo } from '../../packageInfo';
+import { packageInfo } from '../packageInfo';
+import { EventSource } from './events';
+import Emittery, { UnsubscribeFn } from 'emittery';
+import { IAccessorHelper } from '../loaders/accessors';
+import LRUCache from 'lru-cache';
 
-const DEFAULT_PERCENTILES = [0.5, 0.9, 0.99];
+const DEFAULT_PERCENTILES = [0.5, 0.75, 0.9, 0.99];
 const DEFAULT_ERROR = 0.01;
+const SNAPSHOT_EVENT = 'ON-SNAPSHOT';
 
 export interface BunyanLike {
   error(data: any, text: string): void;
   info(text: string): void;
   trace(text: string): void;
+}
+
+export interface GetterContext {
+  registry: Registry;
+  accessor: IAccessorHelper;
+  cache: LRUCache<string, any>;
 }
 
 export interface RegistryOptions {
@@ -43,11 +53,13 @@ export interface RegistryOptions {
  * `Metrics.create()`, which creates a registry implicitly.
  */
 export class Registry {
+  readonly events: EventSource<Snapshot> = new EventSource<Snapshot>();
+  private readonly emitter: Emittery = new Emittery();
   // metrics are stored by their "fully-qualified" name, using stringified tags.
   readonly registry: Map<string, Metric> = new Map();
-  readonly events = new EventSource<Snapshot>();
   readonly percentiles: number[] = DEFAULT_PERCENTILES;
   readonly error: number = DEFAULT_ERROR;
+
   readonly version = packageInfo.version;
 
   currentTime = Date.now();
@@ -77,9 +89,7 @@ export class Registry {
 
     if (this.options.log) {
       this.options.log.info(
-        `metrics ${this.version} started; period_sec=${
-          this.period / 1000
-        }`,
+        `metrics started; period_sec=${this.period / 1000}`,
       );
     }
   }
@@ -99,6 +109,17 @@ export class Registry {
     this.timer.unref();
   }
 
+  onSnapshot(
+    event: string,
+    handler: (eventData?: Snapshot) => void,
+  ): UnsubscribeFn {
+    return this.emitter.on(SNAPSHOT_EVENT, handler);
+  }
+
+  offSnapshot(event: string, handler: (eventDate?: Snapshot) => void): void {
+    this.emitter.off(event, handler);
+  }
+
   // timestamp is optional. exposed for testing.
   publish(timestamp?: number): void {
     if (timestamp == null) timestamp = Date.now();
@@ -115,11 +136,17 @@ export class Registry {
     this.lastPublish = snapshot.timestamp;
     if (this.options.log) {
       this.options.log.trace(
-        `Publishing ${this.registry.size} metrics to ${this.events.subscriberCount} observers.`,
+        `Publishing ${this.registry.size} metrics to ${this.emitter.listenerCount} observers.`,
       );
     }
 
     this.events.post(snapshot);
+
+    this.emitter.emit(SNAPSHOT_EVENT, snapshot).catch((e) => {
+      if (this.options.log) {
+        this.options.log.error(snapshot, e.message);
+      }
+    });
     this.schedulePublish();
   }
 
@@ -139,10 +166,10 @@ export class Registry {
     return this.registry.get(name.canonical);
   }
 
-  getOrMake(name: MetricName): Metric {
+  getOrMake(name: MetricName, options?: any): Metric {
     let metric = this.registry.get(name.canonical);
     if (metric === undefined) {
-      metric = new Metric(name);
+      metric = new Metric(name, options ?? {});
       this.registry.set(name.canonical, metric);
     }
     if (metric.name.type != name.type) {

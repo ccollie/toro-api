@@ -6,7 +6,7 @@ import pMap from 'p-map';
 import { RuleAlertState, RuleScripts } from '../commands';
 import { Clock, IteratorOptions } from '../lib';
 import { logger } from '../logger';
-import { BaseMetric } from '../metrics';
+import { Metric } from '../metrics';
 import { QueueListener, QueueManager } from '../queues';
 import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
 import { RuleAlert, RuleConfigOptions, RuleEventsEnum } from '../types';
@@ -120,12 +120,12 @@ export class RuleManager {
     return this.queueManager.hasLock;
   }
 
-  private findMetric(rule: Rule): BaseMetric {
+  private findMetric(rule: Rule): Metric {
     return this.queueManager.findMetric(rule.metricId);
   }
 
   private dispatchRule(
-    metric: BaseMetric,
+    metric: Metric,
     meta: RuleMeta,
     ts: number,
     hasLock: boolean,
@@ -153,7 +153,7 @@ export class RuleManager {
     }
   }
 
-  handleMetricUpdate(metric: BaseMetric, ts: number): void {
+  handleMetricUpdate(metric: Metric, ts: number): void {
     const metas = this.metricRuleMap.get(metric.id);
     if (metas) {
       const hasLock = this.hasLock;

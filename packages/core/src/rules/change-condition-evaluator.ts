@@ -1,5 +1,5 @@
 import { ChunkedAssociativeArray, systemClock } from '../lib';
-import { BaseMetric } from '../metrics';
+import { Metric } from '../metrics';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation';
 import { calculateInterval, quantile } from '../stats';
@@ -83,7 +83,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
   public readonly sampleInterval: number;
   public readonly usePercentage: boolean;
 
-  constructor(metric: BaseMetric, options: ChangeConditionOptions) {
+  constructor(metric: Metric, options: ChangeConditionOptions) {
     super(metric, { ...options, type: RuleType.THRESHOLD });
     const { timeShift = 0, windowSize, sampleInterval } = options;
 

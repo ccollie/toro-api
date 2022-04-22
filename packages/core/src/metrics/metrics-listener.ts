@@ -1,5 +1,5 @@
 import { default as PQueue } from 'p-queue';
-import { BaseMetric, isPollingMetric, QueueBasedMetric } from './baseMetric';
+import { Metric, isPollingMetric, QueueBasedMetric } from './metric';
 import Emittery, { UnsubscribeFn } from 'emittery';
 import { Queue, RedisClient } from 'bullmq';
 import {
@@ -22,7 +22,7 @@ import { roundDown, roundUp } from '@alpen/shared';
 import { isAfter } from 'date-fns';
 import ms from 'ms';
 import { logger } from '../logger';
-import { SerializedMetric } from '../types';
+import { SerializedMetric } from './types';
 
 const MAX_INTERVAL = ms('2d');
 const DEFAULT_INTERVAL = ms('1 hr');
@@ -41,7 +41,7 @@ interface MetricMetadata {
 }
 
 export interface MetricsUpdatedPayload {
-  metrics: BaseMetric[];
+  metrics: Metric[];
   state: Record<string, any>;
   ts: number;
 }
@@ -58,8 +58,8 @@ export class MetricsListener {
   readonly queueListener: QueueListener;
   protected readonly workQueue: PQueue;
   private readonly _shouldDestroy: boolean;
-  private readonly _metrics: BaseMetric[] = [];
-  private readonly metricMeta = new Map<BaseMetric, MetricMetadata>();
+  private readonly _metrics: Metric[] = [];
+  private readonly metricMeta = new Map<Metric, MetricMetadata>();
   private readonly emitter: Emittery = new Emittery();
   private readonly handlerMap = new Map<string, Set<QueueBasedMetric>>();
   private readonly _state: Record<string, any> = Object.create(null);
@@ -91,7 +91,7 @@ export class MetricsListener {
     }
   }
 
-  private getDataKey(metric: BaseMetric): string {
+  private getDataKey(metric: Metric): string {
     return getMetricsDataKey(this.queue, metric.id);
   }
 
@@ -106,7 +106,7 @@ export class MetricsListener {
 
   saveIfNecessary(
     pipeline: IORedis.Pipeline,
-    metric: BaseMetric,
+    metric: Metric,
     now?: number,
   ): boolean {
     now = now ?? this.clock.getTime();
@@ -123,15 +123,15 @@ export class MetricsListener {
   }
 
   private async pollInternal(
-    metrics: BaseMetric[],
+    metrics: Metric[],
     pipeline: IORedis.Pipeline,
     now?: number,
   ): Promise<void> {
     now = now ?? this.clock.getTime();
     const tasks = [];
-    const polling: BaseMetric[] = [];
+    const polling: Metric[] = [];
 
-    const addToPipeline = (metric: BaseMetric) => {
+    const addToPipeline = (metric: Metric) => {
       // todo: round save time to sampleInterval
       const key = this.getDataKey(metric);
       TimeSeries.multi.add(pipeline, key, now, metric.value);
@@ -204,11 +204,11 @@ export class MetricsListener {
     return this.queueListener.clock;
   }
 
-  get metrics(): BaseMetric[] {
+  get metrics(): Metric[] {
     return this._metrics;
   }
 
-  get activeMetrics(): BaseMetric[] {
+  get activeMetrics(): Metric[] {
     return this._metrics.filter((x) => x.isActive);
   }
 
@@ -220,22 +220,22 @@ export class MetricsListener {
     return this.queueListener.queue.client;
   }
 
-  async getLastWrite(metric: BaseMetric): Promise<number> {
+  async getLastWrite(metric: Metric): Promise<number> {
     const key = this.getDataKey(metric);
     const client = await this.client;
     const span = await TimeSeries.getTimeSpan(client, key);
     return span?.endTime ?? 0;
   }
 
-  findMetricById(id: string): BaseMetric {
+  findMetricById(id: string): Metric {
     return this._metrics.find((x) => x.id === id);
   }
 
-  findMetricByName(name: string): BaseMetric {
-    return this._metrics.find((x) => x.name === name);
+  findMetricByName(name: string): Metric {
+    return this._metrics.find((x) => x.canonicalName === name);
   }
 
-  registerMetricFromJSON(opts: SerializedMetric): BaseMetric {
+  registerMetricFromJSON(opts: SerializedMetric): Metric {
     let metric = this.findMetricById(opts.id);
     if (!metric) {
       metric = createMetricFromJSON(opts);
@@ -244,7 +244,7 @@ export class MetricsListener {
     return metric;
   }
 
-  registerMetric(metric: BaseMetric): void {
+  registerMetric(metric: Metric): void {
     if (this._metrics.indexOf(metric) > 0) return;
     const meta: MetricMetadata = {
       lastTick: Date.now(),
@@ -252,36 +252,11 @@ export class MetricsListener {
       interval: 0
     };
     this.metricMeta.set(metric, meta);
-    if (metric instanceof QueueBasedMetric) {
-      metric.validEvents.forEach((event) => {
-        let metricsForEvent = this.handlerMap.get(event);
-        if (!metricsForEvent) {
-          metricsForEvent = new Set<QueueBasedMetric>();
-          this.handlerMap.set(event, metricsForEvent);
-        }
-        metricsForEvent.add(metric);
-        if (!this.queueListener.listenerCount(event)) {
-          this.queueListener.on(event, this.dispatch);
-        }
-      });
-    }
     this._metrics.push(metric);
     // metric.onUpdate()
   }
 
-  unregisterMetric(metric: BaseMetric): void {
-    if (metric instanceof QueueBasedMetric) {
-      metric.validEvents.forEach((event) => {
-        const metricsForEvent = this.handlerMap.get(event);
-        if (metricsForEvent) {
-          metricsForEvent.delete(metric);
-          if (metricsForEvent.size === 0) {
-            this.handlerMap.delete(event);
-            this.queueListener.off(event, this.dispatch);
-          }
-        }
-      });
-    }
+  unregisterMetric(metric: Metric): void {
     delete this._state[metric.id];
     const idx = this._metrics.indexOf(metric);
     if (idx >= 0) {
@@ -292,17 +267,6 @@ export class MetricsListener {
 
   on(event: string, handler: (eventData?: any) => void): UnsubscribeFn {
     return this.emitter.on(event, handler);
-  }
-
-  onMetricUpdated(
-    id: string,
-    handler: (eventData?: any) => void,
-  ): UnsubscribeFn {
-    return this.emitter.on(`${UPDATE_EVENT_NAME}:${id}`, handler);
-  }
-
-  offMetricUpdated(id: string, handler: (eventData?: any) => void): void {
-    return this.emitter.off(`${UPDATE_EVENT_NAME}:${id}`, handler);
   }
 
   onMetricsUpdated(
@@ -351,7 +315,7 @@ export class MetricsListener {
     event: JobEventData,
   ): void {
     const tasks = [];
-    const filtered: BaseMetric[] = [];
+    const filtered: Metric[] = [];
     metrics.forEach((metric) => {
       if (metric.accept(event)) {
         filtered.push(metric);
@@ -365,7 +329,7 @@ export class MetricsListener {
       .catch(this.onError);
   }
 
-  private async emitUpdate(metrics: BaseMetric[], ts: number): Promise<void> {
+  private async emitUpdate(metrics: Metric[], ts: number): Promise<void> {
     const state = this._state;
     const calls = [];
     metrics.forEach((metric) => {
@@ -409,18 +373,15 @@ export class MetricsListener {
   // populate metric data from job event stream
   static async refreshData(
     queue: Queue,
-    metrics: BaseMetric | BaseMetric[],
+    metrics: Metric | Metric[],
+    dispatch: (event: JobEventData) => void,
     start?: number,
     end?: number,
   ): Promise<void> {
     start = Math.max(0, roundDown(start ?? 0, 1000));
     end = roundUp(end || systemClock.getTime(), 1000);
 
-    const validMetrics = (!Array.isArray(metrics) ? [metrics] : metrics).filter(
-      (metric) => metric instanceof QueueBasedMetric,
-    );
-
-    if (!validMetrics.length) return;
+    if (!Array.isArray(metrics)) metrics = [metrics];
     const client = await queue.client;
 
     const TIMEOUT = 15000;
@@ -477,7 +438,7 @@ export class MetricsListener {
 
       listener = new MetricsListener(queueListener);
 
-      validMetrics.forEach((m) => listener.registerMetric(m));
+      metrics.forEach((m) => listener.registerMetric(m));
       listener.start();
 
       const timerInterval = listener.calcTimerInterval();
@@ -507,9 +468,9 @@ export class MetricsListener {
         }
         lastSeen = systemClock.getTime();
         const now = clock.getTime();
-        listener.dispatch(event);
+        dispatch(event);
         if (lastSaved - now > timerInterval) {
-          await listener.pollInternal(validMetrics, pipeline, now);
+          await listener.pollInternal(metrics, pipeline, now);
         }
         if (count % 25 === 0) {
           await flush();

@@ -1,6 +1,6 @@
 import { ChangeConditionEvaluator, getAggregationFunction } from '../change-condition-evaluator';
 import { getRandomIntArray } from '../../__tests__/factories';
-import { BaseMetric, LatencyMetric } from '../../metrics';
+import { Metric, LatencyMetric } from '../../metrics';
 import { ManualClock } from '../../lib';
 import { random } from '@alpen/shared';
 import ms from 'ms';
@@ -41,7 +41,7 @@ function roundTimestamp(
 
 describe('ChangeConditionEvaluator', () => {
   let clock: ManualClock;
-  let metric: BaseMetric;
+  let metric: Metric;
 
   beforeEach(() => {
     const now = Date.now();

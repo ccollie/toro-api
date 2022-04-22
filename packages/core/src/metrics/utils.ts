@@ -24,7 +24,6 @@ export const metricNameByEnum: Record<MetricTypes, MetricTypeName> = {
   [MetricTypes.CompletedRate]: 'CompletedRate',
   [MetricTypes.ActiveJobs]: 'ActiveJobs',
   [MetricTypes.DelayedJobs]: 'DelayedJobs',
-  [MetricTypes.ErrorPercentage]: 'ErrorPercentage',
   [MetricTypes.Failures]: 'Failures',
   [MetricTypes.Finished]: 'Finished',
   [MetricTypes.FragmentationRatio]: 'FragmentationRatio',

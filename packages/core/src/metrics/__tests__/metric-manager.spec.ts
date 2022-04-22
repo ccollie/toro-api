@@ -6,17 +6,12 @@ import {
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueListener, QueueManager } from '../../queues';
 import {
-  BaseMetric,
-  InstantaneousOpsMetric,
-  LatencyMetric,
-  P90Aggregator,
-  MetricManager,
+  Metric,
+  MetricManager, SerializedMetric,
 } from '../';
 import {
-  AggregatorTypes,
   MetricsEventsEnum,
   MetricTypes,
-  SerializedMetric,
 } from '../../types';
 import { delay, getUniqueId } from '../../lib';
 import ms from 'ms';
@@ -77,10 +72,6 @@ describe('MetricManager', () => {
 
     it('creates a metric from JSON', async () => {
       const json: SerializedMetric = {
-        aggregator: {
-          type: AggregatorTypes.Identity,
-          options: {},
-        },
         id: '',
         name: 'name-' + getUniqueId(),
         description: 'description-' + getUniqueId(),
@@ -110,10 +101,6 @@ describe('MetricManager', () => {
 
     it('emits an "added" event', async () => {
       const json: SerializedMetric = {
-        aggregator: {
-          type: AggregatorTypes.Identity,
-          options: {},
-        },
         id: '',
         options: {},
         name: 'name-' + getUniqueId(),
@@ -139,17 +126,13 @@ describe('MetricManager', () => {
   });
 
   const INTERVAL = ms('10 sec');
-  const DURATION = ms('2 min');
 
-  function createMetric(): BaseMetric {
+  function createMetric(): Metric {
     const metric = new InstantaneousOpsMetric({
       sampleInterval: INTERVAL,
     });
 
     metric.name = `name-${getUniqueId()}`;
-    metric.aggregator = new P90Aggregator({
-      duration: DURATION,
-    });
 
     return metric;
   }
@@ -272,7 +255,7 @@ describe('MetricManager', () => {
   });
 
   describe('deleteMetric', () => {
-    async function addMetric(sut: MetricManager): Promise<BaseMetric> {
+    async function addMetric(sut: MetricManager): Promise<Metric> {
       const metric = createMetric();
       return sut.saveMetric(metric);
     }

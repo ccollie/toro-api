@@ -1,6 +1,6 @@
 import { StreamingPeakDetector } from '../stats';
 import { getStaticProp, isNumber } from '@alpen/shared';
-import { BaseMetric } from '../metrics';
+import { Metric } from '../metrics';
 import {
   ErrorStatus,
   EvaluationResult,
@@ -63,10 +63,10 @@ export function compare(operator: RuleOperator, a: number, b: number): boolean {
 }
 
 export class ConditionEvaluator {
-  public readonly metric: BaseMetric;
+  public readonly metric: Metric;
   protected unit: string;
 
-  constructor(metric: BaseMetric) {
+  constructor(metric: Metric) {
     this.metric = metric;
     // todo: should unit be based on the aggregator rather than the metric ?
     this.unit = getStaticProp(this.metric, 'unit');
@@ -103,7 +103,7 @@ export class ConditionEvaluator {
 export class ThresholdConditionEvaluator extends ConditionEvaluator {
   public options: ThresholdCondition;
 
-  constructor(metric: BaseMetric, options: ThresholdCondition) {
+  constructor(metric: Metric, options: ThresholdCondition) {
     super(metric);
     this.options = options;
   }
@@ -158,7 +158,7 @@ export class PeakConditionEvaluator extends ConditionEvaluator {
   private readonly options: PeakCondition;
   private lastSignal = 0;
 
-  constructor(metric: BaseMetric, options: PeakCondition) {
+  constructor(metric: Metric, options: PeakCondition) {
     super(metric);
     const opts = {
       ...DefaultPeakDetectorOptions,

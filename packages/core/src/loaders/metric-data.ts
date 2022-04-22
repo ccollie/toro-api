@@ -1,7 +1,7 @@
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
 import { DateLike } from '@alpen/shared';
-import { BaseMetric, MetricManager } from '../metrics';
+import { Metric, MetricManager } from '../metrics';
 import {
   filterOutlierObjects,
   OutlierMethod,
@@ -12,7 +12,7 @@ import { getQueueById, getQueueHostClient, getQueueManager } from './accessors';
 import { RedisClient } from 'bullmq';
 
 export interface MetricDataLoaderKey {
-  metric: BaseMetric;
+  metric: Metric;
   start?: DateLike;
   end?: DateLike;
   limit?: number;
@@ -23,7 +23,7 @@ function getCacheKey(key: MetricDataLoaderKey): string {
   return `${metric.id}-${start}-${end}-${limit}`;
 }
 
-function getMetricManager(metric: BaseMetric): MetricManager {
+function getMetricManager(metric: Metric): MetricManager {
   const queue = getQueueManager(metric.queueId);
   return queue.metricManager;
 }
@@ -104,7 +104,7 @@ export const metricData = new DataLoader(getDataBatch, {
 });
 
 export function getMetricData(
-  metric: BaseMetric,
+  metric: Metric,
   start?: DateLike,
   end?: DateLike,
   limit?: number,

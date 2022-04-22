@@ -13,7 +13,7 @@ import { Snapshot } from './snapshot';
 import { performance } from 'perf_hooks';
 
 /*
- * Primary entry point for crow: Create counters, gauges, and distributions,
+ * Primary entry point for metrics: Create counters, gauges, and distributions,
  * and manipulate them.
  */
 export class Metrics {
@@ -118,10 +118,11 @@ export class Metrics {
    */
   addDistribution(name: Distribution, data: number | number[]) {
     const metric = this.registry.getOrMake(name);
+    const distribution = metric.getDistribution();
     if (Array.isArray(data)) {
-      data.forEach((x) => metric.getDistribution().record(x));
+      data.forEach((x) => distribution.record(x));
     } else {
-      metric.getDistribution().record(data);
+      distribution.record(data);
     }
     metric.touch(this.registry.currentTime);
   }

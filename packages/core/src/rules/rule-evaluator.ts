@@ -1,4 +1,4 @@
-import { BaseMetric } from '../metrics';
+import { Metric } from '../metrics';
 import { Rule } from './rule';
 import { parseRuleCondition } from './schemas';
 import {
@@ -19,9 +19,9 @@ import {
 export class RuleEvaluator {
   protected evaluator: ConditionEvaluator;
   public readonly rule: Rule;
-  public readonly metric: BaseMetric;
+  public readonly metric: Metric;
 
-  constructor(rule: Rule, metric: BaseMetric) {
+  constructor(rule: Rule, metric: Metric) {
     this.rule = rule;
     this.onError = this.onError.bind(this);
     this.metric = metric;
@@ -32,7 +32,7 @@ export class RuleEvaluator {
   destroy(): void {}
 
   private static createEvaluator(
-    metric: BaseMetric,
+    metric: Metric,
     rule: Rule,
   ): ConditionEvaluator {
     const condition = parseRuleCondition(rule.condition);

@@ -2,7 +2,7 @@ import * as boom from '@hapi/boom';
 import { isEqual } from '@alpen/shared';
 import { ObjectSchema } from 'joi';
 import { AggregatorTypes, SerializedAggregator } from '../../types';
-import { aggregatorTypeNameMap, getMetricTypeName } from './utils';
+import { aggregatorTypeNameMap } from './utils';
 import { getStaticProp } from '@alpen/shared';
 
 export interface Aggregator {
@@ -38,10 +38,6 @@ function isAggregator(arg: any): arg is Aggregator {
     typeof arg.value === 'number' &&
     typeof arg.update === 'function'
   );
-}
-
-function isWindowedAggregator(arg: any): arg is WindowedAggregator {
-  return isAggregator(arg) && typeof (arg as any).windowSize === 'number';
 }
 
 export class BaseAggregator implements Aggregator {

@@ -1,5 +1,3 @@
-import { MetricType, SerializedMetricName } from '../metrics/crow/metric-name';
-
 export enum MetricTypes {
   None,
   Apdex,
@@ -81,15 +79,6 @@ export enum MetricsEventsEnum {
 export interface SerializedAggregator {
   type: AggregatorTypes;
   options: Record<string, any>;
-}
-
-export interface SerializedMetric {
-  id?: string;
-  name?: SerializedMetricName;
-  isActive?: boolean;
-  options: Record<string, any>;
-  createdAt?: number;
-  updatedAt?: number;
 }
 
 export interface MetricInfo {

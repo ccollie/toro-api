@@ -1,6 +1,4 @@
-import { AggregatorTypeName, AggregatorTypes, MetricTypes } from '../../types';
-import { getStaticProp } from '@alpen/shared';
-import { metricNameByEnum } from '../utils';
+import { AggregatorTypeName, AggregatorTypes } from '../../types';
 
 export const aggregatorTypeNameMap: Record<
   AggregatorTypes,
@@ -23,25 +21,16 @@ export const aggregatorTypeNameMap: Record<
   [AggregatorTypes.P995]: 'P995',
 };
 
-// the following is to avoid circular references to basemetric.ts
+// the following is to avoid circular references to metric.ts
 function isMetric(obj: unknown): boolean {
   if (typeof obj === 'object') {
     let proto;
     while (proto = Object.getPrototypeOf(obj)) {
-      if (proto.constructor.name === 'BaseMetric') {
+      if (proto.constructor.name === 'Metric') {
         return true;
       }
       obj = proto;
     }
   }
   return false;
-}
-
-export function getMetricTypeName(metric: unknown): string {
-  if (typeof metric === 'string') return metric;
-  if (isMetric(metric)) {
-    const type = getStaticProp(metric, 'key') as MetricTypes;
-    return metricNameByEnum[type];
-  }
-  return '';
 }

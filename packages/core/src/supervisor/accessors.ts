@@ -4,7 +4,7 @@ import { StatsClient, StatsListener } from '../stats';
 import { QueueManager, QueueListener } from '../queues';
 import { Supervisor } from './supervisor';
 import { HostManager } from '../hosts/host-manager';
-import { BaseMetric } from '../metrics/baseMetric';
+import { Metric } from '../metrics/metric';
 import { RuleManager } from '../rules/rule-manager';
 import { createAsyncIterator } from '../lib';
 
@@ -48,7 +48,7 @@ export function getQueueId(queue: Queue): string {
   return getSupervisor().getQueueId(queue);
 }
 
-export function getMetricById(id: string): BaseMetric {
+export function getMetricById(id: string): Metric {
   const hosts = getSupervisor().hosts;
   for (let i = 0; i < hosts.length; i++) {
     const managers = hosts[i].queueManagers;

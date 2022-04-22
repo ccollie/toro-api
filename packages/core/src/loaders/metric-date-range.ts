@@ -1,18 +1,18 @@
 import { Queue, RedisClient } from 'bullmq';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { BaseMetric } from '../metrics';
+import { Metric } from '../metrics';
 import { getMetricsDataKey } from '../keys';
 import { Timespan } from '../types';
 import { logger } from '../logger';
 import { TimeSeries } from '../commands';
 import { getQueueHostClient, getQueueById, getQueueManager } from './accessors';
 
-function getDataKey(queue: Queue, metric: BaseMetric): string {
+function getDataKey(queue: Queue, metric: Metric): string {
   return getMetricsDataKey(queue, metric.id);
 }
 
-async function getSingle(metric: BaseMetric): Promise<Timespan> {
+async function getSingle(metric: Metric): Promise<Timespan> {
   const queue = getQueueManager(metric.queueId);
   const metrics = queue.metricManager;
   return metrics.getMetricDateRange(metric);
@@ -23,15 +23,15 @@ type QueryMeta = {
   key: string;
 };
 
-async function getRangeBatch(metrics: BaseMetric[]): Promise<Timespan[]> {
+async function getRangeBatch(metrics: Metric[]): Promise<Timespan[]> {
   if (metrics.length === 1) {
     const span = await getSingle(metrics[0]);
     return [span];
   }
 
   const result: Timespan[] = new Array<Timespan>(metrics.length);
-  const metaMap = new Map<BaseMetric, QueryMeta>();
-  const hostMetrics = new Map<RedisClient, BaseMetric[]>();
+  const metaMap = new Map<Metric, QueryMeta>();
+  const hostMetrics = new Map<RedisClient, Metric[]>();
 
   metrics.forEach((metric, index) => {
     const queue = getQueueById(metric.queueId);

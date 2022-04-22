@@ -13,7 +13,7 @@ import {
   RuleType,
 } from '../../types';
 import {
-  BaseMetric,
+  Metric,
   LatencyMetric,
   MetricsListener,
   P90Aggregator,
@@ -40,7 +40,7 @@ describe('RuleEvaluator', () => {
   let queueListener: QueueListener;
   let listenerHelper: QueueListenerHelper;
   let metricsListener: MetricsListener;
-  let metric: BaseMetric;
+  let metric: Metric;
 
   beforeEach(async () => {
     const queue = await createQueue();
@@ -77,7 +77,7 @@ describe('RuleEvaluator', () => {
 
   const DURATION = ms('2 min');
 
-  function createMetric(): BaseMetric {
+  function createMetric(): Metric {
     const metric = new LatencyMetric({
       jobNames: [],
     });

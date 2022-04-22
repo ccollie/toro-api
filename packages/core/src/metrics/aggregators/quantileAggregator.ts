@@ -1,6 +1,6 @@
 import Joi, { ObjectSchema } from 'joi';
 import baseSchema from '../slidingWindowBaseSchema';
-import { BaseMetric } from '../baseMetric';
+import { Metric } from '../metric';
 import {
   AggregatorTypes,
   SerializedAggregator,
@@ -247,7 +247,7 @@ export class P995Aggregator extends QuantileAggregator {
     return SpecificPercentileSchema;
   }
 
-  getDescription(metric: BaseMetric, short = false): string {
+  getDescription(metric: Metric, short = false): string {
     const type = getMetricTypeName(metric);
     if (short) {
       return `p995(${type})`;

@@ -14,7 +14,7 @@ import { Clock, getQueueUri } from '../lib';
 import type { RepeatableJob } from '../types/queues';
 import cronstrue from 'cronstrue/i18n';
 import { getQueueBusKey } from '../keys';
-import { MetricManager, BaseMetric } from '../metrics';
+import { MetricManager, Metric } from '../metrics';
 import { getConfigDuration } from '../lib/config-utils';
 import { logger } from '../logger';
 import { convertWorker, QueueWorker } from './queue-worker';
@@ -200,7 +200,7 @@ export class QueueManager {
     return this.ruleManager.rules;
   }
 
-  get metrics(): BaseMetric[] {
+  get metrics(): Metric[] {
     return this.metricManager.metrics;
   }
 
@@ -222,7 +222,7 @@ export class QueueManager {
     return this.ruleManager.getRule(id);
   }
 
-  findMetric(id: string): BaseMetric {
+  findMetric(id: string): Metric {
     return this.metricManager.findMetricById(id);
   }
 

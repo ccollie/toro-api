@@ -1,7 +1,7 @@
 import ms from 'ms';
 import { random } from '@alpen/shared';
 import {
-  BaseMetric,
+  Metric,
   CompletedCountMetric,
   JobRateMetric,
   LatencyMetric,
@@ -98,9 +98,9 @@ describe('MetricsListener', () => {
       sut.registerMetric(completed);
       sut.registerMetric(latencies);
 
-      let metrics: BaseMetric[];
+      let metrics: Metric[];
       sut.onMetricsUpdated((event) => {
-        metrics = event.metrics as BaseMetric[];
+        metrics = event.metrics as Metric[];
       });
 
       completed.onUpdate(() => {

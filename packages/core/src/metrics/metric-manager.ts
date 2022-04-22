@@ -4,17 +4,18 @@ import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
 
 import { Queue, RedisClient } from 'bullmq';
-import { MetricsEventsEnum, SerializedMetric } from '../types';
+import { MetricsEventsEnum } from '../types';
 import { Clock, getUniqueId, nanoid } from '../lib';
 import { PossibleTimestamp, TimeSeries } from '../commands';
 import { createMetricFromJSON, serializeMetric } from './factory';
-import { BaseMetric } from './baseMetric';
+import { Metric } from './metric';
 import { MetricsListener, MetricsUpdatedPayload } from './metrics-listener';
 import { QueueListener } from '../queues';
 import { UnsubscribeFn } from 'emittery';
 import { Pipeline } from 'ioredis';
 import { Timespan } from '../types';
 import { TimeseriesDataPoint } from '../stats';
+import { SerializedMetric } from './types';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -69,7 +70,7 @@ export class MetricManager {
     }
   }
 
-  get metrics(): BaseMetric[] {
+  get metrics(): Metric[] {
     return this.listener.metrics;
   }
 
@@ -77,22 +78,22 @@ export class MetricManager {
     return getMetricsKey(this.queue, null);
   }
 
-  private getDataKey(metric: BaseMetric | string): string {
+  private getDataKey(metric: Metric | string): string {
     return getMetricsDataKey(this.queue, getMetricId(metric));
   }
 
-  findMetricById(id: string): BaseMetric {
+  findMetricById(id: string): Metric {
     return this.listener.findMetricById(id);
   }
 
-  async createMetric(opts: SerializedMetric): Promise<BaseMetric> {
+  async createMetric(opts: SerializedMetric): Promise<Metric> {
     let isNew = false;
     let id = opts.id;
     if (!id) {
       isNew = true;
-      const type = opts.type;
+      const type = opts.name?.type;
       if (type) {
-        id = `${nanoid()}`;
+        id = `${type}-${nanoid()}`;
       } else {
         id = getUniqueId();
       }
@@ -115,7 +116,7 @@ export class MetricManager {
     return this.saveMetric(metric);
   }
 
-  getMetricKey(metric: BaseMetric | string): string {
+  getMetricKey(metric: Metric | string): string {
     return getMetricsKey(this.queue, getMetricId(metric));
   }
 
@@ -126,9 +127,9 @@ export class MetricManager {
   /*
    * Fetch a metric by id
    * @param {string} id
-   * @returns {Promise<BaseMetric>}
+   * @returns {Promise<Metric>}
    */
-  async getMetric(id: string): Promise<BaseMetric> {
+  async getMetric(id: string): Promise<Metric> {
     const client = await this.getClient();
     let metric = this.listener.findMetricById(id);
     if (!metric) {
@@ -144,24 +145,24 @@ export class MetricManager {
     return metric;
   }
 
-  getMetricByName(name: string): BaseMetric {
+  getMetricByName(name: string): Metric {
     return this.listener.findMetricByName(name);
   }
 
   /**
    * Update a metric
-   * @param {BaseMetric} metric
-   * @returns {Promise<BaseMetric>}
+   * @param {Metric} metric
+   * @returns {Promise<Metric>}
    */
-  async saveMetric(metric: BaseMetric): Promise<BaseMetric> {
+  async saveMetric(metric: Metric): Promise<Metric> {
     const isNew = !metric.id;
     const id = isNew ? getUniqueId() : metric.id;
     const key = this.getMetricKey(id);
 
-    if ((metric.name ?? '').trim().length === 0) {
+    if ((metric.canonicalName ?? '').trim().length === 0) {
       throw badRequest('A metric must have a name');
     }
-    const foundByName = this.getMetricByName(metric.name);
+    const foundByName = this.getMetricByName(metric.canonicalName);
 
     if (foundByName && foundByName.id !== metric.id) {
       throw badRequest('A metric must have a unique name');
@@ -217,13 +218,13 @@ export class MetricManager {
   }
 
   /**
-   * Change a {@link BaseMetric}'s ACTIVE status
-   * @param {BaseMetric|string} metric
+   * Change a {@link Metric}'s ACTIVE status
+   * @param {Metric|string} metric
    * @param {Boolean} isActive
    * @return {Promise<Boolean>}
    */
   async setMetricStatus(
-    metric: BaseMetric | string,
+    metric: Metric | string,
     isActive: boolean,
   ): Promise<boolean> {
     const id = getMetricId(metric);
@@ -265,7 +266,7 @@ export class MetricManager {
   }
 
   // TODO: what to do with rules dependent on the metric ?
-  async deleteMetric(metric: BaseMetric | string): Promise<boolean> {
+  async deleteMetric(metric: Metric | string): Promise<boolean> {
     const metricId = getMetricId(metric);
     const key = this.getMetricKey(metric);
     const dataKey = this.getDataKey(metric);
@@ -300,11 +301,11 @@ export class MetricManager {
 
   /**
    * Return rules from storage
-   * @param {String} sortBy {@link BaseMetric} field to sort by
+   * @param {String} sortBy {@link Metric} field to sort by
    * @param {Boolean} asc
-   * @return {Promise<[BaseMetric]>}
+   * @return {Promise<[Metric]>}
    */
-  async loadMetrics(sortBy = 'createdAt', asc = true): Promise<BaseMetric[]> {
+  async loadMetrics(sortBy = 'createdAt', asc = true): Promise<Metric[]> {
     const metricsKeyPattern = getMetricsKey(this.queue, '*');
     const sortSpec = `${metricsKeyPattern}->${sortBy}`;
     const client = await this.getClient();
@@ -321,7 +322,7 @@ export class MetricManager {
       pipeline.hgetall(key);
     });
 
-    const result: BaseMetric[] = [];
+    const result: Metric[] = [];
     const reply = await pipeline.exec().then(checkMultiErrors);
     reply.forEach((resp) => {
       if (resp) {
@@ -342,7 +343,7 @@ export class MetricManager {
   }
 
   async addMetricData(
-    metric: BaseMetric | string,
+    metric: Metric | string,
     value: number,
     timestamp?: number,
   ): Promise<void> {
@@ -354,7 +355,7 @@ export class MetricManager {
   }
 
   private getMetricDataArgs(
-    metric: BaseMetric | string,
+    metric: Metric | string,
     start: PossibleTimestamp = '-',
     end: PossibleTimestamp = '+',
     limit?: number,
@@ -374,7 +375,7 @@ export class MetricManager {
 
   pipelineGetMetricData(
     pipeline: Pipeline,
-    metric: BaseMetric | string,
+    metric: Metric | string,
     start: PossibleTimestamp = '-',
     end: PossibleTimestamp = '+',
     limit?: number,
@@ -392,7 +393,7 @@ export class MetricManager {
   }
 
   async getMetricData(
-    metric: BaseMetric | string,
+    metric: Metric | string,
     start: PossibleTimestamp = '-',
     end: PossibleTimestamp = '+',
     limit?: number,
@@ -422,7 +423,7 @@ export class MetricManager {
   }
 
   async refreshMetricData(
-    metric: BaseMetric | string,
+    metric: Metric | string,
     start?: number,
     end?: number,
   ): Promise<void> {
@@ -430,22 +431,23 @@ export class MetricManager {
       metric = await this.getMetric(metric);
     }
 
-    return MetricsListener.refreshData(this.queue, metric, start, end);
+    const dispatch = this.listener.dispatch;
+    return MetricsListener.refreshData(this.queue, metric, dispatch, start, end);
   }
 
-  async getMetricDateRange(metric: BaseMetric | string): Promise<Timespan> {
+  async getMetricDateRange(metric: Metric | string): Promise<Timespan> {
     const client = await this.getClient();
     const key = this.getDataKey(metric);
     return TimeSeries.getTimeSpan(client, key);
   }
 
-  async getMetricDataCount(metric: BaseMetric | string): Promise<number> {
+  async getMetricDataCount(metric: Metric | string): Promise<number> {
     const client = await this.getClient();
     const key = this.getDataKey(metric);
     return TimeSeries.size(client, key);
   }
 
-  async clearData(metric: BaseMetric | string): Promise<number> {
+  async clearData(metric: Metric | string): Promise<number> {
     const count = await this.getMetricDataCount(metric);
     const client = await this.getClient();
     const key = this.getDataKey(metric);
@@ -458,12 +460,12 @@ export class MetricManager {
 
   /**
    * Prune data according to a retention duration
-   * @param {BaseMetric|string} metric
+   * @param {Metric|string} metric
    * @param {Number} retention in ms. Alerts before (getTime - retention) will be removed
    * @returns {Promise<Number>}
    */
   async pruneMetricData(
-    metric: BaseMetric | string,
+    metric: Metric | string,
     retention: number,
   ): Promise<number> {
     // TODO: raise event
@@ -496,7 +498,7 @@ export class MetricManager {
   }
 }
 
-function getMetricId(metric: BaseMetric | string): string {
+function getMetricId(metric: Metric | string): string {
   let id;
   if (typeof metric === 'string') {
     id = metric;
@@ -520,7 +522,7 @@ function deserializeObject(str: string): any {
   }
 }
 
-function deserializeMetric(data?: Record<string, any>): BaseMetric {
+function deserializeMetric(data?: Record<string, any>): Metric {
   if (isEmpty(data)) return null;
   data.options = deserializeObject(data.options);
   return createMetricFromJSON(data);

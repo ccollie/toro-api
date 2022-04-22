@@ -12,7 +12,7 @@ import {
   systemClock,
 } from '../lib';
 import { logger } from '../logger';
-import { Events } from '../metrics/constants';
+import { Events } from '../metrics/metrics-info';
 import { parseStreamId, timestampFromStreamId } from '../redis';
 import type { AppJob } from '../types';
 
