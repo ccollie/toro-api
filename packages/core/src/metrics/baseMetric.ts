@@ -1,23 +1,20 @@
-import { badData, notImplemented } from '@hapi/boom';
 import Emittery from 'emittery';
-import ms from 'ms';
 import * as Joi from 'joi';
 import { JobEventData } from '../queues';
-import { BaseAggregator, NullAggregator } from './aggregators';
-import { Events } from './constants';
+import { Events } from './types';
 import { createAsyncIterator, systemClock } from '../lib';
-import { MetricsListener } from './metrics-listener';
-import { DurationSchema } from '../validation';
-import { MetricCategory, MetricValueType, MetricTypes, Predicate } from '../types';
 import type {
   SerializedMetric,
   QueueMetricOptions,
   MetricOptions,
+  Predicate,
 } from '../types';
-import { createJobNameFilter, metricNameByEnum } from './utils';
-import { getConfigDuration } from '../lib/config-utils';
-import { getStaticProp } from '@alpen/shared';
+import { createJobNameFilter } from './utils';
 import type { TimeseriesDataPoint } from '../stats';
+import { Queue } from 'bullmq';
+import { Pipeline } from 'ioredis';
+import { getMetricsDataKey } from '../keys';
+import {MetricName, MetricType} from './crow/metric-name';
 
 export interface MetricUpdateEvent {
   ts: number;
@@ -27,19 +24,11 @@ export interface MetricUpdateEvent {
 
 export type MetricUpdateEventHandler = (eventData?: MetricUpdateEvent) => void;
 
-const DEFAULT_SAMPLE_INTERVAL = ms('1 min'); // todo: get from config
-
-function getSampleInterval(): number {
-  return getConfigDuration('METRIC_SAMPLE_INTERVAL', DEFAULT_SAMPLE_INTERVAL);
-}
-
 export const BaseMetricSchema = Joi.object().keys({
-  sampleInterval: DurationSchema.optional().default(getSampleInterval()),
-});
-
-export const QueueBasedMetricSchema = BaseMetricSchema.append({
   jobNames: Joi.array().items(Joi.string()).single().optional().default([]),
 });
+
+export const QueueBasedMetricSchema = BaseMetricSchema;
 
 /**
  * Metrics are numeric samples of data collected over time
@@ -48,13 +37,10 @@ export abstract class BaseMetric {
   private readonly emitter: Emittery = new Emittery();
   public id: string;
   public queueId: string;
-  public name: string;
-  public description: string;
   protected options: any;
-  private _aggregator: BaseAggregator;
   private _prev: number;
   protected _value: number;
-  protected _sampleInterval?: number;
+  protected _mn: MetricName;
   public isActive = true;
   public createdAt: number;
   public updatedAt: number;
@@ -63,24 +49,13 @@ export abstract class BaseMetric {
   protected constructor(options: unknown) {
     this._prev = null;
     this._value = -1;
-    this._sampleInterval = getSampleInterval();
     this.setOptions(options);
-    this._aggregator = new NullAggregator();
     this.createdAt = systemClock.getTime();
     this.updatedAt = this.createdAt;
   }
 
-  get aggregator(): BaseAggregator {
-    this._aggregator = this._aggregator || new NullAggregator();
-    return this._aggregator;
-  }
-
-  set aggregator(value: BaseAggregator) {
-    if (this._aggregator) {
-      this._aggregator.destroy();
-    }
-    // todo: validate by schema
-    this._aggregator = value;
+  get canonicalName() {
+    return this._mn.canonical;
   }
 
   validateOptions<T = any>(options: unknown): T {
@@ -98,62 +73,18 @@ export abstract class BaseMetric {
 
   setOptions(options: unknown): void {
     this.options = this.validateOptions(options);
-    this._sampleInterval = this.options.sampleInterval;
   }
 
   destroy(): void {
-    if (this._aggregator) {
-      this._aggregator.destroy();
-    }
     this.emitter.clearListeners();
-  }
-
-  get sampleInterval(): number {
-    return this._sampleInterval;
-  }
-
-  set sampleInterval(value: number | string) {
-    let newValue: number;
-
-    if (typeof value === 'string') {
-      newValue = ms(value);
-      if (isNaN(newValue)) {
-        throw badData('Invalid value for "sampleInterval"');
-      }
-    } else {
-      newValue = value;
-    }
-    // todo: set lower bound
-    this._sampleInterval = newValue;
-  }
-
-  static getTypeName(metric: BaseMetric): string {
-    const type = getStaticProp(metric, 'key') as MetricTypes;
-    return metricNameByEnum[type];
-  }
-
-  static get key(): MetricTypes {
-    return MetricTypes.None;
-  }
-
-  static get description(): string {
-    return 'base_description';
-  }
-
-  static get category(): MetricCategory {
-    return MetricCategory.Queue;
   }
 
   static get schema(): Joi.ObjectSchema {
     return BaseMetricSchema;
   }
 
-  static get unit(): string {
-    return 'base_unit';
-  }
-
-  static get type(): MetricValueType {
-    return MetricValueType.Gauge;
+  get type(): MetricType {
+    return this._mn.type;
   }
 
   get value(): number {
@@ -162,10 +93,6 @@ export abstract class BaseMetric {
 
   onUpdate(listener: MetricUpdateEventHandler): Emittery.UnsubscribeFn {
     return this.emitter.on('update', listener);
-  }
-
-  offUpdate(listener: MetricUpdateEventHandler): void {
-    return this.emitter.off('update', listener);
   }
 
   createValueIterator(): AsyncIterator<TimeseriesDataPoint> {
@@ -180,25 +107,15 @@ export abstract class BaseMetric {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  init(listener: MetricsListener): void {
-    // abstract method
-  }
-
   toJSON(): SerializedMetric {
-    const type = (this.constructor as any).key;
-    const aggregator = this._aggregator.toJSON();
     const { createdAt, updatedAt, isActive } = this;
     return {
       id: this.id,
-      name: this.name,
+      name: this._mn.toJSON(),
       isActive,
-      type,
-      description: this.description,
       options: {
         ...this.options,
       },
-      aggregator,
       createdAt,
       updatedAt,
     };
@@ -206,7 +123,7 @@ export abstract class BaseMetric {
 
   // To override in descendents
   protected transformValue(value: number, ts?: number): number {
-    return this._aggregator.update(value, ts);
+    return value;
   }
 
   // Public core used elsewhere
@@ -225,6 +142,10 @@ export abstract class BaseMetric {
     }
     return this._value;
   }
+
+  protected getDataKey(queue: Queue): string {
+    return getMetricsDataKey(queue, this.id);
+  }
 }
 
 export abstract class QueueBasedMetric extends BaseMetric {
@@ -234,10 +155,6 @@ export abstract class QueueBasedMetric extends BaseMetric {
   constructor(options: QueueMetricOptions) {
     super(options);
     this.jobNames = options.jobNames || [];
-  }
-
-  static get category(): MetricCategory {
-    return MetricCategory.Queue;
   }
 
   get validEvents(): string[] {
@@ -266,7 +183,7 @@ export abstract class QueueBasedMetric extends BaseMetric {
 }
 
 export interface IPollingMetric {
-  checkUpdate: (listener?: MetricsListener, ts?: number) => Promise<void>;
+  checkUpdate: (pipeline: Pipeline, queue: Queue, ts?: number) => Promise<void>;
 }
 
 export function isPollingMetric(arg: any): arg is IPollingMetric {
@@ -286,21 +203,16 @@ export abstract class PollingMetric
     super(options);
   }
 
-  checkUpdate(listener?: MetricsListener, ts?: number): Promise<void> {
-    throw notImplemented('checkUpdate');
-  }
+  abstract checkUpdate(
+    pipeline: Pipeline,
+    queue: Queue,
+    ts?: number,
+  ): Promise<void>;
 }
 
-export abstract class QueuePollingMetric
-  extends QueueBasedMetric
-  implements IPollingMetric
-{
+export abstract class QueuePollingMetric extends QueueBasedMetric {
   protected constructor(options: QueueMetricOptions) {
     super(options);
-  }
-
-  checkUpdate(): Promise<void> {
-    throw notImplemented('checkUpdate');
   }
 
   static get schema(): Joi.ObjectSchema {

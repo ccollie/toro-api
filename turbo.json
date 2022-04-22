@@ -48,10 +48,9 @@
       ]
     },
     "test": {
-      "outputs": [
-        "coverage/**"
-      ],
-      "dependsOn": []
+      "dependsOn": ["build"],
+      "outputs": [""],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "__test__/**/*.ts"]
     },
     "lint": {
       "dependsOn": [

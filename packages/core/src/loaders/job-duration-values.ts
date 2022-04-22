@@ -1,61 +1,44 @@
 import { Queue, RedisClient } from 'bullmq';
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
-import { JobStatus } from '../types';
-import { Scripts } from '../commands';
+import {
+  JobDurationValuesResult,
+  parseDurationValues,
+  Scripts,
+} from '../commands';
 import { getAccessor } from './accessors';
 
-export interface JobMemoryLoaderKey {
+export interface JobDurationLoaderKey {
   queue: Queue;
-  state: JobStatus;
-  limit?: number;
+  start: number;
+  end: number;
   jobName?: string;
 }
 
-export interface JobMemoryLoaderResult {
-  byteCount: number;
-  jobCount: number;
-  iterations: number;
-}
-
-function cacheFn(key: JobMemoryLoaderKey): string {
+function cacheFn(key: JobDurationLoaderKey): string {
   const { getQueueId } = getAccessor();
-  const { queue, state, limit = 0, jobName = '' } = key;
+  const { queue, start, end, jobName = '' } = key;
   const qid = getQueueId(queue);
-  return `${qid}:${state}:${limit}:${jobName}`;
-}
-
-function parseResult(
-  res: [Error | null, Array<number>],
-): JobMemoryLoaderResult {
-  // ignore error
-  const [byteCount = 0, jobCount = 0, iterations = 0] = res[1] ?? [0, 0, 0];
-
-  return { byteCount, jobCount, iterations };
+  return `${qid}:${start}:${end}:${jobName}`;
 }
 
 async function getSingle(
-  key: JobMemoryLoaderKey,
-): Promise<JobMemoryLoaderResult[]> {
-  const { queue, jobName, limit, state } = key;
-  const client = await queue.client;
-  const args = Scripts.getKeysMemoryUsageArgs(queue, state, limit, jobName);
-  const [byteCount = 0, jobCount = 0, iterations = 0] = await (
-    client as any
-  ).getKeysMemoryUsage(...args);
-  const result = { byteCount, jobCount, iterations };
+  key: JobDurationLoaderKey,
+): Promise<JobDurationValuesResult[]> {
+  const { queue, jobName, start, end } = key;
+  const result = await Scripts.getJobDurationValues(queue, start, end, jobName);
   return [result];
 }
 
-async function getJobMemoryBatch(
-  keys: JobMemoryLoaderKey[],
-): Promise<JobMemoryLoaderResult[]> {
+async function getJobDurationBatch(
+  keys: JobDurationLoaderKey[],
+): Promise<JobDurationValuesResult[]> {
   if (keys.length === 1) {
     return getSingle(keys[0]);
   }
   const { getQueueHostClient } = getAccessor();
-  const keyIndexMap = new Map<JobMemoryLoaderKey, number>();
-  const hostKeys = new Map<RedisClient, JobMemoryLoaderKey[]>();
+  const keyIndexMap = new Map<JobDurationLoaderKey, number>();
+  const hostKeys = new Map<RedisClient, JobDurationLoaderKey[]>();
 
   keys.forEach((key, index) => {
     const client = getQueueHostClient(key.queue);
@@ -72,24 +55,27 @@ async function getJobMemoryBatch(
   await pMap(hostKeys, async ([client, keys]) => {
     const pipeline = client.pipeline();
     keys.forEach((key) => {
-      const { queue, jobName, limit, state } = key;
-      const args = Scripts.getKeysMemoryUsageArgs(queue, state, limit, jobName);
-      (pipeline as any).getKeysMemoryUsage(...args);
+      const { queue, jobName, start, end } = key;
+      // todo: pipeline this
+      const args = Scripts.getJobDurationValuesArgs(queue, start, end, jobName);
+      (pipeline as any).getDurationValues(...args);
     });
     const res = await pipeline.exec();
     keys.forEach((key, i) => {
       const index = keyIndexMap.get(key);
-      result[index] = parseResult(res[i]);
+      result[index] = parseDurationValues(res[i]);
     });
   });
 
   return result;
 }
 
-export const jobMemoryUsage = new DataLoader(getJobMemoryBatch, {
+export const jobDurationValues = new DataLoader(getJobDurationBatch, {
   cacheKeyFn: cacheFn,
 });
 
-export function getJobMemoryUsage(opts: JobMemoryLoaderKey): Promise<JobMemoryLoaderResult> {
-  return jobMemoryUsage.load(opts);
+export function getJobDurationValues(
+  opts: JobDurationLoaderKey,
+): Promise<JobDurationValuesResult> {
+  return jobDurationValues.load(opts);
 }

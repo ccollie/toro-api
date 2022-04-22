@@ -1,26 +1,25 @@
-import { getHostById } from './accessors';
+import { getHostById, getQueueHost } from './accessors';
 import { HostManager } from '../hosts';
-import { RedisClient } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import DataLoader from 'dataloader';
 import pMap from 'p-map';
 import { getRedisInfo, RedisMetrics } from '../redis';
 
-export async function getRedisInfoBatch(hosts: HostManager[]): Promise<Array<RedisMetrics>> {
-  const clients = new Set<RedisClient>();
-  const clientsToIndex = new Map<RedisClient, number>();
-  hosts.forEach((host, index) => {
-    clientsToIndex.set(host.client, index);
-    clients.add(host.client);
-  });
-
+export async function getRedisInfosByClient(clients: RedisClient[]): Promise<Array<RedisMetrics>> {
+  const uniqClients = new Set<RedisClient>(clients);
   const resultMap = new Map<RedisClient, RedisMetrics>();
-  await pMap(clients, async (client) => {
+  await pMap(uniqClients, async (client) => {
     const info = await getRedisInfo(client);
     resultMap.set(client, info);
     return info;
   }, { concurrency: 6 });
 
-  return hosts.map(x => resultMap.get(x.client));
+  return clients.map(client => resultMap.get(client));
+}
+
+export async function getRedisInfoBatch(hosts: HostManager[]): Promise<Array<RedisMetrics>> {
+  const clients = hosts.map(host => host.client);
+  return getRedisInfosByClient(clients);
 }
 
 async function getRedisInfoByHostIds(ids: string[]): Promise<Array<RedisMetrics>> {
@@ -30,3 +29,9 @@ async function getRedisInfoByHostIds(ids: string[]): Promise<Array<RedisMetrics>
 
 export const redisInfoByHostId = new DataLoader(getRedisInfoByHostIds);
 export const redisInfoByHost = new DataLoader(getRedisInfoBatch);
+
+export async function getRedisInfoByQueue(queue: Queue): Promise<RedisMetrics> {
+  // use client from host for max reuse
+  const host = getQueueHost(queue);
+  return redisInfoByHost.load(host);
+}

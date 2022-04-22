@@ -1,21 +1,16 @@
-import { QueueCounterBasedMetric } from './counterBasedMetric';
-import { Events } from './constants';
-import { MetricTypes } from '../types';
+import { MetricTypes, MetricOptions } from '../types';
+import { JobCountMetric } from './jobCountMetric';
 
 /**
  * Tracks the number of finished jobs (i.e. Completed or Failed)
  */
-export class FinishedCountMetric extends QueueCounterBasedMetric {
-  get validEvents(): string[] {
-    return [Events.FINISHED];
+export class FinishedCountMetric extends JobCountMetric {
+  constructor(options: MetricOptions) {
+    super(options, ['failed', 'completed']);
   }
 
   static get key(): MetricTypes {
     return MetricTypes.Finished;
-  }
-
-  static get unit(): string {
-    return 'jobs';
   }
 
   static get description(): string {

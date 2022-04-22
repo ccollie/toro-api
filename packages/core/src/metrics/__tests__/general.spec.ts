@@ -1,7 +1,7 @@
 import { RedisMetric } from '../redisMetrics';
 import {
   BaseMetric,
-  JobSpotCountMetric,
+  JobCountMetric,
   MaxAggregator,
   NullAggregator,
   createMetric as _createMetric,
@@ -32,7 +32,7 @@ function createMetric(type: MetricConstructor): BaseMetric {
       jobNames: ['rinse', 'lather', 'repeat'],
     };
     return _createMetric(metricType, options);
-  } else if (isTypeOfMetric(type, JobSpotCountMetric)) {
+  } else if (isTypeOfMetric(type, JobCountMetric)) {
     return _createMetric(metricType, { sampleInterval: 1000 });
   } else if (isTypeOfMetric(type, RateMetric)) {
     const options: RateMetricOptions = {

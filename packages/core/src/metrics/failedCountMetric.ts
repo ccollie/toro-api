@@ -1,10 +1,12 @@
-import { QueueCounterBasedMetric } from './counterBasedMetric';
-import { Events } from './constants';
-import { MetricTypes } from '../types';
+import { JobCountMetric } from './jobCountMetric';
+import { MetricOptions, MetricTypes } from '../types';
 
-export class FailedCountMetric extends QueueCounterBasedMetric {
-  get validEvents(): string[] {
-    return [Events.FAILED];
+/**
+ * A metric tracking the number of currently failed jobs in a queue
+ */
+export class FailedCountMetric extends JobCountMetric {
+  constructor(options: MetricOptions) {
+    super(options, ['failed']);
   }
 
   static get key(): MetricTypes {
@@ -13,9 +15,5 @@ export class FailedCountMetric extends QueueCounterBasedMetric {
 
   static get description(): string {
     return 'Failed Jobs';
-  }
-
-  static get unit(): string {
-    return 'jobs';
   }
 }

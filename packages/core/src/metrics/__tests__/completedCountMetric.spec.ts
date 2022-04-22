@@ -1,4 +1,4 @@
-import { CurrentCompletedCountMetric } from '../';
+import { CompletedCountMetric } from '../';
 import { getUniqueId } from '../../ids';
 import {
   MetricCategory,
@@ -18,27 +18,27 @@ jest.setTimeout(10000);
 describe('CompletedCountMetric', () => {
   describe('static properties', () => {
     it('exposes a "description" property', () => {
-      expect(CurrentCompletedCountMetric.description).toBe(
+      expect(CompletedCountMetric.description).toBe(
         'Current COMPLETED Jobs',
       );
     });
 
     it('exposes a "key" property', () => {
-      expect(CurrentCompletedCountMetric.key).toBe(
+      expect(CompletedCountMetric.key).toBe(
         MetricTypes.Completed,
       );
     });
 
     it('exposes a "unit" property', () => {
-      expect(CurrentCompletedCountMetric.unit).toBe('jobs');
+      expect(CompletedCountMetric.unit).toBe('jobs');
     });
 
     it('exposes a "category" property', () => {
-      expect(CurrentCompletedCountMetric.category).toBe(MetricCategory.Queue);
+      expect(CompletedCountMetric.category).toBe(MetricCategory.Queue);
     });
 
     it('exposes a "type" property', () => {
-      expect(CurrentCompletedCountMetric.type).toBe(MetricValueType.Gauge);
+      expect(CompletedCountMetric.type).toBe(MetricValueType.Gauge);
     });
   });
 
@@ -47,7 +47,7 @@ describe('CompletedCountMetric', () => {
       const options: MetricOptions = {
         sampleInterval: 250,
       };
-      const sut = new CurrentCompletedCountMetric(options);
+      const sut = new CompletedCountMetric(options);
       expect(sut).toBeDefined();
     });
   });
@@ -72,7 +72,7 @@ describe('CompletedCountMetric', () => {
     }
 
     it('should get the correct number of completed jobs', async () => {
-      const sut = new CurrentCompletedCountMetric({ sampleInterval: 1000 });
+      const sut = new CompletedCountMetric({ sampleInterval: 1000 });
       const helper = await MetricTestHelper.forMetric(sut, queue);
       const listener = helper.metricsListener;
 

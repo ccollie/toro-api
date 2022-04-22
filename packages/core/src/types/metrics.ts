@@ -1,21 +1,17 @@
+import { MetricType, SerializedMetricName } from '../metrics/crow/metric-name';
+
 export enum MetricTypes {
   None,
   Apdex,
   ActiveJobs,
   ConnectedClients,
-  ConsecutiveFailures,
   Completed,
   CompletedRate,
-  CurrentCompletedCount,
-  CurrentFailedCount,
   DelayedJobs,
-  ErrorRate,
-  ErrorPercentage,
   Failures,
   Finished,
   FragmentationRatio,
   InstantaneousOps,
-  JobRate,
   Latency,
   PeakMemory,
   PendingCount,
@@ -65,11 +61,6 @@ export interface SlidingWindowOptions {
   granularity?: number;
 }
 
-export interface MetricsFilter {
-  idRegex?: string;
-  jobNames?: string[];
-}
-
 export interface MetricOptions {
   sampleInterval?: number;
 }
@@ -94,11 +85,8 @@ export interface SerializedAggregator {
 
 export interface SerializedMetric {
   id?: string;
-  type: MetricTypes;
-  name?: string;
-  description?: string;
+  name?: SerializedMetricName;
   isActive?: boolean;
-  aggregator: SerializedAggregator;
   options: Record<string, any>;
   createdAt?: number;
   updatedAt?: number;

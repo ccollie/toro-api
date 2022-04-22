@@ -3,11 +3,12 @@ import { QueueBasedMetricSchema, QueuePollingMetric } from './baseMetric';
 import { Events } from './constants';
 import * as units from '../stats/units';
 import { DurationSchema } from '../validation';
-import { MetricsListener } from './metrics-listener';
 import { MetricValueType, QueueMetricOptions } from '../types';
 import { IMovingAverage, MovingAverage } from '../stats/moving-average';
 import { JobEventData } from '../queues';
 import { systemClock } from '../lib';
+import { Pipeline } from 'ioredis';
+import { Queue } from 'bullmq';
 
 /**
  * @interface RateMetricOptions
@@ -39,14 +40,13 @@ export class RateMetric extends QueuePollingMetric {
     this.movingAverage = MovingAverage(options.timePeriod);
   }
 
-  init(listener: MetricsListener): void {
-    super.init(listener);
-    this._count = 0;
-    this.movingAverage.reset();
-  }
-
-  async checkUpdate(ts?: number): Promise<void> {
+  async checkUpdate(
+    pipeline: Pipeline,
+    queue: Queue,
+    ts?: number,
+  ): Promise<void> {
     this.update(this.movingAverage.value, ts);
+    this.reset();
   }
 
   get period(): number {
@@ -69,6 +69,7 @@ export class RateMetric extends QueuePollingMetric {
   }
 
   reset(): void {
+    this._count = 0;
     this.movingAverage.reset();
   }
 

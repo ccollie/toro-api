@@ -14,7 +14,7 @@ import {
   JobFinishedEventData,
 } from '../queues/queue-listener';
 import { getMetricsDataKey } from '../keys';
-import { Events } from './constants';
+import { Events } from './types';
 import { createMetricFromJSON } from './factory';
 import { TimeSeries } from '../commands';
 import IORedis from 'ioredis';
@@ -144,7 +144,7 @@ export class MetricsListener {
         meta.lastSave = now;
         meta.lastTick = now;
         if (isPollingMetric(metric)) {
-          tasks.push(() => metric.checkUpdate(this, now));
+          tasks.push(() => metric.checkUpdate(pipeline, this.queue, now));
           polling.push(metric);
         } else {
           addToPipeline(metric);
@@ -249,8 +249,7 @@ export class MetricsListener {
     const meta: MetricMetadata = {
       lastTick: Date.now(),
       lastSave: 0,
-      interval: 0,
-      sampleInterval: metric.sampleInterval,
+      interval: 0
     };
     this.metricMeta.set(metric, meta);
     if (metric instanceof QueueBasedMetric) {
@@ -268,7 +267,6 @@ export class MetricsListener {
     }
     this._metrics.push(metric);
     // metric.onUpdate()
-    metric.init(this);
   }
 
   unregisterMetric(metric: BaseMetric): void {
@@ -317,7 +315,7 @@ export class MetricsListener {
     this.emitter.off(event, handler);
   }
 
-  calcTimerInterval(): number {
+  private calcTimerInterval(): number {
     let val = Number.MAX_SAFE_INTEGER;
     let gcf = -1;
     const active = this.activeMetrics;

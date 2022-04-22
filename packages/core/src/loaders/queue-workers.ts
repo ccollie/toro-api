@@ -4,6 +4,9 @@ import pMap from 'p-map';
 import { convertWorker, QueueWorker } from '../queues/queue-worker';
 import { aggregateQueuesByClient, mapQueuesToIndex } from './utils';
 
+// todo: cache results. I don't imagine this list would change too frequently.
+// In any cas cache duration should be < 1 min (default metric collection interval)
+
 export async function getQueueWorkers(
   client: RedisClient,
   queues: Queue[],
@@ -98,3 +101,7 @@ export async function getQueueWorkerCountBatch(
 }
 
 export const workerCount = new DataLoader(getQueueWorkerCountBatch);
+
+export function getWorkerCount(queue: Queue): Promise<number> {
+  return workerCount.load(queue);
+}

@@ -1,6 +1,6 @@
 import { QueueBasedMetric } from './baseMetric';
 import type { JobFinishedEventData } from '../queues';
-import { Events } from './constants';
+import { Events } from './types';
 import { MetricTypes } from '../types';
 
 export class WaitTimeMetric extends QueueBasedMetric {

@@ -9,6 +9,7 @@ export interface IAccessorHelper {
   getQueueId: (queue: Queue) => string;
   getHostById: (id: string) => HostManager;
   getQueueById: (queue: string) => Queue;
+  getQueueHost: (queue: string | Queue) => HostManager;
   getQueueHostClient: (queue: Queue) => RedisClient;
   getQueueManager: (queue: Queue | string) => QueueManager;
 }
@@ -39,6 +40,9 @@ const DefaultAccessor: IAccessorHelper = {
   },
   getHostById(id: string): HostManager {
     throw notImplemented('"getHostById" not implemented');
+  },
+  getQueueHost(queue: string | Queue): HostManager {
+    throw notImplemented('"getQueueHost" not implemented');
   },
   getQueueHostClient(queue: Queue): RedisClient {
     throw notImplemented('"getQueueHostClient" not implemented');
@@ -71,8 +75,13 @@ export function getHostById(id: string): HostManager {
   return accessor.getHostById(id);
 }
 
+export function getQueueHost(queue: string | Queue): HostManager {
+  const mgr = accessor.getQueueManager(queue);
+  return mgr?.hostManager;
+}
+
 export function getQueueHostClient(queue: Queue): RedisClient {
-  return accessor.getQueueHostClient(queue);
+  return getQueueHost(queue)?.client;
 }
 
 export function getQueueManager(queue: string | Queue): QueueManager {

@@ -1,25 +1,33 @@
 import { PollingMetric } from './baseMetric';
-import { getRedisInfo } from '../redis';
-import { MetricsListener } from './metrics-listener';
+import { getRedisInfoByQueue } from '../loaders/redis-info';
+import { RedisMetrics } from '../redis/utils';
 import {
   MetricCategory,
   MetricValueType,
   MetricTypes,
   MetricOptions,
 } from '../types';
+import { Pipeline } from 'ioredis';
+import { Queue } from 'bullmq';
+
+type TKey = keyof RedisMetrics;
 
 export class RedisMetric extends PollingMetric {
-  private readonly fieldName: string;
+  private readonly fieldName: TKey;
 
-  constructor(options: MetricOptions, fieldName: string) {
+  constructor(options: MetricOptions, fieldName: TKey) {
     super(options);
     this.fieldName = fieldName;
   }
 
-  async checkUpdate(listener: MetricsListener, ts: number): Promise<void> {
-    const client = await listener.client;
-    const info = await getRedisInfo(client);
-    const value = (info as any)[this.fieldName];
+  async checkUpdate(
+    pipeline: Pipeline,
+    queue: Queue,
+    ts?: number,
+  ): Promise<void> {
+    const info = await getRedisInfoByQueue(queue);
+    const val = info[this.fieldName];
+    const value = typeof val === 'string' ? parseInt(val, 10) : val;
     this.update(value, ts);
   }
 

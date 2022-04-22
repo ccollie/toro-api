@@ -19,6 +19,7 @@ export function initLoaders(): void {
     getQueueId,
     getQueueById,
     getHostById,
+    getQueueHost,
     getQueueManager,
     getQueueHostClient(queue: Queue): RedisClient {
       const host = getQueueHost(queue);

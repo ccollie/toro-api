@@ -89,3 +89,7 @@ async function getJobMemoryBatch(
 export const jobMemoryUsage = new DataLoader(getJobMemoryBatch, {
   cacheKeyFn: cacheFn,
 });
+
+export function getJobMemoryUsage(opts: JobMemoryLoaderKey): Promise<JobMemoryLoaderResult> {
+  return jobMemoryUsage.load(opts);
+}

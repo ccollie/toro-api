@@ -4,7 +4,6 @@ import {
   FlowJob,
   FlowProducer,
   JobNode,
-  JobState,
   NodeOpts,
   Queue,
   RedisClient,

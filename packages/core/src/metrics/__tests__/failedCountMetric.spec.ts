@@ -1,4 +1,4 @@
-import { CurrentFailedCountMetric } from '../';
+import { FailedCountMetric } from '../';
 import { getUniqueId } from '../../ids';
 import {
   QueueMetricOptions,
@@ -11,26 +11,26 @@ import { MetricTestHelper } from './metricTestHelper';
 import { Job, Queue } from 'bullmq';
 import { random } from '@alpen/shared';
 
-describe('CurrentFailedCountMetric', () => {
+describe('FailedCountMetric', () => {
   describe('static properties', () => {
     it('exposes a "description" property', () => {
-      expect(CurrentFailedCountMetric.description).toBe('Failed Jobs');
+      expect(FailedCountMetric.description).toBe('Failed Jobs');
     });
 
     it('exposes a "key" property', () => {
-      expect(CurrentFailedCountMetric.key).toBe(MetricTypes.CurrentFailedCount);
+      expect(FailedCountMetric.key).toBe(MetricTypes.Failures);
     });
 
     it('exposes a "unit" property', () => {
-      expect(CurrentFailedCountMetric.unit).toBe('jobs');
+      expect(FailedCountMetric.unit).toBe('jobs');
     });
 
     it('exposes a "category" property', () => {
-      expect(CurrentFailedCountMetric.category).toBe(MetricCategory.Queue);
+      expect(FailedCountMetric.category).toBe(MetricCategory.Queue);
     });
 
     it('exposes a "type" property', () => {
-      expect(CurrentFailedCountMetric.type).toBe(MetricValueType.Gauge);
+      expect(FailedCountMetric.type).toBe(MetricValueType.Gauge);
     });
   });
 
@@ -39,7 +39,7 @@ describe('CurrentFailedCountMetric', () => {
       const options: QueueMetricOptions = {
         sampleInterval: 250,
       };
-      const sut = new CurrentFailedCountMetric(options);
+      const sut = new FailedCountMetric(options);
       expect(sut).toBeDefined();
       expect(sut.sampleInterval).toBe(options.sampleInterval);
     });
@@ -63,7 +63,7 @@ describe('CurrentFailedCountMetric', () => {
       const queue = await createQueue();
       const client = await queue.client;
 
-      const sut = new CurrentFailedCountMetric({ sampleInterval: 1000 });
+      const sut = new FailedCountMetric({ sampleInterval: 1000 });
       const helper = await MetricTestHelper.forMetric(sut, queue);
 
       const worker = createWorker(

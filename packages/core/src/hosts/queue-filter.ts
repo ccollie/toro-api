@@ -43,7 +43,7 @@ export async function getFilteredQueues(
     }
     if ((checkActive || checkInactive) && !(checkActive && checkInactive)) {
       pipeline.client('list');
-      // count active jobs
+      // count active queues
     }
     let isValid = true;
 
@@ -60,7 +60,7 @@ export async function getFilteredQueues(
       });
     }
 
-    if (checkInactive && checkInactive) {
+    if (checkActive && checkInactive) {
       return Array.from(valid);
     } else {
       const clientList = response[response.length - 1];

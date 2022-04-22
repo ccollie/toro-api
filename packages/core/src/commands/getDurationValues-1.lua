@@ -7,7 +7,7 @@
     ARGV[3]  end ts
     ARGV[4]  job name filter -- optional, can be nil or empty string
   Output:
-    array(number)
+    array(timestamp, processedOn, finishedOn, {...})
 ]]
 local key = KEYS[1]
 local prefix = ARGV[1]
@@ -46,23 +46,16 @@ if (#ids > 0) then
   for _, id in ipairs(ids) do
     local jobKey = prefix .. id
     local job = redis.call('hmget', jobKey, 'timestamp', 'finishedOn', 'processedOn', 'name')
-    local timestamp = tonumber(job[1])
-    local finishedOn = tonumber(job[2])
+    local timestamp = tonumber(job[1]) or -1
+    local finishedOn = tonumber(job[2]) or -1
     local processedOn = tonumber(job[3])
     local name = job[4]
 
     if jobFilterFn(name) and (processedOn ~= nil) then
-      local duration = -1 -- default to -1 if we don't have a finishedOn value
-      local waitTime = -1
-      if (finishedOn ~= nil) then
-        duration = finishedOn - processedOn
-      end
-      if (timestamp ~= nil) then
-        waitTime = processedOn - timestamp
-      end
-      result[count] = duration
-      result[count + 1] = waitTime
-      count = count + 2
+      local count = #result;
+      result[count + 1] = timestamp
+      result[count + 2] = processedOn
+      result[count + 3] = finishedOn
     end
   end
 end

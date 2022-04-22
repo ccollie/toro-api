@@ -1,10 +1,12 @@
-import { QueueCounterBasedMetric } from './counterBasedMetric';
-import { Events } from './constants';
-import { MetricTypes } from '../types';
+import { MetricOptions, MetricTypes } from '../types';
+import { JobCountMetric } from './jobCountMetric';
 
-export class CompletedCountMetric extends QueueCounterBasedMetric {
-  get validEvents(): string[] {
-    return [Events.COMPLETED];
+/**
+ * A metric tracking the number of completed jobs in a queue
+ */
+export class CompletedCountMetric extends JobCountMetric {
+  constructor(options: MetricOptions) {
+    super(options, ['completed']);
   }
 
   static get key(): MetricTypes {
@@ -13,9 +15,5 @@ export class CompletedCountMetric extends QueueCounterBasedMetric {
 
   static get description(): string {
     return 'Completed Jobs';
-  }
-
-  static get unit(): string {
-    return 'jobs';
   }
 }

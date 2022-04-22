@@ -1,8 +1,15 @@
 import ms from 'ms';
-import { Job, JobJsonRaw, MinimalQueue, Queue, RedisClient } from 'bullmq';
+import {
+  FinishedStatus,
+  Job,
+  JobJsonRaw,
+  MinimalQueue,
+  Queue,
+  RedisClient,
+} from 'bullmq';
 import { isEmpty } from '@alpen/shared';
 import { pack } from 'msgpackr';
-import { MetricsTimeseries } from 'packages/core/src/types/metrics-timeseries';
+import { MetricsTimeseries } from '../types/metrics-timeseries';
 import { translateReplyError } from '../redis';
 import { JobFinishedState, JobStatus } from '../types';
 import { nanoid } from '../lib';
@@ -16,6 +23,7 @@ const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
 );
 
 export type FilterJobAction = 'getJobs' | 'getIds' | 'remove';
+export type AggregationType = 'min' | 'max' | 'sum' | 'avg';
 
 export interface ScriptFilteredJobsResult {
   cursor?: number;
@@ -29,6 +37,12 @@ export interface ScanJobsResult {
   cursor?: number;
   total: number;
   jobs: Partial<Job>[];
+}
+
+export interface JobDurationValuesResult {
+  processingTime: number[];
+  waitTime: number[];
+  responseTime: number[];
 }
 
 const DEFAULT_SAMPLE_SIZE = 50;
@@ -404,9 +418,9 @@ export class Scripts {
 
   static async getMetricsDateRange(
     queue: MinimalQueue,
-    type: 'failed' | 'completed',
+    type: FinishedStatus,
     start: Date | number = 0,
-    end: Date| number = -1,
+    end: Date | number = -1,
   ): Promise<MetricsTimeseries> {
     const client = await queue.client;
 
@@ -423,12 +437,7 @@ export class Scripts {
     const metricsKey = queue.toKey(`metrics:${type}`);
     const dataKey = `${metricsKey}:data`;
 
-    const args = [
-      metricsKey,
-      dataKey,
-      start,
-      end,
-    ];
+    const args = [metricsKey, dataKey, start, end];
 
     const arr = await (<any>client).getMetricsDateRange(args);
     const res = arr as Array<string>;
@@ -436,7 +445,7 @@ export class Scripts {
     const dataPoints = res.slice(0, -3);
     const startTs = parseInt(startDate, 10);
     const data = dataPoints.map((v, i) => ({
-      ts: startTs + (i * 60000),
+      ts: startTs + i * 60000,
       value: parseInt(v, 10),
     }));
 
@@ -450,14 +459,13 @@ export class Scripts {
     };
   }
 
-  static async getJobDurationValues(
+  static getJobDurationValuesArgs(
     queue: MinimalQueue,
+    status: FinishedStatus,
     start: Date | number = 0,
-    end: Date| number = -1,
+    end: Date | number = -1,
     jobName = '',
-  ): Promise<{  processingTime: number[]; waitTime: number[] }> {
-    const client = await queue.client;
-
+  ): any[] {
     if (typeof start !== 'number') {
       start = start.getDate();
     }
@@ -468,33 +476,65 @@ export class Scripts {
       throw new Error('End date must be greater than start date');
     }
 
-    const key = queue.toKey('completed');
+    const key = queue.toKey(status);
     const keyPrefix = queue.toKey('');
 
-    const args = [
-      key,
-      keyPrefix,
+    return [key, keyPrefix, start, end, jobName];
+  }
+
+  static async getJobDurationValues(
+    queue: MinimalQueue,
+    start: Date | number = 0,
+    end: Date | number = -1,
+    jobName = '',
+  ): Promise<JobDurationValuesResult> {
+    const client = await queue.client;
+
+    const args = Scripts.getJobDurationValuesArgs(
+      queue,
+      'completed',
       start,
       end,
       jobName,
-    ];
-
-    // we alternate between processingTime and waitTime
-    const waitTime: number[] = [];
-    const processingTime: number[] = [];
+    );
 
     const arr = await (<any>client).getDurationValues(args);
-    if (Array.isArray(arr)) {
-      for(let i = 0; i < arr.length; i += 2) {
-        waitTime.push(parseInt(arr[i], 10));
-        processingTime.push(parseInt(arr[i + 1], 10));
-      }
-    }
+    return parseDurationValues(arr);
+  }
 
-    return {
-      processingTime,
-      waitTime,
-    };
+  static getJobAttemptsArgs(
+    queue: MinimalQueue,
+    status: FinishedStatus,
+    start: Date | number = 0,
+    end: Date | number = -1,
+    jobName = '',
+    aggregation: AggregationType = 'avg'
+  ): unknown[] {
+    const args = Scripts.getJobDurationValuesArgs(queue, status, start, end, jobName);
+    args.push(aggregation);
+    return args;
+  }
+
+  static async getJobAttemptsInRange(
+    queue: MinimalQueue,
+    status: FinishedStatus,
+    start: Date | number = 0,
+    end: Date | number = -1,
+    jobName = '',
+    aggregation: 'min' | 'max' | 'sum' | 'avg'
+  ): Promise<number> {
+    const client = await queue.client;
+
+    const args = Scripts.getJobAttemptsArgs(
+      queue,
+      status,
+      start,
+      end,
+      jobName,
+      aggregation
+    );
+
+    return (<any>client).getAttemptsInRange(args);
   }
 }
 
@@ -539,4 +579,28 @@ export function fixupJob(queue: Queue, currentJob: any): Job {
     return job;
   }
   return null;
+}
+
+export function parseDurationValues(arr: unknown): JobDurationValuesResult {
+  // we alternate between processingTime and waitTime
+  const waitTime: number[] = [];
+  const processingTime: number[] = [];
+  const responseTime: number[] = [];
+
+  if (Array.isArray(arr)) {
+    for (let i = 0; i < arr.length; i += 3) {
+      const ts = parseInt(arr[i], 10);
+      const processedOn = parseInt(arr[i + 1], 10);
+      const finishedOn = parseInt(arr[i + 2], 10);
+      waitTime.push(processedOn - ts);
+      processingTime.push(finishedOn - processedOn);
+      responseTime.push(finishedOn - ts);
+    }
+  }
+
+  return {
+    processingTime,
+    waitTime,
+    responseTime,
+  };
 }

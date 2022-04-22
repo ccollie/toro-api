@@ -1,12 +1,8 @@
 import * as boom from '@hapi/boom';
-import { ConsecutiveFailuresMetric } from './consecutiveFailuresMetric';
 import { CompletedCountMetric } from './completedCountMetric';
 import { CompletedRateMetric } from './completedRateMetric';
 import { FailedCountMetric } from './failedCountMetric';
 import { FinishedCountMetric } from './finishedCountMetric';
-import { ErrorRateMetric } from './errorRateMetric';
-import { ErrorPercentageMetric } from './errorPercentageMetric';
-import { JobRateMetric } from './jobRateMetric';
 import { WaitTimeMetric } from './waitTimeMetric';
 import { LatencyMetric } from './latencyMetric';
 import { ResponseTimeMetric } from './responseTimeMetric';
@@ -18,27 +14,20 @@ import {
   PeakMemoryMetric,
   UsedMemoryMetric,
 } from './redisMetrics';
-import {
-  CurrentActiveCountMetric,
-  CurrentCompletedCountMetric,
-  CurrentDelayedCountMetric,
-  CurrentFailedCountMetric,
-  CurrentWaitingCountMetric,
-  PendingCountMetric,
-  WaitingChildrenCountMetric,
-} from './jobSpotCountMetric';
-import { createAggregator } from './aggregators';
 import { ApdexMetric } from './apdexMetric';
 import { parseTimestamp, hashObject, parseBool } from '@alpen/shared';
 import { isNil, isObject, isString } from '@alpen/shared';
 import { logger } from '../logger';
 import {
-  AggregatorTypes,
   Constructor,
   MetricInfo,
   MetricTypes,
-  SerializedAggregator,
 } from '../types';
+import { ActiveCountMetric } from './activeCountMetric';
+import { DelayedCountMetric } from './delayedCountMetric';
+import { WaitingCountMetric } from './waitingCountMetric';
+import { WaitingChildrenCountMetric } from './waitingChildrenCountMetric';
+import { PendingCountMetric } from './pendingCountMetric';
 
 export type MetricConstructor = Constructor<BaseMetric>;
 
@@ -48,24 +37,18 @@ export const metricsByEnum: Record<MetricTypes, MetricConstructor | null> = {
   [MetricTypes.ConnectedClients]: ConnectedClientsMetric,
   [MetricTypes.Completed]: CompletedCountMetric,
   [MetricTypes.CompletedRate]: CompletedRateMetric,
-  [MetricTypes.ConsecutiveFailures]: ConsecutiveFailuresMetric,
-  [MetricTypes.ActiveJobs]: CurrentActiveCountMetric,
-  [MetricTypes.CurrentCompletedCount]: CurrentCompletedCountMetric,
-  [MetricTypes.DelayedJobs]: CurrentDelayedCountMetric,
-  [MetricTypes.CurrentFailedCount]: CurrentFailedCountMetric,
-  [MetricTypes.ErrorRate]: ErrorRateMetric,
-  [MetricTypes.ErrorPercentage]: ErrorPercentageMetric,
+  [MetricTypes.ActiveJobs]: ActiveCountMetric,
+  [MetricTypes.DelayedJobs]: DelayedCountMetric,
   [MetricTypes.Failures]: FailedCountMetric,
   [MetricTypes.Finished]: FinishedCountMetric,
   [MetricTypes.FragmentationRatio]: FragmentationRatioMetric,
-  [MetricTypes.JobRate]: JobRateMetric,
   [MetricTypes.Latency]: LatencyMetric,
   [MetricTypes.UsedMemory]: UsedMemoryMetric,
   [MetricTypes.PeakMemory]: PeakMemoryMetric,
   [MetricTypes.PendingCount]: PendingCountMetric,
   [MetricTypes.ResponseTime]: ResponseTimeMetric,
   [MetricTypes.InstantaneousOps]: InstantaneousOpsMetric,
-  [MetricTypes.Waiting]: CurrentWaitingCountMetric,
+  [MetricTypes.Waiting]: WaitingCountMetric,
   [MetricTypes.WaitingChildren]: WaitingChildrenCountMetric,
   [MetricTypes.WaitTime]: WaitTimeMetric,
 };
@@ -78,24 +61,18 @@ export const metricsMap: {
   ConnectedClients: ConnectedClientsMetric,
   Completed: CompletedCountMetric,
   CompletedRate: CompletedRateMetric,
-  ConsecutiveFailures: ConsecutiveFailuresMetric,
-  ActiveJobs: CurrentActiveCountMetric,
-  CurrentCompletedCount: CurrentCompletedCountMetric,
-  DelayedJobs: CurrentDelayedCountMetric,
-  CurrentFailedCount: CurrentFailedCountMetric,
-  ErrorRate: ErrorRateMetric,
-  ErrorPercentage: ErrorPercentageMetric,
+  ActiveJobs: ActiveCountMetric,
+  DelayedJobs: DelayedCountMetric,
   Failures: FailedCountMetric,
   Finished: FinishedCountMetric,
   FragmentationRatio: FragmentationRatioMetric,
-  JobRate: JobRateMetric,
   Latency: LatencyMetric,
   UsedMemory: UsedMemoryMetric,
   PeakMemory: PeakMemoryMetric,
   PendingCount: PendingCountMetric,
   ResponseTime: ResponseTimeMetric,
   InstantaneousOps: InstantaneousOpsMetric,
-  Waiting: CurrentWaitingCountMetric,
+  Waiting: WaitingCountMetric,
   WaitingChildren: WaitingChildrenCountMetric,
   WaitTime: WaitTimeMetric,
 };
@@ -147,7 +124,6 @@ export function createMetricFromJSON(json: Record<string, any>): BaseMetric {
     type,
     name,
     options: _options,
-    aggregator: _aggOptions,
     createdAt,
     updatedAt,
     isActive,
@@ -183,19 +159,6 @@ export function createMetricFromJSON(json: Record<string, any>): BaseMetric {
   }
 
   metric.isActive = parseBool(isActive);
-
-  if (_aggOptions) {
-    let aggregator: SerializedAggregator;
-    if (typeof _aggOptions === 'string') {
-      aggregator = deserializeObject(_aggOptions) as SerializedAggregator;
-    } else {
-      aggregator = _aggOptions;
-    }
-    const { type, options } = aggregator;
-    metric.aggregator = createAggregator(type, options);
-  } else {
-    metric.aggregator = createAggregator(AggregatorTypes.Identity, {});
-  }
 
   return metric;
 }

@@ -11,7 +11,7 @@ import {
 import { clearDb, createQueue } from '../../__tests__/factories';
 import { MetricTestHelper } from './metricTestHelper';
 
-describe('CurrentWaitingCountMetric', () => {
+describe('WaitingCountMetric', () => {
   describe('static properties', () => {
     it('exposes a "description" property', () => {
       expect(WaitingCountMetric.description).toBe('Waiting Jobs');

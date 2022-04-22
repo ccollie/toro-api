@@ -12,7 +12,7 @@ import { Job, Queue } from 'bullmq';
 import { random } from '@alpen/shared';
 import { delay } from '../../lib';
 
-describe('CurrentActiveCountMetric', () => {
+describe('ActiveCountMetric', () => {
   describe('static properties', () => {
     it('exposes a "description" property', () => {
       expect(ActiveCountMetric.description).toBe('Active Jobs');
