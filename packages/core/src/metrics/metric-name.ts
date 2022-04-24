@@ -1,6 +1,7 @@
 // different metric types have different implementations:
 import boom from '@hapi/boom';
 import { parseMetricName } from './metric-name-parser';
+import { DEFAULT_ERROR, DEFAULT_PERCENTILES } from './registry';
 
 export enum MetricType {
   Counter,
@@ -12,6 +13,9 @@ export const QueueTagKey = 'queue';
 export const HostTagKey = 'host';
 export const InstanceTagKey = 'instance';
 export const QueueIdTagKey = 'queue_id';
+export const JobNameTagKey = 'jobName';
+export const PercentilesTagKey = '__pct__';
+export const ErrorTagKey = '__err__';
 
 export type Tags = Map<string, string> | { [key: string]: string };
 
@@ -23,14 +27,14 @@ export interface SerializedGaugeName {
   fieldName?: string;
 }
 
-export interface SerializedCounterName {
+export interface SerializedCounterName  {
   type: MetricType.Counter;
   canonical: string;
   fieldName?: string;
 }
 
 export interface SerializedDistributionName {
-  type: MetricType;
+  type: MetricType.Distribution;
   canonical: string;
   fieldName?: string;
   percentiles?: number[];
@@ -83,6 +87,47 @@ export abstract class MetricName {
     };
   }
 
+  static fromCanonicalName(canonical: string, baseTags?: Tags): MetricName {
+    const { name, tags, fieldName, metric } = parseMetricName(canonical);
+
+    if (!metric) {
+      throw boom.badData(`Unknown metric: "${name}"`);
+    }
+    const type = metric.metricType;
+    switch (type) {
+      case MetricType.Gauge:
+        return new Gauge(name, baseTags, tags, fieldName);
+      case MetricType.Counter:
+        return new Counter(name, baseTags, tags, fieldName);
+      case MetricType.Distribution: {
+        // ICKY. Not very LSP
+        let percentiles = getNumericArrayValue(tags, PercentilesTagKey);
+        if (percentiles.length === 0) percentiles = DEFAULT_PERCENTILES;
+        const error = getNumberTagValue(tags, ErrorTagKey) ?? DEFAULT_ERROR;
+        if (!percentiles.every((x) => x > 0 && x < 1)) {
+          throw boom.badData(
+            'percentiles: expected array of numbers between 0 and 1',
+          );
+        }
+        if (
+          (error !== undefined && !Number.isFinite(error)) ||
+          error < 0 ||
+          error >= 1
+        ) {
+          throw boom.badData('error: expected a number between 0 and 1');
+        }
+        return new Distribution(
+          name,
+          baseTags,
+          tags,
+          percentiles,
+          error,
+          fieldName,
+        );
+      }
+    }
+  }
+
   static fromJSON(data: Record<string, any>): MetricName {
     const { type, canonical, fieldName } = data;
     if (
@@ -95,12 +140,12 @@ export abstract class MetricName {
     if (!canonical) {
       throw boom.badData('Missing canonical metric name');
     }
-    const { name, tags } = parseMetricName(canonical);
+    const { name, tags, fieldName: _field } = parseMetricName(canonical);
     switch (type) {
       case MetricType.Gauge:
-        return new Gauge(name, tags, fieldName);
+        return new Gauge(name, tags, fieldName ?? _field);
       case MetricType.Counter:
-        return new Counter(name, tags, fieldName);
+        return new Counter(name, tags, fieldName ?? _field);
       case MetricType.Distribution: {
         // ICKY. Not very LSP
         const { percentiles, error } = data;
@@ -121,7 +166,13 @@ export abstract class MetricName {
         ) {
           throw boom.badData('error: expected a number between 0 and 1');
         }
-        return new Distribution(name, tags, percentiles, error, fieldName);
+        return new Distribution(
+          name,
+          tags,
+          percentiles,
+          error,
+          fieldName ?? _field,
+        );
       }
     }
   }
@@ -131,16 +182,15 @@ export abstract class MetricName {
   }
 
   getNumberTagValue(name: string): number | undefined {
-    const val = this.getTagValue(name);
-    if (val) {
-      const result = parseFloat(val);
-      // todo: should we throw ?
-      if (!Number.isFinite(result)) {
-        throw new Error('Cannot parse the value of "' + name + '" as a number');
-      }
-      return result;
-    }
-    return undefined;
+    return getNumberTagValue(this.tags, name);
+  }
+
+  getArrayTagValue(name: string): string[] {
+    return getArrayTagValue(this.tags, name);
+  }
+
+  getNumericArrayValue(tag: string): number[] {
+    return getNumericArrayValue(this.tags, tag);
   }
 
   /*
@@ -173,12 +223,41 @@ export function tagsToMap(
   return new Map([...toEntries(baseTags), ...toEntries(tags)]);
 }
 
-export function splitMetricName(name: string): [string, string] {
-  const n = name.indexOf('{');
-  if (n < 0) {
-    return [name, ''];
+function getNumberTagValue(
+  tags: Map<string, string>,
+  name: string,
+): number | undefined {
+  const val = tags.get(name);
+  if (val) {
+    const result = parseFloat(val);
+    // todo: should we throw ?
+    if (!Number.isFinite(result)) {
+      throw new Error('Cannot parse the value of "' + name + '" as a number');
+    }
+    return result;
   }
-  return [name.slice(0, n), name.slice(n)];
+  return undefined;
+}
+
+function getArrayTagValue(tags: Map<string, string>, name: string): string[] {
+  const val = tags.get(name);
+  if (!val) return [];
+  return val.split(',');
+}
+
+function getNumericArrayValue(
+  tags: Map<string, string>,
+  key: string,
+): number[] {
+  const items = getArrayTagValue(tags, key);
+  return items.map((val) => {
+    const x = parseFloat(val);
+    if (!Number.isFinite(x))
+      throw new RangeError(
+        `Getting ${key}[]; Cannot parse tag value ${val} as a number`,
+      );
+    return x;
+  });
 }
 
 export class Counter extends MetricName {
@@ -205,6 +284,19 @@ export class Gauge extends MetricName {
   }
 }
 
+function distributionTags(
+  baseTags: Tags,
+  tags: Tags = NoTags,
+  percentiles: number[],
+  error: number,
+): Map<string, string> {
+  const map = tagsToMap(baseTags, tags);
+  const percentilesValue = percentiles.sort().map((p) => p.toString()).join(',');
+  map.set(PercentilesTagKey, percentilesValue);
+  map.set(ErrorTagKey, error.toString());
+  return map;
+}
+
 export class Distribution extends MetricName {
   readonly percentileGauges: Gauge[];
   readonly countGauge: Gauge;
@@ -218,7 +310,12 @@ export class Distribution extends MetricName {
     public readonly error: number,
     fieldName?: string,
   ) {
-    super(MetricType.Distribution, name, tagsToMap(baseTags, tags), fieldName);
+    super(
+      MetricType.Distribution,
+      name,
+      distributionTags(baseTags, tags, percentiles, error),
+      fieldName,
+    );
     this.percentileGauges = percentiles.map(
       (p) =>
         new Gauge(this.name, this.tags, { p: p.toString() }, fieldName, this),
@@ -240,9 +337,11 @@ export class Distribution extends MetricName {
   }
 
   toJSON(): SerializedDistributionName {
-    const { percentiles, error } = this;
+    const { percentiles, error, canonical, fieldName } = this;
     return {
-      ...super.toJSON(),
+      type: MetricType.Distribution,
+      canonical,
+      fieldName,
       percentiles,
       error,
     };

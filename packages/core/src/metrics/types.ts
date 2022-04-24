@@ -44,6 +44,11 @@ export type MetricTypeName =
   | QueueMetricTypeName
   | HostMetricTypeName;
 
+export type DistributionMetricTypeNames =
+    | 'jobs_wait_time_ms'
+    | 'jobs_runtime_ms'
+    | 'jobs_process_time_ms';
+
 export interface MetricFamily {
   type: MetricTypeName;
   metricType: MetricType;
@@ -55,8 +60,15 @@ export interface MetricFamily {
 export interface SerializedMetric {
   id?: string;
   name?: SerializedMetricName;
-  isActive?: boolean;
-  options: Record<string, any>;
   createdAt?: number;
   updatedAt?: number;
 }
+
+// retention
+export type MetricMetadata = {
+  createdAt: number;
+  firstTs?: number;
+  lastTs?: number;
+  lastUpdated?: number;
+  [key:string]: any;
+};

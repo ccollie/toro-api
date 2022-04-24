@@ -12,9 +12,9 @@ import {
   systemClock,
 } from '../lib';
 import { logger } from '../logger';
-import { Events } from '../metrics/metrics-info';
 import { parseStreamId, timestampFromStreamId } from '../redis';
 import type { AppJob } from '../types';
+import { Events } from '~/core';
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');
@@ -74,7 +74,6 @@ export class QueueListener extends Emittery {
       max: 500,
       ttl: CACHE_TIMEOUT,
     });
-
 
     // proxy events from contained QueueEvents
     this.on(Emittery.listenerAdded, ({ eventName }) => {
@@ -242,7 +241,10 @@ export class QueueListener extends Emittery {
     this.emitJobEvents(data);
   }
 
-  protected delayedListener(args: { jobId: string; delay: number }, id: string): void {
+  protected delayedListener(
+    args: { jobId: string; delay: number },
+    id: string,
+  ): void {
     const data = this.preprocessJobEvent('delayed', args, id);
     const { job } = data;
     if (!data.prevState && !job.timestamp) {
@@ -268,46 +270,47 @@ export class QueueListener extends Emittery {
     this.emitJobEvents(data);
   }
 
-  protected progressListener(args: { jobId: string; data: number | object }, id: string): void {
+  protected progressListener(
+    args: { jobId: string; data: number | object },
+    id: string,
+  ): void {
     const data = this.preprocessJobEvent('progress', args, id);
     const { job } = data;
     job.progress = args.data;
     this.emitJobEvents(data);
   }
 
-  markFinished(
-    data: JobEventData,
-    status: 'completed' | 'failed',
-  ): void {
+  markFinished(data: JobEventData, status: 'completed' | 'failed'): void {
     const { job, ts } = data;
     const failed = status === 'failed';
     job.state = status;
     job.finishedOn = ts;
 
-    this.getDurations(data).then(({ latency, wait, responseTime }) => {
-      const evtData: JobFinishedEventData = {
-        job,
-        ts,
-        latency,
-        responseTime,
-        wait,
-        success: !failed,
-        event: status,
-      };
+    this.getDurations(data)
+      .then(({ latency, wait, responseTime }) => {
+        const evtData: JobFinishedEventData = {
+          job,
+          ts,
+          latency,
+          responseTime,
+          wait,
+          success: !failed,
+          event: status,
+        };
 
-      const finishedEvtData = { ...evtData, event: 'finished' };
+        const finishedEvtData = { ...evtData, event: 'finished' };
 
-      return Promise.all([
-        this.emit(failed ? Events.FAILED : Events.COMPLETED, evtData),
-        this.emit(FINISHED_EVENT, finishedEvtData),
-      ]);
-    }).catch(err => {
-      logger.error(`Error in handler for event: "${status}"`, {
-        err,
-        jobId: job.id,
+        return Promise.all([
+          this.emit(failed ? Events.FAILED : Events.COMPLETED, evtData),
+          this.emit(FINISHED_EVENT, finishedEvtData),
+        ]);
+      })
+      .catch((err) => {
+        logger.error(`Error in handler for event: "${status}"`, {
+          err,
+          jobId: job.id,
+        });
       });
-    });
-
   }
 
   private static needsMeta(data: JobEventData): boolean {
@@ -335,7 +338,7 @@ export class QueueListener extends Emittery {
     return {
       latency,
       wait,
-      responseTime
+      responseTime,
     };
   }
 
@@ -428,11 +431,11 @@ export class QueueListener extends Emittery {
       this.lastTimestamp = parseTimestamp(ts);
     }
 
-    const qe = this.queueEvents = new QueueEvents(this.queue.name, {
+    const qe = (this.queueEvents = new QueueEvents(this.queue.name, {
       lastEventId: eventId,
       autorun: true,
       connection: client,
-    });
+    }));
 
     qe.on('active', this.activeListener.bind(this));
     qe.on('completed', this.completedListener.bind(this));

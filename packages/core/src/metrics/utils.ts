@@ -1,12 +1,15 @@
-import { MetricTypeName, MetricTypes } from '../types';
+import type {
+  MetricTypeName,
+} from './types';
 import type { Predicate } from '../types';
+import { HostTagKey, MetricName, QueueTagKey } from './metric-name';
 
 export function createJobNameFilter(
   jobNames?: string | string[],
 ): Predicate<string> {
   if (!jobNames) {
     return () => true;
-  } else if (typeof (jobNames) === 'string') {
+  } else if (typeof jobNames === 'string') {
     return (name: string) => name === jobNames;
   } else if (jobNames.length === 0) {
     return () => true;
@@ -16,24 +19,12 @@ export function createJobNameFilter(
   return (name: string) => !!name && jobNames.includes(name);
 }
 
-export const metricNameByEnum: Record<MetricTypes, MetricTypeName> = {
-  [MetricTypes.None]: 'None', //
-  [MetricTypes.Apdex]: 'Apdex',
-  [MetricTypes.ConnectedClients]: 'ConnectedClients',
-  [MetricTypes.Completed]: 'Completed',
-  [MetricTypes.CompletedRate]: 'CompletedRate',
-  [MetricTypes.ActiveJobs]: 'ActiveJobs',
-  [MetricTypes.DelayedJobs]: 'DelayedJobs',
-  [MetricTypes.Failures]: 'Failures',
-  [MetricTypes.Finished]: 'Finished',
-  [MetricTypes.FragmentationRatio]: 'FragmentationRatio',
-  [MetricTypes.Latency]: 'Latency',
-  [MetricTypes.UsedMemory]: 'UsedMemory',
-  [MetricTypes.PeakMemory]: 'PeakMemory',
-  [MetricTypes.PendingCount]: 'PendingCount',
-  [MetricTypes.ResponseTime]: 'ResponseTime',
-  [MetricTypes.InstantaneousOps]: 'InstantaneousOps',
-  [MetricTypes.Waiting]: 'Waiting',
-  [MetricTypes.WaitingChildren]: 'WaitingChildren',
-  [MetricTypes.WaitTime]: 'WaitTime',
-};
+export function isHostMetric(type: MetricTypeName | MetricName): boolean {
+  if (type instanceof MetricName) {
+    const host = type.getTagValue(HostTagKey);
+    const queue = type.getTagValue(QueueTagKey);
+    return !!host && queue?.length === 0;
+  }
+  const str = '' + type;
+  return str.startsWith('redis') || str.includes('queue');
+}

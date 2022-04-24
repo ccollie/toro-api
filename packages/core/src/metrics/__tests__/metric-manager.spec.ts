@@ -49,11 +49,7 @@ describe('MetricManager', () => {
 
   describe('constructor', () => {
     it('should construct an object', () => {
-      const sut = new MetricManager(
-        '1234',
-        queueManager.queueListener,
-        queueManager.bus,
-      );
+      const sut = new MetricManager(queueManager.queue, { bus: queueManager.bus });
       expect(sut).toBeDefined();
     });
   });
@@ -79,7 +75,7 @@ describe('MetricManager', () => {
         type: MetricTypes.Latency,
       };
 
-      const sut = new MetricManager('some_id', queueListener, queueManager.bus);
+      const sut = new MetricManager(queueManager.queue, { bus: queueManager.bus });
       const metric = await sut.createMetric(json);
 
       expect(metric).toBeDefined();
@@ -94,7 +90,6 @@ describe('MetricManager', () => {
       expect(data.isActive).toBe('false');
       expect(data.type).toBe(MetricTypes.Latency);
       expect(data.createdAt).toBe(metric.createdAt.toString());
-      expect(data.updatedAt).toBe(metric.updatedAt.toString());
 
       expect(sut.metrics.length).toBe(1);
     });
@@ -112,11 +107,7 @@ describe('MetricManager', () => {
       queueManager.bus.on(MetricsEventsEnum.METRIC_ADDED, (data) => {
         eventData = data;
       });
-      const sut = new MetricManager(
-        'some_queue_id',
-        queueListener,
-        queueManager.bus,
-      );
+      const sut = new MetricManager(queueManager.queue, { bus: queueManager.bus });
 
       await sut.createMetric(json);
       await delay(200);
@@ -138,8 +129,7 @@ describe('MetricManager', () => {
   }
 
   function createManager(): MetricManager {
-    const id = nanoid();
-    return new MetricManager(id, queueListener, queueManager.bus);
+    return new MetricManager(queueManager.queue, { bus: queueManager.bus });
   }
 
   describe('saveMetric', () => {

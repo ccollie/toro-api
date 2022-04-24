@@ -3,6 +3,7 @@ import {
   Counter,
   Distribution,
   Gauge,
+  MetricName,
   MetricType,
   NoTags,
   Tags,
@@ -11,6 +12,8 @@ import {
 import { Registry, RegistryOptions } from './registry';
 import { Snapshot } from './snapshot';
 import { performance } from 'perf_hooks';
+import { DistributionMetricTypeNames, MetricTypeName } from './types';
+import { Metric } from './metric';
 
 /*
  * Primary entry point for metrics: Create counters, gauges, and distributions,
@@ -39,7 +42,11 @@ export class Metrics {
   /*
    * Create a counter with the given name and optional tags.
    */
-  counter(name: string, tags: Tags = NoTags, fieldName?: string): Counter {
+  counter(
+    name: string | MetricTypeName,
+    tags: Tags = NoTags,
+    fieldName?: string,
+  ): Counter {
     const rv = new Counter(this.prefix + name, this.tags, tags, fieldName);
     this.registry.getOrMake(rv);
     return rv;
@@ -48,7 +55,11 @@ export class Metrics {
   /*
    * Create a gauge with the given name and optional tags.
    */
-  gauge(name: string, tags: Tags = NoTags, fieldName?: string): Gauge {
+  gauge(
+    name: string | MetricTypeName,
+    tags: Tags = NoTags,
+    fieldName?: string,
+  ): Gauge {
     const rv = new Gauge(this.prefix + name, this.tags, tags, fieldName);
     this.registry.getOrMake(rv);
     return rv;
@@ -58,7 +69,7 @@ export class Metrics {
    * Create a distribution with the given name and optional tags.
    */
   distribution(
-    name: string,
+    name: string | DistributionMetricTypeNames,
     tags: Tags = NoTags,
     percentiles: number[] = this.registry.percentiles,
     error: number = this.registry.error,
@@ -113,6 +124,14 @@ export class Metrics {
     this.registry.remove(name);
   }
 
+  get(name: MetricName | string): Metric {
+    return this.registry.get(name);
+  }
+
+  remove(name: MetricName): void {
+    this.registry.remove(name);
+  }
+
   /*
    * Add a data point (or array of data points) to a distribution.
    */
@@ -125,6 +144,15 @@ export class Metrics {
       distribution.record(data);
     }
     metric.touch(this.registry.currentTime);
+  }
+
+  addMetrics(metric: Metric | Metric[]): void {
+    const arr = Array.isArray(metric) ? metric : [metric];
+    arr.forEach((item) => {
+      if (!this.registry.has(item.name)) {
+        this.registry.addMetric(item);
+      }
+    });
   }
 
   /*

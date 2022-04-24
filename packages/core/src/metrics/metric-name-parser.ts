@@ -1,4 +1,6 @@
 // https://github.com/yunyu/parse-prometheus-text-format
+import { metricsInfo  } from './metrics-info';
+import { MetricFamily } from './types';
 
 class InvalidLineError extends Error {
   constructor(message) {
@@ -22,28 +24,37 @@ const STATE_LABELVALUE = 8;
 const STATE_LABELVALUESLASH = 9;
 const STATE_NEXTLABEL = 10;
 const STATE_TIMESTAMP = 11;
+const STATE_FIELDNAME = 12;
 
 export interface ParseResult {
   name: string;
   value: string;
   labels: Record<string, string>;
+  fieldName?: string;
   timestampMs?: number;
 }
 
 export function parseMetricName(canonical: string): {
   name: string;
+  fieldName: string;
+  metric: MetricFamily;
   tags: Map<string, string>;
 } {
   const tags = new Map<string, string>();
-  const parsed = parseSampleLine(canonical);
-  Object.values(parsed.labels).forEach(k => {
-    tags.set(k, parsed.labels[k]);
+  const { labels, name, fieldName } = parseSampleLine(canonical);
+  Object.values(labels).forEach(k => {
+    tags.set(k, labels[k]);
   });
+  const metric = metricsInfo.find(x => ('' + x.type) === name);
   return {
-    name: parsed.name,
-    tags
+    name,
+    fieldName,
+    tags,
+    metric
   };
 }
+
+export const LabelNameRegex = /[a-zA-Z_][\w]*/;
 
 export default function parseSampleLine(line: string): ParseResult {
   let name = '';
@@ -51,6 +62,7 @@ export default function parseSampleLine(line: string): ParseResult {
   let labelvalue = '';
   let value = '';
   let timestamp = '';
+  let fieldName = '';
   let labels = undefined;
   let state = STATE_NAME;
 
@@ -144,7 +156,11 @@ export default function parseSampleLine(line: string): ParseResult {
         throw new InvalidLineError(line);
       }
     } else if (state === STATE_ENDOFLABELS) {
-      if (char === ' ' || char === '\t') {
+      // parse fieldName
+      // metric{name=value}:fieldname
+      if (char === ':') {
+        state = STATE_FIELDNAME;
+      } else if (char === ' ' || char === '\t') {
         // do nothing
       } else {
         value += char;
@@ -162,12 +178,22 @@ export default function parseSampleLine(line: string): ParseResult {
       } else {
         timestamp += char;
       }
+    } else if (state === STATE_FIELDNAME) {
+      if (char === ' ' || char === '\t') {
+        state = STATE_VALUE;
+      } else {
+        fieldName += char;
+        if (!LabelNameRegex.test(fieldName)) {
+          throw new InvalidLineError(`Invalid char "${char}" in fieldName`);
+        }
+      }
     }
   }
 
   return {
     name,
     value,
+    fieldName,
     labels: labels ?? {},
     timestampMs: timestamp ? parseInt(timestamp) : 0,
   };

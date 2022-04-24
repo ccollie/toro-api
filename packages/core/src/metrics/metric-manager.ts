@@ -1,119 +1,105 @@
-import { badRequest, notFound } from '@hapi/boom';
-import { isEmpty, isNil, isNumber, isString, parseBool } from '@alpen/shared';
+import boom, { badRequest, notFound } from '@hapi/boom';
+import { isNumber, isObject, safeParse } from '@alpen/shared';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
 
 import { Queue, RedisClient } from 'bullmq';
-import { MetricsEventsEnum } from '../types';
-import { Clock, getUniqueId, nanoid } from '../lib';
+import { MetricsEventsEnum, Timespan } from '../types';
+import { Clock, systemClock } from '../lib';
 import { PossibleTimestamp, TimeSeries } from '../commands';
-import { createMetricFromJSON, serializeMetric } from './factory';
 import { Metric } from './metric';
-import { MetricsListener, MetricsUpdatedPayload } from './metrics-listener';
-import { QueueListener } from '../queues';
+import { MetricsUpdatedPayload } from './metrics-listener';
 import { UnsubscribeFn } from 'emittery';
 import { Pipeline } from 'ioredis';
-import { Timespan } from '../types';
 import { TimeseriesDataPoint } from '../stats';
-import { SerializedMetric } from './types';
+import { MetricMetadata, MetricTypeName } from './types';
+import { Metrics } from './metrics';
+import {
+  Counter as CounterName,
+  Distribution as DistributionName,
+  Gauge as GaugeName,
+  MetricName,
+  MetricType,
+    HostTagKey,
+  QueueTagKey,
+} from './metric-name';
+import { RegistryOptions } from './registry';
+import { isHostMetric } from './utils';
+import { metricsInfo } from './metrics-info';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
+
+type MetricLike = Metric | MetricName | string;
+
+// todo: pass in default registry options
+
+type MetricManagerOptions = {
+  host: string;
+  bus: EventBus;
+  registryOptions?: RegistryOptions;
+};
 
 /**
  * Manages the storage of Metric instances related to a queue
  */
 export class MetricManager {
   private readonly queue: Queue;
-  private readonly queueId: string;
   private readonly bus: EventBus;
-  private readonly listener: MetricsListener;
   private readonly clock: Clock;
+  private readonly host: string;
   private running = false;
   private metricsLoaded = false;
+  private readonly _metrics: Metrics;
+  private readonly _metaData = new Map<string, MetricMetadata>();
 
   /**
    * Construct a {@link MetricManager}
-   * @param queueId
-   * @param listener
-   * @param {EventBus} bus queue bus
+   * @param queue
+   * @param options
    */
-  constructor(queueId: string, listener: QueueListener, bus: EventBus) {
-    this.queue = listener.queue;
-    this.queueId = queueId;
-    this.bus = bus;
-    this.listener = new MetricsListener(listener);
-    this.clock = listener.clock;
+  constructor(queue: Queue, options: MetricManagerOptions) {
+    this.queue = queue;
+    this.bus = options.bus;
+    this.clock = systemClock;
+    this._metrics = Metrics.create(options.registryOptions);
+    this.host = options.host;
   }
 
   destroy(): void {
     //
     this.stop();
-    this.listener.destroy();
   }
 
   async start(): Promise<void> {
     if (!this.running) {
       this.running = true;
-      this.listener.clearHandlerMap();
       const metrics = await this.loadMetrics();
-      for (const metric of metrics) {
-        this.listener.registerMetric(metric);
-      }
-      this.listener.start();
+      this._metrics.addMetrics(metrics);
+      this._metrics.registry.start();
     }
   }
 
   stop(): void {
     if (this.running) {
       this.running = false;
-      this.listener.stop();
+      this._metrics.registry.stop();
     }
   }
 
   get metrics(): Metric[] {
-    return this.listener.metrics;
+    return this._metrics.registry.getMetrics();
   }
 
   get indexKey(): string {
     return getMetricsKey(this.queue, null);
   }
 
-  private getDataKey(metric: Metric | string): string {
-    return getMetricsDataKey(this.queue, getMetricId(metric));
+  private getDataKey(metric: MetricLike): string {
+    return getMetricsDataKey(this.queue, getCanonicalName(metric));
   }
 
   findMetricById(id: string): Metric {
-    return this.listener.findMetricById(id);
-  }
-
-  async createMetric(opts: SerializedMetric): Promise<Metric> {
-    let isNew = false;
-    let id = opts.id;
-    if (!id) {
-      isNew = true;
-      const type = opts.name?.type;
-      if (type) {
-        id = `${type}-${nanoid()}`;
-      } else {
-        id = getUniqueId();
-      }
-      opts.id = id;
-    }
-    if (!opts.createdAt) {
-      opts.createdAt = this.clock.getTime();
-    }
-    const key = this.getMetricKey(id);
-    const client = await this.getClient();
-    if (!isNew) {
-      const existing = await client.exists(key);
-      if (existing) {
-        throw badRequest(
-          `A metric with id "${id}" exists in queue "${this.queue.name}"`,
-        );
-      }
-    }
-    const metric = createMetricFromJSON(opts);
-    return this.saveMetric(metric);
+    return this.metrics.find((x) => x.id === id);
   }
 
   getMetricKey(metric: Metric | string): string {
@@ -124,29 +110,94 @@ export class MetricManager {
     return this.queue.client;
   }
 
+  private deserializeMetric(
+    name: string | null,
+    value: string | null,
+  ): { metric?: Metric; meta?: MetricMetadata } {
+    let metric: Metric;
+
+    if (name) {
+      const metricName = MetricName.fromCanonicalName(name); // todo: try catch
+      metric = new Metric(metricName);
+    }
+
+    let meta: MetricMetadata;
+    if (value) {
+      const v = safeParse(value);
+      if (isObject(v)) {
+        meta = v as MetricMetadata;
+      } else {
+        meta = {
+          createdAt: this.clock.getTime(),
+        };
+      }
+    }
+
+    return { metric, meta };
+  }
+
   /*
    * Fetch a metric by id
    * @param {string} id
    * @returns {Promise<Metric>}
    */
-  async getMetric(id: string): Promise<Metric> {
+  async getMetric(id: string | MetricName): Promise<Metric | null> {
     const client = await this.getClient();
-    let metric = this.listener.findMetricById(id);
+    const canonical = getCanonicalName(id);
+    let metric = this.metrics.find((m) => m.canonicalName === canonical);
     if (!metric) {
-      const data = await client.hgetall(this.getMetricKey(id));
-      if (metric) {
-        metric = deserializeMetric(data);
+      const data = await client.hget(this.indexKey, canonical);
+      if (data) {
+        const { metric: _metric, meta: _meta } = this.deserializeMetric(
+          canonical,
+          data,
+        );
+        metric = _metric ?? null;
         if (metric) {
-          this.listener.registerMetric(metric);
+          this._metrics.addMetrics(metric);
+          if (_meta) {
+            this._metaData.set(metric.canonicalName, _meta);
+          }
         }
-        // else throw
+      } else {
+        metric = null;
       }
     }
     return metric;
   }
 
-  getMetricByName(name: string): Metric {
-    return this.listener.findMetricByName(name);
+  async createMetric(type: MetricTypeName): Promise<Metric> {
+    const queue = this.queue;
+    const tags = new Map<string, string>();
+
+    tags.set(HostTagKey, this.host);
+    if (!isHostMetric(type)) {
+      const queueName = queue.name; // todo: use prefix ?
+      tags.set(QueueTagKey, queueName);
+    }
+    const info = metricsInfo.find((m) => m.type === type);
+    const {
+      tags: baseTags,
+      percentiles,
+      error,
+    } = this._metrics.registry.options;
+
+    let mn: MetricName;
+    if (info.metricType === MetricType.Counter) {
+      mn = new CounterName(type, baseTags, tags);
+    } else if (info.metricType === MetricType.Gauge) {
+      mn = new GaugeName(type, baseTags, tags);
+    } else {
+      mn = new DistributionName(type, baseTags, tags, percentiles, error);
+    }
+    if (this._metrics.get(mn)) {
+      throw boom.badRequest(
+        `Metric ${type} already exists in queue ${queue.name}`,
+      );
+    }
+
+    const metric = new Metric(mn);
+    return this.saveMetric(metric);
   }
 
   /**
@@ -155,125 +206,115 @@ export class MetricManager {
    * @returns {Promise<Metric>}
    */
   async saveMetric(metric: Metric): Promise<Metric> {
-    const isNew = !metric.id;
-    const id = isNew ? getUniqueId() : metric.id;
-    const key = this.getMetricKey(id);
-
-    if ((metric.canonicalName ?? '').trim().length === 0) {
-      throw badRequest('A metric must have a name');
-    }
-    const foundByName = this.getMetricByName(metric.canonicalName);
-
-    if (foundByName && foundByName.id !== metric.id) {
-      throw badRequest('A metric must have a unique name');
-    }
+    const id = metric.canonicalName;
+    const key = this.indexKey;
 
     const client = await this.getClient();
+    const meta: MetricMetadata = {
+      createdAt: this.clock.getTime(),
+    };
 
-    metric.queueId = this.queueId;
-    const data = serializeMetric(metric) as Record<string, any>;
-    if (!data.createdAt) {
-      data.createdAt = this.clock.getTime();
-    }
+    let strMeta = JSON.stringify(meta);
 
-    data.updatedAt = this.clock.getTime();
     const reply = await client
       .pipeline()
-      .exists(key)
-      .hget(key, 'isActive')
-      .sadd(this.indexKey, id)
-      .hmset(key, data)
+      .hsetnx(key, id, strMeta)
+      .hget(key, id)
       .exec()
       .then(checkMultiErrors);
 
-    const exists = reply[0];
-    const wasActive = parseBool(reply[1]);
-    metric.updatedAt = data.updatedAt;
+    const exists = reply[0] === 0;
+    strMeta = reply[1];
 
-    const found = this.listener.findMetricById(metric.id);
-    // todo: whats the proper way to update ?
+    if (strMeta) {
+      const val = safeParse(strMeta);
+      // todo. Do this in lua
+      if (typeof val === 'object') {
+        const meta = val as MetricMetadata;
+        this._metaData.set(id, meta);
+      }
+    }
+
+    const found = this._metrics.get(id);
+    // todo: what's the proper way to update ?
     if (!found) {
-      this.listener.registerMetric(metric);
+      this._metrics.addMetrics([metric]);
     }
 
-    const calls: Array<Promise<void>> = [];
-
-    const eventName = exists
-      ? MetricsEventsEnum.METRIC_UPDATED
-      : MetricsEventsEnum.METRIC_ADDED;
-
-    calls.push(this.bus.emit(eventName, { metric: metric.toJSON() }));
-
-    if (exists && wasActive !== metric.isActive) {
-      const eventName = metric.isActive
-        ? MetricsEventsEnum.METRIC_ACTIVATED
-        : MetricsEventsEnum.METRIC_DEACTIVATED;
-
-      calls.push(this.bus.emit(eventName, { metricId: id }));
+    if (!exists) {
+      // todo: put this on workQueue as its non-critical
+      await this.bus.emit(MetricsEventsEnum.METRIC_ADDED, {
+        metric: metric.toJSON(),
+      });
     }
-
-    await Promise.all(calls);
 
     return metric;
   }
 
   /**
-   * Change a {@link Metric}'s ACTIVE status
+   * Set/update the metadata associated with a {@link Metric}'s
    * @param {Metric|string} metric
-   * @param {Boolean} isActive
-   * @return {Promise<Boolean>}
+   * @param {MetricMetadata} meta the new metadata value
+   * @param action determines how to update the metadata
+   * @return {Promise<MetricMetadata>}
    */
-  async setMetricStatus(
-    metric: Metric | string,
-    isActive: boolean,
-  ): Promise<boolean> {
-    const id = getMetricId(metric);
-    const key = this.getMetricKey(id);
+  async setMetricMeta(
+    metric: MetricLike,
+    meta: MetricMetadata,
+    action: 'replace' | 'merge' = 'merge',
+  ): Promise<MetricMetadata> {
+    const canonical = getCanonicalName(metric);
     const client = await this.getClient();
 
-    const reply = client
-      .pipeline()
-      .exists(key)
-      .hget(key, 'isActive')
-      .hset(key, 'isActive', isActive ? 1 : 0)
-      .exec()
-      .then(checkMultiErrors);
-
-    const exists = reply[0];
-    const wasActive = parseBool(reply[1]);
-    if (exists) {
-      if (wasActive !== isActive) {
-        const eventName = isActive
-          ? MetricsEventsEnum.METRIC_ACTIVATED
-          : MetricsEventsEnum.METRIC_DEACTIVATED;
-
-        await this.bus.emit(eventName, {
-          metricId: id,
-        });
-
-        const now = this.clock.getTime();
-        await client.hset(key, 'updatedAt', now);
-
-        return true;
-      }
-    } else {
-      // oops. remove the hash
-      await client.del(key);
-      throw notFound(`BaseMetric "${id}" not found`);
+    const _metric = await this.getMetric(canonical);
+    if (!_metric) {
+      throw notFound(`Metric "${canonical}" not found`);
     }
 
-    return false;
+    const key = this.indexKey;
+
+    let updated: MetricMetadata;
+    if (action === 'replace') {
+      const str = JSON.stringify(meta);
+      updated = meta;
+      await client.hset(key, canonical, str);
+    } else {
+      const saved = await client.hget(key, canonical);
+      if (saved) {
+        const value = safeParse(saved);
+        // todo. Do this in lua
+        if (typeof value === 'object') {
+          updated = {
+            ...value,
+            ...meta,
+          } as MetricMetadata;
+          await client.hset(key, canonical, JSON.stringify(updated));
+        }
+      } else {
+        updated = meta;
+      }
+    }
+
+    this._metaData.set(canonical, updated);
+
+    return updated;
   }
 
   // TODO: what to do with rules dependent on the metric ?
-  async deleteMetric(metric: Metric | string): Promise<boolean> {
-    const metricId = getMetricId(metric);
-    const key = this.getMetricKey(metric);
+  async deleteMetric(metric: MetricLike): Promise<boolean> {
+    const canonicalName = getCanonicalName(metric);
+    const key = canonicalName;
     const dataKey = this.getDataKey(metric);
     const client = await this.getClient();
     const pipeline = client.pipeline();
 
-    pipeline.srem(this.indexKey, metricId);
+    pipeline.hdel(this.indexKey, canonicalName);
+    this._metaData.delete(canonicalName);
+    const found = this.metrics.find((m) => m.canonicalName === canonicalName);
+    if (found) {
+      this._metrics.remove(found.name);
+    }
+
     const responses = await TimeSeries.multi
       .size(pipeline, dataKey)
       .del(key, dataKey)
@@ -283,60 +324,47 @@ export class MetricManager {
     const [_, hasAlerts, deleted] = responses;
     if (deleted) {
       const calls: Array<Promise<void>> = [
-        this.bus.emit(MetricsEventsEnum.METRIC_DELETED, { metricId }),
+        this.bus.emit(MetricsEventsEnum.METRIC_DELETED, { canonicalName }),
       ];
       if (!!hasAlerts) {
         calls.push(
-          this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, { metricId }),
+          this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, {
+            canonicalName,
+          }),
         );
       }
       await Promise.all(calls);
-      const toRemove = this.listener.findMetricById(metricId);
-      if (toRemove) {
-        this.listener.unregisterMetric(toRemove);
-      }
     }
     return !!deleted;
   }
 
   /**
    * Return rules from storage
-   * @param {String} sortBy {@link Metric} field to sort by
-   * @param {Boolean} asc
    * @return {Promise<[Metric]>}
    */
-  async loadMetrics(sortBy = 'createdAt', asc = true): Promise<Metric[]> {
-    const metricsKeyPattern = getMetricsKey(this.queue, '*');
-    const sortSpec = `${metricsKeyPattern}->${sortBy}`;
+  async loadMetrics(): Promise<Metric[]> {
     const client = await this.getClient();
-    const ids = await client.sort(
-      this.indexKey,
-      'alpha',
-      'by',
-      sortSpec,
-      asc ? 'asc' : 'desc',
-    );
-    const pipeline = client.pipeline();
-    (ids as string[]).forEach((id) => {
-      const key = this.getMetricKey(id);
-      pipeline.hgetall(key);
-    });
+    const items = await client.hgetall(this.indexKey);
 
     const result: Metric[] = [];
-    const reply = await pipeline.exec().then(checkMultiErrors);
-    reply.forEach((resp) => {
-      if (resp) {
-        try {
-          const metric = deserializeMetric(resp);
-          if (metric) {
-            metric.queueId = this.queueId;
-            result.push(metric);
-          }
-        } catch (err) {
-          console.log(err);
+    for (const [key, value] of Object.entries(items)) {
+      const name = MetricName.fromCanonicalName(key); // todo: try catch
+      const metric = new Metric(name);
+
+      result.push(metric);
+      if (value) {
+        const v = safeParse(value);
+        let meta: MetricMetadata;
+        if (isObject(v)) {
+          meta = v as MetricMetadata;
+        } else {
+          meta = {
+            createdAt: this.clock.getTime(),
+          };
         }
+        this._metaData.set(name.canonical, meta);
       }
-    });
+    }
 
     this.metricsLoaded = true;
     return result;
@@ -422,19 +450,6 @@ export class MetricManager {
     }));
   }
 
-  async refreshMetricData(
-    metric: Metric | string,
-    start?: number,
-    end?: number,
-  ): Promise<void> {
-    if (typeof metric === 'string') {
-      metric = await this.getMetric(metric);
-    }
-
-    const dispatch = this.listener.dispatch;
-    return MetricsListener.refreshData(this.queue, metric, dispatch, start, end);
-  }
-
   async getMetricDateRange(metric: Metric | string): Promise<Timespan> {
     const client = await this.getClient();
     const key = this.getDataKey(metric);
@@ -494,7 +509,7 @@ export class MetricManager {
   onMetricsUpdated(
     handler: (eventData?: MetricsUpdatedPayload) => void,
   ): UnsubscribeFn {
-    return this.listener.onMetricsUpdated(handler);
+    throw boom.notImplemented('onMetricsUpdated');
   }
 }
 
@@ -511,19 +526,8 @@ function getMetricId(metric: Metric | string): string {
   return id;
 }
 
-function deserializeObject(str: string): any {
-  const empty = Object.create(null);
-  if (isNil(str)) return empty;
-  try {
-    return isString(str) ? JSON.parse(str) : empty;
-  } catch {
-    // console.log
-    return empty;
-  }
-}
-
-function deserializeMetric(data?: Record<string, any>): Metric {
-  if (isEmpty(data)) return null;
-  data.options = deserializeObject(data.options);
-  return createMetricFromJSON(data);
+function getCanonicalName(metric: MetricLike): string {
+  if (typeof metric === 'string') return metric;
+  if (metric instanceof Metric) return metric.canonicalName;
+  return metric.canonical;
 }

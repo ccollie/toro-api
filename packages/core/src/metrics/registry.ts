@@ -4,11 +4,14 @@ import { Snapshot } from './snapshot';
 import { packageInfo } from '../packageInfo';
 import { EventSource } from './events';
 import Emittery, { UnsubscribeFn } from 'emittery';
-import { IAccessorHelper } from '../loaders/accessors';
+import pSettle from 'p-settle';
+import { getAccessor, IAccessorHelper } from '../loaders/accessors';
 import LRUCache from 'lru-cache';
+import { logger } from '../logger';
+import { BiasedQuantileDistribution } from './bqdist';
 
-const DEFAULT_PERCENTILES = [0.5, 0.75, 0.9, 0.99];
-const DEFAULT_ERROR = 0.01;
+export const DEFAULT_PERCENTILES = [0.5, 0.75, 0.9, 0.99];
+export const DEFAULT_ERROR = 0.01;
 const SNAPSHOT_EVENT = 'ON-SNAPSHOT';
 
 export interface BunyanLike {
@@ -17,11 +20,11 @@ export interface BunyanLike {
   trace(text: string): void;
 }
 
-export interface GetterContext {
+export type GetterContext = {
   registry: Registry;
   accessor: IAccessorHelper;
   cache: LRUCache<string, any>;
-}
+};
 
 export interface RegistryOptions {
   // default tags to apply to each metric:
@@ -38,9 +41,6 @@ export interface RegistryOptions {
 
   // (msec) stop reporting counters and distributions that haven't been touched in this long
   expire?: number;
-
-  // bunyan(-like) logger for debugging
-  log?: BunyanLike;
 }
 
 /*
@@ -53,10 +53,12 @@ export interface RegistryOptions {
  * `Metrics.create()`, which creates a registry implicitly.
  */
 export class Registry {
-  readonly events: EventSource<Snapshot> = new EventSource<Snapshot>();
-  private readonly emitter: Emittery = new Emittery();
   // metrics are stored by their "fully-qualified" name, using stringified tags.
-  readonly registry: Map<string, Metric> = new Map();
+  private readonly registry: Map<string, Metric> = new Map();
+  private readonly context: GetterContext;
+  private readonly emitter: Emittery = new Emittery();
+
+  readonly events: EventSource<Snapshot> = new EventSource<Snapshot>();
   readonly percentiles: number[] = DEFAULT_PERCENTILES;
   readonly error: number = DEFAULT_ERROR;
 
@@ -85,17 +87,34 @@ export class Registry {
       }
     });
 
+    this.context = {
+      registry: this,
+      accessor: getAccessor(),
+      cache: new LRUCache<string, any>({ stale: false, maxSize: 100 }),
+    };
+
     this.schedulePublish();
 
-    if (this.options.log) {
-      this.options.log.info(
-        `metrics started; period_sec=${this.period / 1000}`,
-      );
+    logger.info(`metrics started; period_sec=${this.period / 1000}`);
+  }
+
+  getMetrics(): Metric[] {
+    return Array.from(this.registry.values());
+  }
+
+  get polling(): boolean {
+    return !!this.timer;
+  }
+
+  start() {
+    if (!this.timer) {
+      this.schedulePublish();
     }
   }
 
   stop() {
     if (this.timer) clearTimeout(this.timer);
+    this.timer = undefined;
   }
 
   private schedulePublish(): void {
@@ -134,20 +153,67 @@ export class Registry {
 
     const snapshot = this.snapshot(timestamp);
     this.lastPublish = snapshot.timestamp;
-    if (this.options.log) {
-      this.options.log.trace(
-        `Publishing ${this.registry.size} metrics to ${this.emitter.listenerCount} observers.`,
-      );
-    }
+
+    logger.trace(
+      `Publishing ${this.registry.size} metrics to ${this.emitter.listenerCount} observers.`,
+    );
 
     this.events.post(snapshot);
 
     this.emitter.emit(SNAPSHOT_EVENT, snapshot).catch((e) => {
-      if (this.options.log) {
-        this.options.log.error(snapshot, e.message);
-      }
+      logger.error(snapshot, e.message);
     });
+
     this.schedulePublish();
+  }
+
+  async collect(
+    timestamp: number = Date.now(),
+  ): Promise<Map<string, number | BiasedQuantileDistribution>> {
+    const tasks = [];
+    const metrics: Metric[] = [];
+    const context = this.context;
+    const map = new Map<string, number | BiasedQuantileDistribution>();
+
+    function addResult(metric: Metric) {
+      const name = metric.canonicalName;
+      if (metric.type === MetricType.Distribution) {
+        map.set(name, metric.getDistribution());
+      } else {
+        map.set(name, metric.getValue());
+      }
+    }
+
+    for (const metric of this.registry.values()) {
+      if (metric.collect) {
+        metrics.push(metric);
+        tasks.push(() => metric.collect(context, metric, timestamp));
+      } else {
+        addResult(metric);
+      }
+    }
+    if (tasks.length) {
+      const res = await pSettle(tasks, { concurrency: 6 });
+
+      res.forEach((completion, index) => {
+        if (completion.isFulfilled) {
+          const metric = metrics[index];
+          const name = metric.canonicalName;
+          if (metric.type === MetricType.Distribution) {
+            map.set(name, completion.value);
+          } else if (metric.type === MetricType.Gauge) {
+            metric.setGauge(completion.value);
+          } else if (metric.type === MetricType.Counter) {
+            metric.increment(completion.value);
+          }
+          map.set(name, completion.value);
+        } else if (completion.isRejected) {
+          logger.error(`${completion.reason}`);
+        }
+      });
+    }
+
+    return map;
   }
 
   /*
@@ -162,14 +228,29 @@ export class Registry {
     return new Snapshot(this, timestamp, map);
   }
 
-  get(name: MetricName): Metric | undefined {
-    return this.registry.get(name.canonical);
+  get(name: MetricName | string): Metric | undefined {
+    const needle = (typeof name === 'string') ? name : name.canonical;
+    return this.registry.get(needle);
   }
 
-  getOrMake(name: MetricName, options?: any): Metric {
+  has(name: MetricName): boolean {
+    return !!this.get(name);
+  }
+
+  addMetric(metric: Metric) {
+    if (this.has(metric.name)) {
+      throw new Error(
+          `A metric with name ${metric.canonicalName} already exists}`,
+      );
+    }
+    this.registry.set(metric.canonicalName, metric);
+  }
+
+
+  getOrMake(name: MetricName): Metric {
     let metric = this.registry.get(name.canonical);
     if (metric === undefined) {
-      metric = new Metric(name, options ?? {});
+      metric = new Metric(name);
       this.registry.set(name.canonical, metric);
     }
     if (metric.name.type != name.type) {

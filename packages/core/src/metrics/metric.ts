@@ -1,17 +1,16 @@
 import Emittery from 'emittery';
-import * as Joi from 'joi';
-import { JobEventData } from '../queues';
-import { Events, MetricFamily, SerializedMetric } from './types';
+import { MetricFamily, SerializedMetric } from './types';
 import { createAsyncIterator, systemClock } from '../lib';
-import type { QueueMetricOptions, Predicate } from '../types';
-import { createJobNameFilter } from './utils';
 import type { TimeseriesDataPoint } from '../stats';
-import { Queue } from 'bullmq';
-import { Pipeline } from 'ioredis';
-import { getMetricsDataKey } from '../keys';
-import { Distribution, MetricName, MetricType } from './metric-name';
+import {
+  Distribution,
+  JobNameTagKey,
+  MetricName,
+  MetricType,
+} from './metric-name';
 import { BiasedQuantileDistribution } from './bqdist';
 import { metricsInfo } from './metrics-info';
+import { metricGetters, MetricValueFn } from './metric-getters';
 
 type Value = number | (() => number) | BiasedQuantileDistribution;
 
@@ -23,35 +22,28 @@ export interface MetricUpdateEvent {
 
 export type MetricUpdateEventHandler = (eventData?: MetricUpdateEvent) => void;
 
-export const BaseMetricSchema = Joi.object().keys({
-  jobNames: Joi.array().items(Joi.string()).single().optional().default([]),
-});
-
-export const QueueBasedMetricSchema = BaseMetricSchema;
-
 /*
  * The value stored for a MetricName in a MetricsRegistry, along with its
  * name and last update time.
  */
 export class Metric {
-  private readonly meta: MetricFamily;
+  private readonly info: MetricFamily;
   private readonly emitter: Emittery = new Emittery();
+  private _prev: number | BiasedQuantileDistribution;
+
   public id: string;
   public queueId: string;
-  protected options: any;
-  private _prev: number;
+  public readonly collect: MetricValueFn;
   protected _value: Value;
-
-  public isActive = true;
   public createdAt: number;
-  public updatedAt: number;
   public lastChangedAt: number;
 
-  constructor(public readonly name: MetricName, options: unknown) {
+  constructor(public readonly name: MetricName) {
+    if (!name) {
+      throw new Error('Missing name in metric');
+    }
     this._prev = null;
-    this.setOptions(options);
     this.createdAt = systemClock.getTime();
-    this.updatedAt = this.createdAt;
     if (name instanceof Distribution) {
       this._value = new BiasedQuantileDistribution(
         name.percentiles,
@@ -60,10 +52,11 @@ export class Metric {
     } else {
       this._value = 0;
     }
-    this.meta = metricsInfo.find((x) => '' + x.type === name.name);
-    if (!this.meta) {
+    this.info = metricsInfo.find((x) => '' + x.type === name.name);
+    if (!this.info) {
       throw new Error(`metric "${name.name}" is not recognized`);
     }
+    this.collect = metricGetters[this.info.type];
   }
 
   touch(time: number) {
@@ -74,29 +67,8 @@ export class Metric {
     return this.name.canonical;
   }
 
-  validateOptions<T = any>(options: unknown): T {
-    const schema = (this.constructor as any).schema;
-    if (schema) {
-      const { error, value } = schema.validate(options);
-      if (error) {
-        throw error;
-      }
-      return value as T;
-    }
-
-    return options as T;
-  }
-
-  setOptions(options: unknown): void {
-    this.options = this.validateOptions(options);
-  }
-
   destroy(): void {
     this.emitter.clearListeners();
-  }
-
-  static get schema(): Joi.ObjectSchema {
-    return BaseMetricSchema;
   }
 
   get type(): MetricType {
@@ -104,11 +76,15 @@ export class Metric {
   }
 
   get description(): string {
-    return this.meta.description;
+    return this.info.description;
   }
 
   get unit(): string | undefined {
-    return this.meta.unit;
+    return this.info.unit;
+  }
+
+  get jobName(): string {
+    return this.getTagValue(JobNameTagKey);
   }
 
   getTagValue(key: string): string {
@@ -175,16 +151,9 @@ export class Metric {
   }
 
   toJSON(): SerializedMetric {
-    const { createdAt, updatedAt, isActive, options } = this;
     return {
       id: this.id,
       name: this.name.toJSON(),
-      isActive,
-      options: {
-        ...this.options,
-      },
-      createdAt,
-      updatedAt,
     };
   }
 
@@ -239,55 +208,4 @@ export class Metric {
         break;
     }
   }
-
-  protected getDataKey(queue: Queue): string {
-    return getMetricsDataKey(queue, this.id);
-  }
-}
-
-export abstract class QueueBasedMetric extends Metric {
-  private _filter: Predicate<string>;
-  private _jobNames: string[];
-
-  constructor(options: QueueMetricOptions) {
-    super(options);
-    this.jobNames = options.jobNames || [];
-  }
-
-  get validEvents(): string[] {
-    return [Events.FINISHED];
-  }
-
-  get jobNames(): string[] {
-    return this._jobNames;
-  }
-
-  set jobNames(values: string[]) {
-    this._jobNames = values;
-    this._filter = createJobNameFilter(values);
-  }
-
-  static get schema(): Joi.ObjectSchema {
-    return QueueBasedMetricSchema;
-  }
-
-  abstract handleEvent(event?: JobEventData): void;
-
-  accept(event: JobEventData): boolean {
-    const name = event.job.name;
-    return !name || this._filter(name);
-  }
-}
-
-export interface IPollingMetric {
-  checkUpdate: (pipeline: Pipeline, queue: Queue, ts?: number) => Promise<void>;
-}
-
-export function isPollingMetric(arg: any): arg is IPollingMetric {
-  return (
-    arg &&
-    typeof arg.interval === 'number' &&
-    typeof arg.checkUpdate === 'function' &&
-    arg instanceof Metric
-  );
 }

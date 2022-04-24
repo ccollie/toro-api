@@ -1,8 +1,4 @@
-import {
-  HostTagKey,
-  QueueIdTagKey,
-  QueueTagKey,
-} from './metric-name';
+import { HostTagKey, QueueIdTagKey, QueueTagKey } from './metric-name';
 import boom from '@hapi/boom';
 import { FinishedStatus, JobState, Queue } from 'bullmq';
 import { getJobCounts } from '../loaders/job-counts';
@@ -17,7 +13,7 @@ import { getFilteredQueues, HostManager } from '../hosts';
 import { Metric } from './metric';
 import { MetricTypeName } from './types';
 import { QueueFilter, QueueFilterStatus } from '../types';
-import { GetterContext } from './registry';
+import { GetterContext, Registry } from './registry';
 
 export type MetricValueFn = (
   context: GetterContext,
@@ -103,11 +99,11 @@ function getHostOrQueueFromContext(
   return res;
 }
 
-function getRange(ts: number, period: number): [number, number] {
+function getRange(registry: Registry, ts: number): [number, number] {
   // ts is rounded to period, and represents the _beginning_ of the
   // new measurement interval. We need the past range
   const end = ts - 1;
-  const start = ts - period;
+  const start = ts - registry.period;
   return [start, end];
 }
 
@@ -159,8 +155,8 @@ function attempts(
     metric: Metric,
     ts?: number,
   ): Promise<number> => {
-    const [start, end] = getRange(ts, 60000); // todo;
-    const jobName = '';
+    const [start, end] = getRange(context.registry, ts);
+    const jobName = metric.jobName;
     const queue = getQueueFromContext(context, metric);
     return Scripts.getJobAttemptsInRange(
       queue,
@@ -200,9 +196,10 @@ function jobDuration(valueType: keyof JobDurationValuesResult) {
     metric: Metric,
     ts: number,
   ): Promise<BiasedQuantileDistribution> => {
-    const [start, end] = getRange(ts, 60000); // todo;
+    const [start, end] = getRange(context.registry, ts);
     const queue = getQueueFromContext(context, metric);
-    const values = await getJobDurationValues({ queue, start, end });
+    const jobName = metric.jobName;
+    const values = await getJobDurationValues({ queue, start, end, jobName });
     const durations = values[valueType];
     const distribution = new BiasedQuantileDistribution();
     durations.forEach((value) => distribution.record(value));

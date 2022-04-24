@@ -1,4 +1,4 @@
-import {  badRequest, notFound } from '@hapi/boom';
+import { badRequest, notFound } from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
 import { Job, type JobState, Queue } from 'bullmq';
@@ -85,14 +85,10 @@ export class QueueManager {
     this.statsClient = new StatsClient({
       queueId: this.id,
       queue,
-      host: host.name
+      host: host.name,
     });
     this.statsListener = this.createStatsListener();
-    this.metricManager = new MetricManager(
-      this.id,
-      this.queueListener,
-      this.bus,
-    );
+    this.metricManager = new MetricManager(this.queue, { host: this.host, bus: this.bus });
     this._isReadOnly = !!config.isReadonly;
     this.ruleManager = new RuleManager(this);
     this.dispatchMetrics = this.dispatchMetrics.bind(this);
@@ -214,7 +210,7 @@ export class QueueManager {
       queueId: this.id,
       host: this.host,
       writer: this.hostManager.writer,
-      bus: this.bus
+      bus: this.bus,
     });
   }
 

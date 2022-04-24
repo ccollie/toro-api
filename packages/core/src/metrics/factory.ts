@@ -1,25 +1,22 @@
 import * as boom from '@hapi/boom';
 import { Metric } from './metric';
-import {
-  parseTimestamp,
-  hashObject,
-  parseBool,
-  safeParse,
-} from '@alpen/shared';
-import { isObject } from '@alpen/shared';
+import { hashObject, safeParse } from '@alpen/shared';
 import { logger } from '../logger';
 import { MetricName } from './metric-name';
+import { parseMetricName } from './metric-name-parser';
+
+export function createMetricFromCanonicalName(canonical: string): MetricName {
+  const parsed = parseMetricName(canonical);
+  let name: MetricName;
+  if (!parsed.metric) {
+    throw boom.badData(`unrecognized metric name "${parsed.name}"`);
+  }
+
+  return name;
+}
 
 export function createMetricFromJSON(json: Record<string, any>): Metric {
-  /// TODO: Hackish handling of createdAt, updatedAt
-  const {
-    id,
-    name,
-    options: _options,
-    createdAt,
-    updatedAt,
-    isActive,
-  } = json as Record<string, any>;
+  const { id, name } = json as Record<string, any>;
 
   // todo: id ?
 
@@ -37,34 +34,14 @@ export function createMetricFromJSON(json: Record<string, any>): Metric {
     throw boom.badData('Error parsing metric name');
   }
 
-  let options: Record<string, any>;
-  if (typeof _options == 'string') {
-    options = JSON.parse(_options);
-    if (!isObject(options)) {
-      throw boom.badRequest('Object expected for "options" field');
-    }
-  } else {
-    options = _options;
-  }
-
   const type = metricName.type;
-  const metric = new Metric(name, options);
+  const metric = new Metric(name);
   if (!metric) {
     logger.error(`Error loading metric. Type "${type}" invalid.`);
     return metric;
   }
 
   metric.id = id;
-
-  if (createdAt) {
-    metric.createdAt = parseTimestamp(createdAt);
-  }
-
-  if (updatedAt) {
-    metric.updatedAt = parseTimestamp(createdAt);
-  }
-
-  metric.isActive = parseBool(isActive);
 
   return metric;
 }
@@ -74,9 +51,5 @@ export function serializeMetric(metric: Metric): Record<string, any> {
     ...metric.toJSON(),
   };
   json.id = json.id || metric.id || hashObject(json);
-  // serialize object fields
-  if (isObject(json.options)) {
-    json.options = JSON.stringify(json.options);
-  }
   return json;
 }
