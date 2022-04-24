@@ -1,6 +1,6 @@
 import { ObjectSchema } from 'joi';
 import { BaseAggregator } from './aggregator';
-import { AggregatorTypes } from '../../types';
+import { AggregatorTypes } from '../types';
 import { Metric } from '../metric';
 
 /**

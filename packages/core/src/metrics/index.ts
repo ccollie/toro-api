@@ -6,14 +6,15 @@ export * from './metrics-info';
 export * from './metrics-listener';
 export * from '../types/metrics-timeseries';
 export * from './metric-manager';
+export * from './metric-name';
 export * from './sliding-window-counter';
-export * from './factory';
 export * from './types';
 
-export { createJobNameFilter } from './utils';
-
 export {
-  Metric,
-  MetricUpdateEvent,
-  MetricUpdateEventHandler,
-};
+  createJobNameFilter,
+  isValidMetric,
+  isHostMetric,
+  getCanonicalName,
+} from './utils';
+
+export { Metric, MetricUpdateEvent, MetricUpdateEventHandler };

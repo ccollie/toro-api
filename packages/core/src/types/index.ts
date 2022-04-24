@@ -1,7 +1,6 @@
 export * from './app-info';
 export * from './notifications';
 export * from './timespan';
-export * from './metrics';
 export * from './metrics-timeseries';
 export * from './queues';
 export * from './queue-filters';

@@ -1,5 +1,6 @@
 import { HostTagKey, QueueIdTagKey, QueueTagKey } from './metric-name';
 import boom from '@hapi/boom';
+import { DDSketch } from '@datadog/sketches-js';
 import { FinishedStatus, JobState, Queue } from 'bullmq';
 import { getJobCounts } from '../loaders/job-counts';
 import { round } from '@alpen/shared';
@@ -19,7 +20,7 @@ export type MetricValueFn = (
   context: GetterContext,
   metric: Metric,
   ts?: number,
-) => Promise<number | BiasedQuantileDistribution>;
+) => Promise<number | BiasedQuantileDistribution | DDSketch>;
 
 function getHostFromContext(
   context: GetterContext,
@@ -195,15 +196,15 @@ function jobDuration(valueType: keyof JobDurationValuesResult) {
     context: GetterContext,
     metric: Metric,
     ts: number,
-  ): Promise<BiasedQuantileDistribution> => {
+  ): Promise<DDSketch> => {
     const [start, end] = getRange(context.registry, ts);
     const queue = getQueueFromContext(context, metric);
     const jobName = metric.jobName;
     const values = await getJobDurationValues({ queue, start, end, jobName });
     const durations = values[valueType];
-    const distribution = new BiasedQuantileDistribution();
-    durations.forEach((value) => distribution.record(value));
-    return distribution;
+    const res = new DDSketch(); // todo: RelativeAccuracy
+    durations.forEach(value => res.accept(value));
+    return res;
   };
 }
 

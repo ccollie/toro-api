@@ -1,4 +1,4 @@
-import { AggregatorTypeName, AggregatorTypes } from '../../types';
+import { AggregatorTypeName, AggregatorTypes } from '../types';
 
 export const aggregatorTypeNameMap: Record<
   AggregatorTypes,

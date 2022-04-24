@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
 import { PeakSignalDirectionEnum, StatsMetricsTypeEnum } from '../../scalars';
-import { GraphQLEnumType } from 'graphql';
 import { OutlierMethod, StatsRateType } from '@alpen/core';
+import { MetricTypeTC } from '../metric/scalars';
 
 /* eslint max-len: 0 */
 
@@ -109,16 +109,15 @@ export const StatsSnapshotTC = schemaComposer.createObjectTC({
 
 export const StatsQueryInputTC = schemaComposer.createInputTC({
   name: 'StatsQueryInput',
-  description: 'Queue stats filter.',
+  description: 'Queue metrics filter.',
   fields: {
     jobName: {
       type: 'String',
       description: 'An optional job name to filter on',
     },
     metric: {
-      type: StatsMetricsTypeEnum,
+      type: MetricTypeTC.NonNull,
       makeRequired: true,
-      defaultValue: 'latency',
       description: 'The metric requested',
     },
     granularity: {
@@ -130,15 +129,6 @@ export const StatsQueryInputTC = schemaComposer.createInputTC({
       description:
         'An expression specifying the range to query e.g. yesterday, last_7days',
     },
-  },
-});
-
-export const StatsRateTypeEnum = new GraphQLEnumType({
-  name: 'StatsRateType',
-  values: {
-    [StatsRateType.Throughput]: { value: StatsRateType.Throughput },
-    [StatsRateType.Errors]: { value: StatsRateType.Errors },
-    [StatsRateType.ErrorPercentage]: { value: StatsRateType.ErrorPercentage },
   },
 });
 

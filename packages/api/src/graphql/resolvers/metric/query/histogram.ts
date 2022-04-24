@@ -1,7 +1,11 @@
-import { BaseMetric, BinnedHistogramValues, computeBins } from '@alpen/core';
+import { Metric, BinnedHistogramValues, computeBins } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { MetricsHistogramInput } from '../../../typings';
-import { BaseHistogramInputFields, HistogramPayloadTC, parseHistogramBinningOptions, } from '../../stats';
+import {
+  BaseHistogramInputFields,
+  HistogramPayloadTC,
+  parseHistogramBinningOptions,
+} from '../../stats';
 import { OutlierFilterInputTC } from '../../stats/types';
 import { FieldConfig } from '../../utils';
 import { getMetricData } from './getData';
@@ -21,7 +25,7 @@ export const metricHistogramFC: FieldConfig = {
     input: MetricHistogramInputTC.NonNull,
   },
   async resolve(
-    metric: BaseMetric,
+    metric: Metric,
     { input }: { input: MetricsHistogramInput },
     { loaders },
   ): Promise<BinnedHistogramValues> {

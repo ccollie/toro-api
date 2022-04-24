@@ -6,13 +6,10 @@ import {
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueListener, QueueManager } from '../../queues';
 import { Metric, MetricManager } from '../';
-import { MetricsEventsEnum } from '../../types';
+import { MetricsEventsEnum } from '../types';
 import { delay, getUniqueId } from '../../lib';
-import ms from 'ms';
 import { RedisClient } from 'bullmq';
 import {
-  MetricName,
-  MetricType,
   NoTags,
   Gauge as GaugeName
 } from '../metric-name';

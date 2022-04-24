@@ -1,7 +1,7 @@
 import { calculateInterval } from '../../stats';
 import { ChunkedAssociativeArray, systemClock } from '../../lib';
 import { BaseAggregator, WindowedAggregator } from './aggregator';
-import { SlidingWindowOptions } from '../../types';
+import { SlidingWindowOptions } from '../types';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../../validation';
 import ms from 'ms';

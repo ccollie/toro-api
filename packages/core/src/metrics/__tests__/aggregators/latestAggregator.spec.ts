@@ -1,5 +1,5 @@
 import { LatestAggregator, Metric } from '../../';
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '../../types';
 import { random } from '@alpen/shared';
 import { Gauge as GaugeName, NoTags } from '../../metric-name';
 

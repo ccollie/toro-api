@@ -1,4 +1,4 @@
-import { BaseMetric, Rule } from '@alpen/core';
+import { Metric, Rule } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { MetricTC } from '../../metric/query';
 import { FieldConfig } from '../../utils';
@@ -11,7 +11,7 @@ export const metric: FieldConfig = {
     parent: Rule,
     _: unknown,
     { accessors }: EZContext,
-  ): Promise<BaseMetric> {
+  ): Promise<Metric> {
     const manager = accessors.getQueueManager(parent.queueId);
     return manager.metricManager.getMetric(parent.metricId);
   },

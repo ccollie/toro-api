@@ -14,6 +14,7 @@ export * from './DateTime';
 export * from './MetricCategory';
 export * from './MetricValueType';
 export * from './types';
+export * from './extended-metric';
 
 export {
   GraphQLEmailAddress,

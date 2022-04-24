@@ -9,6 +9,7 @@ import { getAccessor, IAccessorHelper } from '../loaders/accessors';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import { BiasedQuantileDistribution } from './bqdist';
+import { DDSketch } from '@datadog/sketches-js';
 
 export const DEFAULT_PERCENTILES = [0.5, 0.75, 0.9, 0.99];
 export const DEFAULT_ERROR = 0.01;
@@ -169,11 +170,11 @@ export class Registry {
 
   async collect(
     timestamp: number = Date.now(),
-  ): Promise<Map<string, number | BiasedQuantileDistribution>> {
+  ): Promise<Map<string, number | BiasedQuantileDistribution | DDSketch>> {
     const tasks = [];
     const metrics: Metric[] = [];
     const context = this.context;
-    const map = new Map<string, number | BiasedQuantileDistribution>();
+    const map = new Map<string, number | BiasedQuantileDistribution | DDSketch>();
 
     function addResult(metric: Metric) {
       const name = metric.canonicalName;
@@ -229,7 +230,7 @@ export class Registry {
   }
 
   get(name: MetricName | string): Metric | undefined {
-    const needle = (typeof name === 'string') ? name : name.canonical;
+    const needle = typeof name === 'string' ? name : name.canonical;
     return this.registry.get(needle);
   }
 
@@ -240,12 +241,11 @@ export class Registry {
   addMetric(metric: Metric) {
     if (this.has(metric.name)) {
       throw new Error(
-          `A metric with name ${metric.canonicalName} already exists}`,
+        `A metric with name ${metric.canonicalName} already exists}`,
       );
     }
     this.registry.set(metric.canonicalName, metric);
   }
-
 
   getOrMake(name: MetricName): Metric {
     let metric = this.registry.get(name.canonical);

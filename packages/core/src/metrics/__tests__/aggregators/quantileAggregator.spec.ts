@@ -1,4 +1,4 @@
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '../../types';
 import {
   P75Aggregator,
   P90Aggregator,

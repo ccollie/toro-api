@@ -3,6 +3,7 @@ import {
   CleanQueueJobType,
   Duration,
   ErrorLevelEnum,
+  ExtendedMetricScalarType,
   FinishedStatus,
   GraphQLDateTime,
   GraphQLEmailAddress,
@@ -39,6 +40,7 @@ schemaComposer.add(ChangeAggregationEnum);
 schemaComposer.add(CleanQueueJobType);
 schemaComposer.add(Duration);
 schemaComposer.add(ErrorLevelEnum);
+schemaComposer.add(ExtendedMetricScalarType);
 schemaComposer.add(FinishedStatus);
 schemaComposer.add(GraphQLDateTime);
 schemaComposer.add(GraphQLEmailAddress);

@@ -1,5 +1,5 @@
 import Emittery from 'emittery';
-import { MetricFamily, SerializedMetric } from './types';
+import { MetricFamily } from './types';
 import { createAsyncIterator, systemClock } from '../lib';
 import type { TimeseriesDataPoint } from '../stats';
 import {
@@ -150,13 +150,6 @@ export class Metric {
     });
   }
 
-  toJSON(): SerializedMetric {
-    return {
-      id: this.id,
-      name: this.name.toJSON(),
-    };
-  }
-
   // To override in descendents
   protected transformValue(value: number, ts?: number): number {
     return value;
@@ -195,15 +188,15 @@ export class Metric {
         const dist = this.getDistribution();
         const data = dist.snapshot();
         dist.reset();
-        if (data.sampleCount > 0) {
+        if (data.count > 0) {
           for (let i = 0; i < name.percentiles.length; i++) {
             map.set(
               name.percentileGauges[i],
               data.getPercentile(name.percentiles[i]),
             );
           }
-          map.set(name.countGauge, data.sampleCount);
-          map.set(name.sumGauge, data.sampleSum);
+          map.set(name.countGauge, data.count);
+          map.set(name.sumGauge, data.sum);
         }
         break;
     }

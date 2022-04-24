@@ -4,6 +4,7 @@ import { StatsGranularityEnum, TimeSpanTC } from '../../scalars';
 import { FieldConfig } from '../index';
 import { normalizeGranularity } from '../stats/utils';
 import { getClient } from './utils';
+import { MetricTypeTC } from '../metric/scalars';
 
 const StatsSpanInput = schemaComposer.createInputTC({
   name: 'StatsSpanInput',
@@ -13,6 +14,7 @@ const StatsSpanInput = schemaComposer.createInputTC({
       description: 'The host/queue to query',
     },
     jobName: 'String',
+    metric: MetricTypeTC.NonNull,
     granularity: StatsGranularityEnum,
   },
 });

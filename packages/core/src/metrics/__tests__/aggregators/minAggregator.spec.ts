@@ -1,5 +1,5 @@
 import { Metric, MinAggregator } from '../../';
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '../../types';
 import { random } from '@alpen/shared';
 import { validateCounts } from './helpers';
 import { Gauge as GaugeName, NoTags } from '../../metric-name';

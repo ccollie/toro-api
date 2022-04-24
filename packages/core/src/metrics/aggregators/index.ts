@@ -18,7 +18,8 @@ import {
   QuantileAggregator,
 } from './quantileAggregator';
 import type { PercentileAggregatorOptions } from './quantileAggregator';
-import { AggregatorTypes, Constructor } from '../../types';
+import { AggregatorTypes } from '../types';
+import { Constructor } from '../../types';
 
 export type AggregatorClass = Constructor<BaseAggregator>;
 

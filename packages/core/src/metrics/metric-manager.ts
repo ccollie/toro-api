@@ -1,10 +1,10 @@
-import boom, { badRequest, notFound } from '@hapi/boom';
+import boom, { notFound } from '@hapi/boom';
 import { isNumber, isObject, safeParse } from '@alpen/shared';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
 
 import { Queue, RedisClient } from 'bullmq';
-import { MetricsEventsEnum, Timespan } from '../types';
+import { MetricMetadata, MetricsEventsEnum, MetricTypeName } from './types';
 import { Clock, systemClock } from '../lib';
 import { PossibleTimestamp, TimeSeries } from '../commands';
 import { Metric } from './metric';
@@ -12,24 +12,22 @@ import { MetricsUpdatedPayload } from './metrics-listener';
 import { UnsubscribeFn } from 'emittery';
 import { Pipeline } from 'ioredis';
 import { TimeseriesDataPoint } from '../stats';
-import { MetricMetadata, MetricTypeName } from './types';
 import { Metrics } from './metrics';
 import {
   Counter as CounterName,
   Distribution as DistributionName,
   Gauge as GaugeName,
+  HostTagKey, JobNameTagKey,
   MetricName,
   MetricType,
-    HostTagKey,
   QueueTagKey,
 } from './metric-name';
 import { RegistryOptions } from './registry';
-import { isHostMetric } from './utils';
+import { isHostMetric, MetricLike, getCanonicalName } from './utils';
 import { metricsInfo } from './metrics-info';
+import { Timespan } from '../types';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
-
-type MetricLike = Metric | MetricName | string;
 
 // todo: pass in default registry options
 
@@ -102,7 +100,7 @@ export class MetricManager {
     return this.metrics.find((x) => x.id === id);
   }
 
-  getMetricKey(metric: Metric | string): string {
+  getMetricKey(metric: MetricLike): string {
     return getMetricsKey(this.queue, getCanonicalName(metric));
   }
 
@@ -166,11 +164,15 @@ export class MetricManager {
     return metric;
   }
 
-  async createMetric(type: MetricTypeName): Promise<Metric> {
+  createMetricName(type: MetricTypeName, jobName?: string): MetricName {
     const queue = this.queue;
     const tags = new Map<string, string>();
 
     tags.set(HostTagKey, this.host);
+    if (jobName) {
+      tags.set(JobNameTagKey, jobName);
+    }
+
     if (!isHostMetric(type)) {
       const queueName = queue.name; // todo: use prefix ?
       tags.set(QueueTagKey, queueName);
@@ -190,12 +192,17 @@ export class MetricManager {
     } else {
       mn = new DistributionName(type, baseTags, tags, percentiles, error);
     }
+
+    return mn;
+  }
+
+  async createMetric(type: MetricTypeName): Promise<Metric> {
+    const mn = this.createMetricName(type);
     if (this._metrics.get(mn)) {
       throw boom.badRequest(
-        `Metric ${type} already exists in queue ${queue.name}`,
+        `Metric ${type} already exists in queue ${this.queue.name}`,
       );
     }
-
     const metric = new Metric(mn);
     return this.saveMetric(metric);
   }
@@ -244,7 +251,7 @@ export class MetricManager {
     if (!exists) {
       // todo: put this on workQueue as its non-critical
       await this.bus.emit(MetricsEventsEnum.METRIC_ADDED, {
-        metric: metric.toJSON(),
+        canonicalName: metric.canonicalName,
       });
     }
 
@@ -468,7 +475,9 @@ export class MetricManager {
     const client = await this.getClient();
     const key = this.getDataKey(metric);
     await client.del(key);
-    await this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, { canonicalName });
+    await this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, {
+      canonicalName,
+    });
     return isNumber(count) ? count : 0;
   }
 
@@ -505,10 +514,4 @@ export class MetricManager {
   ): UnsubscribeFn {
     throw boom.notImplemented('onMetricsUpdated');
   }
-}
-
-function getCanonicalName(metric: MetricLike): string {
-  if (typeof metric === 'string') return metric;
-  if (metric instanceof Metric) return metric.canonicalName;
-  return metric.canonical;
 }

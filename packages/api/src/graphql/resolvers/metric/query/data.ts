@@ -1,4 +1,4 @@
-import { BaseMetric, TimeseriesDataPoint } from '@alpen/core';
+import { Metric, TimeseriesDataPoint } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
 import { MetricDataInput } from '../../../typings';
@@ -25,7 +25,7 @@ export const metricDataFC: FieldConfig = {
     input: MetricDataInputTC.NonNull,
   },
   async resolve(
-    metric: BaseMetric,
+    metric: Metric,
     { input }: { input: MetricDataInput },
     context: EZContext,
   ): Promise<TimeseriesDataPoint[]> {

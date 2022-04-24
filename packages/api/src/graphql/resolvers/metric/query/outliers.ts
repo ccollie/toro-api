@@ -1,4 +1,4 @@
-import { BaseMetric, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
+import { Metric, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { MetricDataOutliersInput } from '../../../typings';
 import { OutlierDetectionMethod, TimeseriesDataPointTC, } from '../../stats/types';
@@ -34,7 +34,7 @@ export const metricDataOutliersFC: FieldConfig = {
     input: MetricDataOutliersInputTC.NonNull,
   },
   async resolve(
-    metric: BaseMetric,
+    metric: Metric,
     { input }: { input: MetricDataOutliersInput },
     { loaders },
   ): Promise<TimeseriesDataPoint[]> {

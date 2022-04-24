@@ -1,7 +1,7 @@
 import { Metric, StandardDeviationAggregator } from '../../';
 import { random } from '@alpen/shared';
 import { OnlineNormalEstimator } from '../../../stats';
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '../../types';
 import { validateCounts } from './helpers';
 import { Gauge as GaugeName, NoTags } from '../../metric-name';
 

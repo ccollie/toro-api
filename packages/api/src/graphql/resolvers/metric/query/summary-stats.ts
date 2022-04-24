@@ -1,7 +1,7 @@
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { SummaryStatisticsTC } from '../../stats/types';
-import { BaseMetric } from '@alpen/core';
+import { Metric } from '@alpen/core';
 import { MetricDataInput, SummaryStatistics } from '../../../typings';
 import { MetricDataInputTC } from '../../metric/query/data';
 import { calcSummaryStats } from '../../stats/summary';
@@ -15,7 +15,7 @@ export const metricSummaryStatsFC: FieldConfig = {
     input: MetricDataInputTC.NonNull,
   },
   async resolve(
-    metric: BaseMetric,
+    metric: Metric,
     { input }: { input: MetricDataInput },
     context: EZContext,
   ): Promise<SummaryStatistics> {

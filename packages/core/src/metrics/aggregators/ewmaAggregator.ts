@@ -2,7 +2,7 @@ import { BaseAggregator, WindowedAggregator } from './aggregator';
 import { systemClock } from '../../lib';
 import { IMovingAverage, MovingAverage } from '../../stats/moving-average';
 import { ObjectSchema } from 'joi';
-import { AggregatorTypes, SlidingWindowOptions } from '../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../types';
 import { TimeWindowOptionSchema } from './SlidingTimeWindowAggregator';
 import { Metric } from '../metric';
 

@@ -1,7 +1,7 @@
 import { validateCounts } from './helpers';
 import { ManualClock } from '../../../lib';
 import { MaxAggregator, Metric } from '../../';
-import { AggregatorTypes } from '../../../types';
+import { AggregatorTypes } from '../../types';
 import { Gauge as GaugeName, NoTags } from '../../metric-name';
 
 describe('MaxAggregator', () => {

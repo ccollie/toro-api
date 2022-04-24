@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { MetricTC } from '../../metric/query';
-import { BaseMetric } from '@alpen/core';
+import { Metric } from '@alpen/core';
 
 export const metrics: FieldConfig = {
   type: MetricTC.NonNull.List.NonNull,
@@ -11,7 +11,7 @@ export const metrics: FieldConfig = {
     queue: Queue,
     _,
     { accessors }: EZContext,
-  ): Promise<BaseMetric[]> {
+  ): Promise<Metric[]> {
     const manager = accessors.getQueueManager(queue);
     return manager.metricManager.metrics;
   },

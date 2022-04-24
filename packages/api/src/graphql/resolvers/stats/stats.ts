@@ -5,7 +5,7 @@ import { getStats } from './utils';
 
 export const stats: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   type: StatsSnapshotTC.NonNull.List.NonNull,
-  description: 'Queries for queue stats snapshots within a range',
+  description: 'Queries for queue metric snapshots within a range',
   args: {
     input: StatsQueryInputTC.NonNull,
   },

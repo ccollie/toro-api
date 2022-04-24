@@ -1,4 +1,4 @@
-import { BaseMetric, filterOutlierObjects, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
+import { Metric, filterOutlierObjects, OutlierMethod, TimeseriesDataPoint } from '@alpen/core';
 import { DateLike } from '@alpen/shared';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
@@ -12,7 +12,7 @@ export interface GetDataOptions {
 
 export async function getMetricData(
   context: EZContext,
-  metric: BaseMetric,
+  metric: Metric,
   options: GetDataOptions,
 ): Promise<TimeseriesDataPoint[]> {
   const { from: start, to: end, outlierFilter } = options;

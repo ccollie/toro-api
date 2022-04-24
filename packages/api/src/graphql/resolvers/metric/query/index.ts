@@ -8,7 +8,7 @@ import { metricSummaryStatsFC as summaryStats } from './summary-stats';
 import { metricDescriptionFC as description } from './description';
 // eslint-disable-next-line max-len
 import { metricPercentileDistributionFC as percentileDistribution } from './percentile-distribution';
-import { BaseMetric } from '@alpen/core';
+import { Metric } from '@alpen/core';
 import { AggregatorTC } from '../../aggregator/query';
 import { getStaticProp } from '@alpen/shared';
 
@@ -23,26 +23,26 @@ export const MetricTC = schemaComposer.createObjectTC({
     ...BaseFields,
     type: {
       type: MetricTypeTC.NonNull,
-      resolve: (metric: BaseMetric) => {
+      resolve: (metric: Metric) => {
         return getStaticProp(metric, 'type');
       },
     },
     category: {
       type: 'MetricCategory!',
-      resolve: (metric: BaseMetric) => {
+      resolve: (metric: Metric) => {
         return getStaticProp(metric, 'category');
       },
     },
     unit: {
       type: 'String!',
-      resolve: (metric: BaseMetric) => {
+      resolve: (metric: Metric) => {
         return getStaticProp(metric, 'unit');
       },
     },
     currentValue: {
       type: 'Float',
       description: 'The current value of the metric',
-      resolve: (metric: BaseMetric) => {
+      resolve: (metric: Metric) => {
         return metric.value;
       },
     },

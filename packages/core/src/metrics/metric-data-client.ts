@@ -1,26 +1,30 @@
 import { Queue } from 'bullmq';
-import { DateLike, isEmpty } from '@alpen/shared';
+import { DateLike } from '@alpen/shared';
 import {
+  getGranularitySuffix,
   getHostStatsKey,
   getMetricsDataKey,
   getMetricsKey,
   getQueueMetaKey,
   getStatsKey,
 } from '../keys';
-import { StatsGranularity, type StatsMetricType, StatsRateType } from './types';
+import {
+  StatsGranularity,
+  type StatsMetricType,
+  StatsRateType,
+} from '../stats/types';
 import { Pipeline } from 'ioredis';
 import { TimeSeries } from '../commands';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
-import { aggregateSnapshots, getRetention, aggregateMeter } from './utils';
+import { getCanonicalName, MetricLike } from './utils';
 import { WriteCache } from '../redis';
-import { MeterSummary } from './meter';
+import type { StatisticalSnapshot } from '../stats';
+import { getRetention, MeterSummary } from '../stats';
 import type { Timespan } from '../types';
-import type { StatisticalSnapshot } from './timer';
 import { Metric, MetricName } from '../metrics';
-import { getCanonicalName } from '../metrics/utils';
 
 export interface RangeOpts {
   key: string;
@@ -30,7 +34,7 @@ export interface RangeOpts {
   count?: number;
 }
 
-export interface StatsClientArgs {
+export interface MetricsClientArgs {
   host: string;
   queueId: string;
   queue: Queue;
@@ -38,15 +42,15 @@ export interface StatsClientArgs {
 }
 
 /**
- * Base class for manipulating and querying collected queue stats in redis
+ * Base class for manipulating and querying collected metrics in redis
  */
-export class StatsClient extends Emittery {
+export class MetricDataClient extends Emittery {
   private readonly cache: LRUCache<string, any>;
   protected readonly host: string;
   protected readonly queue: Queue;
   protected readonly queueId: string;
 
-  constructor(args: StatsClientArgs) {
+  constructor(args: MetricsClientArgs) {
     super();
     const { host, queueId, queue } = args;
     this.host = host;
@@ -54,7 +58,7 @@ export class StatsClient extends Emittery {
     this.queueId = queueId;
     this.onError = this.onError.bind(this);
     this.cache = new LRUCache({
-      max: 200,
+      max: 100,
       ttl: 10000,
     });
   }
@@ -74,7 +78,7 @@ export class StatsClient extends Emittery {
     return getMetricsDataKey(this.queue, getCanonicalName(metric));
   }
 
-  async getRange<T = any>(
+  private async getRange<T = any>(
     key: string,
     start: DateLike,
     end: DateLike,
@@ -99,32 +103,30 @@ export class StatsClient extends Emittery {
   }
 
   async getSpan(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit?: StatsGranularity,
   ): Promise<Timespan | null> {
     const client = await this.queue.client;
-    const key = this.getKey(jobName, metric, unit);
+    const key = this.getKey(metric, unit);
     return TimeSeries.getTimeSpan(client, key);
   }
 
   async getHostSpan(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
   ): Promise<Timespan | null> {
     const client = await this.queue.client;
-    const key = this.getHostKey(jobName, metric, unit);
+    const key = this.getDataKey(metric, unit);
     return TimeSeries.getTimeSpan(client, key);
   }
 
   async getLast(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
   ): Promise<StatisticalSnapshot | null> {
     const client = await this.queue.client;
-    const key = this.getKey(jobName, metric, unit);
+    const key = this.getKey(metric, unit);
+    // todo: cache this
     return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
   }
 
@@ -144,7 +146,7 @@ export class StatsClient extends Emittery {
     start: DateLike,
     end: DateLike,
   ): Promise<T[]> {
-    const args = StatsClient.getFetchManyArgs(key, start, end);
+    const args = MetricDataClient.getFetchManyArgs(key, start, end);
     const cacheId = args.cacheKey;
     let data = this.cache.get(cacheId) as T[];
     if (Array.isArray(data)) return data;
@@ -165,54 +167,49 @@ export class StatsClient extends Emittery {
   }
 
   private async aggregateInternal<T>(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
     fn: (items: StatisticalSnapshot[]) => T,
   ): Promise<T> {
-    const items = await this.getStats(jobName, metric, unit, start, end);
+    const items = await this.getStats(metric, unit, start, end);
     return fn(items);
   }
 
   private async aggregateHostInternal<T>(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
     fn: (items: StatisticalSnapshot[]) => T,
   ): Promise<T> {
-    const items = await this.getHostStats(jobName, metric, unit, start, end);
+    const items = await this.getHostStats(metric, unit, start, end);
     return fn(items);
   }
 
   async getStats(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<StatisticalSnapshot[]> {
-    const key = this.getKey(jobName, metric, unit);
+    const key = this.getKey(metric, unit);
     const stats = await this.cachedFetchMany<StatisticalSnapshot>(
       key,
       start,
       end,
     );
-    return stats.map(StatsClient.fixRates); //hacky
+    return stats;
   }
 
   async getAggregateStats(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<StatisticalSnapshot> {
     return this.aggregateInternal<StatisticalSnapshot>(
-      jobName,
       metric,
       unit,
       start,
@@ -222,7 +219,6 @@ export class StatsClient extends Emittery {
   }
 
   async getAggregateRates(
-    jobName: string,
     unit: StatsGranularity,
     type: StatsRateType,
     start: DateLike,
@@ -230,7 +226,6 @@ export class StatsClient extends Emittery {
   ): Promise<MeterSummary> {
     const fn = (items: StatisticalSnapshot[]) => aggregateMeter(items, type);
     return this.aggregateInternal<MeterSummary>(
-      jobName,
       'latency',
       unit,
       start,
@@ -239,43 +234,28 @@ export class StatsClient extends Emittery {
     );
   }
 
-  // HACK.
-  private static fixRates(stats: StatisticalSnapshot): StatisticalSnapshot {
-    const { rates, ...rest } = stats as any;
-    if (!isEmpty(rates)) {
-      stats = { ...rest };
-      stats.m1Rate = rest['1'] ?? 0;
-      stats.m5Rate = rest['5'] ?? 0;
-      stats.m15Rate = rest['15'] ?? 0;
-    }
-    return stats;
-  }
-
   async getHostStats(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<StatisticalSnapshot[]> {
-    const key = this.getHostKey(jobName, metric, unit);
+    const key = this.getHostKey(metric, unit);
     const stats = await this.cachedFetchMany<StatisticalSnapshot>(
       key,
       start,
       end,
     );
-    return stats.map(StatsClient.fixRates);
+    return stats;
   }
 
   async getAggregateHostStats(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<StatisticalSnapshot> {
     return this.aggregateHostInternal<StatisticalSnapshot>(
-      jobName,
       metric,
       unit,
       start,
@@ -285,7 +265,6 @@ export class StatsClient extends Emittery {
   }
 
   async getHostAggregateRates(
-    jobName: string,
     unit: StatsGranularity,
     type: StatsRateType,
     start: DateLike,
@@ -294,7 +273,6 @@ export class StatsClient extends Emittery {
     const fn = (items: StatisticalSnapshot[]) => aggregateMeter(items, type);
 
     return this.aggregateHostInternal<MeterSummary>(
-      jobName,
       'latency',
       unit,
       start,
@@ -304,11 +282,10 @@ export class StatsClient extends Emittery {
   }
 
   async getHostLast(
-    jobName: string,
-    metric: StatsMetricType,
+    metric: MetricLike,
     unit: StatsGranularity,
   ): Promise<StatisticalSnapshot | null> {
-    const key = this.getHostKey(jobName, metric, unit);
+    const key = this.getHostKey(metric, unit);
     const client = await this.queue.client;
     return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
   }
@@ -329,35 +306,6 @@ export class StatsClient extends Emittery {
     const key = getQueueMetaKey(this.queue);
     const client = await this.queue.client;
     await client.hmset(key, data);
-  }
-
-  protected updateWriteCursor(
-    pipeline: Pipeline,
-    jobType: string,
-    type: StatsMetricType,
-    unit: StatsGranularity,
-    value: DateLike,
-  ): Pipeline {
-    const key = getCursorKey(jobType, type, unit);
-    const update = {
-      [key]: toDate(value).getTime(),
-    };
-    return this.updateMeta(pipeline, update);
-  }
-
-  async setLastWriteCursor(
-    jobType: string,
-    type: StatsMetricType,
-    unit: StatsGranularity,
-    value: DateLike,
-  ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const key = getCursorKey(jobType, type, unit);
-    const update = {
-      [key]: toDate(value).getTime(),
-    };
-
-    return this.setMeta(update);
   }
 
   async getLastWriteCursor(
@@ -391,15 +339,12 @@ export class StatsClient extends Emittery {
   cleanup(
     pipeline: Pipeline,
     isHost: boolean,
-    jobName: string,
-    type: StatsMetricType,
+    type: MetricLike,
     unit: StatsGranularity,
     retention?: number,
   ): void {
     retention = retention || getRetention(unit);
-    const key = isHost
-      ? this.getHostKey(jobName, type, unit)
-      : this.getKey(jobName, type, unit);
+    const key = isHost ? this.getHostKey(type, unit) : this.getKey(type, unit);
 
     const data = {
       key,
@@ -427,12 +372,9 @@ export class StatsClient extends Emittery {
     return TimeSeries.removeRange(client, key, start, end, offset, count);
   }
 
-  getKey(
-    jobName: string,
-    metric: StatsMetricType,
-    unit?: StatsGranularity,
-  ): string {
-    return getStatsKey(this.queue, jobName, metric, unit);
+  getKey(metric: MetricLike, unit?: StatsGranularity): string {
+    const canonical = getCanonicalName(metric);
+    return getStatsKey(this.queue, canonical, unit);
   }
 
   getHostKey(
@@ -463,4 +405,18 @@ export function getRangeCacheKey(opts: RangeOpts): string {
   const start = toDate(opts.start).getTime();
   const end = toDate(opts.end).getTime();
   return `${opts.key}:${start}-${end}:${offset}:${count}`;
+}
+
+export function getMetricDataKey(
+  queue: Queue,
+  metric: MetricLike,
+  granularity?: StatsGranularity,
+): string {
+  const parts = ['metrics', getCanonicalName(metric)];
+  const suffix = getGranularitySuffix(granularity);
+  if (suffix) {
+    parts.push(`1${suffix}`);
+  }
+  const fragment = parts.join(':');
+  return queue.toKey(fragment);
 }

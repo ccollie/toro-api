@@ -1,9 +1,22 @@
-import { schemaComposer } from 'graphql-compose';
-import { createEnumFromTS } from '../../../scalars';
-import { MetricTypes } from '@alpen/core';
+import { EnumTypeComposer, schemaComposer } from 'graphql-compose';
+import { metricsInfo } from '@alpen/core';
 import { AggregatorInputTC } from '../../aggregator/query';
 
-export const MetricTypeTC = createEnumFromTS(MetricTypes, 'MetricType');
+function createMetricTypesTS(): EnumTypeComposer<any> {
+  const values: Record<string, any> = Object.create(null);
+  const metricTypes = new Set(metricsInfo.map((x) => x.type));
+
+  metricTypes.forEach((k, info) => {
+    values[k] = { value: k };
+  });
+  return schemaComposer.createEnumTC({
+    name: 'MetricType',
+    values,
+    description: 'Available metric names',
+  });
+}
+
+export const MetricTypeTC = createMetricTypesTS();
 
 export const BaseFields = {
   type: MetricTypeTC.NonNull,
@@ -15,21 +28,17 @@ export const BaseFields = {
     type: 'String!',
     description: 'The name of the metric',
   },
+  canonicalName: {
+    type: 'String!',
+    description: 'The canonical name of the metric',
+  },
   description: {
     type: 'String',
     description: 'A description of the metric being measured.',
   },
-  sampleInterval: {
-    type: 'Int',
-    description: 'The metric sampling interval.',
-  },
-  isActive: {
-    type: 'Boolean!',
-    description: 'Is the metric active (i.e. is data being collected).',
-  },
-  options: {
-    type: 'JSONObject!',
-    description: 'The metric options',
+  unit: {
+    type: 'String',
+    description: 'The metric unit.',
   },
 };
 
@@ -50,7 +59,7 @@ export const MetricInputTC = schemaComposer
       ...InputFields,
     },
   })
-  .makeFieldNullable(['name', 'options', 'aggregator', 'sampleInterval']);
+  .makeFieldNullable(['name', 'options', 'aggregator']);
 
 export const CreateMetricTC = schemaComposer
   .createInputTC({
@@ -60,5 +69,4 @@ export const CreateMetricTC = schemaComposer
       ...InputFields,
     },
   })
-  .makeOptional('sampleInterval')
   .makeRequired(['name', 'queueId']);

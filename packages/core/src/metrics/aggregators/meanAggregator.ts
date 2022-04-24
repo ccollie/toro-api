@@ -1,5 +1,5 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
-import { AggregatorTypes, SlidingWindowOptions } from '../../types';
+import { AggregatorTypes, SlidingWindowOptions } from '../types';
 import { Metric } from '../metric';
 
 /***

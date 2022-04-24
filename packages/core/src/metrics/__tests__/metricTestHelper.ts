@@ -2,16 +2,11 @@ import { Queue, RedisClient } from 'bullmq';
 import { UnsubscribeFn } from 'emittery';
 import { Clock } from '../../lib';
 import { Metric, MetricsListener } from '../../metrics';
-import { MetricTypes } from '../../types';
 import { QueueListener } from '../../queues';
 import { createQueue, createQueueListener, QueueListenerHelper } from '../../__tests__/factories';
 
 const BASE_UNIT = 'base_unit';
 const BASE_DESCRIPTION = 'base_description';
-
-function getBaseKey(): MetricTypes {
-  return MetricTypes.None;
-}
 
 export class MetricTestHelper {
   queueListener: QueueListener;
@@ -49,11 +44,6 @@ export class MetricTestHelper {
 
   static getKey(metric: Metric): string {
     return this.getStaticProp(metric, 'key');
-  }
-
-  static hasKey(metric: Metric): boolean {
-    const key = this.getStaticProp(metric, 'key');
-    return key && key !== getBaseKey();
   }
 
   static getUnit(metric: Metric): string {

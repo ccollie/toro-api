@@ -1,6 +1,7 @@
 import {
   HostManager,
   MeterSummary,
+  MetricManager,
   StatisticalSnapshot,
   StatsClient,
   StatsGranularity,
@@ -29,6 +30,14 @@ export function getClient(
     // it's a queue
     return context.accessors.getStatsClient(model as Queue);
   }
+}
+
+export function getMetricsManager(
+  context: EZContext,
+  queue: Queue,
+): MetricManager {
+  const mgr = context.accessors.getQueueManager(queue);
+  return mgr.metricManager;
 }
 
 export async function getStats(

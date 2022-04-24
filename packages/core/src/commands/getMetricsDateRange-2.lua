@@ -11,7 +11,7 @@ local msPerMinute = 60 * 1000
 local rcall = redis.call
 
 -- round n to nearest minute
-function round(n, direction)
+local function round(n, direction)
   local fn = direction == 'up' and math.ceil or math.floor
   return fn(n / msPerMinute) * msPerMinute
 end

@@ -1,6 +1,6 @@
 import * as boom from '@hapi/boom';
 import { ObjectSchema } from 'joi';
-import { AggregatorTypes, SerializedAggregator } from '../../types';
+import { AggregatorTypes, SerializedAggregator } from '../types';
 import { aggregatorTypeNameMap } from './utils';
 import { getStaticProp } from '@alpen/shared';
 import { Metric } from '../metric';

@@ -1,4 +1,4 @@
-import { BaseMetric, getPercentileDistribution } from '@alpen/core';
+import { Metric, getPercentileDistribution } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
 import { EZContext } from 'graphql-ez';
 import { MetricPercentileDistributionInput, PercentileDistribution, } from '../../../typings';
@@ -37,7 +37,7 @@ export const metricPercentileDistributionFC: FieldConfig = {
     input: MetricPercentileDistributionInputTC.NonNull,
   },
   async resolve(
-    metric: BaseMetric,
+    metric: Metric,
     { input }: { input: MetricPercentileDistributionInput },
     context: EZContext,
   ): Promise<PercentileDistribution> {

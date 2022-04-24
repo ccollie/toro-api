@@ -15,7 +15,7 @@ export function getLockKey(host: string): string {
   return getHostKey(host, 'lock');
 }
 
-function getGranularitySuffix(granularity?: StatsGranularity): string | null {
+export function getGranularitySuffix(granularity?: StatsGranularity): string | null {
   if (!granularity) return null;
   if (granularity === StatsGranularity.Month) {
     return 'mt';
