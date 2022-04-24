@@ -1,7 +1,7 @@
 import { ObjectSchema } from 'joi';
 import { BaseAggregator } from './aggregator';
 import { AggregatorTypes } from '../../types';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 /**
  * An aggregator which returns the latest value
@@ -16,8 +16,8 @@ export class LatestAggregator extends BaseAggregator {
     this._value = undefined;
   }
 
-  getDescription(metric: unknown, short?: boolean): string {
-    const metricType = getMetricTypeName(metric);
+  getDescription(metric: Metric, short?: boolean): string {
+    const metricType = metric.name.name;
     if (short) {
       return metricType;
     }

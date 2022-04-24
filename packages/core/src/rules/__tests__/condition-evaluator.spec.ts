@@ -1,8 +1,4 @@
-import { LatencyMetric } from '../../metrics';
-import {
-  PeakConditionEvaluator,
-  ThresholdConditionEvaluator,
-} from '../';
+import { PeakConditionEvaluator, ThresholdConditionEvaluator } from '../';
 import {
   ErrorStatus,
   PeakCondition,
@@ -13,8 +9,15 @@ import {
 } from '../../types';
 
 import { ManualClock } from '../../lib';
+import { Metric } from '../../metrics';
+import { Gauge as GaugeName, NoTags } from '../../metrics/metric-name';
 
 describe('Condition Evaluation', () => {
+  function createMetric(): Metric {
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
+  }
+
   describe('ThresholdConditionEvaluator', () => {
     function createEvaluator(
       options?: Partial<ThresholdCondition>,
@@ -25,13 +28,13 @@ describe('Condition Evaluation', () => {
         operator: RuleOperator.GT,
       };
       const opts = { ...defaults, ...(options || {}) };
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       return new ThresholdConditionEvaluator(metric, opts);
     }
 
     describe('constructor', () => {
       it('can construct an instance', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const options: ThresholdCondition = {
           type: RuleType.THRESHOLD,
           errorThreshold: 0,
@@ -141,13 +144,13 @@ describe('Condition Evaluation', () => {
         errorThreshold: 3.5,
       };
       const opts = { ...defaults, ...(options || {}) };
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       return new PeakConditionEvaluator(metric, opts);
     }
 
     describe('constructor', () => {
       it('can construct an instance', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const options: PeakCondition = {
           type: RuleType.PEAK,
           errorThreshold: 3.5,

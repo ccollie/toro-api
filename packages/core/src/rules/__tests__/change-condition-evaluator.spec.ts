@@ -1,6 +1,9 @@
-import { ChangeConditionEvaluator, getAggregationFunction } from '../change-condition-evaluator';
+import {
+  ChangeConditionEvaluator,
+  getAggregationFunction,
+} from '../change-condition-evaluator';
 import { getRandomIntArray } from '../../__tests__/factories';
-import { Metric, LatencyMetric } from '../../metrics';
+import { Metric } from '../../metrics';
 import { ManualClock } from '../../lib';
 import { random } from '@alpen/shared';
 import ms from 'ms';
@@ -10,6 +13,7 @@ import {
   RuleOperator,
   ChangeTypeEnum,
 } from '../../types';
+import { Gauge as GaugeName, NoTags } from '../../metrics/metric-name';
 
 function getDiffs(
   prevWindow: number[],
@@ -43,10 +47,15 @@ describe('ChangeConditionEvaluator', () => {
   let clock: ManualClock;
   let metric: Metric;
 
+  function createMetric(): Metric {
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
+  }
+
   beforeEach(() => {
     const now = Date.now();
     clock = new ManualClock(now - (now % 1000));
-    metric = new LatencyMetric({});
+    metric = createMetric();
   });
 
   function createInstance(
@@ -274,13 +283,13 @@ describe('ChangeConditionEvaluator', () => {
     });
 
     it('generates a short description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, true);
       expect(actual).toBe('latency change');
     });
 
     it('generates a long description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, false);
       expect(actual).toBe('change(latency, max, "10s")');
     });

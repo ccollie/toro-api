@@ -1,15 +1,15 @@
 'use strict';
 import { AggregatorTypes, SlidingWindowOptions } from '../../types';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 export class MinAggregator extends SlidingTimeWindowAggregator {
   constructor(options?: SlidingWindowOptions) {
     super(options);
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       return `min(${type})`;
     }

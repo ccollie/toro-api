@@ -1,6 +1,6 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
 import { AggregatorTypes, SlidingWindowOptions } from '../../types';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 /***
  * An aggregator returning the mean of a stream of values
@@ -10,8 +10,8 @@ export class MeanAggregator extends StatsBasedAggregator {
     super(window, 'mean');
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       return `avg(${type})`;
     }

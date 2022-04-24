@@ -84,15 +84,6 @@ export function createAggregator(
   return new ctor(options);
 }
 
-export function validateAggregatorOpts(
-  type: string | AggregatorTypes,
-  options?: Record<string, any>,
-): Record<string, any> | undefined {
-  const ctor = findAggregator(type);
-  const validateOptions: (opts: any) => any = (ctor as any).validateOptions;
-  return validateOptions(options);
-}
-
 export {
   BaseAggregator,
   EWMAAggregator,

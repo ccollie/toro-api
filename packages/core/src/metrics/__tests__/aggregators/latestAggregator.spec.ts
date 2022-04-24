@@ -1,11 +1,14 @@
-import {
-  LatestAggregator,
-  LatencyMetric,
-} from '../../';
+import { LatestAggregator, Metric } from '../../';
 import { AggregatorTypes } from '../../../types';
 import { random } from '@alpen/shared';
+import { Gauge as GaugeName, NoTags } from '../../metric-name';
 
 describe('LatestAggregator', () => {
+  function createMetric(): Metric {
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
+  }
+
   describe('static properties', () => {
     it('has the correct "key" property', () => {
       expect(LatestAggregator.key).toBe(AggregatorTypes.Latest);
@@ -62,13 +65,13 @@ describe('LatestAggregator', () => {
     });
 
     it('generates a short description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, true);
       expect(actual).toBe('Latency');
     });
 
     it('generates a long description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, false);
       expect(actual).toBe('Latency latest value');
     });

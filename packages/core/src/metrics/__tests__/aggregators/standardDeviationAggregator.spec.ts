@@ -1,10 +1,16 @@
-import { LatencyMetric, StandardDeviationAggregator } from '../../';
+import { Metric, StandardDeviationAggregator } from '../../';
 import { random } from '@alpen/shared';
 import { OnlineNormalEstimator } from '../../../stats';
 import { AggregatorTypes } from '../../../types';
 import { validateCounts } from './helpers';
+import { Gauge as GaugeName, NoTags } from '../../metric-name';
 
 describe('StandardDeviationAggregator', () => {
+  function createMetric(): Metric {
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
+  }
+
   describe('static properties', () => {
     it('has the correct "key" property', () => {
       expect(StandardDeviationAggregator.key).toBe(AggregatorTypes.StdDev);
@@ -130,13 +136,13 @@ describe('StandardDeviationAggregator', () => {
     });
 
     it('generates a short description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, true);
       expect(actual).toBe('std_dev(Latency)');
     });
 
     it('generates a long description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, false);
       expect(actual).toBe('Latency std deviation');
     });

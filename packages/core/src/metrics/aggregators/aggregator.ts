@@ -1,9 +1,9 @@
 import * as boom from '@hapi/boom';
-import { isEqual } from '@alpen/shared';
 import { ObjectSchema } from 'joi';
 import { AggregatorTypes, SerializedAggregator } from '../../types';
 import { aggregatorTypeNameMap } from './utils';
 import { getStaticProp } from '@alpen/shared';
+import { Metric } from '../metric';
 
 export interface Aggregator {
   /** The number of samples added so far */
@@ -31,15 +31,6 @@ export interface WindowedAggregator extends Aggregator {
   windowSize: number;
 }
 
-function isAggregator(arg: any): arg is Aggregator {
-  return (
-    arg &&
-    typeof arg.count == 'number' &&
-    typeof arg.value === 'number' &&
-    typeof arg.update === 'function'
-  );
-}
-
 export class BaseAggregator implements Aggregator {
   protected options: any;
 
@@ -59,12 +50,6 @@ export class BaseAggregator implements Aggregator {
     this.options = BaseAggregator.validateOptions(options);
   }
 
-  isSameAs(other: BaseAggregator): boolean {
-    return (
-      other && other.type === this.type && isEqual(other.options, this.options)
-    );
-  }
-
   static validateOptions(options: unknown): any {
     const schema = (this.constructor as any).schema;
     if (schema) {
@@ -78,8 +63,8 @@ export class BaseAggregator implements Aggregator {
     return options;
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       const key = getStaticProp(this, 'key');
       const aggrTypeName = aggregatorTypeNameMap[key as AggregatorTypes];

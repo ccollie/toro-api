@@ -137,7 +137,8 @@ export class RuleManager {
         evaluator = new RuleEvaluator(rule, metric);
         meta.evaluator = evaluator;
       }
-      const result = evaluator.evaluate(metric.value, ts);
+      // TODO: !!!!!!!!!!!!!!!
+      const result = evaluator.evaluate( /* metric.value */ 0, ts);
       // put this check AFTER the above since evaluators may be stateful, and we
       // need to maintain state in case we acquire the lock
       if (!hasLock) return;

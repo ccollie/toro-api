@@ -57,7 +57,7 @@ async function getJobDurationBatch(
     keys.forEach((key) => {
       const { queue, jobName, start, end } = key;
       // todo: pipeline this
-      const args = Scripts.getJobDurationValuesArgs(queue, start, end, jobName);
+      const args = Scripts.getJobDurationValuesArgs(queue, 'completed', start, end, jobName);
       (pipeline as any).getDurationValues(...args);
     });
     const res = await pipeline.exec();

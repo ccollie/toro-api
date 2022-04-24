@@ -1,6 +1,6 @@
 import { AggregatorTypes, SlidingWindowOptions } from '../../types';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 /*
 An aggregator to return a sum
@@ -13,8 +13,8 @@ export class SumAggregator extends SlidingTimeWindowAggregator {
     super(options);
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       return `sum(${type})`;
     }

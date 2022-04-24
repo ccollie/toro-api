@@ -9,7 +9,6 @@ import {
 import { DDSketch } from '@datadog/sketches-js';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
 import { ordinal, round } from '@alpen/shared';
-import { getMetricTypeName } from './utils';
 
 function quantileToString(q: number): string {
   return 'p' + (q * 100).toString(10).replace('.', '');
@@ -75,8 +74,8 @@ export class QuantileAggregator extends SlidingTimeWindowAggregator {
     return QuantileAggregatorSchema;
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     let q = round(this.quantile, 2);
     if (short) {
       const str = quantileToString(q);
@@ -248,7 +247,7 @@ export class P995Aggregator extends QuantileAggregator {
   }
 
   getDescription(metric: Metric, short = false): string {
-    const type = getMetricTypeName(metric);
+    const type = metric.name.name;
     if (short) {
       return `p995(${type})`;
     }

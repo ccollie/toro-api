@@ -1,6 +1,6 @@
 import { AggregatorTypes, SlidingWindowOptions } from '../../types';
 import { SlidingTimeWindowAggregator } from './SlidingTimeWindowAggregator';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 export class MaxAggregator extends SlidingTimeWindowAggregator {
   /**
@@ -17,8 +17,8 @@ export class MaxAggregator extends SlidingTimeWindowAggregator {
     return AggregatorTypes.Max;
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       return `max(${type})`;
     }

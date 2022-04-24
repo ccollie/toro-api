@@ -5,18 +5,17 @@ import {
 } from '../../__tests__/factories';
 import { HostManager, QueueConfig } from '../../hosts';
 import { QueueListener, QueueManager } from '../../queues';
-import {
-  Metric,
-  MetricManager, SerializedMetric,
-} from '../';
-import {
-  MetricsEventsEnum,
-  MetricTypes,
-} from '../../types';
+import { Metric, MetricManager } from '../';
+import { MetricsEventsEnum } from '../../types';
 import { delay, getUniqueId } from '../../lib';
 import ms from 'ms';
-import { nanoid } from 'nanoid';
 import { RedisClient } from 'bullmq';
+import {
+  MetricName,
+  MetricType,
+  NoTags,
+  Gauge as GaugeName
+} from '../metric-name';
 
 describe('MetricManager', () => {
   let listenerHelper: QueueListenerHelper;
@@ -49,7 +48,10 @@ describe('MetricManager', () => {
 
   describe('constructor', () => {
     it('should construct an object', () => {
-      const sut = new MetricManager(queueManager.queue, { bus: queueManager.bus });
+      const sut = new MetricManager(queueManager.queue, {
+        host: 'host',
+        bus: queueManager.bus,
+      });
       expect(sut).toBeDefined();
     });
   });
@@ -67,69 +69,52 @@ describe('MetricManager', () => {
     });
 
     it('creates a metric from JSON', async () => {
-      const json: SerializedMetric = {
-        id: '',
-        name: 'name-' + getUniqueId(),
-        description: 'description-' + getUniqueId(),
-        options: {},
-        type: MetricTypes.Latency,
-      };
-
-      const sut = new MetricManager(queueManager.queue, { bus: queueManager.bus });
-      const metric = await sut.createMetric(json);
+      const sut = new MetricManager(queueManager.queue, {
+        host: 'host',
+        bus: queueManager.bus,
+      });
+      const metric = await sut.createMetric('jobs_waiting');
 
       expect(metric).toBeDefined();
-      expect(metric).toBeInstanceOf(LatencyMetric);
+      expect(metric.name.name).toBeInstanceOf('jobs_waiting');
 
-      const members = await client.smembers(sut.indexKey);
-      expect(members.includes(metric.id)).toBe(true);
+      const exists = await client.hexists(sut.indexKey, metric.canonicalName);
+      expect(exists).toBe(true);
 
       const data = await client.hgetall(sut.getMetricKey(metric));
       expect(data).toBeDefined();
-      expect(data.id).toBe(metric.id);
-      expect(data.isActive).toBe('false');
-      expect(data.type).toBe(MetricTypes.Latency);
-      expect(data.createdAt).toBe(metric.createdAt.toString());
-
       expect(sut.metrics.length).toBe(1);
     });
 
     it('emits an "added" event', async () => {
-      const json: SerializedMetric = {
-        id: '',
-        options: {},
-        name: 'name-' + getUniqueId(),
-        description: 'description-' + getUniqueId(),
-        type: MetricTypes.Latency,
-      };
-
       let eventData: Record<string, any> = null;
       queueManager.bus.on(MetricsEventsEnum.METRIC_ADDED, (data) => {
         eventData = data;
       });
-      const sut = new MetricManager(queueManager.queue, { bus: queueManager.bus });
+      const sut = new MetricManager(queueManager.queue, {
+        host: 'host',
+        bus: queueManager.bus,
+      });
 
-      await sut.createMetric(json);
+      const metric = await sut.createMetric('jobs_waiting');
       await delay(200);
+      const canonicalName = metric.canonicalName;
 
-      expect(eventData).toMatchObject(json);
+      expect(eventData).toMatchObject({ canonicalName });
     });
   });
 
-  const INTERVAL = ms('10 sec');
-
   function createMetric(): Metric {
-    const metric = new InstantaneousOpsMetric({
-      sampleInterval: INTERVAL,
-    });
-
-    metric.name = `name-${getUniqueId()}`;
-
+    const mn = new GaugeName( 'jobs_active', NoTags, NoTags);
+    const metric = new Metric(mn);
     return metric;
   }
 
   function createManager(): MetricManager {
-    return new MetricManager(queueManager.queue, { bus: queueManager.bus });
+    return new MetricManager(queueManager.queue, {
+      host: 'host',
+      bus: queueManager.bus,
+    });
   }
 
   describe('saveMetric', () => {
@@ -177,21 +162,9 @@ describe('MetricManager', () => {
         const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
-        expect(saved.isActive).toBe(true);
-
-        saved.isActive = false;
-        saved.name = 'changed_name';
-
-        await sut.saveMetric(saved);
-
         const data = await client.hgetall(sut.getMetricKey(metric));
         expect(data).toBeDefined();
-        expect(data.id).toBe(metric.id);
-        expect(data.isActive).toBe('false');
         expect(data.name).toBe('changed_name');
-
-        const lastUpdated = parseInt(data.updatedAt);
-        expect(saved.updatedAt).toBe(lastUpdated);
       });
 
       it('emits an "updated" event', async (done) => {
@@ -206,15 +179,11 @@ describe('MetricManager', () => {
         const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
-        saved.isActive = false;
-        saved.name = 'changed_name';
-
         await sut.saveMetric(saved);
       });
 
       it('emits events on active state change', async () => {
         const metric = createMetric();
-        metric.isActive = false;
 
         let eventData: Record<string, any> = null;
         queueManager.bus.on(MetricsEventsEnum.METRIC_ACTIVATED, (data) => {
@@ -230,13 +199,11 @@ describe('MetricManager', () => {
         const sut = createManager();
         const saved = await sut.saveMetric(metric);
 
-        saved.isActive = true;
         await sut.saveMetric(saved);
         await delay(800);
         expect(eventData).not.toBe(null);
         eventData = null;
 
-        saved.isActive = false;
         await sut.saveMetric(saved);
         await delay(800);
         expect(eventData).not.toBe(null);

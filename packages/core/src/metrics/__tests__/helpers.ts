@@ -1,5 +1,4 @@
 import { random } from '@alpen/shared';
-import { Metric } from '../';
 
 export function getRandomBoolArray(count?: number): boolean[] {
   count = count || random(5, 20);
@@ -17,19 +16,4 @@ export function getRandomNumberArray(length?: number): number[] {
     xs[i] = Math.random();
   }
   return xs;
-}
-
-export function validateMetricToJSON(metric: Metric): void {
-  const json = metric.toJSON();
-  // hack: options is protected
-  const options = (metric as any).options;
-  expect(json).toBeDefined();
-  expect(json).toMatchObject({
-    id: metric.id,
-    createdAt: metric.createdAt,
-    updatedAt: metric.createdAt,
-    name: metric.name,
-    isActive: metric.isActive,
-    options,
-  });
 }

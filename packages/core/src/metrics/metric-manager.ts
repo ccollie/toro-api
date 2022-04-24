@@ -103,7 +103,7 @@ export class MetricManager {
   }
 
   getMetricKey(metric: Metric | string): string {
-    return getMetricsKey(this.queue, getMetricId(metric));
+    return getMetricsKey(this.queue, getCanonicalName(metric));
   }
 
   private getClient(): Promise<RedisClient> {
@@ -456,20 +456,19 @@ export class MetricManager {
     return TimeSeries.getTimeSpan(client, key);
   }
 
-  async getMetricDataCount(metric: Metric | string): Promise<number> {
+  async getMetricDataCount(metric: MetricLike): Promise<number> {
     const client = await this.getClient();
     const key = this.getDataKey(metric);
     return TimeSeries.size(client, key);
   }
 
-  async clearData(metric: Metric | string): Promise<number> {
+  async clearData(metric: MetricLike): Promise<number> {
+    const canonicalName = getCanonicalName(metric);
     const count = await this.getMetricDataCount(metric);
     const client = await this.getClient();
     const key = this.getDataKey(metric);
     await client.del(key);
-    await this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, {
-      metricId: getMetricId(metric),
-    });
+    await this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, { canonicalName });
     return isNumber(count) ? count : 0;
   }
 
@@ -501,29 +500,11 @@ export class MetricManager {
     }
   }
 
-  async getMetricIds(): Promise<string[]> {
-    const client = await this.getClient();
-    return client.smembers(this.indexKey);
-  }
-
   onMetricsUpdated(
     handler: (eventData?: MetricsUpdatedPayload) => void,
   ): UnsubscribeFn {
     throw boom.notImplemented('onMetricsUpdated');
   }
-}
-
-function getMetricId(metric: Metric | string): string {
-  let id;
-  if (typeof metric === 'string') {
-    id = metric;
-  } else if (metric.id) {
-    id = metric.id;
-  }
-  if (!id) {
-    throw badRequest('Expected a metric or metric id');
-  }
-  return id;
 }
 
 function getCanonicalName(metric: MetricLike): string {

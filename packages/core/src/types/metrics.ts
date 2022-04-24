@@ -1,32 +1,9 @@
-export enum MetricTypes {
-  None,
-  Apdex,
-  ActiveJobs,
-  ConnectedClients,
-  Completed,
-  CompletedRate,
-  DelayedJobs,
-  Failures,
-  Finished,
-  FragmentationRatio,
-  InstantaneousOps,
-  Latency,
-  PeakMemory,
-  PendingCount,
-  ResponseTime,
-  UsedMemory,
-  Waiting,
-  WaitingChildren,
-  WaitTime,
-}
 
 export enum MetricCategory {
   Queue,
   Host,
   Redis,
 }
-
-export type MetricTypeName = keyof typeof MetricTypes;
 
 export enum AggregatorTypes {
   None,

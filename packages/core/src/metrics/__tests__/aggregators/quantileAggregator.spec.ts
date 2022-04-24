@@ -1,4 +1,3 @@
-import { LatencyMetric } from '../../';
 import { AggregatorTypes } from '../../../types';
 import {
   P75Aggregator,
@@ -11,8 +10,15 @@ import {
 import { random } from '@alpen/shared';
 import { DDSketch } from '@datadog/sketches-js';
 import { validateCounts } from './helpers';
+import { Metric } from '../../metric';
+import { Gauge as GaugeName, NoTags } from '../../metric-name';
 
 describe('Quantile Aggregators', () => {
+  function createMetric(): Metric {
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
+  }
+
   describe('QuantileAggregator', () => {
     describe('static properties', () => {
       it('has the correct "key" property', () => {
@@ -82,13 +88,13 @@ describe('Quantile Aggregators', () => {
       });
 
       it('generates a short description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, true);
         expect(actual).toBe('p95(Latency)');
       });
 
       it('generates a long description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, false);
         expect(actual).toBe('Latency 95th percentile');
       });
@@ -159,13 +165,13 @@ describe('Quantile Aggregators', () => {
       });
 
       it('generates a short description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, true);
         expect(actual).toBe('p75(Latency)');
       });
 
       it('generates a long description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, false);
         expect(actual).toBe('Latency 75th percentile');
       });
@@ -236,13 +242,13 @@ describe('Quantile Aggregators', () => {
       });
 
       it('generates a short description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, true);
         expect(actual).toBe('p90(Latency)');
       });
 
       it('generates a long description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, false);
         expect(actual).toBe('Latency 90th percentile');
       });
@@ -313,13 +319,13 @@ describe('Quantile Aggregators', () => {
       });
 
       it('generates a short description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, true);
         expect(actual).toBe('p95(Latency)');
       });
 
       it('generates a long description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, false);
         expect(actual).toBe('Latency 95th percentile');
       });
@@ -390,13 +396,13 @@ describe('Quantile Aggregators', () => {
       });
 
       it('generates a short description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, true);
         expect(actual).toBe('p995(Latency)');
       });
 
       it('generates a long description', () => {
-        const metric = new LatencyMetric({});
+        const metric = createMetric();
         const actual = instance.getDescription(metric, false);
         expect(actual).toBe('Latency 99.5th percentile');
       });

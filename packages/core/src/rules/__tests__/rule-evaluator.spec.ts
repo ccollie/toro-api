@@ -12,12 +12,7 @@ import {
   RuleOperator,
   RuleType,
 } from '../../types';
-import {
-  Metric,
-  LatencyMetric,
-  MetricsListener,
-  P90Aggregator,
-} from '../../metrics';
+import { Metric } from '../../metrics';
 import { QueueListener } from '../../queues';
 import {
   clearDb,
@@ -25,10 +20,9 @@ import {
   createQueueListener,
   createRule,
   QueueListenerHelper,
-  randomString,
 } from '../../__tests__/factories';
 import { delay } from '../../lib';
-import ms from 'ms';
+import { Gauge as GaugeName, NoTags } from '../../metrics/metric-name';
 
 class ExtRuleEvaluator extends RuleEvaluator {
   getEvaluator(): ConditionEvaluator {
@@ -39,14 +33,12 @@ class ExtRuleEvaluator extends RuleEvaluator {
 describe('RuleEvaluator', () => {
   let queueListener: QueueListener;
   let listenerHelper: QueueListenerHelper;
-  let metricsListener: MetricsListener;
   let metric: Metric;
 
   beforeEach(async () => {
     const queue = await createQueue();
     queueListener = await createQueueListener(queue);
     listenerHelper = new QueueListenerHelper(queueListener);
-    metricsListener = new MetricsListener(queueListener);
   });
 
   afterEach(async () => {
@@ -75,19 +67,9 @@ describe('RuleEvaluator', () => {
     return new ExtRuleEvaluator(rule, metric);
   }
 
-  const DURATION = ms('2 min');
-
   function createMetric(): Metric {
-    const metric = new LatencyMetric({
-      jobNames: [],
-    });
-
-    metric.name = `name-${randomString(4)}`;
-    metric.aggregator = new P90Aggregator({
-      duration: DURATION,
-    });
-
-    return metric;
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
   }
 
   describe('constructor', () => {
@@ -99,7 +81,6 @@ describe('RuleEvaluator', () => {
 
       const evaluator = new RuleEvaluator(rule, metric);
       expect(evaluator).toBeDefined();
-      expect(evaluator.metric).toBeInstanceOf(LatencyMetric);
       expect(evaluator.rule).toBe(rule);
     });
 

@@ -1,9 +1,15 @@
 import { validateCounts } from './helpers';
 import { ManualClock } from '../../../lib';
-import { LatencyMetric, MaxAggregator } from '../../';
+import { MaxAggregator, Metric } from '../../';
 import { AggregatorTypes } from '../../../types';
+import { Gauge as GaugeName, NoTags } from '../../metric-name';
 
 describe('MaxAggregator', () => {
+  function createMetric(): Metric {
+    const mn = new GaugeName('jobs_active', NoTags, NoTags);
+    return new Metric(mn);
+  }
+
   describe('static properties', () => {
     it('has the correct "key" property', () => {
       expect(MaxAggregator.key).toBe(AggregatorTypes.Max);
@@ -81,13 +87,13 @@ describe('MaxAggregator', () => {
     });
 
     it('generates a short description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, true);
       expect(actual).toBe('max(Latency)');
     });
 
     it('generates a long description', () => {
-      const metric = new LatencyMetric({});
+      const metric = createMetric();
       const actual = instance.getDescription(metric, false);
       expect(actual).toBe('Latency max');
     });

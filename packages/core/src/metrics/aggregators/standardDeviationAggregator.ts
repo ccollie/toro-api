@@ -1,14 +1,14 @@
 import { StatsBasedAggregator } from './statsBasedAggregator';
 import { AggregatorTypes, SlidingWindowOptions } from '../../types';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 export class StandardDeviationAggregator extends StatsBasedAggregator {
   constructor(window: SlidingWindowOptions) {
     super(window, 'standardDeviation');
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       return `std_dev(${type})`;
     }

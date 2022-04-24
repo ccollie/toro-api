@@ -1,7 +1,7 @@
 import { ObjectSchema } from 'joi';
 import { BaseAggregator } from './aggregator';
 import { AggregatorTypes } from '../../types';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 export class NullAggregator extends BaseAggregator {
   protected _value: number | undefined;
@@ -13,8 +13,8 @@ export class NullAggregator extends BaseAggregator {
     this._value = undefined;
   }
 
-  getDescription(metric: unknown): string {
-    return getMetricTypeName(metric);
+  getDescription(metric: Metric): string {
+    return metric.name.name;
   }
 
   static get key(): AggregatorTypes {

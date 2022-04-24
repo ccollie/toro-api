@@ -4,7 +4,7 @@ import { IMovingAverage, MovingAverage } from '../../stats/moving-average';
 import { ObjectSchema } from 'joi';
 import { AggregatorTypes, SlidingWindowOptions } from '../../types';
 import { TimeWindowOptionSchema } from './SlidingTimeWindowAggregator';
-import { getMetricTypeName } from './utils';
+import { Metric } from '../metric';
 
 /***
  * Returns the Exponentially Weighted Moving Avg of a stream
@@ -27,8 +27,8 @@ export class EWMAAggregator
     this.ewma = MovingAverage(options.duration);
   }
 
-  getDescription(metric: unknown, short = false): string {
-    const type = getMetricTypeName(metric);
+  getDescription(metric: Metric, short = false): string {
+    const type = metric.name.name;
     if (short) {
       return super.getDescription(metric, true);
     }

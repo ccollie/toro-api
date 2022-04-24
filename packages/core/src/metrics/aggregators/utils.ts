@@ -20,17 +20,3 @@ export const aggregatorTypeNameMap: Record<
   [AggregatorTypes.P99]: 'P99',
   [AggregatorTypes.P995]: 'P995',
 };
-
-// the following is to avoid circular references to metric.ts
-function isMetric(obj: unknown): boolean {
-  if (typeof obj === 'object') {
-    let proto;
-    while (proto = Object.getPrototypeOf(obj)) {
-      if (proto.constructor.name === 'Metric') {
-        return true;
-      }
-      obj = proto;
-    }
-  }
-  return false;
-}

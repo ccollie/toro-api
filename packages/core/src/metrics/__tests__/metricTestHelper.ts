@@ -96,11 +96,11 @@ export class MetricTestHelper {
   }
 
   registerMetric(metric: Metric): void {
-    this.metricsListener.registerMetric(metric);
+   // this.metricsListener.registerMetric(metric);
   }
 
   unregisterMetric(metric: Metric): void {
-    this.metricsListener.unregisterMetric(metric);
+    // this.metricsListener.unregisterMetric(metric);
   }
 
   advanceTime(delta: number): void {
