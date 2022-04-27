@@ -1,44 +1,77 @@
-import { Queue } from 'bullmq';
+import { Queue, RedisClient } from 'bullmq';
 import { DateLike } from '@alpen/shared';
 import {
-  getGranularitySuffix,
-  getHostStatsKey,
-  getMetricsDataKey,
+  getHostMetricsKey,
   getMetricsKey,
-  getQueueMetaKey,
-  getStatsKey,
+  getQueueMetricDataKey,
 } from '../keys';
-import {
-  StatsGranularity,
-  type StatsMetricType,
-  StatsRateType,
-} from '../stats/types';
+import { StatsGranularity } from '../stats/types';
 import { Pipeline } from 'ioredis';
-import { TimeSeries } from '../commands';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
-import { getCanonicalName, MetricLike } from './utils';
-import { WriteCache } from '../redis';
-import type { StatisticalSnapshot } from '../stats';
-import { getRetention, MeterSummary } from '../stats';
-import type { Timespan } from '../types';
-import { Metric, MetricName } from '../metrics';
+import { getMetricName, MetricLike } from './utils';
+import { getRetention, Meter, MeterSummary } from '../stats';
+import { MetricType } from '../metrics';
+import ms from 'ms';
+import {
+  TimeSeriesList,
+  TimeseriesListMetadata,
+  TimeseriesValue,
+} from '../commands/timeseries-list';
+import { DDSketch } from '@datadog/sketches-js';
+import { BiasedQuantileDistribution, deserializeSketch } from './bqdist';
+import { ManualClock } from '../lib';
+import { checkMultiErrors } from '~/core';
 
 export interface RangeOpts {
   key: string;
+  unit: StatsGranularity;
   start: DateLike;
   end: DateLike;
-  offset?: number;
-  count?: number;
 }
 
 export interface MetricsClientArgs {
   host: string;
-  queueId: string;
   queue: Queue;
-  writer?: WriteCache;
+  client: RedisClient;
+}
+
+const Granularities = [
+  StatsGranularity.Hour,
+  StatsGranularity.Minute,
+  StatsGranularity.Week,
+  StatsGranularity.Month,
+];
+
+function getPeriod(unit: StatsGranularity): number {
+  return ms(`1 ${unit}`);
+}
+
+interface ParsedAddParams {
+  period: number;
+  key: string;
+}
+
+function parseAddParams(
+  metric: MetricLike,
+  unit: StatsGranularity,
+  expectedTypes: MetricType[] = [MetricType.Gauge, MetricType.Counter],
+): ParsedAddParams {
+  const key = this.getKey(metric, unit);
+  const mn = getMetricName(metric);
+  if (!expectedTypes.includes(mn.type)) {
+    const expected = expectedTypes.join(' or ');
+    throw new Error(
+      `Expected metric type. Expected ${expected}, got ${mn.type}`,
+    );
+  }
+  const period = getPeriod(unit);
+  return {
+    key,
+    period,
+  };
 }
 
 /**
@@ -48,14 +81,15 @@ export class MetricDataClient extends Emittery {
   private readonly cache: LRUCache<string, any>;
   protected readonly host: string;
   protected readonly queue: Queue;
-  protected readonly queueId: string;
+  private readonly client: RedisClient;
+  private _pipeline: Pipeline;
 
   constructor(args: MetricsClientArgs) {
     super();
-    const { host, queueId, queue } = args;
+    const { host, queue, client } = args;
     this.host = host;
     this.queue = queue;
-    this.queueId = queueId;
+    this.client = client;
     this.onError = this.onError.bind(this);
     this.cache = new LRUCache({
       max: 100,
@@ -71,66 +105,62 @@ export class MetricDataClient extends Emittery {
   }
 
   get indexKey(): string {
-    return getMetricsKey(this.queue, null);
+    if (!this.queue) {
+      return getHostMetricsKey(this.host);
+    } else {
+      return getMetricsKey(this.queue, null);
+    }
   }
 
-  private getDataKey(metric: Metric | MetricName): string {
-    return getMetricsDataKey(this.queue, getCanonicalName(metric));
+  private getDataKey(metric: MetricLike, unit: StatsGranularity): string {
+    return this.getKey(metric, unit);
   }
 
   private async getRange<T = any>(
     key: string,
+    unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
-    offset?: number,
-    count?: number,
-  ): Promise<T[]> {
-    const client = await this.queue.client;
-    const results = await TimeSeries.getRange<T>(
-      client,
-      key,
-      start,
-      end,
-      offset,
-      count,
-    );
-    return results.map((x) => x.value);
+  ): Promise<TimeseriesValue<T>[]> {
+    const period = getPeriod(unit);
+    return TimeSeriesList.getRange<T>(this.client, key, period, start, end);
+  }
+
+  private async getRangeBuffer(
+    key: string,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<TimeseriesValue<Buffer>[]> {
+    const period = getPeriod(unit);
+    return TimeSeriesList.getRangeBuffer(this.client, key, period, start, end);
   }
 
   static pipelineGetRange(pipeline: Pipeline, range: RangeOpts): void {
-    const { key, start, end, offset, count } = range;
-    TimeSeries.multi.getRange(pipeline, key, start, end, offset, count);
+    const { key, start, end, unit } = range;
+    const period = getPeriod(unit);
+    TimeSeriesList.multi.getRange(pipeline, key, period, start, end);
   }
 
-  async getSpan(
-    metric: MetricLike,
-    unit?: StatsGranularity,
-  ): Promise<Timespan | null> {
-    const client = await this.queue.client;
-    const key = this.getKey(metric, unit);
-    return TimeSeries.getTimeSpan(client, key);
-  }
-
-  async getHostSpan(
+  async getMetadata(
     metric: MetricLike,
     unit: StatsGranularity,
-  ): Promise<Timespan | null> {
-    const client = await this.queue.client;
-    const key = this.getDataKey(metric, unit);
-    return TimeSeries.getTimeSpan(client, key);
+  ): Promise<TimeseriesListMetadata | null> {
+    const key = this.getKey(metric, unit);
+    return TimeSeriesList.metadata(this.client, key);
   }
 
   async getLast(
     metric: MetricLike,
     unit: StatsGranularity,
-  ): Promise<StatisticalSnapshot | null> {
-    const client = await this.queue.client;
+  ): Promise<number | null> {
     const key = this.getKey(metric, unit);
+    const period = getPeriod(unit);
     // todo: cache this
-    return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
+    return TimeSeriesList.get<number>(this.client, key, period, '+');
   }
 
-  private static getFetchManyArgs(
+  private static getFetchRangeArgs(
     key: string,
     start: DateLike,
     end: DateLike,
@@ -141,16 +171,17 @@ export class MetricDataClient extends Emittery {
     return { cacheKey, start, end };
   }
 
-  private async cachedFetchMany<T>(
+  private async cachedRange<T>(
     key: string,
+    unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
-  ): Promise<T[]> {
-    const args = MetricDataClient.getFetchManyArgs(key, start, end);
+  ): Promise<TimeseriesValue<T>[]> {
+    const args = MetricDataClient.getFetchRangeArgs(key, start, end);
     const cacheId = args.cacheKey;
-    let data = this.cache.get(cacheId) as T[];
+    let data = this.cache.get(cacheId) as TimeseriesValue<T>[];
     if (Array.isArray(data)) return data;
-    data = await this.getRange<T>(key, args.start, args.end);
+    data = await this.getRange<T>(key, unit, start, end);
     this.cache.set(cacheId, data);
     return data;
   }
@@ -166,257 +197,194 @@ export class MetricDataClient extends Emittery {
     return this.getCachedArray(key);
   }
 
-  private async aggregateInternal<T>(
+  async add(
     metric: MetricLike,
     unit: StatsGranularity,
-    start: DateLike,
-    end: DateLike,
-    fn: (items: StatisticalSnapshot[]) => T,
-  ): Promise<T> {
-    const items = await this.getStats(metric, unit, start, end);
-    return fn(items);
+    ts: DateLike,
+    value: number,
+  ): Promise<void> {
+    const { key, period } = parseAddParams(metric, unit);
+    await TimeSeriesList.add(this.client, key, period, ts, value);
   }
 
-  private async aggregateHostInternal<T>(
+  async pipelineAdd(
     metric: MetricLike,
     unit: StatsGranularity,
-    start: DateLike,
-    end: DateLike,
-    fn: (items: StatisticalSnapshot[]) => T,
-  ): Promise<T> {
-    const items = await this.getHostStats(metric, unit, start, end);
-    return fn(items);
+    ts: DateLike,
+    value: number,
+  ): Promise<void> {
+    const { key, period } = parseAddParams(metric, unit);
+    await TimeSeriesList.multi.add(this.pipeline, key, period, ts, value);
   }
 
-  async getStats(
+  async addDistribution(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    ts: DateLike,
+    value: BiasedQuantileDistribution,
+  ): Promise<void> {
+    const { key, period } = parseAddParams(metric, unit, [
+      MetricType.Distribution,
+    ]);
+    const buf = value.serializeData();
+    await TimeSeriesList.addBuffer(this.client, key, period, ts, buf);
+  }
+
+  async getNumericRange(
     metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
-  ): Promise<StatisticalSnapshot[]> {
+  ): Promise<TimeseriesValue<number>[]> {
     const key = this.getKey(metric, unit);
-    const stats = await this.cachedFetchMany<StatisticalSnapshot>(
-      key,
-      start,
-      end,
-    );
-    return stats;
+    const mn = getMetricName(metric);
+    if (mn.type === MetricType.Distribution) {
+      throw new Error('Expected Counter or Gauge');
+    }
+    return this.getRange<number>(key, unit, start, end);
   }
 
-  async getAggregateStats(
+  async getDistributionRange(
     metric: MetricLike,
     unit: StatsGranularity,
     start: DateLike,
     end: DateLike,
-  ): Promise<StatisticalSnapshot> {
-    return this.aggregateInternal<StatisticalSnapshot>(
-      metric,
-      unit,
-      start,
-      end,
-      aggregateSnapshots,
-    );
+  ): Promise<TimeseriesValue<DDSketch>[]> {
+    const key = this.getKey(metric, unit);
+    const items = await this.getRangeBuffer(key, unit, start, end);
+    const result: TimeseriesValue<DDSketch>[] = [];
+    items.forEach((item) => {
+      try {
+        const sketch = deserializeSketch(item.value);
+        result.push({ timestamp: item.timestamp, value: sketch });
+      } catch (e) {
+        logger.warn(e);
+      }
+    });
+    return result;
+  }
+
+  async aggregateDistribution(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<DDSketch> {
+    const data = await this.getDistributionRange(metric, unit, start, end);
+    const result = new DDSketch();
+    data.forEach(({ value: sketch }) => {
+      result.merge(sketch);
+      // https://github.com/DataDog/sketches-js/pull/18
+      result.zeroCount += sketch.zeroCount;
+    });
+    return result;
+  }
+
+  async aggregateToDistribution(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<DDSketch> {
+    const data = await this.getNumericRange(metric, unit, start, end);
+    const result = new DDSketch();
+    data.forEach(({ value }) => {
+      result.accept(value);
+    });
+    return result;
+  }
+
+  async aggregateNumeric<T = number>(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+    fn: (items: TimeseriesValue<number>[]) => T,
+  ): Promise<T> {
+    const items = await this.getNumericRange(metric, unit, start, end);
+    return fn(items);
   }
 
   async getAggregateRates(
+    metric: MetricLike,
     unit: StatsGranularity,
-    type: StatsRateType,
     start: DateLike,
     end: DateLike,
   ): Promise<MeterSummary> {
-    const fn = (items: StatisticalSnapshot[]) => aggregateMeter(items, type);
-    return this.aggregateInternal<MeterSummary>(
-      'latency',
-      unit,
-      start,
-      end,
-      fn,
-    );
-  }
-
-  async getHostStats(
-    metric: MetricLike,
-    unit: StatsGranularity,
-    start: DateLike,
-    end: DateLike,
-  ): Promise<StatisticalSnapshot[]> {
-    const key = this.getHostKey(metric, unit);
-    const stats = await this.cachedFetchMany<StatisticalSnapshot>(
-      key,
-      start,
-      end,
-    );
-    return stats;
-  }
-
-  async getAggregateHostStats(
-    metric: MetricLike,
-    unit: StatsGranularity,
-    start: DateLike,
-    end: DateLike,
-  ): Promise<StatisticalSnapshot> {
-    return this.aggregateHostInternal<StatisticalSnapshot>(
-      metric,
-      unit,
-      start,
-      end,
-      aggregateSnapshots,
-    );
-  }
-
-  async getHostAggregateRates(
-    unit: StatsGranularity,
-    type: StatsRateType,
-    start: DateLike,
-    end: DateLike,
-  ): Promise<MeterSummary> {
-    const fn = (items: StatisticalSnapshot[]) => aggregateMeter(items, type);
-
-    return this.aggregateHostInternal<MeterSummary>(
-      'latency',
-      unit,
-      start,
-      end,
-      fn,
-    );
-  }
-
-  async getHostLast(
-    metric: MetricLike,
-    unit: StatsGranularity,
-  ): Promise<StatisticalSnapshot | null> {
-    const key = this.getHostKey(metric, unit);
-    const client = await this.queue.client;
-    return TimeSeries.get<StatisticalSnapshot>(client, key, '+');
-  }
-
-  async getMeta(): Promise<Record<string, string>> {
-    const key = getQueueMetaKey(this.queue);
-    const client = await this.queue.client;
-    return client.hgetall(key);
-  }
-
-  private updateMeta(pipeline: Pipeline, data: Record<string, any>): Pipeline {
-    const key = getQueueMetaKey(this.queue);
-    pipeline.hmset(key, data);
-    return pipeline;
-  }
-
-  async setMeta(data: Record<string, any>): Promise<void> {
-    const key = getQueueMetaKey(this.queue);
-    const client = await this.queue.client;
-    await client.hmset(key, data);
-  }
-
-  async getLastWriteCursor(
-    jobType: string | null,
-    type: string,
-    unit?: string,
-  ): Promise<number | null> {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const key = getCursorKey(jobType, type, unit);
-    let meta = await this.getMeta();
-    meta = meta || {};
-    // todo: look at
-    const value = meta[key];
-    if (!value) {
-      return 0;
-    }
-
-    return parseInt(value, 10);
+    // todo: cache if endDate < Date.now()
+    return this.aggregateNumeric(metric, unit, start, end, aggregateMeter);
   }
 
   /**
    * Clean a range of items
-   * @param pipeline
-   * @param isHost are we cleaning up host level resources ?
-   * @param jobName
-   * @param type
-   * @param unit
-   * @param retention  retention time in ms. Items with score < (latest - retention) are removed
-   * @return the number of items removed
+   * @param metric
    */
-  cleanup(
-    pipeline: Pipeline,
-    isHost: boolean,
-    type: MetricLike,
-    unit: StatsGranularity,
-    retention?: number,
-  ): void {
-    retention = retention || getRetention(unit);
-    const key = isHost ? this.getHostKey(type, unit) : this.getKey(type, unit);
-
-    const data = {
-      key,
-      type,
-      unit,
-      retention,
-    };
-    if (!isHost) {
-      data['queueId'] = this.queueId;
-    }
-    TimeSeries.multi.truncate(pipeline, key, retention);
+  pipelinePrune(metric: MetricLike): void {
+    Granularities.forEach((unit) => {
+      const key = this.getDataKey(metric, unit);
+      const retention = getRetention(unit);
+      TimeSeriesList.multi.truncate(this.pipeline, key, retention);
+    });
     // TODO: pass in bus
     // const event = (isHost ? 'host.' : '') + 'stats.cleanup';
     // this.queueManager.bus.pipelineEmit(pipeline, event, data);
   }
 
-  async removeRange(
-    key: string,
-    start: DateLike,
-    end: DateLike,
-    offset?: number,
-    count?: number,
-  ): Promise<number> {
-    const client = await this.queue.client;
-    return TimeSeries.removeRange(client, key, start, end, offset, count);
+  pipelineDeleteMetric(metric: MetricLike): Pipeline {
+    const keys = Granularities.map((unit) => this.getDataKey(metric, unit));
+    return this.pipeline.del(...keys);
+  }
+
+  async deleteMetric(metric: MetricLike): Promise<number> {
+    const keys = Granularities.map((unit) => this.getDataKey(metric, unit));
+    return this.client.del(keys);
   }
 
   getKey(metric: MetricLike, unit?: StatsGranularity): string {
-    const canonical = getCanonicalName(metric);
-    return getStatsKey(this.queue, canonical, unit);
+    if (!this.queue) {
+      return getHostMetricsKey(this.host, metric, unit);
+    }
+    return getQueueMetricDataKey(this.queue, metric, unit);
   }
 
-  getHostKey(
-    jobName: string,
-    metric: StatsMetricType,
-    unit: StatsGranularity,
-  ): string {
-    return getHostStatsKey(this.host, jobName, metric, unit);
+  getHostKey(metric: MetricLike, unit: StatsGranularity): string {
+    return getHostMetricsKey(this.host, metric, unit);
   }
 
   onError(err: Error): void {
     logger.warn(err);
   }
-}
 
-function getCursorKey(
-  jobType: string | null,
-  type: string,
-  unit: string,
-): string {
-  jobType = jobType && jobType.length ? jobType : '~QUEUE';
-  const key = [jobType, type, unit].filter((value) => !!value).join('-');
-  return `cursor:${key}`;
+  get pipeline(): Pipeline {
+    if (!this._pipeline) {
+      this._pipeline = this.client.pipeline();
+    }
+    return this._pipeline;
+  }
+
+  async flush(): Promise<unknown[]> {
+    if (this._pipeline) {
+      const result = this._pipeline.exec().then(checkMultiErrors);
+      this._pipeline = null;
+      return result;
+    }
+    return [];
+  }
 }
 
 export function getRangeCacheKey(opts: RangeOpts): string {
-  const { offset = 0, count = -1 } = opts;
   const start = toDate(opts.start).getTime();
   const end = toDate(opts.end).getTime();
-  return `${opts.key}:${start}-${end}:${offset}:${count}`;
+  return `${opts.key}:${start}-${end}`;
 }
 
-export function getMetricDataKey(
-  queue: Queue,
-  metric: MetricLike,
-  granularity?: StatsGranularity,
-): string {
-  const parts = ['metrics', getCanonicalName(metric)];
-  const suffix = getGranularitySuffix(granularity);
-  if (suffix) {
-    parts.push(`1${suffix}`);
-  }
-  const fragment = parts.join(':');
-  return queue.toKey(fragment);
+export function aggregateMeter(recs: TimeseriesValue<number>[]): MeterSummary {
+  const clock = new ManualClock();
+  const meter = new Meter(clock);
+  recs.forEach((rec) => {
+    clock.set(rec.timestamp);
+    meter.mark(rec.value);
+  });
+
+  return meter.getSummary();
 }

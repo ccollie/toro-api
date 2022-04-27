@@ -33,25 +33,6 @@ export enum StatsGranularity {
   Month = 'month',
 }
 
-export type StatsRangeOptions = {
-  type?: string;
-  metric: StatsMetricType;
-  jobName?: string;
-  granularity?: StatsGranularity;
-};
-
-export type StatsQueryOptions = StatsRangeOptions & {
-  start?: Date | number;
-  end?: Date | number;
-};
-
-export interface StatsWindow {
-  /** the total length of the window (ms) */
-  duration: number;
-  /** the sub-divisions (sampling interval) */
-  interval: number;
-}
-
 export interface StatisticalSnapshotOptions {
   startTime?: number;
   endTime?: number;

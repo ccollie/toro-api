@@ -1,23 +1,24 @@
 import boom, { notFound } from '@hapi/boom';
-import { isNumber, isObject, safeParse } from '@alpen/shared';
+import { DateLike, isNumber, isObject, safeParse } from '@alpen/shared';
 import { checkMultiErrors, convertTsForStream, EventBus } from '../redis';
 import { getMetricsDataKey, getMetricsKey } from '../keys';
 
 import { Queue, RedisClient } from 'bullmq';
 import { MetricMetadata, MetricsEventsEnum, MetricTypeName } from './types';
 import { Clock, systemClock } from '../lib';
-import { PossibleTimestamp, TimeSeries } from '../commands';
+import { PossibleTimestamp, TimeSeries, TimeseriesValue } from '../commands';
 import { Metric } from './metric';
 import { MetricsUpdatedPayload } from './metrics-listener';
 import { UnsubscribeFn } from 'emittery';
 import { Pipeline } from 'ioredis';
-import { TimeseriesDataPoint } from '../stats';
+import { StatsGranularity, TimeseriesDataPoint } from '../stats';
 import { Metrics } from './metrics';
 import {
   Counter as CounterName,
   Distribution as DistributionName,
   Gauge as GaugeName,
-  HostTagKey, JobNameTagKey,
+  HostTagKey,
+  JobNameTagKey,
   MetricName,
   MetricType,
   QueueTagKey,
@@ -26,6 +27,10 @@ import { RegistryOptions } from './registry';
 import { isHostMetric, MetricLike, getCanonicalName } from './utils';
 import { metricsInfo } from './metrics-info';
 import { Timespan } from '../types';
+import { MetricDataClient } from './metric-data-client';
+import { logger } from '../logger';
+import { BiasedQuantileDistribution } from './bqdist';
+import { DDSketch } from '@datadog/sketches-js';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -34,6 +39,7 @@ import { Timespan } from '../types';
 type MetricManagerOptions = {
   host: string;
   bus: EventBus;
+  client: RedisClient;
   registryOptions?: RegistryOptions;
 };
 
@@ -41,6 +47,7 @@ type MetricManagerOptions = {
  * Manages the storage of Metric instances related to a queue
  */
 export class MetricManager {
+  private readonly client: RedisClient;
   private readonly queue: Queue;
   private readonly bus: EventBus;
   private readonly clock: Clock;
@@ -49,6 +56,7 @@ export class MetricManager {
   private metricsLoaded = false;
   private readonly _metrics: Metrics;
   private readonly _metaData = new Map<string, MetricMetadata>();
+  readonly dataClient: MetricDataClient;
 
   /**
    * Construct a {@link MetricManager}
@@ -56,11 +64,17 @@ export class MetricManager {
    * @param options
    */
   constructor(queue: Queue, options: MetricManagerOptions) {
+    const { bus, host, client } = options;
     this.queue = queue;
-    this.bus = options.bus;
+    this.bus = bus;
     this.clock = systemClock;
     this._metrics = Metrics.create(options.registryOptions);
-    this.host = options.host;
+    this.host = host;
+    this.dataClient = new MetricDataClient({
+      queue,
+      host,
+      client,
+    });
   }
 
   destroy(): void {
@@ -140,7 +154,7 @@ export class MetricManager {
    * @returns {Promise<Metric>}
    */
   async getMetric(id: string | MetricName): Promise<Metric | null> {
-    const client = await this.getClient();
+    const client = this.client;
     const canonical = getCanonicalName(id);
     let metric = this.metrics.find((m) => m.canonicalName === canonical);
     if (!metric) {
@@ -216,14 +230,13 @@ export class MetricManager {
     const id = metric.canonicalName;
     const key = this.indexKey;
 
-    const client = await this.getClient();
     const meta: MetricMetadata = {
       createdAt: this.clock.getTime(),
     };
 
     let strMeta = JSON.stringify(meta);
 
-    const reply = await client
+    const reply = await this.client
       .pipeline()
       .hsetnx(key, id, strMeta)
       .hget(key, id)
@@ -310,10 +323,7 @@ export class MetricManager {
   // TODO: what to do with rules dependent on the metric ?
   async deleteMetric(metric: MetricLike): Promise<boolean> {
     const canonicalName = getCanonicalName(metric);
-    const key = canonicalName;
-    const dataKey = this.getDataKey(metric);
-    const client = await this.getClient();
-    const pipeline = client.pipeline();
+    const pipeline = this.dataClient.pipeline;
 
     pipeline.hdel(this.indexKey, canonicalName);
     this._metaData.delete(canonicalName);
@@ -321,26 +331,16 @@ export class MetricManager {
     if (found) {
       this._metrics.remove(found.name);
     }
+    this.dataClient.pipelineDeleteMetric(metric);
 
-    const responses = await TimeSeries.multi
-      .size(pipeline, dataKey)
-      .del(key, dataKey)
-      .exec()
-      .then(checkMultiErrors);
+    const responses = await this.dataClient.flush();
 
-    const [_, hasAlerts, deleted] = responses;
+    const deleted = responses[0];
     if (deleted) {
-      const calls: Array<Promise<void>> = [
-        this.bus.emit(MetricsEventsEnum.METRIC_DELETED, { canonicalName }),
-      ];
-      if (!!hasAlerts) {
-        calls.push(
-          this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, {
-            canonicalName,
-          }),
-        );
-      }
-      await Promise.all(calls);
+      // todo: place on worker queue. Not critical
+      this.bus
+        .emit(MetricsEventsEnum.METRIC_DELETED, { canonicalName })
+        .catch((e) => logger.warn(e));
     }
     return !!deleted;
   }
@@ -350,8 +350,7 @@ export class MetricManager {
    * @return {Promise<[Metric]>}
    */
   async loadMetrics(): Promise<Metric[]> {
-    const client = await this.getClient();
-    const items = await client.hgetall(this.indexKey);
+    const items = await this.client.hgetall(this.indexKey);
 
     const result: Metric[] = [];
     for (const [key, value] of Object.entries(items)) {
@@ -378,89 +377,76 @@ export class MetricManager {
   }
 
   async addMetricData(
-    metric: Metric | string,
+    metric: MetricLike,
+    unit: StatsGranularity,
+    timestamp: number,
     value: number,
-    timestamp?: number,
   ): Promise<void> {
-    const key = this.getDataKey(metric);
-    const client = await this.getClient();
-    const strValue = JSON.stringify(value);
-    timestamp = timestamp ?? this.clock.getTime();
-    await TimeSeries.add(client, key, timestamp, strValue);
+    await this.dataClient.add(metric, unit, timestamp, value);
   }
 
-  private getMetricDataArgs(
-    metric: Metric | string,
-    start: PossibleTimestamp = '-',
-    end: PossibleTimestamp = '+',
-    limit?: number,
-  ): Array<string | number> {
-    const key = this.getDataKey(metric);
-
-    start = convertTsForStream(start);
-    end = convertTsForStream(end);
-
-    const rest: Array<string | number> = [key, start, end];
-    if (typeof limit === 'number') {
-      rest.push(0, limit);
-    }
-
-    return rest;
+  async addDistributionData(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    timestamp: number,
+    value: BiasedQuantileDistribution,
+  ): Promise<void> {
+    await this.dataClient.addDistribution(metric, unit, timestamp, value);
   }
 
   pipelineGetMetricData(
     pipeline: Pipeline,
-    metric: Metric | string,
+    metric: MetricLike,
+    unit: StatsGranularity,
     start: PossibleTimestamp = '-',
     end: PossibleTimestamp = '+',
-    limit?: number,
   ): Pipeline {
     const key = this.getDataKey(metric);
     start = convertTsForStream(start);
     end = convertTsForStream(end);
-
     const rest = [];
-    if (typeof limit === 'number') {
-      rest.push(0, limit);
-    }
     TimeSeries.multi.getRange(pipeline, key, start, end, ...rest);
     return pipeline;
   }
 
   async getMetricData(
     metric: Metric | string,
-    start: PossibleTimestamp = '-',
-    end: PossibleTimestamp = '+',
-    limit?: number,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
   ): Promise<TimeseriesDataPoint[]> {
-    const client = await this.getClient();
-    const key = this.getDataKey(metric);
-
-    start = convertTsForStream(start);
-    end = convertTsForStream(end);
-
-    const rest = [];
-    if (typeof limit === 'number') {
-      rest.push(0, limit);
-    }
-    const data = await TimeSeries.getRange<number>(
-      client,
-      key,
+    const data = await this.dataClient.getNumericRange(
+      metric,
+      unit,
       start,
       end,
-      ...rest,
     );
 
     return data.map((x) => ({
-      ts: parseInt(x.timestamp),
+      ts: x.timestamp,
       value: x.value,
     }));
   }
 
-  async getMetricDateRange(metric: Metric | string): Promise<Timespan> {
-    const client = await this.getClient();
-    const key = this.getDataKey(metric);
-    return TimeSeries.getTimeSpan(client, key);
+  async getDistributionRange(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Promise<TimeseriesValue<DDSketch>[]> {
+    return this.dataClient.getDistributionRange(metric, unit, start, end);
+  }
+
+  async getMetricDateRange(
+    metric: MetricLike,
+    unit = StatsGranularity.Minute,
+  ): Promise<Timespan> {
+    const meta = await this.dataClient.getMetadata(metric, unit);
+    if (!meta) return null;
+    return {
+      startTime: meta.firstTS,
+      endTime: meta.lastTS,
+    };
   }
 
   async getMetricDataCount(metric: MetricLike): Promise<number> {
@@ -472,9 +458,8 @@ export class MetricManager {
   async clearData(metric: MetricLike): Promise<number> {
     const canonicalName = getCanonicalName(metric);
     const count = await this.getMetricDataCount(metric);
-    const client = await this.getClient();
-    const key = this.getDataKey(metric);
-    await client.del(key);
+    this.dataClient.pipelineDeleteMetric(metric);
+    await this.dataClient.flush();
     await this.bus.emit(MetricsEventsEnum.METRIC_DATA_CLEARED, {
       canonicalName,
     });
@@ -484,29 +469,19 @@ export class MetricManager {
   /**
    * Prune data according to a retention duration
    * @param {Metric|string} metric
-   * @param {Number} retention in ms. Alerts before (getTime - retention) will be removed
-   * @returns {Promise<Number>}
+   * @returns {Promise<void>}
    */
-  async pruneMetricData(
-    metric: Metric | string,
-    retention: number,
-  ): Promise<number> {
+  async pruneMetricData(metric: Metric | string): Promise<void> {
     // TODO: raise event
-    const client = await this.getClient();
-    const dataKey = this.getDataKey(metric);
-    return TimeSeries.truncate(client, dataKey, retention);
+    this.dataClient.pipelinePrune(metric);
+    await this.dataClient.flush();
   }
 
-  async pruneData(retention: number): Promise<void> {
-    const client = await this.getClient();
-    const pipeline = client.pipeline();
+  async pruneData(): Promise<void> {
     for (const metric of this.metrics) {
-      const dataKey = this.getDataKey(metric);
-      TimeSeries.multi.truncate(pipeline, dataKey, retention);
+      this.dataClient.pipelinePrune(metric);
     }
-    if (this.metrics.length) {
-      await pipeline.exec();
-    }
+    await this.dataClient.flush();
   }
 
   onMetricsUpdated(

@@ -125,7 +125,7 @@ async function rangeCmd(
 
 export interface TimeseriesValue<T = any> {
   // todo: make this a number. maybe its a string because of snowflake ids ??
-  timestamp: string;
+  timestamp: number;
   value: T;
 }
 
@@ -175,7 +175,7 @@ async function getRangeByIndex<T = any>(
       const value = JSON.parse(data) as T;
       if (value !== undefined) {
         result.push({
-          timestamp,
+          timestamp: parseInt(timestamp),
           value,
         });
       }

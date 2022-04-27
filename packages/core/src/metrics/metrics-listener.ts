@@ -12,13 +12,9 @@ import {
   JobFinishedEventData,
   QueueListener,
 } from '../queues/queue-listener';
-import { getMetricsDataKey } from '../keys';
 import { Events } from './types';
-import { TimeSeries } from '../commands';
-import IORedis from 'ioredis';
 import { roundDown, roundUp } from '@alpen/shared';
 import { isAfter } from 'date-fns';
-import ms from 'ms';
 import { logger } from '../logger';
 
 const DEFAULT_CONCURRENCY = 16;

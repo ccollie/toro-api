@@ -30,9 +30,6 @@ export class Snapshot {
  * Collect samples over a time period, keeping only enough data to compute
  * specific percentiles within a desired error range.
  *
- * This algorithm comes from the paper "Effective Computation of Biased
- * Quantiles over Data Streams".
- *
  * - percentiles: list of desired percentiles (median = 0.5)
  * - error: relative error allowed in the reported measurement
  */
@@ -64,9 +61,37 @@ export class BiasedQuantileDistribution {
   snapshot(): Snapshot {
     return new Snapshot(this);
   }
+
+  serializeData(): Uint8Array {
+    return serializeSketch(this.sketch);
+  }
+
+  unserializeData(buf: Uint8Array | Buffer) {
+    this.sketch = deserializeSketch(buf);
+  }
 }
 
+export enum DistributionMarshalType {
+  Plain = 0,
+  Compressed = 1
+}
 
 export function deserializeSketch(arr: Uint8Array): DDSketch {
-  return new DDSketch();
+  const marshalType = arr[0];
+  const data = arr.subarray(1);
+
+  if (marshalType === DistributionMarshalType.Plain) {
+    return DDSketch.fromProto(data);
+  } else {
+    throw new Error('Compression not implemented');
+  }
+}
+
+export function serializeSketch(sketch: DDSketch): Uint8Array {
+  const bytes = sketch.toProto();
+  // todo - check size and compress over a threshold
+  const res = new Uint8Array(1 + bytes.length);
+  res[0] = DistributionMarshalType.Plain;
+  res.set(bytes, 1);
+  return res;
 }

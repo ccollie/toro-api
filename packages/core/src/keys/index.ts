@@ -2,6 +2,7 @@ import { getValue as getConfig } from '../config/index';
 import { firstChar } from '@alpen/shared';
 import { Queue } from 'bullmq';
 import { StatsGranularity, StatsMetricType } from '../stats/types';
+import { MetricLike, getCanonicalName } from '../metrics/utils';
 
 const statsPrefix = getConfig('statsPrefix', 'alpen');
 
@@ -15,7 +16,9 @@ export function getLockKey(host: string): string {
   return getHostKey(host, 'lock');
 }
 
-export function getGranularitySuffix(granularity?: StatsGranularity): string | null {
+export function getGranularitySuffix(
+  granularity?: StatsGranularity,
+): string | null {
   if (!granularity) return null;
   if (granularity === StatsGranularity.Month) {
     return 'mt';
@@ -67,6 +70,37 @@ export function getHostStatsKey(
     parts.push(`1${suffix}`);
   }
   return getHostKey(host, ...parts);
+}
+
+export function getHostMetricsKey(
+  host: string,
+  metric?: MetricLike,
+  unit?: StatsGranularity,
+): string {
+  const parts = ['metrics'];
+  if (metric) {
+    parts.push(getCanonicalName(metric));
+    // todo: if metric is set, suffix must also be set
+    const suffix = getGranularitySuffix(unit);
+    if (suffix) {
+      parts.push(`1${suffix}`);
+    }
+  }
+  return getHostKey(host, ...parts);
+}
+
+export function getQueueMetricDataKey(
+  queue: Queue,
+  metric: MetricLike,
+  granularity?: StatsGranularity,
+): string {
+  const parts = ['metrics', getCanonicalName(metric)];
+  const suffix = getGranularitySuffix(granularity);
+  if (suffix) {
+    parts.push(`1${suffix}`);
+  }
+  const fragment = parts.join(':');
+  return queue.toKey(fragment);
 }
 
 export function getQueueStatsPattern(

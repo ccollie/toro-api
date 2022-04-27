@@ -11,6 +11,7 @@ import { ManualClock } from '../lib';
 import { Meter, type MeterSummary } from './meter';
 import { HistogramSnapshot, StatsGranularity, StatsRateType } from './types';
 import type { StatisticalSnapshot } from './timer';
+import {DDSketch} from "@datadog/sketches-js";
 
 export const CONFIG = {
   units: [
@@ -105,6 +106,10 @@ function ensureWasmLoaded(): void {
     wasmLoaded = true;
     initWebAssemblySync();
   }
+}
+
+export function createSketch(): DDSketch {
+  return new DDSketch();
 }
 
 export function createHistogram(packed = true): Histogram {

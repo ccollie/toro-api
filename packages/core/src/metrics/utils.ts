@@ -8,7 +8,6 @@ import { HostTagKey, MetricName, MetricType, QueueTagKey } from './metric-name';
 import { Metric } from './metric';
 import { metricsInfo } from './metrics-info';
 import boom from '@hapi/boom';
-import {parseMetricName} from "./metric-name-parser";
 
 export type MetricLike = Metric | MetricName | string;
 
@@ -82,7 +81,9 @@ export function isValidMetric(
         }
       }
     } else if (agg) {
-      throw boom.badData(`Unexpected aggregate. ${metric} is not a distribution`);
+      throw boom.badData(
+        `Unexpected aggregate. ${metric} is not a distribution`,
+      );
     }
     return true;
   }

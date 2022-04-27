@@ -196,14 +196,14 @@ function jobDuration(valueType: keyof JobDurationValuesResult) {
     context: GetterContext,
     metric: Metric,
     ts: number,
-  ): Promise<DDSketch> => {
+  ): Promise<BiasedQuantileDistribution> => {
     const [start, end] = getRange(context.registry, ts);
     const queue = getQueueFromContext(context, metric);
     const jobName = metric.jobName;
     const values = await getJobDurationValues({ queue, start, end, jobName });
     const durations = values[valueType];
-    const res = new DDSketch(); // todo: RelativeAccuracy
-    durations.forEach(value => res.accept(value));
+    const res = new BiasedQuantileDistribution(); // todo: RelativeAccuracy
+    durations.forEach(value => res.record(value));
     return res;
   };
 }
