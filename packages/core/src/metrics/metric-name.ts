@@ -9,6 +9,17 @@ export enum MetricType {
   Distribution,
 }
 
+import { MetricAggregate } from './types';
+
+
+export const MetricAggregateByType: Record<MetricType, MetricAggregate[]> = {
+  [MetricType.Counter]: ['sum'],
+  [MetricType.Gauge]: [ 'latest', 'min', 'max', 'sum', 'count', 'average' ],
+  [MetricType.Distribution]: [
+    'min', 'max', 'sum', 'count', 'average' // todo: percentiles
+  ]
+};
+
 export const QueueTagKey = 'queue';
 export const HostTagKey = 'host';
 export const InstanceTagKey = 'instance';

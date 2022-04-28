@@ -1,5 +1,5 @@
 import { Queue, RedisClient } from 'bullmq';
-import { DateLike } from '@alpen/shared';
+import { DateLike, endOf, startOf } from '@alpen/shared';
 import {
   getHostMetricsKey,
   getMetricsKey,
@@ -12,7 +12,13 @@ import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
 import { getMetricName, MetricLike } from './utils';
-import { getRetention, Meter, MeterSummary } from '../stats';
+import {
+  CONFIG,
+  getRetention,
+  mergeSketches,
+  Meter,
+  MeterSummary,
+} from '../stats';
 import { MetricType } from '../metrics';
 import ms from 'ms';
 import {
@@ -21,7 +27,11 @@ import {
   TimeseriesValue,
 } from '../commands/timeseries-list';
 import { DDSketch } from '@datadog/sketches-js';
-import { BiasedQuantileDistribution, deserializeSketch } from './bqdist';
+import {
+  BiasedQuantileDistribution,
+  deserializeSketch,
+  serializeSketch,
+} from './bqdist';
 import { ManualClock } from '../lib';
 import { checkMultiErrors } from '~/core';
 
@@ -44,6 +54,14 @@ const Granularities = [
   StatsGranularity.Week,
   StatsGranularity.Month,
 ];
+
+interface RollupMeta {
+  start: Date;
+  end: Date;
+  unit: StatsGranularity;
+  sketch?: DDSketch;
+  value?: number;
+}
 
 function getPeriod(unit: StatsGranularity): number {
   return ms(`1 ${unit}`);
@@ -136,6 +154,33 @@ export class MetricDataClient extends Emittery {
     return TimeSeriesList.getRangeBuffer(this.client, key, period, start, end);
   }
 
+  pipelineGetBuffer(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    ts: DateLike,
+  ): Pipeline {
+    const period = getPeriod(unit);
+    const key = this.getKey(metric, unit);
+    return TimeSeriesList.multi.getBuffer(this.pipeline, key, period, ts);
+  }
+
+  pipelineGetRangeBuffer(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    start: DateLike,
+    end: DateLike,
+  ): Pipeline {
+    const period = getPeriod(unit);
+    const key = this.getKey(metric, unit);
+    return TimeSeriesList.multi.getRangeBuffer(
+      this.pipeline,
+      key,
+      period,
+      start,
+      end,
+    );
+  }
+
   static pipelineGetRange(pipeline: Pipeline, range: RangeOpts): void {
     const { key, start, end, unit } = range;
     const period = getPeriod(unit);
@@ -217,6 +262,26 @@ export class MetricDataClient extends Emittery {
     await TimeSeriesList.multi.add(this.pipeline, key, period, ts, value);
   }
 
+  pipelineAddDistribution(
+    metric: MetricLike,
+    unit: StatsGranularity,
+    ts: DateLike,
+    value: BiasedQuantileDistribution | DDSketch,
+  ): Pipeline {
+    const { key, period } = parseAddParams(metric, unit, [
+      MetricType.Distribution,
+    ]);
+
+    let buf: Uint8Array;
+    if (value instanceof BiasedQuantileDistribution) {
+      buf = value.serializeData();
+    } else {
+      buf = serializeSketch(value);
+    }
+
+    return TimeSeriesList.multi.addBuffer(this.pipeline, key, period, ts, buf);
+  }
+
   async addDistribution(
     metric: MetricLike,
     unit: StatsGranularity,
@@ -228,6 +293,78 @@ export class MetricDataClient extends Emittery {
     ]);
     const buf = value.serializeData();
     await TimeSeriesList.addBuffer(this.client, key, period, ts, buf);
+  }
+
+  /* Write and rollup distribution to higher granularity */
+  async writeDistribution(
+    metric: MetricLike,
+    sketch: DDSketch,
+    unit = StatsGranularity.Minute,
+    ts = Date.now(),
+  ): Promise<void> {
+    const getRollupValues = async (ts: number): Promise<RollupMeta[]> => {
+      const rollupMeta: RollupMeta[] = [];
+      CONFIG.units.forEach((unit) => {
+        // skip the src
+        if (unit === StatsGranularity.Minute) return;
+
+        const start = startOf(ts, unit);
+        const end = endOf(ts, unit);
+
+        rollupMeta.push({
+          start,
+          end,
+          unit,
+        });
+      });
+
+      // get destination data
+      rollupMeta.forEach((meta) => {
+        const { start, unit } = meta;
+        this.pipelineGetBuffer(metric, unit, start);
+      });
+
+      const items = await this.flush();
+      items.forEach((item, index) => {
+        if (!item) return;
+        const meta = rollupMeta[index];
+        const mn = getMetricName(metric);
+
+        const buf = item as Buffer;
+        if (mn.type === MetricType.Distribution) {
+          try {
+            meta.sketch = deserializeSketch(buf);
+          } catch (e) {
+            logger.warn(e);
+          }
+        } else {
+          meta.value = parseInt(buf.toString());
+        }
+      });
+
+      return rollupMeta;
+    };
+
+    const rollup = async (source: DDSketch, ts: number): Promise<void> => {
+      const rollupMeta = await getRollupValues(ts);
+
+      rollupMeta.forEach((meta) => {
+        const { start, unit, sketch } = meta;
+
+        if (sketch) {
+          const merged = mergeSketches(null, [sketch, source]);
+          this.pipelineAddDistribution(metric, unit, start, merged);
+        }
+      });
+    };
+
+    this.pipelineAddDistribution(metric, unit, ts, sketch);
+    if (unit === StatsGranularity.Minute) {
+      // only rollup events at lowest granularity
+      await rollup(sketch, ts);
+    }
+
+    await this.flush();
   }
 
   async getNumericRange(
@@ -387,4 +524,77 @@ export function aggregateMeter(recs: TimeseriesValue<number>[]): MeterSummary {
   });
 
   return meter.getSummary();
+}
+
+/* Write and rollup distribution to higher granularities */
+async function writeDistribution(
+  dataClient: MetricDataClient,
+  metric: MetricLike,
+  sketch: DDSketch,
+  unit = StatsGranularity.Minute,
+  ts = Date.now(),
+): Promise<void> {
+  async function getRollupValues(ts: number): Promise<RollupMeta[]> {
+    const rollupMeta: RollupMeta[] = [];
+    CONFIG.units.forEach((unit) => {
+      // skip the src
+      if (unit === StatsGranularity.Minute) return;
+
+      const start = startOf(ts, unit);
+      const end = endOf(ts, unit);
+
+      rollupMeta.push({
+        start,
+        end,
+        unit,
+      });
+    });
+
+    // get destination data
+    rollupMeta.forEach((meta) => {
+      const { start, unit } = meta;
+      dataClient.pipelineGetBuffer(metric, unit, start);
+    });
+
+    const items = await dataClient.flush();
+    items.forEach((item, index) => {
+      if (!item) return;
+      const meta = rollupMeta[index];
+      const mn = getMetricName(metric);
+
+      const buf = item as Buffer;
+      if (mn.type === MetricType.Distribution) {
+        try {
+          meta.sketch = deserializeSketch(buf);
+        } catch (e) {
+          logger.warn(e);
+        }
+      } else {
+        meta.value = parseInt(buf.toString());
+      }
+    });
+
+    return rollupMeta;
+  }
+
+  async function rollup(source: DDSketch, ts: number): Promise<void> {
+    const rollupMeta = await getRollupValues(ts);
+
+    rollupMeta.forEach((meta) => {
+      const { start, unit, sketch } = meta;
+
+      if (sketch) {
+        const merged = mergeSketches(null, [sketch, source]);
+        dataClient.pipelineAddDistribution(metric, unit, start, merged);
+      }
+    });
+  }
+
+  dataClient.pipelineAddDistribution(metric, unit, ts, sketch);
+  if (unit === StatsGranularity.Minute) {
+    // only rollup events at lowest granularity
+    await rollup(sketch, ts);
+  }
+
+  await dataClient.flush();
 }

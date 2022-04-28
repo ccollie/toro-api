@@ -1,7 +1,6 @@
 import Emittery from 'emittery';
 import { MetricFamily } from './types';
-import { createAsyncIterator, systemClock } from '../lib';
-import type { TimeseriesDataPoint } from '../stats';
+import { systemClock } from '../lib';
 import {
   Distribution,
   JobNameTagKey,
@@ -30,11 +29,10 @@ export class Metric {
   private readonly info: MetricFamily;
   private readonly emitter: Emittery = new Emittery();
   private _prev: number | BiasedQuantileDistribution;
+  protected _value: Value;
 
   public id: string;
-  public queueId: string;
   public readonly collect: MetricValueFn;
-  protected _value: Value;
   public createdAt: number;
   public lastChangedAt: number;
 
@@ -136,18 +134,6 @@ export class Metric {
 
   onUpdate(listener: MetricUpdateEventHandler): Emittery.UnsubscribeFn {
     return this.emitter.on('update', listener);
-  }
-
-  createValueIterator(): AsyncIterator<TimeseriesDataPoint> {
-    return createAsyncIterator(this.emitter, {
-      eventNames: ['update'],
-      transform(_, data: MetricUpdateEvent) {
-        return {
-          ts: data.ts,
-          value: data.value,
-        };
-      },
-    });
   }
 
   // To override in descendents

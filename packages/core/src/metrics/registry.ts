@@ -9,7 +9,6 @@ import { getAccessor, IAccessorHelper } from '../loaders/accessors';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import { BiasedQuantileDistribution } from './bqdist';
-import { DDSketch } from '@datadog/sketches-js';
 
 export const DEFAULT_PERCENTILES = [0.5, 0.75, 0.9, 0.99];
 export const DEFAULT_ERROR = 0.01;
@@ -170,11 +169,11 @@ export class Registry {
 
   async collect(
     timestamp: number = Date.now(),
-  ): Promise<Map<string, number | BiasedQuantileDistribution | DDSketch>> {
+  ): Promise<Map<string, number | BiasedQuantileDistribution>> {
     const tasks = [];
     const metrics: Metric[] = [];
     const context = this.context;
-    const map = new Map<string, number | BiasedQuantileDistribution | DDSketch>();
+    const map = new Map<string, number | BiasedQuantileDistribution>();
 
     function addResult(metric: Metric) {
       const name = metric.canonicalName;

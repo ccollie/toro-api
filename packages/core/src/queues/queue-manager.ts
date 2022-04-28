@@ -3,7 +3,6 @@ import PQueue from 'p-queue';
 import ms from 'ms';
 import { Job, type JobState, Queue } from 'bullmq';
 import { StatsClient } from '../stats/stats-client';
-import { StatsListener } from '../stats/stats-listener';
 import { Rule, RuleManager } from '../rules';
 import { RuleAlert, RuleConfigOptions } from '../types';
 import { EventBus, LockManager } from '../redis';
@@ -68,9 +67,7 @@ export class QueueManager {
   readonly clock: Clock;
   private _isReadOnly = false;
   private readonly _workQueue: PQueue = new PQueue({ concurrency: 6 });
-  public readonly statsListener: StatsListener;
   private _uri: string = undefined;
-  private inStatsUpdate = false;
   public readonly dataRetention = getRetention();
 
   constructor(host: HostManager, queue: Queue, config: QueueConfig) {
@@ -87,8 +84,11 @@ export class QueueManager {
       queue,
       host: host.name,
     });
-    this.statsListener = this.createStatsListener();
-    this.metricManager = new MetricManager(this.queue, { host: this.host, bus: this.bus });
+    this.metricManager = new MetricManager(this.queue, {
+      host: this.host,
+      bus: this.bus,
+      client: this.hostManager.client
+    });
     this._isReadOnly = !!config.isReadonly;
     this.ruleManager = new RuleManager(this);
     this.dispatchMetrics = this.dispatchMetrics.bind(this);
@@ -98,11 +98,6 @@ export class QueueManager {
   }
 
   protected init(): void {
-    if (this.hasLock) {
-      process.nextTick(() => {
-        this.catchupStats();
-      });
-    }
     this.lock.on(LockManager.ACQUIRED, this.handleLockEvent);
   }
 
@@ -113,7 +108,6 @@ export class QueueManager {
     await this.queueListener.destroy();
     this.bus.destroy();
     this.statsClient.destroy();
-    this.statsListener.destroy();
     await this._workQueue.onIdle(); // should we just clear ?
     await this.queue.close();
   }
@@ -122,19 +116,6 @@ export class QueueManager {
     // todo: log
     logger.warn(err);
     throw err;
-  }
-
-  catchupStats(): void {
-    if (this.inStatsUpdate) return;
-    const listener = this.createStatsListener();
-    const catchup = (): Promise<void> => {
-      this.inStatsUpdate = false;
-      return listener.catchUp().finally(() => {
-        this.inStatsUpdate = false;
-        listener.destroy();
-      });
-    };
-    this.addWork(catchup);
   }
 
   get name(): string {
@@ -204,16 +185,6 @@ export class QueueManager {
     return new QueueListener(this.queue);
   }
 
-  private createStatsListener(): StatsListener {
-    return new StatsListener({
-      queue: this.queue,
-      queueId: this.id,
-      host: this.host,
-      writer: this.hostManager.writer,
-      bus: this.bus,
-    });
-  }
-
   getRule(id: string): Promise<Rule> {
     return this.ruleManager.getRule(id);
   }
@@ -229,9 +200,6 @@ export class QueueManager {
   }
 
   private handleLockEvent(): void {
-    if (!this.inStatsUpdate) {
-      this.catchupStats();
-    }
   }
 
   protected dispatchMetrics({ metrics = [], ts }): void {
@@ -320,7 +288,6 @@ export class QueueManager {
 
   async listen(): Promise<void> {
     await Promise.all([
-      this.statsListener.startListening(),
       this.queueListener.startListening(),
     ]);
     this.metricManager.onMetricsUpdated(this.dispatchMetrics);
@@ -462,10 +429,9 @@ export class QueueManager {
     if (this.hasLock) {
       this._workQueue
         .addAll([
-          () => this.statsListener.sweep(this.statsClient),
+          () => this.metricManager.pruneData(),
           () => this.ruleManager.pruneAlerts(this.dataRetention),
           () => this.bus.cleanup(),
-          () => this.metricManager.pruneData(this.dataRetention),
         ])
         .catch((err) => this.onError(err));
     }

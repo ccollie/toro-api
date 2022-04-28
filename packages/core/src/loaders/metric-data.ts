@@ -1,7 +1,7 @@
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
 import { DateLike } from '@alpen/shared';
-import { Metric, MetricManager } from '../metrics';
+import {Metric, MetricManager, QueueIdTagKey} from '../metrics';
 import {
   filterOutlierObjects,
   OutlierMethod,
@@ -24,7 +24,8 @@ function getCacheKey(key: MetricDataLoaderKey): string {
 }
 
 function getMetricManager(metric: Metric): MetricManager {
-  const queue = getQueueManager(metric.queueId);
+  const qid = metric.getTagValue(QueueIdTagKey);
+  const queue = getQueueManager(qid);
   return queue.metricManager;
 }
 
@@ -66,7 +67,8 @@ async function getDataBatch(
 
   keys.forEach((key, index) => {
     const { metric } = key;
-    const queue = getQueueById(metric.queueId);
+    const qid = metric.getTagValue(QueueIdTagKey);
+    const queue = getQueueById(qid);
     const client = getQueueHostClient(queue);
     let metricsThisHost = hostMetrics.get(client);
     if (!metricsThisHost) {

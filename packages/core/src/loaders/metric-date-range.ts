@@ -7,13 +7,15 @@ import { Timespan } from '../types';
 import { logger } from '../logger';
 import { TimeSeries } from '../commands';
 import { getQueueHostClient, getQueueById, getQueueManager } from './accessors';
+import { QueueIdTagKey } from '../metrics';
 
 function getDataKey(queue: Queue, metric: Metric): string {
   return getMetricsDataKey(queue, metric.id);
 }
 
 async function getSingle(metric: Metric): Promise<Timespan> {
-  const queue = getQueueManager(metric.queueId);
+  const qid = metric.getTagValue(QueueIdTagKey);
+  const queue = getQueueManager(qid);
   const metrics = queue.metricManager;
   return metrics.getMetricDateRange(metric);
 }
@@ -34,7 +36,8 @@ async function getRangeBatch(metrics: Metric[]): Promise<Timespan[]> {
   const hostMetrics = new Map<RedisClient, Metric[]>();
 
   metrics.forEach((metric, index) => {
-    const queue = getQueueById(metric.queueId);
+    const qid = metric.getTagValue(QueueIdTagKey);
+    const queue = getQueueById(qid);
     const client = getQueueHostClient(queue);
     let metricsThisHost = hostMetrics.get(client);
     if (!metricsThisHost) {

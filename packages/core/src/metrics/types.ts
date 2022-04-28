@@ -1,5 +1,27 @@
 import { MetricType } from './metric-name';
 
+export type MetricAggregate =
+    | 'percentile'
+    | 'histogram'
+    | 'latest'
+    | 'min'
+    | 'max'
+    | 'sum'
+    | 'count'
+    | 'average';
+
+export enum MetricAggregationType {
+  LATEST = 'LATEST',
+  MAX = 'MAX',
+  MIN = 'MIN',
+  AVG = 'AVG',
+  SUM = 'SUM',
+  COUNT = 'COUNT',
+  P90 = 'P90',
+  P95 = 'P95',
+  P99 = 'P99',
+}
+
 export const Events = {
   FINISHED: 'job.finished',
   COMPLETED: 'job.completed',

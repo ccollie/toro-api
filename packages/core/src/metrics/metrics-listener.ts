@@ -3,7 +3,6 @@ import { Metric } from './metric';
 import Emittery, { UnsubscribeFn } from 'emittery';
 import { Queue, RedisClient } from 'bullmq';
 import {
-  AccurateInterval,
   Clock,
   systemClock,
 } from '../lib';

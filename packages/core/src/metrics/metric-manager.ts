@@ -388,7 +388,7 @@ export class MetricManager {
   async addDistributionData(
     metric: MetricLike,
     unit: StatsGranularity,
-    timestamp: number,
+    timestamp: DateLike,
     value: BiasedQuantileDistribution,
   ): Promise<void> {
     await this.dataClient.addDistribution(metric, unit, timestamp, value);

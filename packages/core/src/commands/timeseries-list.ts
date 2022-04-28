@@ -244,6 +244,10 @@ export class TimeSeriesList {
     return result;
   }
 
+  static parseRangeResponse(res: unknown, period: number): TimeseriesValue[] {
+    return parseRangeResponse(res, period);
+  }
+
   static async set(
     client: RedisClient,
     key: string,

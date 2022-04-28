@@ -1,6 +1,5 @@
 import { createHistogram, DefaultPercentiles } from './utils';
-import { build, decodeFromCompressedBase64, Histogram } from 'hdr-histogram-js';
-import { StatisticalSnapshot } from './timer';
+import { Histogram } from 'hdr-histogram-js';
 
 export type PercentileDistribution = {
   totalCount: number;
@@ -61,25 +60,4 @@ export function getPercentileDistribution(
     }
   }
   return result;
-}
-
-export function getSnapshotPercentileDistribution(
-  snapshot: StatisticalSnapshot,
-  percentiles: number[] = DefaultPercentiles,
-): PercentileDistribution {
-  let hist: Histogram;
-  if (!snapshot.data) {
-    hist = build({
-      numberOfSignificantValueDigits: 2,
-      bitBucketSize: 32,
-      useWebAssembly: false,
-    });
-  } else {
-    hist = decodeFromCompressedBase64(snapshot.data, 32, true);
-  }
-  try {
-    return getPercentileDistribution(hist, percentiles);
-  } finally {
-    hist.destroy();
-  }
 }

@@ -1,6 +1,6 @@
 import * as boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
-import { StatsClient, StatsListener } from '../stats';
+import { StatsClient } from '../stats';
 import { QueueManager, QueueListener } from '../queues';
 import { Supervisor } from './supervisor';
 import { HostManager } from '../hosts/host-manager';
@@ -137,11 +137,6 @@ export function getQueueManager(
 export function getQueueListener(queue: Queue | string): QueueListener {
   const manager = getQueueManager(queue);
   return manager.queueListener;
-}
-
-export function getStatsListener(queue: Queue | string): StatsListener {
-  const manager = getQueueManager(queue);
-  return manager.statsListener;
 }
 
 export function getQueueRuleManager(

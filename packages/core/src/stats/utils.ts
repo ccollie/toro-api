@@ -11,7 +11,7 @@ import { ManualClock } from '../lib';
 import { Meter, type MeterSummary } from './meter';
 import { HistogramSnapshot, StatsGranularity, StatsRateType } from './types';
 import type { StatisticalSnapshot } from './timer';
-import {DDSketch} from "@datadog/sketches-js";
+import { DDSketch } from '@datadog/sketches-js';
 
 export const CONFIG = {
   units: [
@@ -110,6 +110,18 @@ function ensureWasmLoaded(): void {
 
 export function createSketch(): DDSketch {
   return new DDSketch();
+}
+
+export function mergeSketches(dst: DDSketch | null | undefined, sketches: DDSketch[]): DDSketch {
+  if (!dst) {
+    dst = createSketch();
+  }
+  sketches.forEach(sketch => {
+    dst.merge(sketch);
+    // https://github.com/DataDog/sketches-js/pull/18
+    dst.zeroCount += sketch.zeroCount;
+  });
+  return dst;
 }
 
 export function createHistogram(packed = true): Histogram {
@@ -218,16 +230,6 @@ export function aggregateThroughputRates(
   recs: StatisticalSnapshot[],
 ): MeterSummary {
   return aggregateMeter(recs, StatsRateType.Throughput);
-}
-
-export function aggregateErrorRates(recs: StatisticalSnapshot[]): MeterSummary {
-  return aggregateMeter(recs, StatsRateType.Errors);
-}
-
-export function aggregateErrorPercentageRates(
-  recs: StatisticalSnapshot[],
-): MeterSummary {
-  return aggregateMeter(recs, StatsRateType.ErrorPercentage);
 }
 
 export function aggregateSnapshots(

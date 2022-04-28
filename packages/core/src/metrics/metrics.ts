@@ -12,8 +12,16 @@ import {
 import { Registry, RegistryOptions } from './registry';
 import { Snapshot } from './snapshot';
 import { performance } from 'perf_hooks';
-import { DistributionMetricTypeNames, MetricTypeName } from './types';
+import {DistributionMetricTypeNames, MetricAggregate, MetricTypeName} from './types';
 import { Metric } from './metric';
+
+export const AggregateByType: Record<MetricType, MetricAggregate[]> = {
+  [MetricType.Counter]: ['sum'],
+  [MetricType.Gauge]: [ 'latest', 'min', 'max', 'sum', 'count', 'average' ],
+  [MetricType.Distribution]: [
+    'min', 'max', 'sum', 'count', 'average' // todo: percentiles
+  ]
+};
 
 /*
  * Primary entry point for metrics: Create counters, gauges, and distributions,

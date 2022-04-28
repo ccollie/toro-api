@@ -2,8 +2,6 @@ import { Queue } from 'bullmq';
 import { DateLike, isEmpty } from '@alpen/shared';
 import {
   getHostStatsKey,
-  getMetricsDataKey,
-  getMetricsKey,
   getQueueMetaKey,
   getStatsKey,
 } from '../keys';
@@ -19,16 +17,6 @@ import { WriteCache } from '../redis';
 import { MeterSummary } from './meter';
 import type { Timespan } from '../types';
 import type { StatisticalSnapshot } from './timer';
-import { Metric, MetricName } from '../metrics';
-import { getCanonicalName } from '../metrics/utils';
-
-export interface RangeOpts {
-  key: string;
-  start: DateLike;
-  end: DateLike;
-  offset?: number;
-  count?: number;
-}
 
 export interface StatsClientArgs {
   host: string;
@@ -66,14 +54,6 @@ export class StatsClient extends Emittery {
     this.emit(name, data).catch(this.onError);
   }
 
-  get indexKey(): string {
-    return getMetricsKey(this.queue, null);
-  }
-
-  private getDataKey(metric: Metric | MetricName): string {
-    return getMetricsDataKey(this.queue, getCanonicalName(metric));
-  }
-
   async getRange<T = any>(
     key: string,
     start: DateLike,
@@ -91,11 +71,6 @@ export class StatsClient extends Emittery {
       count,
     );
     return results.map((x) => x.value);
-  }
-
-  static pipelineGetRange(pipeline: Pipeline, range: RangeOpts): void {
-    const { key, start, end, offset, count } = range;
-    TimeSeries.multi.getRange(pipeline, key, start, end, offset, count);
   }
 
   async getSpan(
@@ -151,17 +126,6 @@ export class StatsClient extends Emittery {
     data = await this.getRange<T>(key, args.start, args.end);
     this.cache.set(cacheId, data);
     return data;
-  }
-
-  getCachedArray<T = any>(key: string): T[] {
-    const data = this.cache.get(key) as T[];
-    if (Array.isArray(data)) return data;
-    return null;
-  }
-
-  getCachedRange<T>(range: RangeOpts): T[] {
-    const key = getRangeCacheKey(range);
-    return this.getCachedArray(key);
   }
 
   private async aggregateInternal<T>(
@@ -416,17 +380,6 @@ export class StatsClient extends Emittery {
     // this.queueManager.bus.pipelineEmit(pipeline, event, data);
   }
 
-  async removeRange(
-    key: string,
-    start: DateLike,
-    end: DateLike,
-    offset?: number,
-    count?: number,
-  ): Promise<number> {
-    const client = await this.queue.client;
-    return TimeSeries.removeRange(client, key, start, end, offset, count);
-  }
-
   getKey(
     jobName: string,
     metric: StatsMetricType,
@@ -456,11 +409,4 @@ function getCursorKey(
   jobType = jobType && jobType.length ? jobType : '~QUEUE';
   const key = [jobType, type, unit].filter((value) => !!value).join('-');
   return `cursor:${key}`;
-}
-
-export function getRangeCacheKey(opts: RangeOpts): string {
-  const { offset = 0, count = -1 } = opts;
-  const start = toDate(opts.start).getTime();
-  const end = toDate(opts.end).getTime();
-  return `${opts.key}:${start}-${end}:${offset}:${count}`;
 }
