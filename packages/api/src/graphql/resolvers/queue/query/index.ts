@@ -1,13 +1,7 @@
-import { StatsRateType } from '@alpen/core';
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
-
 import {
-  getQueueRatesResolver,
-  histogram,
-  percentileDistribution,
   stats,
-  statsAggregate,
   statsDateRange,
   statsLatest as lastStatsSnapshot,
 } from '../../stats';
@@ -44,12 +38,6 @@ import { waitTimeAvg } from './waitTimeAvg';
 import { workerCount } from './worker-count';
 import { workers } from './workers';
 
-const throughput = getQueueRatesResolver(StatsRateType.Throughput);
-const errorRate = getQueueRatesResolver(StatsRateType.Errors);
-const errorPercentageRate = getQueueRatesResolver(
-  StatsRateType.ErrorPercentage,
-);
-
 export const QueueTC = schemaComposer.createObjectTC({
   name: 'Queue',
   fields: {
@@ -63,7 +51,6 @@ export const QueueTC = schemaComposer.createObjectTC({
     config: config,
     defaultJobOptions,
     name: 'String!',
-    histogram,
     host,
     hostId,
     isPaused,
@@ -82,7 +69,6 @@ export const QueueTC = schemaComposer.createObjectTC({
     metricCount,
     metricsData,
     pendingJobCount,
-    percentileDistribution,
     repeatableJobs,
     repeatableJobCount,
     ruleAlertCount,
@@ -93,11 +79,7 @@ export const QueueTC = schemaComposer.createObjectTC({
     schedulers,
     schedulerCount,
     stats,
-    statsAggregate,
     statsDateRange,
-    throughput,
-    errorRate,
-    errorPercentageRate,
     waitingCount,
     waitingChildrenCount,
     waitTimeAvg,

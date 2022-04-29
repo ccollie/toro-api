@@ -1,5 +1,31 @@
-import { MetricType } from './metric-name';
-import { MetricFamily } from './types';
+import { MetricFamily, MetricType } from './types';
+import { AggregationType } from './aggregators/aggregation';
+
+export const MetricAggregateByType: Record<MetricType, AggregationType[]> = {
+  [MetricType.Counter]: [AggregationType.SUM],
+  [MetricType.Gauge]: [
+    AggregationType.LATEST,
+    AggregationType.MIN,
+    AggregationType.MAX,
+    AggregationType.SUM,
+    AggregationType.COUNT,
+    AggregationType.AVG,
+  ],
+  [MetricType.Distribution]: [
+    AggregationType.MIN,
+    AggregationType.MAX,
+    AggregationType.SUM,
+    AggregationType.COUNT,
+    AggregationType.AVG,
+    // todo: percentiles
+  ],
+};
+
+export const DefaultAggregationType: Record<MetricType, AggregationType> = {
+  [MetricType.Gauge]: AggregationType.LATEST,
+  [MetricType.Counter]: AggregationType.COUNT,
+  [MetricType.Distribution]: AggregationType.SUM,
+};
 
 export const metricsInfo: MetricFamily[] = [
   {

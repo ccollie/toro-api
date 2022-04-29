@@ -1,5 +1,6 @@
 import { Metric } from './metric';
-import { MetricName, MetricType, Tags } from './metric-name';
+import { MetricType } from './types';
+import { MetricName, Tags } from './metric-name';
 import { Snapshot } from './snapshot';
 import { packageInfo } from '../packageInfo';
 import { EventSource } from './events';
@@ -9,10 +10,11 @@ import { getAccessor, IAccessorHelper } from '../loaders/accessors';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import { BiasedQuantileDistribution } from './bqdist';
+import { DDSketch } from '@datadog/sketches-js';
 
 export const DEFAULT_PERCENTILES = [0.5, 0.75, 0.9, 0.99];
 export const DEFAULT_ERROR = 0.01;
-const SNAPSHOT_EVENT = 'ON-SNAPSHOT';
+const SNAPSHOT_EVENT = 'METRIC_SNAPSHOT';
 
 export interface BunyanLike {
   error(data: any, text: string): void;
@@ -124,23 +126,23 @@ export class Registry {
     let duration = nextTime - Date.now();
     while (duration < 0) duration += this.period;
     if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.publish(nextTime), duration);
+    this.timer = setTimeout(async () => {
+      this.publish(nextTime)
+          .catch(e => logger.error(e));
+    }, duration);
     this.timer.unref();
   }
 
-  onSnapshot(
-    event: string,
-    handler: (eventData?: Snapshot) => void,
-  ): UnsubscribeFn {
+  onSnapshot(handler: (eventData?: Snapshot) => void): UnsubscribeFn {
     return this.emitter.on(SNAPSHOT_EVENT, handler);
   }
 
-  offSnapshot(event: string, handler: (eventDate?: Snapshot) => void): void {
-    this.emitter.off(event, handler);
+  offSnapshot(handler: (eventDate?: Snapshot) => void): void {
+    this.emitter.off(SNAPSHOT_EVENT, handler);
   }
 
   // timestamp is optional. exposed for testing.
-  publish(timestamp?: number): void {
+  async publish(timestamp?: number): Promise<void> {
     if (timestamp == null) timestamp = Date.now();
     this.currentTime = timestamp;
     if (this.options.expire) {
@@ -151,7 +153,7 @@ export class Registry {
       }
     }
 
-    const snapshot = this.snapshot(timestamp);
+    const snapshot = await this.snapshot(timestamp);
     this.lastPublish = snapshot.timestamp;
 
     logger.trace(
@@ -169,18 +171,17 @@ export class Registry {
 
   async collect(
     timestamp: number = Date.now(),
-  ): Promise<Map<string, number | BiasedQuantileDistribution>> {
+  ): Promise<Map<MetricName, number | BiasedQuantileDistribution>> {
     const tasks = [];
     const metrics: Metric[] = [];
     const context = this.context;
-    const map = new Map<string, number | BiasedQuantileDistribution>();
+    const map = new Map<MetricName, number | BiasedQuantileDistribution>();
 
     function addResult(metric: Metric) {
-      const name = metric.canonicalName;
       if (metric.type === MetricType.Distribution) {
-        map.set(name, metric.getDistribution());
+        map.set(metric.name, metric.getDistribution());
       } else {
-        map.set(name, metric.getValue());
+        map.set(metric.name, metric.getValue());
       }
     }
 
@@ -198,9 +199,10 @@ export class Registry {
       res.forEach((completion, index) => {
         if (completion.isFulfilled) {
           const metric = metrics[index];
-          const name = metric.canonicalName;
+          const name = metric.name;
           if (metric.type === MetricType.Distribution) {
             map.set(name, completion.value);
+            // todo: metric.capture to add computed metrics
           } else if (metric.type === MetricType.Gauge) {
             metric.setGauge(completion.value);
           } else if (metric.type === MetricType.Counter) {
@@ -220,12 +222,27 @@ export class Registry {
    * Return a snapshot of the current value of each metric.
    * Distributions will be reset.
    */
-  snapshot(timestamp: number = Date.now()): Snapshot {
-    const map = new Map<MetricName, number>();
-    for (const metric of this.registry.values()) {
-      metric.capture(map);
+  async snapshot(timestamp: number = Date.now()): Promise<Snapshot> {
+    const map = await this.collect(timestamp);
+    const distributions = new Map<MetricName, DDSketch>();
+    const numerics = new Map<MetricName, number>();
+    for (const [mn, value] of map) {
+      if (mn.type === MetricType.Distribution) {
+        const sketch = (value as BiasedQuantileDistribution).sketch;
+        distributions.set(mn, sketch);
+        const metric = this.registry.get(mn.canonical);
+        if (metric) {
+          metric.capture(numerics);
+        }
+      } else {
+        numerics.set(mn, value as number);
+      }
     }
-    return new Snapshot(this, timestamp, map);
+
+    const snapshot = new Snapshot(this, timestamp, numerics);
+    snapshot.distributions = distributions;
+
+    return snapshot;
   }
 
   get(name: MetricName | string): Metric | undefined {

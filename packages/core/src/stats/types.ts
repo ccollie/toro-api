@@ -1,6 +1,3 @@
-export * from './outliers/types';
-
-export type StatsMetricType = 'latency' | 'wait' | 'counts';
 
 export interface TimeseriesDataPoint {
   /** The unix based timestamp of when the measurement occurred */
@@ -15,37 +12,16 @@ export enum PeakSignal {
   BELOW = -1,
 }
 
-export enum StatsRateType {
-  Throughput = 'Throughput',
-  Errors = 'Errors',
-  ErrorPercentage = 'ErrorPercentage',
-}
-
-export enum StatsGranularity {
-  Minute = 'minute',
-  Hour = 'hour',
-  Day = 'day',
-  Week = 'week',
-  Month = 'month',
-}
-
-export interface StatisticalSnapshotOptions {
-  startTime?: number;
-  endTime?: number;
-  includeData: boolean;
-  counts?: Record<string, number>;
-}
-
-export interface HistogramSnapshot {
+export interface StatsSnapshot {
   min: number;
   max: number;
   mean: number;
   median: number;
   stddev: number;
+  sum: number;
   count: number;
   p90: number;
   p95: number;
   p99: number;
   p995: number;
-  data?: string; // encoded data
 }

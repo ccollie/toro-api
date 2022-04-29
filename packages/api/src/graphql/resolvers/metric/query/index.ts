@@ -2,15 +2,17 @@ import { schemaComposer } from 'graphql-compose';
 import { metricDataFC } from './data';
 import { metricDataOutliersFC as outliers } from './outliers';
 import { metricDateRangeFC as dateRange } from './date-range';
-import { BaseFields, MetricTypeTC } from '../scalars';
-import { metricHistogramFC as histogram } from './histogram';
-import { metricSummaryStatsFC as summaryStats } from './summary-stats';
-import { metricDescriptionFC as description } from './description';
+import { MetricTypeTC } from '../scalars';
+import { stats } from './stats';
+import { aggregate } from './aggregate';
+import { rate } from './rate';
 // eslint-disable-next-line max-len
 import { metricPercentileDistributionFC as percentileDistribution } from './percentile-distribution';
 import { Metric } from '@alpen/core';
-import { AggregatorTC } from '../../aggregator/query';
 import { getStaticProp } from '@alpen/shared';
+import { AggregationTypeEnum } from '../../../scalars';
+
+// todo: https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/get-all-metrics#definition--MetricDescriptor
 
 export const MetricTC = schemaComposer.createObjectTC({
   name: 'Metric',
@@ -20,31 +22,27 @@ export const MetricTC = schemaComposer.createObjectTC({
       type: 'ID!',
       description: 'the id of the metric',
     },
-    ...BaseFields,
     type: {
       type: MetricTypeTC.NonNull,
       resolve: (metric: Metric) => {
         return getStaticProp(metric, 'type');
       },
     },
-    category: {
-      type: 'MetricCategory!',
-      resolve: (metric: Metric) => {
-        return getStaticProp(metric, 'category');
-      },
-    },
     unit: {
       type: 'String!',
-      resolve: (metric: Metric) => {
-        return getStaticProp(metric, 'unit');
-      },
+      description: 'The unit of the metric',
     },
-    currentValue: {
-      type: 'Float',
-      description: 'The current value of the metric',
-      resolve: (metric: Metric) => {
-        return metric.value;
-      },
+    description: {
+      type: 'String!',
+      description: 'A short description of the metric',
+    },
+    aggregationTypes: {
+      type: AggregationTypeEnum.List.NonNull,
+      description: 'The list of allowed aggregations for this metric.',
+    },
+    defaultAggregation: {
+      type: AggregationTypeEnum.NonNull,
+      description: 'The default aggregation for this metric.',
     },
     createdAt: {
       type: 'Date!',
@@ -54,17 +52,24 @@ export const MetricTC = schemaComposer.createObjectTC({
       type: 'Date!',
       description: 'Timestamp of when this metric was created',
     },
-    options: {
-      type: 'JSONObject!',
-      description: 'The metric options',
+    canonicalName: {
+      type: 'String!',
+      description: 'The canonical name of the metric',
     },
-    description,
-    aggregator: AggregatorTC.NonNull,
+    tags: {
+      type: '[String!]!',
+      description: 'The tags of the metric',
+      resolve: (metric: Metric) => {
+        const keys = metric.name.tags.keys();
+        return Array.from(keys);
+      },
+    },
+    aggregate,
+    rate,
     data: metricDataFC,
     outliers,
-    histogram,
     percentileDistribution,
-    summaryStats,
+    stats,
     dateRange,
   },
 });

@@ -1,28 +1,24 @@
-import { HostManager, StatisticalSnapshot, StatsGranularity, StatsMetricType } from '@alpen/core';
+import { MetricGranularity } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
-import { StatsGranularityEnum, StatsMetricsTypeEnum } from '../../scalars';
+import { MetricNameScalar, MetricGranularityEnum } from '../../scalars';
 import { FieldConfig } from '../index';
 import { StatsSnapshotTC } from './types';
-import { getClient, normalizeGranularity } from './utils';
+import { getMetricManager, normalizeGranularity } from './utils';
+import boom from '@hapi/boom';
 
 export const StatsLatestInputTC = schemaComposer.createInputTC({
   name: 'StatsLatestInput',
   description: 'Queue stats filter to getting latest snapshot.',
   fields: {
-    jobName: {
-      type: 'String',
-      description: 'An optional job name to filter on',
-    },
     metric: {
-      type: StatsMetricsTypeEnum,
+      type: MetricNameScalar,
       makeRequired: true,
-      defaultValue: 'latency',
       description: 'The metric requested',
     },
     granularity: {
-      type: StatsGranularityEnum,
+      type: MetricGranularityEnum,
       makeRequired: true,
-      defaultValue: StatsGranularity.Minute, // TODO: should be hour, i think
+      defaultValue: MetricGranularity.Minute, // TODO: should be hour, i think
       description: 'Stats snapshot granularity',
     },
   },
@@ -35,28 +31,9 @@ export const statsLatest: FieldConfig = {
     input: StatsLatestInputTC,
   },
   async resolve(_, { input }, context) {
-    const { jobName, granularity, metric } = input || {
-      granularity: StatsGranularity.Minute,
-      metric: 'latency',
-    };
-    let snapshot: StatisticalSnapshot;
-    const client = getClient(context, _);
+    const { granularity, metric } = input;
+    const manager = getMetricManager(context, _);
     const unit = normalizeGranularity(granularity);
-    if (_ instanceof HostManager) {
-      snapshot = await client.getHostLast(
-        jobName,
-        metric as StatsMetricType,
-        unit,
-      );
-    } else {
-      snapshot = await client.getLast(jobName, metric as StatsMetricType, unit);
-    }
-    // HACK!!!
-    if (snapshot) {
-      snapshot.m1Rate = snapshot.m1Rate ?? 0;
-      snapshot.m5Rate = snapshot.m5Rate ?? 0;
-      snapshot.m15Rate = snapshot.m15Rate ?? 0;
-    }
-    return snapshot;
+    throw boom.notImplemented('getLatest');
   },
 };

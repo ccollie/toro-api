@@ -1,36 +1,10 @@
-import { MetricType } from './metric-name';
+import { AggregationType } from './aggregators/aggregation';
 
-export type MetricAggregate =
-    | 'percentile'
-    | 'histogram'
-    | 'latest'
-    | 'min'
-    | 'max'
-    | 'sum'
-    | 'count'
-    | 'average';
-
-export enum MetricAggregationType {
-  LATEST = 'LATEST',
-  MAX = 'MAX',
-  MIN = 'MIN',
-  AVG = 'AVG',
-  SUM = 'SUM',
-  COUNT = 'COUNT',
-  P90 = 'P90',
-  P95 = 'P95',
-  P99 = 'P99',
+export enum MetricType {
+  Counter,
+  Gauge,
+  Distribution,
 }
-
-export const Events = {
-  FINISHED: 'job.finished',
-  COMPLETED: 'job.completed',
-  FAILED: 'job.failed',
-  PROGRESS: 'job.progress',
-  ACTIVE: 'job.active',
-  DELAYED: 'job.delayed',
-  STALLED: 'job.stalled',
-};
 
 export enum MetricCategory {
   Queue,
@@ -77,45 +51,20 @@ export type DistributionMetricTypeNames =
   | 'jobs_runtime_ms'
   | 'jobs_process_time_ms';
 
-export type DistributionAggregate =
-  | 'sum'
-  | 'count'
-  | 'avg'
-  | 'min'
-  | 'max'
-  | 'p50'
-  | 'p75'
-  | 'p90'
-  | 'p99';
-
 export type ExtendedMetricTypeName = {
   metric: MetricTypeName;
-  aggregate?: DistributionAggregate;
+  aggregate?: AggregationType;
+  // percentile or rate interval
+  value?: number;
 };
 
-export enum AggregatorTypes {
-  None,
-  Identity,
-  Ewma,
-  Latest,
-  Min,
-  Max,
-  Mean,
-  Sum,
-  StdDev,
-  Quantile,
-  P75,
-  P90,
-  P95,
-  P99,
-  P995,
-}
 
-export type AggregatorTypeName = keyof typeof AggregatorTypes;
-
-export interface SerializedAggregator {
-  type: AggregatorTypes;
-  options: Record<string, any>;
+export enum MetricGranularity {
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
 }
 
 export enum MetricValueType {

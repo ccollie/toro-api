@@ -37,6 +37,12 @@ export type Scalars = {
   JobProgress: string | number | Record<string, unknown>;
   /** Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action */
   JobRemoveOption: boolean | number;
+  /**
+   * A metric name has a string name like "clientCount", and an optional list
+   *   of tags, each of which has a string name and value (for example key "host", value "production").
+   *   Tags allow the same metric to be measured along several different dimensions and collated later.
+   */
+  MetricName: any;
   /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
   Timestamp: number;
   /** A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt. */
@@ -69,45 +75,20 @@ export type AddJobLogResult = {
   count: Scalars['Int'];
 };
 
-export type AggregateInfo = {
-  __typename?: 'AggregateInfo';
-  description: Scalars['String'];
-  isWindowed: Scalars['Boolean'];
-  type: AggregateTypeEnum;
-};
-
-export const AggregateTypeEnum = {
-  Ewma: 'Ewma',
-  Identity: 'Identity',
-  Latest: 'Latest',
-  Max: 'Max',
-  Mean: 'Mean',
-  Min: 'Min',
-  None: 'None',
-  P75: 'P75',
+export const AggregationType = {
+  Avg: 'AVG',
+  Count: 'COUNT',
+  Latest: 'LATEST',
+  Max: 'MAX',
+  Min: 'MIN',
   P90: 'P90',
   P95: 'P95',
   P99: 'P99',
-  P995: 'P995',
-  Quantile: 'Quantile',
-  StdDev: 'StdDev',
-  Sum: 'Sum',
+  Sum: 'SUM',
 } as const;
 
-export type AggregateTypeEnum =
-  typeof AggregateTypeEnum[keyof typeof AggregateTypeEnum];
-export type Aggregator = {
-  __typename?: 'Aggregator';
-  description: Scalars['String'];
-  options?: Maybe<Scalars['JSONObject']>;
-  type: AggregateTypeEnum;
-};
-
-export type AggregatorInput = {
-  options?: InputMaybe<Scalars['JSONObject']>;
-  type: AggregateTypeEnum;
-};
-
+export type AggregationType =
+  typeof AggregationType[keyof typeof AggregationType];
 export type AppInfo = {
   __typename?: 'AppInfo';
   author?: Maybe<Scalars['String']>;
@@ -144,26 +125,14 @@ export type BulkStatusItem = {
   success: Scalars['Boolean'];
 };
 
-export const ChangeAggregation = {
-  Avg: 'AVG',
-  Max: 'MAX',
-  Min: 'MIN',
-  P90: 'P90',
-  P95: 'P95',
-  P99: 'P99',
-  Sum: 'SUM',
-} as const;
-
-export type ChangeAggregation =
-  typeof ChangeAggregation[keyof typeof ChangeAggregation];
 export type ChangeConditionInput = {
-  aggregationType: ChangeAggregation;
+  aggregationType: AggregationType;
   changeType: ConditionChangeType;
   /** The value needed to trigger an error notification */
   errorThreshold: Scalars['Float'];
   /** The comparison operator */
   operator: RuleOperator;
-  /** Lookback period (ms). How far back are we going to compare eg 1 hour means we're comparing now vs 1 hour ago */
+  /** Lookback period (ms). How far back are we going to compare eg 1 hour means we are comparing now vs 1 hour ago */
   timeShift: Scalars['Duration'];
   /** The value needed to trigger an warning notification */
   warningThreshold?: InputMaybe<Scalars['Float']>;
@@ -241,19 +210,10 @@ export type CreateMailNotificationChannelInput = {
 
 /** Input fields for creating a metric */
 export type CreateMetricInput = {
-  aggregator?: InputMaybe<AggregatorInput>;
-  /** A description of the metric being measured. */
-  description?: InputMaybe<Scalars['String']>;
-  /** Is the metric active (i.e. is data being collected). */
-  isActive: Scalars['Boolean'];
   /** The name of the metric */
   name: Scalars['String'];
-  /** The metric options */
-  options: Scalars['JSONObject'];
   /** The id of the queue to which the metric belongs */
   queueId: Scalars['ID'];
-  /** The metric sampling interval. */
-  sampleInterval?: InputMaybe<Scalars['Int']>;
   type: MetricType;
 };
 
@@ -401,9 +361,7 @@ export type DeleteQueueOptions = {
 
 export type DeleteQueueStatsInput = {
   /** Optional stats granularity. If omitted, the entire range of data is deleted */
-  granularity?: InputMaybe<StatsGranularity>;
-  /** Optional job name to delete stats for. If omitted, all queue stats are erased */
-  jobName?: InputMaybe<Scalars['String']>;
+  granularity?: InputMaybe<MetricGranularity>;
   queueId: Scalars['ID'];
 };
 
@@ -600,70 +558,6 @@ export type GetJobsInput = {
   queueId: Scalars['ID'];
   sortOrder?: InputMaybe<SortOrderEnum>;
   status?: InputMaybe<JobState>;
-};
-
-export type HistogramBin = {
-  __typename?: 'HistogramBin';
-  count: Scalars['Int'];
-  /** Lower bound of the bin */
-  x0: Scalars['Float'];
-  /** Upper bound of the bin */
-  x1: Scalars['Float'];
-};
-
-/** Options for generating histogram bins */
-export type HistogramBinOptionsInput = {
-  /** Optional number of bins to select. */
-  binCount?: InputMaybe<Scalars['Int']>;
-  /** Method used to compute histogram bin count */
-  binMethod?: InputMaybe<HistogramBinningMethod>;
-  /** Optional maximum value to include in counts */
-  maxValue?: InputMaybe<Scalars['Float']>;
-  /** Optional minimum value to include in counts */
-  minValue?: InputMaybe<Scalars['Float']>;
-  /** Generate a "nice" bin count */
-  pretty?: InputMaybe<Scalars['Boolean']>;
-};
-
-/** The method used to calculate the optimal bin width (and consequently number of bins) for a histogram */
-export const HistogramBinningMethod = {
-  /** Maximum of the ‘Sturges’ and ‘Freedman’ estimators. Provides good all around performance. */
-  Auto: 'Auto',
-  /** Calculate the number of histogram bins based on Freedman-Diaconis method */
-  Freedman: 'Freedman',
-  /** Calculate the number of bins based on the Sturges method */
-  Sturges: 'Sturges',
-} as const;
-
-export type HistogramBinningMethod =
-  typeof HistogramBinningMethod[keyof typeof HistogramBinningMethod];
-/** Records histogram binning data */
-export type HistogramInput = {
-  /** The minimum date to consider */
-  from: Scalars['Date'];
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
-  options?: InputMaybe<HistogramBinOptionsInput>;
-  /** The maximum date to consider */
-  to: Scalars['Date'];
-};
-
-/** Records histogram binning data */
-export type HistogramPayload = {
-  __typename?: 'HistogramPayload';
-  bins: Array<Maybe<HistogramBin>>;
-  /** The maximum value in the data range. */
-  max: Scalars['Float'];
-  /** The minimum value in the data range. */
-  min: Scalars['Float'];
-  /** The total number of values. */
-  total: Scalars['Int'];
-  /** The width of the bins */
-  width: Scalars['Float'];
 };
 
 export type HostQueuesFilter = {
@@ -994,20 +888,6 @@ export const JobState = {
 } as const;
 
 export type JobState = typeof JobState[keyof typeof JobState];
-/** Base implementation for job stats information. */
-export type JobStatsInterface = {
-  /** The number of completed jobs in the sample interval */
-  completed: Scalars['Int'];
-  /** The sample size */
-  count: Scalars['Int'];
-  /** The end of the interval */
-  endTime: Scalars['Date'];
-  /** The number of failed jobs in the sample interval */
-  failed: Scalars['Int'];
-  /** The start of the interval */
-  startTime: Scalars['Date'];
-};
-
 export const JobType = {
   Active: 'active',
   Completed: 'completed',
@@ -1122,50 +1002,48 @@ export type Meter = {
 /** Metrics are numeric samples of data collected over time */
 export type Metric = {
   __typename?: 'Metric';
-  aggregator: Aggregator;
-  category: MetricCategory;
+  /** Aggregates metrics within a range */
+  aggregate: Scalars['Int'];
+  /** The list of allowed aggregations for this metric. */
+  aggregationTypes: Array<Maybe<AggregationType>>;
+  /** The canonical name of the metric */
+  canonicalName: Scalars['String'];
   /** Timestamp of when this metric was created */
   createdAt: Scalars['Date'];
-  /** The current value of the metric */
-  currentValue?: Maybe<Scalars['Float']>;
   data: Array<Maybe<TimeseriesDataPoint>>;
   /** Returns the timestamps of the first and last data items recorded for the metric */
   dateRange?: Maybe<TimeSpan>;
-  /** Returns the description of the metric */
+  /** The default aggregation for this metric. */
+  defaultAggregation: AggregationType;
+  /** A short description of the metric */
   description: Scalars['String'];
-  histogram: HistogramPayload;
   /** the id of the metric */
   id: Scalars['ID'];
-  /** Is the metric active (i.e. is data being collected). */
-  isActive: Scalars['Boolean'];
-  /** The name of the metric */
-  name: Scalars['String'];
-  /** The metric options */
-  options: Scalars['JSONObject'];
   /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
   outliers: Array<Maybe<TimeseriesDataPoint>>;
   /** Compute a percentile distribution. */
   percentileDistribution: PercentileDistribution;
-  /** The id of the queue to which the metric belongs */
-  queueId: Scalars['ID'];
-  /** The metric sampling interval. */
-  sampleInterval?: Maybe<Scalars['Int']>;
-  /** Returns simple descriptive statistics from a range of metric data */
-  summaryStats: SummaryStatistics;
+  /** Gets rate data for a metric within a range */
+  rate: Meter;
+  /** Calculates summary stats over metric data in a given range */
+  stats: StatsSnapshot;
+  /** The tags of the metric */
+  tags: Array<Scalars['String']>;
   type: MetricType;
+  /** The unit of the metric */
   unit: Scalars['String'];
   /** Timestamp of when this metric was created */
   updatedAt: Scalars['Date'];
 };
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricDataArgs = {
-  input: MetricDataInput;
+export type MetricAggregateArgs = {
+  input: MetricsQueryInput;
 };
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricHistogramArgs = {
-  input: MetricsHistogramInput;
+export type MetricDataArgs = {
+  input: MetricDataInput;
 };
 
 /** Metrics are numeric samples of data collected over time */
@@ -1179,7 +1057,12 @@ export type MetricPercentileDistributionArgs = {
 };
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricSummaryStatsArgs = {
+export type MetricRateArgs = {
+  input: MetricsQueryInput;
+};
+
+/** Metrics are numeric samples of data collected over time */
+export type MetricStatsArgs = {
   input: MetricDataInput;
 };
 
@@ -1204,11 +1087,20 @@ export type MetricDataOutliersInput = {
   threshold?: InputMaybe<Scalars['Float']>;
 };
 
+export const MetricGranularity = {
+  Day: 'Day',
+  Hour: 'Hour',
+  Minute: 'Minute',
+  Month: 'Month',
+  Week: 'Week',
+} as const;
+
+export type MetricGranularity =
+  typeof MetricGranularity[keyof typeof MetricGranularity];
 export type MetricInfo = {
   __typename?: 'MetricInfo';
   category: MetricCategory;
   description?: Maybe<Scalars['String']>;
-  isPolling: Scalars['Boolean'];
   key: Scalars['String'];
   type: MetricType;
   unit?: Maybe<Scalars['String']>;
@@ -1217,21 +1109,12 @@ export type MetricInfo = {
 
 /** Input fields for updating a metric */
 export type MetricInput = {
-  aggregator?: InputMaybe<AggregatorInput>;
-  /** A description of the metric being measured. */
-  description?: InputMaybe<Scalars['String']>;
   /** the id of the metric */
   id: Scalars['ID'];
-  /** Is the metric active (i.e. is data being collected). */
-  isActive: Scalars['Boolean'];
   /** The name of the metric */
   name?: InputMaybe<Scalars['String']>;
-  /** The metric options */
-  options?: InputMaybe<Scalars['JSONObject']>;
   /** The id of the queue to which the metric belongs */
   queueId: Scalars['ID'];
-  /** The metric sampling interval. */
-  sampleInterval?: InputMaybe<Scalars['Int']>;
   type: MetricType;
 };
 
@@ -1250,32 +1133,31 @@ export const MetricStatusType = {
 
 export type MetricStatusType =
   typeof MetricStatusType[keyof typeof MetricStatusType];
+/** Available metric names */
 export const MetricType = {
-  ActiveJobs: 'ActiveJobs',
-  Apdex: 'Apdex',
-  Completed: 'Completed',
-  CompletedRate: 'CompletedRate',
-  ConnectedClients: 'ConnectedClients',
-  ConsecutiveFailures: 'ConsecutiveFailures',
-  CurrentCompletedCount: 'CurrentCompletedCount',
-  CurrentFailedCount: 'CurrentFailedCount',
-  DelayedJobs: 'DelayedJobs',
-  ErrorPercentage: 'ErrorPercentage',
-  ErrorRate: 'ErrorRate',
-  Failures: 'Failures',
-  Finished: 'Finished',
-  FragmentationRatio: 'FragmentationRatio',
-  InstantaneousOps: 'InstantaneousOps',
-  JobRate: 'JobRate',
-  Latency: 'Latency',
-  None: 'None',
-  PeakMemory: 'PeakMemory',
-  PendingCount: 'PendingCount',
-  ResponseTime: 'ResponseTime',
-  UsedMemory: 'UsedMemory',
-  WaitTime: 'WaitTime',
-  Waiting: 'Waiting',
-  WaitingChildren: 'WaitingChildren',
+  CompletedPercentage: 'completed_percentage',
+  FailedPercentage: 'failed_percentage',
+  JobAttempts: 'job_attempts',
+  JobAvgAttempts: 'job_avg_attempts',
+  JobsActive: 'jobs_active',
+  JobsCompleted: 'jobs_completed',
+  JobsDelayed: 'jobs_delayed',
+  JobsFailed: 'jobs_failed',
+  JobsFinished: 'jobs_finished',
+  JobsPending: 'jobs_pending',
+  JobsProcessTimeMs: 'jobs_process_time_ms',
+  JobsRuntimeMs: 'jobs_runtime_ms',
+  JobsWaitTimeMs: 'jobs_wait_time_ms',
+  JobsWaiting: 'jobs_waiting',
+  JobsWaitingChildren: 'jobs_waiting_children',
+  PausedQueues: 'paused_queues',
+  Queues: 'queues',
+  RedisConnectedClients: 'redis_connected_clients',
+  RedisInstantaneousOpsPerSec: 'redis_instantaneous_ops_per_sec',
+  RedisMemFragmentationRatio: 'redis_mem_fragmentation_ratio',
+  RedisUsedMemory: 'redis_used_memory',
+  RedisUsedMemoryPeak: 'redis_used_memory_peak',
+  Workers: 'workers',
 } as const;
 
 export type MetricType = typeof MetricType[keyof typeof MetricType];
@@ -1296,14 +1178,17 @@ export type MetricsDataInput = {
   type: MetricStatusType;
 };
 
-/** Compute a frequency distribution of a range of metric data. */
-export type MetricsHistogramInput = {
-  /** The minimum date to consider */
-  from: Scalars['Date'];
-  options?: InputMaybe<HistogramBinOptionsInput>;
-  outlierFilter?: InputMaybe<OutlierFilterInput>;
-  /** The maximum date to consider */
-  to: Scalars['Date'];
+/** Metrics filter. */
+export type MetricsQueryInput = {
+  aggregator: AggregationType;
+  /** Range end */
+  end: Scalars['Date'];
+  /** Stats snapshot granularity */
+  granularity?: InputMaybe<MetricGranularity>;
+  /** The metric requested */
+  metric: MetricType;
+  /** Range start */
+  start: Scalars['Date'];
 };
 
 export type MetricsTimeseries = {
@@ -1421,7 +1306,6 @@ export type Mutation = {
    */
   pauseQueue: Queue;
   promoteJob: PromoteJobResult;
-  refreshMetricData: Array<Maybe<RefreshMetricDataResult>>;
   /** Start tracking a queue */
   registerQueue: Queue;
   /** Resume a queue after being PAUSED. */
@@ -1627,10 +1511,6 @@ export type MutationPromoteJobArgs = {
   input: JobLocatorInput;
 };
 
-export type MutationRefreshMetricDataArgs = {
-  input: RefreshMetricDataInput;
-};
-
 export type MutationRegisterQueueArgs = {
   input?: InputMaybe<RegisterQueueInput>;
 };
@@ -1802,15 +1682,6 @@ export type OnQueueJobUpdatesPayload = {
   queueId: Scalars['String'];
 };
 
-/** Returns a stream of metric data updates */
-export type OnQueueMetricValueUpdated = {
-  __typename?: 'OnQueueMetricValueUpdated';
-  queueId: Scalars['String'];
-  /** The timestamp of the time the value was recorded */
-  ts: Scalars['Date'];
-  value: Scalars['Float'];
-};
-
 export type OnQueuePausedPayload = {
   __typename?: 'OnQueuePausedPayload';
   queueId: Scalars['String'];
@@ -1924,20 +1795,6 @@ export type PercentileDistribution = {
   totalCount: Scalars['Int'];
 };
 
-/** Records histogram binning data */
-export type PercentileDistributionInput = {
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
-  /** The percentiles to get frequencies for */
-  percentiles?: InputMaybe<Array<Scalars['Float']>>;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range: Scalars['String'];
-};
-
 export type PingPayload = {
   __typename?: 'PingPayload';
   latency: Scalars['Int'];
@@ -1951,8 +1808,6 @@ export type PromoteJobResult = {
 
 export type Query = {
   __typename?: 'Query';
-  /** Get the list of aggregate types available for metrics */
-  aggregates: Array<Maybe<AggregateInfo>>;
   /** Get general app info */
   appInfo: AppInfo;
   /** Get the list of available metric types */
@@ -2081,12 +1936,6 @@ export type Queue = {
   config?: Maybe<QueueConfig>;
   /** Returns the current default job options of the specified queue. */
   defaultJobOptions?: Maybe<JobOptions>;
-  /** Gets the current job ErrorPercentage rates based on an exponential moving average */
-  errorPercentageRate: Meter;
-  /** Gets the current job Errors rates based on an exponential moving average */
-  errorRate: Meter;
-  /** Compute the histogram of job data. */
-  histogram: HistogramPayload;
   host: Scalars['String'];
   hostId: Scalars['ID'];
   id: Scalars['String'];
@@ -2114,13 +1963,12 @@ export type Queue = {
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
   limiter?: Maybe<QueueLimiter>;
   metricCount: Scalars['Int'];
+  /** The metrics associated with the queue */
   metrics: Array<Metric>;
   metricsData?: Maybe<MetricsTimeseries>;
   name: Scalars['String'];
   /** Returns the number of jobs waiting to be processed. */
   pendingJobCount: Scalars['Int'];
-  /** Compute a percentile distribution. */
-  percentileDistribution: PercentileDistribution;
   prefix: Scalars['String'];
   /** Returns the number of repeatable jobs */
   repeatableJobCount: Scalars['Int'];
@@ -2133,14 +1981,10 @@ export type Queue = {
   rules: Array<Rule>;
   schedulerCount: Scalars['Int'];
   schedulers: Array<QueueScheduler>;
-  /** Queries for queue stats snapshots within a range */
+  /** Queries for metric snapshots within a range */
   stats: Array<StatsSnapshot>;
-  /** Aggregates queue statistics within a range */
-  statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
   statsDateRange?: Maybe<TimeSpan>;
-  /** Gets the current job Throughput rates based on an exponential moving average */
-  throughput: Meter;
   /** Get the average time a job spends in the queue before being processed */
   waitTimeAvg: Scalars['Int'];
   /** Returns the number of child jobs waiting to be processed. */
@@ -2149,18 +1993,6 @@ export type Queue = {
   waitingCount: Scalars['Int'];
   workerCount: Scalars['Int'];
   workers: Array<QueueWorker>;
-};
-
-export type QueueErrorPercentageRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueErrorRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueHistogramArgs = {
-  input: HistogramInput;
 };
 
 export type QueueJobDurationAvgArgs = {
@@ -2204,10 +2036,6 @@ export type QueueMetricsDataArgs = {
   input?: InputMaybe<MetricsDataInput>;
 };
 
-export type QueuePercentileDistributionArgs = {
-  input: PercentileDistributionInput;
-};
-
 export type QueueRepeatableJobsArgs = {
   input?: InputMaybe<RepeatableJobsInput>;
 };
@@ -2224,16 +2052,8 @@ export type QueueStatsArgs = {
   input: StatsQueryInput;
 };
 
-export type QueueStatsAggregateArgs = {
-  input: StatsQueryInput;
-};
-
 export type QueueStatsDateRangeArgs = {
   input: StatsSpanInput;
-};
-
-export type QueueThroughputArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
 };
 
 export type QueueWaitTimeAvgArgs = {
@@ -2299,35 +2119,25 @@ export type QueueHost = {
   description?: Maybe<Scalars['String']>;
   /** Discover Bull queues on the given host */
   discoverQueues: Array<DiscoverQueuesPayload>;
-  /** Gets the current job ErrorPercentage rates for a host based on an exponential moving average */
-  errorPercentageRate: Meter;
-  /** Gets the current job Errors rates for a host based on an exponential moving average */
-  errorRate: Meter;
-  /** Compute the histogram of job data. */
-  histogram: HistogramPayload;
   id: Scalars['ID'];
   /** Get job counts for a host */
   jobCounts: JobCounts;
   /** Gets the last recorded queue stats snapshot for a metric */
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
+  /** The metrics associated with the host */
+  metrics: Array<Metric>;
   /** The name of the host */
   name: Scalars['String'];
-  /** Compute a percentile distribution. */
-  percentileDistribution: PercentileDistribution;
   ping: PingPayload;
   /** The count of queues registered for this host */
   queueCount: Scalars['Int'];
   /** The queues registered for this host */
   queues: Array<Queue>;
   redis: RedisInfo;
-  /** Queries for queue stats snapshots within a range */
+  /** Queries for metric snapshots within a range */
   stats: Array<StatsSnapshot>;
-  /** Aggregates queue statistics within a range */
-  statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
   statsDateRange?: Maybe<TimeSpan>;
-  /** Gets the current job Throughput rates for a host based on an exponential moving average */
-  throughput: Meter;
   uri: Scalars['String'];
   /** Returns the number of workers associated with managed queues on this host */
   workerCount: Scalars['Int'];
@@ -2339,24 +2149,8 @@ export type QueueHostDiscoverQueuesArgs = {
   unregisteredOnly?: InputMaybe<Scalars['Boolean']>;
 };
 
-export type QueueHostErrorPercentageRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueHostErrorRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueHostHistogramArgs = {
-  input: HistogramInput;
-};
-
 export type QueueHostLastStatsSnapshotArgs = {
   input?: InputMaybe<StatsLatestInput>;
-};
-
-export type QueueHostPercentileDistributionArgs = {
-  input: PercentileDistributionInput;
 };
 
 export type QueueHostQueuesArgs = {
@@ -2367,16 +2161,8 @@ export type QueueHostStatsArgs = {
   input: StatsQueryInput;
 };
 
-export type QueueHostStatsAggregateArgs = {
-  input: StatsQueryInput;
-};
-
 export type QueueHostStatsDateRangeArgs = {
   input: StatsSpanInput;
-};
-
-export type QueueHostThroughputArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
 };
 
 export type QueueHostWorkersArgs = {
@@ -2525,22 +2311,6 @@ export type RedisInfo = {
   used_memory_lua: Scalars['Int'];
   used_memory_peak: Scalars['Int'];
   used_memory_peak_human: Scalars['String'];
-};
-
-export type RefreshMetricDataInput = {
-  end?: InputMaybe<Scalars['Date']>;
-  metricId: Scalars['String'];
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range?: InputMaybe<Scalars['String']>;
-  start?: InputMaybe<Scalars['Date']>;
-};
-
-export type RefreshMetricDataResult = {
-  __typename?: 'RefreshMetricDataResult';
-  end?: Maybe<Scalars['Date']>;
-  metric: Metric;
-  metricId: Scalars['String'];
-  start?: Maybe<Scalars['Date']>;
 };
 
 export type RegisterQueueInput = {
@@ -2890,78 +2660,35 @@ export const SortOrderEnum = {
 } as const;
 
 export type SortOrderEnum = typeof SortOrderEnum[keyof typeof SortOrderEnum];
-export const StatsGranularity = {
-  Day: 'Day',
-  Hour: 'Hour',
-  Minute: 'Minute',
-  Month: 'Month',
-  Week: 'Week',
-} as const;
-
-export type StatsGranularity =
-  typeof StatsGranularity[keyof typeof StatsGranularity];
 /** Queue stats filter to getting latest snapshot. */
 export type StatsLatestInput = {
   /** Stats snapshot granularity */
-  granularity?: InputMaybe<StatsGranularity>;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
+  granularity?: InputMaybe<MetricGranularity>;
   /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
+  metric?: InputMaybe<Scalars['MetricName']>;
 };
 
-export const StatsMetricType = {
-  Latency: 'Latency',
-  Wait: 'Wait',
-} as const;
-
-export type StatsMetricType =
-  typeof StatsMetricType[keyof typeof StatsMetricType];
-/** Queue stats filter. */
+/** Queue metrics filter. */
 export type StatsQueryInput = {
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
+  end: Scalars['Date'];
+  /** Snapshot granularity */
+  granularity?: InputMaybe<MetricGranularity>;
   /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
+  metric: MetricType;
   /** An expression specifying the range to query e.g. yesterday, last_7days */
   range: Scalars['String'];
+  start: Scalars['Date'];
 };
 
-/** Queue stats rates filter. */
-export type StatsRateQueryInput = {
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range: Scalars['String'];
-};
-
-/** Queue job stats snapshot. */
-export type StatsSnapshot = JobStatsInterface & {
+/** Stats snapshot. */
+export type StatsSnapshot = {
   __typename?: 'StatsSnapshot';
-  /** The number of completed jobs in the sample interval */
-  completed: Scalars['Int'];
-  /** The sample size */
+  /** The number of samples */
   count: Scalars['Int'];
-  /** The end of the interval */
-  endTime: Scalars['Date'];
-  /** The number of failed jobs in the sample interval */
-  failed: Scalars['Int'];
-  /** One minute exponentially weighted moving average */
-  m1Rate: Scalars['Float'];
-  /** Five minute exponentially weighted moving average */
-  m5Rate: Scalars['Float'];
-  /** Fifteen minute exponentially weighted moving average */
-  m15Rate: Scalars['Float'];
   /** The maximum value in the data set */
   max: Scalars['Float'];
   /** The average of values during the period */
   mean: Scalars['Float'];
-  /** The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled,divided by the number of seconds the process has been running), it doesn’t offer a sense of recency. */
-  meanRate: Scalars['Float'];
   /** The median value of the data set */
   median: Scalars['Float'];
   /** The minimum value in the data set */
@@ -2974,29 +2701,16 @@ export type StatsSnapshot = JobStatsInterface & {
   p99: Scalars['Float'];
   /** The 99.5th percentile */
   p995: Scalars['Float'];
-  /** The start of the interval */
-  startTime: Scalars['Date'];
   /** The standard deviation of the dataset over the sample period */
   stddev: Scalars['Float'];
 };
 
 export type StatsSpanInput = {
-  granularity?: InputMaybe<StatsGranularity>;
+  granularity?: InputMaybe<MetricGranularity>;
   /** The host/queue to query */
   id: Scalars['ID'];
   jobName?: InputMaybe<Scalars['String']>;
-};
-
-/** Filtering options for stats subscriptions. */
-export type StatsUpdatedSubscriptionFilter = {
-  /** Data granularity */
-  granularity?: InputMaybe<StatsGranularity>;
-  /** The id of the queue or host to subscribe to */
-  id: Scalars['ID'];
-  /** An optional job name for filtering */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
+  metric: MetricType;
 };
 
 export type Subscription = {
@@ -3007,8 +2721,6 @@ export type Subscription = {
   obJobCompleted?: Maybe<OnJobStateChangePayload>;
   /** Returns job failed events */
   obJobFailed?: Maybe<OnJobStateChangePayload>;
-  /** Subscribe for updates in host statistical snapshots */
-  onHostStatsUpdated: StatsSnapshot;
   onJobAdded: OnJobAddedPayload;
   onJobDelayed: OnJobDelayedPayload;
   onJobLogAdded: OnJobLogAddedPayload;
@@ -3020,13 +2732,10 @@ export type Subscription = {
   onQueueDeleted: OnQueueDeletedPayload;
   onQueueJobCountsChanged: OnQueueJobCountsChangedPayload;
   onQueueJobUpdates: OnQueueJobUpdatesPayload;
-  onQueueMetricValueUpdated: OnQueueMetricValueUpdated;
   onQueuePaused: OnQueuePausedPayload;
   onQueueRegistered: OnQueueRegisteredPayload;
   onQueueResumed: OnQueueResumedPayload;
   onQueueStateChanged: OnQueueStateChangedPayload;
-  /** Subscribe for updates in queue statistical snapshots */
-  onQueueStatsUpdated: StatsSnapshot;
   onQueueUnregistered: OnQueueUnregisteredPayload;
   onQueueWorkersChanged: OnQueueWorkersChangedPayload;
   /** Returns an updated count of workers assigned to a queue */
@@ -3047,10 +2756,6 @@ export type SubscriptionObJobCompletedArgs = {
 export type SubscriptionObJobFailedArgs = {
   jobId: Scalars['String'];
   queueId: Scalars['String'];
-};
-
-export type SubscriptionOnHostStatsUpdatedArgs = {
-  input: StatsUpdatedSubscriptionFilter;
 };
 
 export type SubscriptionOnJobAddedArgs = {
@@ -3102,11 +2807,6 @@ export type SubscriptionOnQueueJobUpdatesArgs = {
   input: QueueJobUpdatesFilterInput;
 };
 
-export type SubscriptionOnQueueMetricValueUpdatedArgs = {
-  metricId: Scalars['String'];
-  queueId: Scalars['String'];
-};
-
 export type SubscriptionOnQueuePausedArgs = {
   queueId: Scalars['String'];
 };
@@ -3121,10 +2821,6 @@ export type SubscriptionOnQueueResumedArgs = {
 
 export type SubscriptionOnQueueStateChangedArgs = {
   queueId: Scalars['String'];
-};
-
-export type SubscriptionOnQueueStatsUpdatedArgs = {
-  input: StatsUpdatedSubscriptionFilter;
 };
 
 export type SubscriptionOnQueueUnregisteredArgs = {
@@ -3142,32 +2838,6 @@ export type SubscriptionOnQueueWorkersCountChangedArgs = {
 export type SubscriptionOnRuleAlertArgs = {
   queueId: Scalars['ID'];
   ruleIds?: InputMaybe<Array<Scalars['String']>>;
-};
-
-/** Basic descriptive statistics */
-export type SummaryStatistics = {
-  __typename?: 'SummaryStatistics';
-  /** The number of input values included in calculations */
-  count: Scalars['Int'];
-  /** The maximum value. */
-  max?: Maybe<Scalars['Float']>;
-  /** The average value - the sum of all values over the number of values. */
-  mean: Scalars['Float'];
-  /** The median is the middle number of a list. This is often a good indicator of "the middle" when there are outliers that skew the mean value. */
-  median?: Maybe<Scalars['Float']>;
-  /** The minimum value. */
-  min?: Maybe<Scalars['Float']>;
-  /** The standard deviation is the square root of the sample variance. */
-  sampleStandardDeviation: Scalars['Float'];
-  /**
-   * The sample variance is the sum of squared deviations from the mean.
-   * The sample variance is distinguished from the variance by dividing the sum of squared deviations by (n - 1) instead of n. This corrects the bias in estimating a value from a sample set rather than the full population.
-   */
-  sampleVariance: Scalars['Float'];
-  /** The standard deviation is the square root of the variance. This is also known as the population standard deviation. It is useful for measuring the amount of variation or dispersion in a set of values. */
-  standardDeviation: Scalars['Float'];
-  /** The variance is the sum of squared deviations from the mean. */
-  variance: Scalars['Float'];
 };
 
 export type ThresholdConditionInput = {
@@ -3346,7 +3016,7 @@ export type GetAppInfoQuery = {
 
 export type HostsPageDataQueryVariables = Exact<{
   range: Scalars['String'];
-  granularity?: StatsGranularity;
+  granularity?: MetricGranularity;
 }>;
 
 export type HostsPageDataQuery = {
@@ -3367,34 +3037,13 @@ export type HostsPageDataQuery = {
       delayed?: number | null;
       waiting?: number | null;
     };
-    throughput: {
-      __typename?: 'Meter';
-      count: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    };
-    errorRate: {
-      __typename?: 'Meter';
-      count: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    };
-    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
-    statsAggregate?:
-      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-      | null;
-    lastStatsSnapshot?:
-      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-      | null;
   }>;
 };
 
 export type HostOverviewQueryVariables = Exact<{
   id: Scalars['ID'];
   range: Scalars['String'];
-  granularity?: StatsGranularity;
+  granularity?: MetricGranularity;
 }>;
 
 export type HostOverviewQuery = {
@@ -3414,27 +3063,6 @@ export type HostOverviewQuery = {
       delayed?: number | null;
       waiting?: number | null;
     };
-    throughput: {
-      __typename?: 'Meter';
-      count: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    };
-    errorRate: {
-      __typename?: 'Meter';
-      count: number;
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    };
-    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
-    statsAggregate?:
-      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-      | null;
-    lastStatsSnapshot?:
-      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-      | null;
   } | null;
 };
 
@@ -3483,19 +3111,13 @@ export type MetricFragment = {
   __typename?: 'Metric';
   id: string;
   type: MetricType;
-  queueId: string;
-  name: string;
+  canonicalName: string;
   description: string;
-  isActive: boolean;
-  options: { [key: string]: unknown };
   createdAt: any;
   updatedAt: any;
-  sampleInterval?: number | null;
-  aggregator: {
-    __typename?: 'Aggregator';
-    type: AggregateTypeEnum;
-    options?: { [key: string]: unknown } | null;
-  };
+  aggregationTypes: Array<AggregationType | null>;
+  defaultAggregation: AggregationType;
+  unit: string;
   dateRange?: {
     __typename?: 'TimeSpan';
     startTime: number;
@@ -3514,22 +3136,7 @@ export type GetAvailableMetricsQuery = {
     description?: string | null;
     unit?: string | null;
     category: MetricCategory;
-    isPolling: boolean;
   }>;
-};
-
-export type GetAvailableAggregatesQueryVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type GetAvailableAggregatesQuery = {
-  __typename?: 'Query';
-  aggregates: Array<{
-    __typename?: 'AggregateInfo';
-    type: AggregateTypeEnum;
-    isWindowed: boolean;
-    description: string;
-  } | null>;
 };
 
 export type GetMetricByIdQueryVariables = Exact<{
@@ -3716,27 +3323,6 @@ export type HostQueuesQuery = {
         isPaused: boolean;
         isReadonly: boolean;
         workerCount: number;
-        throughput: {
-          __typename?: 'Meter';
-          count: number;
-          m1Rate: number;
-          m5Rate: number;
-          m15Rate: number;
-        };
-        errorRate: {
-          __typename?: 'Meter';
-          count: number;
-          m1Rate: number;
-          m5Rate: number;
-          m15Rate: number;
-        };
-        stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
-        statsAggregate?:
-          | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-          | null;
-        lastStatsSnapshot?:
-          | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-          | null;
       } & JobCountsFragment
     >;
   } | null;
@@ -4504,7 +4090,7 @@ export type GetQueueJobsNamesQuery = {
 export type GetPageQueueStatsQueryVariables = Exact<{
   id: Scalars['ID'];
   range: Scalars['String'];
-  granularity: StatsGranularity;
+  granularity: MetricGranularity;
 }>;
 
 export type GetPageQueueStatsQuery = {
@@ -4518,41 +4104,12 @@ export type GetPageQueueStatsQuery = {
     isPaused: boolean;
     jobNames: Array<string>;
     workerCount: number;
-    throughput: {
-      __typename?: 'Meter';
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    };
-    errorRate: {
-      __typename?: 'Meter';
-      m1Rate: number;
-      m5Rate: number;
-      m15Rate: number;
-    };
-    stats: Array<{ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment>;
-    statsAggregate?:
-      | ({ __typename?: 'StatsSnapshot' } & StatsSnapshotFragment)
-      | null;
   } | null;
-};
-
-export type MeterFragment = {
-  __typename?: 'Meter';
-  count: number;
-  meanRate: number;
-  m1Rate: number;
-  m5Rate: number;
-  m15Rate: number;
 };
 
 export type StatsSnapshotFragment = {
   __typename?: 'StatsSnapshot';
   count: number;
-  failed: number;
-  completed: number;
-  startTime: any;
-  endTime: any;
   stddev: number;
   mean: number;
   min: number;
@@ -4562,10 +4119,6 @@ export type StatsSnapshotFragment = {
   p95: number;
   p99: number;
   p995: number;
-  meanRate: number;
-  m1Rate: number;
-  m5Rate: number;
-  m15Rate: number;
 };
 
 export type GetStatsSpanQueryVariables = Exact<{
@@ -4628,24 +4181,6 @@ export type GetHostStatsLatestQuery = {
   } | null;
 };
 
-export type QueueStatsUpdatedSubscriptionVariables = Exact<{
-  input: StatsUpdatedSubscriptionFilter;
-}>;
-
-export type QueueStatsUpdatedSubscription = {
-  __typename?: 'Subscription';
-  onQueueStatsUpdated: { __typename?: 'StatsSnapshot' } & StatsSnapshotFragment;
-};
-
-export type HostStatsUpdatedSubscriptionVariables = Exact<{
-  input: StatsUpdatedSubscriptionFilter;
-}>;
-
-export type HostStatsUpdatedSubscription = {
-  __typename?: 'Subscription';
-  onHostStatsUpdated: { __typename?: 'StatsSnapshot' } & StatsSnapshotFragment;
-};
-
 export const MetricFragmentDoc = {
   kind: 'Document',
   definitions: [
@@ -4661,25 +4196,16 @@ export const MetricFragmentDoc = {
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'canonicalName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'aggregationTypes' } },
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'aggregator' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
-              ],
-            },
+            name: { kind: 'Name', value: 'defaultAggregation' },
           },
+          { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'dateRange' },
@@ -5189,29 +4715,6 @@ export const QueueWorkersFragmentDoc = {
     },
   ],
 } as unknown as DocumentNode;
-export const MeterFragmentDoc = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'Meter' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'Meter' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode;
 export const StatsSnapshotFragmentDoc = {
   kind: 'Document',
   definitions: [
@@ -5226,10 +4729,6 @@ export const StatsSnapshotFragmentDoc = {
         kind: 'SelectionSet',
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
           { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
           { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
           { kind: 'Field', name: { kind: 'Name', value: 'min' } },
@@ -5239,10 +4738,6 @@ export const StatsSnapshotFragmentDoc = {
           { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -5360,7 +4855,7 @@ export const HostsPageDataDocument = {
             kind: 'NonNullType',
             type: {
               kind: 'NamedType',
-              name: { kind: 'Name', value: 'StatsGranularity' },
+              name: { kind: 'Name', value: 'MetricGranularity' },
             },
           },
           defaultValue: { kind: 'EnumValue', value: 'Minute' },
@@ -5423,218 +4918,8 @@ export const HostsPageDataDocument = {
                     ],
                   },
                 },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'throughput' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm1Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm5Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm15Rate' },
-                      },
-                    ],
-                  },
-                },
                 { kind: 'Field', name: { kind: 'Name', value: 'queueCount' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'errorRate' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm1Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm5Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm15Rate' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'stats' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'statsAggregate' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'lastStatsSnapshot' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
               ],
             },
           },
@@ -5690,37 +4975,6 @@ export const HostsPageDataDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'os' } },
           { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
           { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'StatsSnapshot' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -5823,7 +5077,7 @@ export const HostOverviewDocument = {
             kind: 'NonNullType',
             type: {
               kind: 'NamedType',
-              name: { kind: 'Name', value: 'StatsGranularity' },
+              name: { kind: 'Name', value: 'MetricGranularity' },
             },
           },
           defaultValue: { kind: 'EnumValue', value: 'Minute' },
@@ -5895,218 +5149,8 @@ export const HostOverviewDocument = {
                     ],
                   },
                 },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'throughput' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm1Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm5Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm15Rate' },
-                      },
-                    ],
-                  },
-                },
                 { kind: 'Field', name: { kind: 'Name', value: 'queueCount' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'errorRate' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm1Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm5Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm15Rate' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'stats' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'statsAggregate' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'lastStatsSnapshot' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
               ],
             },
           },
@@ -6162,37 +5206,6 @@ export const HostOverviewDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'os' } },
           { kind: 'Field', name: { kind: 'Name', value: 'tcp_port' } },
           { kind: 'Field', name: { kind: 'Name', value: 'redis_mode' } },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'StatsSnapshot' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -6550,7 +5563,6 @@ export const GetAvailableMetricsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'description' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'category' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'isPolling' } },
               ],
             },
           },
@@ -6613,88 +5625,6 @@ export function refetchGetAvailableMetricsQuery(
   variables?: GetAvailableMetricsQueryVariables,
 ) {
   return { query: GetAvailableMetricsDocument, variables: variables };
-}
-export const GetAvailableAggregatesDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'GetAvailableAggregates' },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'aggregates' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'isWindowed' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode;
-
-/**
- * __useGetAvailableAggregatesQuery__
- *
- * To run a query within a React component, call `useGetAvailableAggregatesQuery` and pass it any options that fit your needs.
- * When your component renders, `useGetAvailableAggregatesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGetAvailableAggregatesQuery({
- *   variables: {
- *   },
- * });
- */
-export function useGetAvailableAggregatesQuery(
-  baseOptions?: Apollo.QueryHookOptions<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useQuery<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >(GetAvailableAggregatesDocument, options);
-}
-export function useGetAvailableAggregatesLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useLazyQuery<
-    GetAvailableAggregatesQuery,
-    GetAvailableAggregatesQueryVariables
-  >(GetAvailableAggregatesDocument, options);
-}
-export type GetAvailableAggregatesQueryHookResult = ReturnType<
-  typeof useGetAvailableAggregatesQuery
->;
-export type GetAvailableAggregatesLazyQueryHookResult = ReturnType<
-  typeof useGetAvailableAggregatesLazyQuery
->;
-export type GetAvailableAggregatesQueryResult = Apollo.QueryResult<
-  GetAvailableAggregatesQuery,
-  GetAvailableAggregatesQueryVariables
->;
-export function refetchGetAvailableAggregatesQuery(
-  variables?: GetAvailableAggregatesQueryVariables,
-) {
-  return { query: GetAvailableAggregatesDocument, variables: variables };
 }
 export const GetMetricByIdDocument = {
   kind: 'Document',
@@ -6773,25 +5703,16 @@ export const GetMetricByIdDocument = {
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'canonicalName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'aggregationTypes' } },
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'aggregator' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
-              ],
-            },
+            name: { kind: 'Name', value: 'defaultAggregation' },
           },
+          { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'dateRange' },
@@ -6929,25 +5850,16 @@ export const CreateMetricDocument = {
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'canonicalName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'aggregationTypes' } },
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'aggregator' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
-              ],
-            },
+            name: { kind: 'Name', value: 'defaultAggregation' },
           },
+          { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'dateRange' },
@@ -7071,25 +5983,16 @@ export const UpdateMetricDocument = {
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'canonicalName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'aggregationTypes' } },
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'aggregator' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
-              ],
-            },
+            name: { kind: 'Name', value: 'defaultAggregation' },
           },
+          { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'dateRange' },
@@ -7312,25 +6215,16 @@ export const GetQueueMetricsDocument = {
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'id' } },
           { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'queueId' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'name' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'canonicalName' } },
           { kind: 'Field', name: { kind: 'Name', value: 'description' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'isActive' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'options' } },
           { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
           { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'sampleInterval' } },
+          { kind: 'Field', name: { kind: 'Name', value: 'aggregationTypes' } },
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'aggregator' },
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'options' } },
-              ],
-            },
+            name: { kind: 'Name', value: 'defaultAggregation' },
           },
+          { kind: 'Field', name: { kind: 'Name', value: 'unit' } },
           {
             kind: 'Field',
             name: { kind: 'Name', value: 'dateRange' },
@@ -8633,160 +7527,7 @@ export const HostQueuesDocument = {
                       },
                       {
                         kind: 'Field',
-                        name: { kind: 'Name', value: 'throughput' },
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'count' },
-                            },
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'm1Rate' },
-                            },
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'm5Rate' },
-                            },
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'm15Rate' },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'errorRate' },
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'count' },
-                            },
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'm1Rate' },
-                            },
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'm5Rate' },
-                            },
-                            {
-                              kind: 'Field',
-                              name: { kind: 'Name', value: 'm15Rate' },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: 'Field',
                         name: { kind: 'Name', value: 'workerCount' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'stats' },
-                        arguments: [
-                          {
-                            kind: 'Argument',
-                            name: { kind: 'Name', value: 'input' },
-                            value: {
-                              kind: 'ObjectValue',
-                              fields: [
-                                {
-                                  kind: 'ObjectField',
-                                  name: { kind: 'Name', value: 'range' },
-                                  value: {
-                                    kind: 'Variable',
-                                    name: { kind: 'Name', value: 'range' },
-                                  },
-                                },
-                                {
-                                  kind: 'ObjectField',
-                                  name: { kind: 'Name', value: 'granularity' },
-                                  value: { kind: 'EnumValue', value: 'Minute' },
-                                },
-                              ],
-                            },
-                          },
-                        ],
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            {
-                              kind: 'FragmentSpread',
-                              name: { kind: 'Name', value: 'StatsSnapshot' },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'statsAggregate' },
-                        arguments: [
-                          {
-                            kind: 'Argument',
-                            name: { kind: 'Name', value: 'input' },
-                            value: {
-                              kind: 'ObjectValue',
-                              fields: [
-                                {
-                                  kind: 'ObjectField',
-                                  name: { kind: 'Name', value: 'range' },
-                                  value: {
-                                    kind: 'Variable',
-                                    name: { kind: 'Name', value: 'range' },
-                                  },
-                                },
-                                {
-                                  kind: 'ObjectField',
-                                  name: { kind: 'Name', value: 'granularity' },
-                                  value: { kind: 'EnumValue', value: 'Minute' },
-                                },
-                              ],
-                            },
-                          },
-                        ],
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            {
-                              kind: 'FragmentSpread',
-                              name: { kind: 'Name', value: 'StatsSnapshot' },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'lastStatsSnapshot' },
-                        arguments: [
-                          {
-                            kind: 'Argument',
-                            name: { kind: 'Name', value: 'input' },
-                            value: {
-                              kind: 'ObjectValue',
-                              fields: [
-                                {
-                                  kind: 'ObjectField',
-                                  name: { kind: 'Name', value: 'granularity' },
-                                  value: { kind: 'EnumValue', value: 'Minute' },
-                                },
-                              ],
-                            },
-                          },
-                        ],
-                        selectionSet: {
-                          kind: 'SelectionSet',
-                          selections: [
-                            {
-                              kind: 'FragmentSpread',
-                              name: { kind: 'Name', value: 'StatsSnapshot' },
-                            },
-                          ],
-                        },
                       },
                     ],
                   },
@@ -8822,37 +7563,6 @@ export const HostQueuesDocument = {
               ],
             },
           },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'StatsSnapshot' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -16354,7 +15064,7 @@ export const GetPageQueueStatsDocument = {
             kind: 'NonNullType',
             type: {
               kind: 'NamedType',
-              name: { kind: 'Name', value: 'StatsGranularity' },
+              name: { kind: 'Name', value: 'MetricGranularity' },
             },
           },
         },
@@ -16385,162 +15095,9 @@ export const GetPageQueueStatsDocument = {
                 { kind: 'Field', name: { kind: 'Name', value: 'isPaused' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'jobNames' } },
                 { kind: 'Field', name: { kind: 'Name', value: 'workerCount' } },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'throughput' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm1Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm5Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm15Rate' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'errorRate' },
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm1Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm5Rate' },
-                      },
-                      {
-                        kind: 'Field',
-                        name: { kind: 'Name', value: 'm15Rate' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'stats' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'statsAggregate' },
-                  arguments: [
-                    {
-                      kind: 'Argument',
-                      name: { kind: 'Name', value: 'input' },
-                      value: {
-                        kind: 'ObjectValue',
-                        fields: [
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'range' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'range' },
-                            },
-                          },
-                          {
-                            kind: 'ObjectField',
-                            name: { kind: 'Name', value: 'granularity' },
-                            value: {
-                              kind: 'Variable',
-                              name: { kind: 'Name', value: 'granularity' },
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      {
-                        kind: 'FragmentSpread',
-                        name: { kind: 'Name', value: 'StatsSnapshot' },
-                      },
-                    ],
-                  },
-                },
               ],
             },
           },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'StatsSnapshot' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -16836,10 +15393,6 @@ export const GetQueueStatsDocument = {
         kind: 'SelectionSet',
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
           { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
           { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
           { kind: 'Field', name: { kind: 'Name', value: 'min' } },
@@ -16849,10 +15402,6 @@ export const GetQueueStatsDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -17005,10 +15554,6 @@ export const GetQueueStatsLatestDocument = {
         kind: 'SelectionSet',
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
           { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
           { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
           { kind: 'Field', name: { kind: 'Name', value: 'min' } },
@@ -17018,10 +15563,6 @@ export const GetQueueStatsLatestDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -17174,10 +15715,6 @@ export const GetHostStatsLatestDocument = {
         kind: 'SelectionSet',
         selections: [
           { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
           { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
           { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
           { kind: 'Field', name: { kind: 'Name', value: 'min' } },
@@ -17187,10 +15724,6 @@ export const GetHostStatsLatestDocument = {
           { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
           { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
         ],
       },
     },
@@ -17253,241 +15786,3 @@ export function refetchGetHostStatsLatestQuery(
 ) {
   return { query: GetHostStatsLatestDocument, variables: variables };
 }
-export const QueueStatsUpdatedDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'subscription',
-      name: { kind: 'Name', value: 'QueueStatsUpdated' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: {
-            kind: 'Variable',
-            name: { kind: 'Name', value: 'input' },
-          },
-          type: {
-            kind: 'NonNullType',
-            type: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'StatsUpdatedSubscriptionFilter' },
-            },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'onQueueStatsUpdated' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: {
-                  kind: 'Variable',
-                  name: { kind: 'Name', value: 'input' },
-                },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                {
-                  kind: 'FragmentSpread',
-                  name: { kind: 'Name', value: 'StatsSnapshot' },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'StatsSnapshot' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode;
-
-/**
- * __useQueueStatsUpdatedSubscription__
- *
- * To run a query within a React component, call `useQueueStatsUpdatedSubscription` and pass it any options that fit your needs.
- * When your component renders, `useQueueStatsUpdatedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useQueueStatsUpdatedSubscription({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useQueueStatsUpdatedSubscription(
-  baseOptions: Apollo.SubscriptionHookOptions<
-    QueueStatsUpdatedSubscription,
-    QueueStatsUpdatedSubscriptionVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSubscription<
-    QueueStatsUpdatedSubscription,
-    QueueStatsUpdatedSubscriptionVariables
-  >(QueueStatsUpdatedDocument, options);
-}
-export type QueueStatsUpdatedSubscriptionHookResult = ReturnType<
-  typeof useQueueStatsUpdatedSubscription
->;
-export type QueueStatsUpdatedSubscriptionResult =
-  Apollo.SubscriptionResult<QueueStatsUpdatedSubscription>;
-export const HostStatsUpdatedDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'subscription',
-      name: { kind: 'Name', value: 'HostStatsUpdated' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: {
-            kind: 'Variable',
-            name: { kind: 'Name', value: 'input' },
-          },
-          type: {
-            kind: 'NonNullType',
-            type: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'StatsUpdatedSubscriptionFilter' },
-            },
-          },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'onHostStatsUpdated' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'input' },
-                value: {
-                  kind: 'Variable',
-                  name: { kind: 'Name', value: 'input' },
-                },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                {
-                  kind: 'FragmentSpread',
-                  name: { kind: 'Name', value: 'StatsSnapshot' },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    },
-    {
-      kind: 'FragmentDefinition',
-      name: { kind: 'Name', value: 'StatsSnapshot' },
-      typeCondition: {
-        kind: 'NamedType',
-        name: { kind: 'Name', value: 'StatsSnapshot' },
-      },
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          { kind: 'Field', name: { kind: 'Name', value: 'count' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'failed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'completed' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'startTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'endTime' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'stddev' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'mean' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'min' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'max' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'median' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p90' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p95' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p99' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'p995' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'meanRate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm1Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm5Rate' } },
-          { kind: 'Field', name: { kind: 'Name', value: 'm15Rate' } },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode;
-
-/**
- * __useHostStatsUpdatedSubscription__
- *
- * To run a query within a React component, call `useHostStatsUpdatedSubscription` and pass it any options that fit your needs.
- * When your component renders, `useHostStatsUpdatedSubscription` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useHostStatsUpdatedSubscription({
- *   variables: {
- *      input: // value for 'input'
- *   },
- * });
- */
-export function useHostStatsUpdatedSubscription(
-  baseOptions: Apollo.SubscriptionHookOptions<
-    HostStatsUpdatedSubscription,
-    HostStatsUpdatedSubscriptionVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions };
-  return Apollo.useSubscription<
-    HostStatsUpdatedSubscription,
-    HostStatsUpdatedSubscriptionVariables
-  >(HostStatsUpdatedDocument, options);
-}
-export type HostStatsUpdatedSubscriptionHookResult = ReturnType<
-  typeof useHostStatsUpdatedSubscription
->;
-export type HostStatsUpdatedSubscriptionResult =
-  Apollo.SubscriptionResult<HostStatsUpdatedSubscription>;

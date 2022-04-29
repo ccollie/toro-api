@@ -61,6 +61,9 @@
     "deploy": {
       "dependsOn": ["build", "test", "lint", "copy-assets"]
     },
+    "ui": {
+      "dependsOn": ["build", "gen-client"]
+    },
     "example": {
       "dependsOn": [
         "^build",

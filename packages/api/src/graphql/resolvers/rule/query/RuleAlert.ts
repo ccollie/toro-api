@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import {
-  ChangeAggregationEnum,
+  AggregationTypeEnum,
   ConditionChangeEnum,
   ErrorLevelEnum,
   PeakSignalDirectionEnum,
@@ -81,7 +81,7 @@ export const ChangeRuleEvaluationStateTC = schemaComposer.createObjectTC({
       type: ConditionChangeEnum.NonNull,
     },
     aggregation: {
-      type: ChangeAggregationEnum.NonNull,
+      type: AggregationTypeEnum.NonNull,
     },
   },
 });

@@ -1,6 +1,5 @@
-import { parseDuration } from '@alpen/shared';
+import {parseDuration} from '@alpen/shared';
 import {
-  ChangeAggregation as GQLChangeAggregation,
   ConditionChangeType as GQLChangeType,
   PeakSignalDirection as GQLPeakSignalDirection,
   RuleConditionInput,
@@ -9,7 +8,7 @@ import {
   Severity as GQLSeverity,
 } from '../../../typings';
 import {
-  ChangeAggregationType,
+  AggregationType,
   ChangeTypeEnum,
   PeakSignalDirection,
   RuleCondition,
@@ -37,7 +36,7 @@ export function convertCondition(input: RuleConditionInput): RuleCondition {
           type: RuleType.CHANGE,
           changeType: translateChangeType(changeType),
           operator: translateOperator(operator),
-          aggregationType: translateAggregation(aggregationType),
+          aggregationType: AggregationType.AVG, // TODO: aggregationType,
           windowSize: parseDuration(windowSize),
           timeShift: parseDuration(timeShift),
           ...rest,
@@ -65,27 +64,6 @@ export function convertCondition(input: RuleConditionInput): RuleCondition {
   }
 
   return condition;
-}
-
-export function translateAggregation(
-  agg: GQLChangeAggregation,
-): ChangeAggregationType {
-  switch (agg) {
-    case GQLChangeAggregation.Avg:
-      return ChangeAggregationType.AVG;
-    case GQLChangeAggregation.Max:
-      return ChangeAggregationType.MAX;
-    case GQLChangeAggregation.Min:
-      return ChangeAggregationType.MIN;
-    case GQLChangeAggregation.P90:
-      return ChangeAggregationType.P90;
-    case GQLChangeAggregation.P95:
-      return ChangeAggregationType.P95;
-    case GQLChangeAggregation.P99:
-      return ChangeAggregationType.P99;
-    case GQLChangeAggregation.Sum:
-      return ChangeAggregationType.SUM;
-  }
 }
 
 export function translateChangeType(change: GQLChangeType): ChangeTypeEnum {

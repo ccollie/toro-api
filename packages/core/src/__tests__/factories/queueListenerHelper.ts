@@ -1,7 +1,7 @@
 import { isNumber, random } from '@alpen/shared';
 import { defaultsDeep } from 'lodash';
 import { ManualClock } from '../../lib';
-import { Events } from '../../metrics';
+import { Events } from '../../queues/queue-listener';
 import { nanoid } from 'nanoid';
 import {
   JobEventData,

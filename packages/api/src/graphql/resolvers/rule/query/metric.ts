@@ -13,6 +13,6 @@ export const metric: FieldConfig = {
     { accessors }: EZContext,
   ): Promise<Metric> {
     const manager = accessors.getQueueManager(parent.queueId);
-    return manager.metricManager.getMetric(parent.metricId);
+    return manager.metricsManager.getMetric(parent.metricId);
   },
 };

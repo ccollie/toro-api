@@ -14,7 +14,16 @@ import {
 import { logger } from '../logger';
 import { parseStreamId, timestampFromStreamId } from '../redis';
 import type { AppJob } from '../types';
-import { Events } from '~/core';
+
+export const Events = {
+  FINISHED: 'job.finished',
+  COMPLETED: 'job.completed',
+  FAILED: 'job.failed',
+  PROGRESS: 'job.progress',
+  ACTIVE: 'job.active',
+  DELAYED: 'job.delayed',
+  STALLED: 'job.stalled',
+};
 
 export const FINISHED_EVENT = 'job.finished';
 const CACHE_TIMEOUT = ms('2 hours');

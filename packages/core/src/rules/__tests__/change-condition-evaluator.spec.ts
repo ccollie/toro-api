@@ -1,18 +1,14 @@
-import {
-  ChangeConditionEvaluator,
-  getAggregationFunction,
-} from '../change-condition-evaluator';
+import { ChangeConditionEvaluator } from '../change-condition-evaluator';
 import { getRandomIntArray } from '../../__tests__/factories';
-import { Metric } from '../../metrics';
 import { ManualClock } from '../../lib';
 import { random } from '@alpen/shared';
 import ms from 'ms';
 import {
   ChangeConditionOptions,
-  ChangeAggregationType,
   RuleOperator,
   ChangeTypeEnum,
 } from '../../types';
+import { Metric, AggregationType, getAggregateFunction } from '../../metrics';
 import { Gauge as GaugeName, NoTags } from '../../metrics/metric-name';
 
 function getDiffs(
@@ -65,7 +61,7 @@ describe('ChangeConditionEvaluator', () => {
       errorThreshold: 0,
       operator: RuleOperator.GTE,
       changeType: ChangeTypeEnum.CHANGE,
-      aggregationType: ChangeAggregationType.MAX,
+      aggregationType: AggregationType.MAX,
       windowSize: 10000,
       timeShift: 1000,
       ...opts,
@@ -99,7 +95,7 @@ describe('ChangeConditionEvaluator', () => {
       errorThreshold: 0,
       operator: RuleOperator.GTE,
       changeType: ChangeTypeEnum.CHANGE,
-      aggregationType: ChangeAggregationType.MAX,
+      aggregationType: AggregationType.MAX,
       windowSize: 10000,
       timeShift: 1000,
     });
@@ -168,8 +164,8 @@ describe('ChangeConditionEvaluator', () => {
       expect(instanceCurrentWindow).toStrictEqual(window);
     });
 
-    function testAggregation(aggregationType: ChangeAggregationType): void {
-      const calculate = getAggregationFunction(aggregationType);
+    function testAggregation(aggregationType: AggregationType): void {
+      const calculate = getAggregateFunction(aggregationType);
       const windowSize = ms('5 mins');
       const instance = createInstance({
         windowSize,
@@ -183,19 +179,19 @@ describe('ChangeConditionEvaluator', () => {
     }
 
     it('calculates max', () => {
-      testAggregation(ChangeAggregationType.MAX);
+      testAggregation(AggregationType.MAX);
     });
 
     it('calculates min', () => {
-      testAggregation(ChangeAggregationType.MIN);
+      testAggregation(AggregationType.MIN);
     });
 
     it('calculates sum', () => {
-      testAggregation(ChangeAggregationType.SUM);
+      testAggregation(AggregationType.SUM);
     });
 
     it('calculates avg', () => {
-      testAggregation(ChangeAggregationType.AVG);
+      testAggregation(AggregationType.AVG);
     });
   });
 
@@ -210,7 +206,7 @@ describe('ChangeConditionEvaluator', () => {
         errorThreshold: 0,
         operator: RuleOperator.GTE,
         changeType: ChangeTypeEnum.CHANGE,
-        aggregationType: ChangeAggregationType.MAX,
+        aggregationType: AggregationType.MAX,
         windowSize: 10000,
         timeShift: 1000,
       });
@@ -238,7 +234,7 @@ describe('ChangeConditionEvaluator', () => {
         errorThreshold: 0,
         operator: RuleOperator.GTE,
         changeType: ChangeTypeEnum.CHANGE,
-        aggregationType: ChangeAggregationType.MAX,
+        aggregationType: AggregationType.MAX,
         windowSize: 10000,
         timeShift: 1000,
       });
@@ -255,7 +251,7 @@ describe('ChangeConditionEvaluator', () => {
 
     beforeEach(() => {
       instance = createInstance({
-        aggregationType: ChangeAggregationType.MAX,
+        aggregationType: AggregationType.MAX,
         windowSize: 10000,
         timeShift: 1000,
       });
@@ -276,7 +272,7 @@ describe('ChangeConditionEvaluator', () => {
       const clock = new ManualClock(0);
       instance = createInstance({
         changeType: ChangeTypeEnum.CHANGE,
-        aggregationType: ChangeAggregationType.MAX,
+        aggregationType: AggregationType.MAX,
         windowSize: 10000,
         timeShift: 1000,
       });

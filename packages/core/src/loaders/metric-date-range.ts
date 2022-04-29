@@ -10,13 +10,13 @@ import { getQueueHostClient, getQueueById, getQueueManager } from './accessors';
 import { QueueIdTagKey } from '../metrics';
 
 function getDataKey(queue: Queue, metric: Metric): string {
-  return getMetricsDataKey(queue, metric.id);
+  return getMetricsDataKey('', queue, metric.id);
 }
 
 async function getSingle(metric: Metric): Promise<Timespan> {
   const qid = metric.getTagValue(QueueIdTagKey);
   const queue = getQueueManager(qid);
-  const metrics = queue.metricManager;
+  const metrics = queue.metricsManager;
   return metrics.getMetricDateRange(metric);
 }
 

@@ -7,7 +7,7 @@ import { round } from '@alpen/shared';
 import { getRedisInfoByQueue } from '../loaders/redis-info';
 import { RedisMetrics } from '../redis/utils';
 import { getJobDurationValues } from '../loaders/job-duration-values';
-import { AggregationType, JobDurationValuesResult, Scripts } from '../commands';
+import { JobDurationValuesResult, Scripts } from '../commands';
 import { BiasedQuantileDistribution } from './bqdist';
 import { getWorkerCount } from '../loaders/queue-workers';
 import { getFilteredQueues, HostManager } from '../hosts';
@@ -15,6 +15,7 @@ import { Metric } from './metric';
 import { MetricTypeName } from './types';
 import { QueueFilter, QueueFilterStatus } from '../types';
 import { GetterContext, Registry } from './registry';
+import { AggregationType } from './aggregators/aggregation';
 
 export type MetricValueFn = (
   context: GetterContext,
@@ -203,7 +204,7 @@ function jobDuration(valueType: keyof JobDurationValuesResult) {
     const values = await getJobDurationValues({ queue, start, end, jobName });
     const durations = values[valueType];
     const res = new BiasedQuantileDistribution(); // todo: RelativeAccuracy
-    durations.forEach(value => res.record(value));
+    durations.forEach((value) => res.record(value));
     return res;
   };
 }
@@ -218,8 +219,8 @@ function queueCount(filter?: QueueFilter): MetricValueFn {
 
 /* eslint-disable camelcase */
 export const metricGetters: Record<MetricTypeName, MetricValueFn> = {
-  job_attempts: attempts('sum'),
-  job_avg_attempts: attempts('avg'),
+  job_attempts: attempts(AggregationType.SUM),
+  job_avg_attempts: attempts(AggregationType.AVG),
   jobs_active: jobCount('active'),
   jobs_completed: jobCount('completed'),
   jobs_delayed: jobCount('delayed'),

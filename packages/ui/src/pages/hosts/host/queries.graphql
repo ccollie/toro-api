@@ -1,4 +1,4 @@
-query HostOverview($id: ID!, $range: String!, $granularity: StatsGranularity! = Minute) {
+query HostOverview($id: ID!, $range: String!, $granularity: MetricGranularity! = Minute) {
   host(id: $id) {
     id
     redis {
@@ -12,29 +12,8 @@ query HostOverview($id: ID!, $range: String!, $granularity: StatsGranularity! = 
       delayed
       waiting
     }
-    throughput(input: { range: $range, granularity: $granularity }) {
-      count
-      m1Rate
-      m5Rate
-      m15Rate
-    }
     queueCount
     workerCount
-    errorRate(input: { range: $range, granularity: $granularity }) {
-      count
-      m1Rate
-      m5Rate
-      m15Rate
-    }
-    stats(input: { range: $range, granularity: $granularity }) {
-      ...StatsSnapshot
-    }
-    statsAggregate(input: { range: $range, granularity: $granularity }) {
-      ...StatsSnapshot
-    }
-    lastStatsSnapshot(input: { granularity: $granularity }) {
-      ...StatsSnapshot
-    }
   }
 }
 

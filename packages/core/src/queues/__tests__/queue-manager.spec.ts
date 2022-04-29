@@ -35,7 +35,7 @@ describe('QueueManager', () => {
         expect(sut.bus).toBeDefined();
         expect(sut.queueListener).toBeDefined();
         expect(sut.ruleManager).toBeDefined();
-        expect(sut.statsClient).toBeDefined();
+        expect(sut.metricsManager).toBeDefined();
         expect(sut.id).toBe(config.id);
         expect(sut.name).toBe(queue.name);
         expect(sut.hostName).toBe(hostManager.name);

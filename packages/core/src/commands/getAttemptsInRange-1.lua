@@ -15,7 +15,7 @@ local prefix = ARGV[1]
 local rangeStart = tonumber(ARGV[2], 0)
 local rangeEnd = tonumber(ARGV[3], -1)
 local jobNameFilter = ARGV[4]
-local aggregator = ARGV[5] or 'sum'
+local aggregator = string.lower(ARGV[5] or 'sum')
 
 if (jobNameFilter == '') then
   jobNameFilter = nil
@@ -25,61 +25,51 @@ local jobFilterFn = function(jobName)
     return true
 end
 
+local function min(arr)
+  if (#arr == 0) then
+    return 0
+  end
+  local res = math.huge
+  for _, value in ipairs(arr) do
+    if (value < res) then
+      res = value
+    end
+  end
+  return res
+end
+
+local function max(arr)
+  local res = -1 * math.huge
+  for _, value in ipairs(arr) do
+    if (value > res) then
+      res = value
+    end
+  end
+  return res
+end
+
+local function sum(arr)
+  local res = 0
+  for _, value in ipairs(arr) do
+    res = res + value
+  end
+  return res
+end
+
+local function avg(arr)
+  local count = #arr
+  local total = sum(arr)
+  if (count == 0) then
+    return 0
+  end
+  return total/count
+end
+
 local aggregators = {
-  sum = {
-    init = function(context) 
-      context = context or {}
-      context.value = 0
-    end,
-    reduce = function(context, value) 
-      context.value = context.value + value
-    end,
-    finish = function(context) 
-      return context.value
-    end
-  },
-  min = {
-    init = function(context)
-      context = context or {}
-      context.value = math.huge
-    end,
-    reduce = function(context, value)
-      context.value = math.min(context.value, value)
-    end,
-    finish = function(context)
-      return context.value
-    end
-  },
-  max = {
-    init = function(context)
-      context = context or {}
-      context.value = -math.huge
-    end,
-    reduce = function(context, value)
-      context.value = math.max(context.value, value)
-    end,
-    finish = function(context)
-      return context.value
-    end
-  },
-  avg = {
-    init = function(context)
-      context = context or {}
-      context.count = 0
-      context.sum = 0
-    end,
-    reduce = function(context, value)
-      context.sum = context.sum + value
-      context.count = context.count + 1
-    end,
-    finish = function(context)
-      local count = context.count
-      if (count == 0) then
-        return 0
-      end
-      return context.sum / count
-    end
-  }
+  sum = sum,
+  min = min,
+  max = max,
+  avg = avg
 } 
 
 
@@ -102,11 +92,8 @@ local result = 0
 
 local ids = redis.call('zrangebystore', key, rangeStart, rangeEnd)
 if (#ids > 0) then
-  local context = {}
   local handler = aggregators[aggregator]
-  local reduce = handler.reduce
-  handler.init(context)
-  
+  local values = {}
   for _, id in ipairs(ids) do
     local jobKey = prefix .. id
     local job = redis.call('hmget', jobKey, 'attemptsMade', 'name')
@@ -114,10 +101,10 @@ if (#ids > 0) then
     local name = job[2]
 
     if jobFilterFn(name) and (attemptsMade ~= nil) then
-      reduce(context, attemptsMade)
+      table.insert(values, attemptsMade)
     end
   end
-  result = handler.finish(context)
+  result = handler(values)
 end
 
 return result

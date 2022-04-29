@@ -1,21 +1,16 @@
 import {
-  ChangeAggregationType,
+  AggregationType,
   ChangeTypeEnum,
   ErrorStatus,
+  MetricGranularity,
   PeakSignalDirection,
   QueueFilterStatus,
   RuleOperator,
   RuleState,
   RuleType,
   Severity,
-  StatsGranularity,
 } from '@alpen/core';
 import { createEnumFromTS } from './types';
-
-export const ChangeAggregationEnum = createEnumFromTS(
-  ChangeAggregationType,
-  'ChangeAggregation',
-);
 
 export const ConditionChangeEnum = createEnumFromTS(
   ChangeTypeEnum,
@@ -37,7 +32,11 @@ export const RuleOperatorEnum = createEnumFromTS(RuleOperator, 'RuleOperator');
 export const RuleStateEnum = createEnumFromTS(RuleState, 'RuleState');
 export const RuleTypeEnum = createEnumFromTS(RuleType, 'RuleType');
 export const SeverityType = createEnumFromTS(Severity, 'Severity');
-export const StatsGranularityEnum = createEnumFromTS(
-  StatsGranularity,
-  'StatsGranularity',
+export const MetricGranularityEnum = createEnumFromTS(
+  MetricGranularity,
+  'MetricGranularity',
+);
+export const AggregationTypeEnum = createEnumFromTS(
+  AggregationType,
+  'AggregationType',
 );

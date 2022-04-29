@@ -16,6 +16,7 @@ import { nanoid } from '../lib';
 import { Pipeline } from 'ioredis';
 import { getConfigDuration } from '../lib/config-utils';
 import { ensureScriptsLoaded } from './utils';
+import { AggregationType } from '../metrics/aggregators/aggregation';
 
 const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
   'JOB_NAMES_CACHE_TIMOUT',
@@ -23,7 +24,6 @@ const DEFAULT_JOBNAMES_TIMEOUT = getConfigDuration(
 );
 
 export type FilterJobAction = 'getJobs' | 'getIds' | 'remove';
-export type AggregationType = 'min' | 'max' | 'sum' | 'avg';
 
 export interface ScriptFilteredJobsResult {
   cursor?: number;
@@ -508,9 +508,15 @@ export class Scripts {
     start: Date | number = 0,
     end: Date | number = -1,
     jobName = '',
-    aggregation: AggregationType = 'avg'
+    aggregation: AggregationType = AggregationType.AVG,
   ): unknown[] {
-    const args = Scripts.getJobDurationValuesArgs(queue, status, start, end, jobName);
+    const args = Scripts.getJobDurationValuesArgs(
+      queue,
+      status,
+      start,
+      end,
+      jobName,
+    );
     args.push(aggregation);
     return args;
   }
@@ -521,7 +527,7 @@ export class Scripts {
     start: Date | number = 0,
     end: Date | number = -1,
     jobName = '',
-    aggregation: 'min' | 'max' | 'sum' | 'avg'
+    aggregation: AggregationType,
   ): Promise<number> {
     const client = await queue.client;
 
@@ -531,7 +537,7 @@ export class Scripts {
       start,
       end,
       jobName,
-      aggregation
+      aggregation,
     );
 
     return (<any>client).getAttemptsInRange(args);

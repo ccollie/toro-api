@@ -25,7 +25,7 @@ export const deleteMetric: FieldConfig = {
   async resolve(_, { input }, { accessors }: EZContext) {
     const { queueId, metricId } = input;
     const manager = accessors.getQueueManager(queueId, true);
-    const result = await manager.metricManager.deleteMetric(metricId);
+    const result = await manager.metricsManager.deleteMetric(metricId);
 
     if (!result) {
       throw boom.notFound(`No filter found with id "${metricId}"`);

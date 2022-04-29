@@ -1,121 +1,69 @@
 import {
+  StatsSnapshot,
   HostManager,
-  MeterSummary,
+  Metric,
   MetricManager,
-  StatisticalSnapshot,
-  StatsClient,
-  StatsGranularity,
-  StatsMetricType,
-  StatsRateType,
+  MetricName,
+  MetricGranularity
 } from '@alpen/core';
-import { parseRange } from '@alpen/shared';
+import { DateLike } from '@alpen/shared';
 import { Queue } from 'bullmq';
 import { EZContext } from 'graphql-ez';
 
-export function normalizeGranularity(granularity: string): StatsGranularity {
+export type MetricLike = Metric | MetricName | string;
+
+export function normalizeGranularity(granularity: string): MetricGranularity {
   return (
     granularity ? granularity.toLowerCase() : granularity
-  ) as StatsGranularity;
+  ) as MetricGranularity;
 }
 
-export function getClient(
+export function getMetricName(m: MetricLike): MetricName {
+  if (typeof m === 'string') {
+    return MetricName.fromCanonicalName(m);
+  }
+  if (m instanceof Metric) {
+    return m.name;
+  }
+  return m;
+}
+
+export function getMetricManagerFromMetric(
+  context: EZContext,
+  metric: MetricLike,
+): MetricManager | null {
+  const mn = getMetricName(metric);
+  const queueId = mn.getTagValue('queue');
+  const hostId = mn.getTagValue('host');
+  const queue = context.accessors.getQueueManager(queueId);
+  if (queue) return queue.metricsManager;
+  const host = context.accessors.getHost(hostId);
+  if (host) return host.metricsManager;
+  throw new Error('Invalid metric');
+}
+
+export function getMetricManager(
   context: EZContext,
   model: Queue | HostManager,
-): StatsClient {
+): MetricManager {
   if (model instanceof HostManager) {
     const host = model as HostManager;
-    const manager = host.queueManagers[0];
-    return manager.statsClient;
+    return host.metricsManager;
   } else {
-    // it's a queue
-    return context.accessors.getStatsClient(model as Queue);
+    const qm = context.accessors.getQueueManager(model);
+    return qm.metricsManager;
   }
-}
-
-export function getMetricsManager(
-  context: EZContext,
-  queue: Queue,
-): MetricManager {
-  const mgr = context.accessors.getQueueManager(queue);
-  return mgr.metricManager;
 }
 
 export async function getStats(
   context: EZContext,
   model: Queue | HostManager,
-  jobName: string,
-  range: string,
-  metric: StatsMetricType,
-  granularity: StatsGranularity,
-): Promise<StatisticalSnapshot[]> {
-  const client = getClient(context, model);
+  metric: MetricLike,
+  granularity: MetricGranularity,
+  start: DateLike,
+  end: DateLike,
+): Promise<StatsSnapshot> {
   const unit = normalizeGranularity(granularity);
-
-  const { startTime, endTime } = parseRange(range);
-  if (model instanceof HostManager) {
-    return client.getHostStats(jobName, metric, unit, startTime, endTime);
-  } else {
-    return client.getStats(jobName, metric, unit, startTime, endTime);
-  }
-}
-
-export async function aggregateStats(
-  context: EZContext,
-  model: Queue | HostManager,
-  jobName: string,
-  range: string,
-  metric: StatsMetricType,
-  granularity: StatsGranularity,
-): Promise<StatisticalSnapshot> {
-  const client = getClient(context, model);
-  let snapshot: StatisticalSnapshot;
-
-  const unit = normalizeGranularity(granularity);
-  const { startTime, endTime } = parseRange(range);
-
-  if (model instanceof HostManager) {
-    snapshot = await client.getAggregateHostStats(
-      jobName,
-      metric,
-      unit,
-      startTime,
-      endTime,
-    );
-  } else {
-    snapshot = await client.getAggregateStats(
-      jobName,
-      metric,
-      unit,
-      startTime,
-      endTime,
-    );
-  }
-
-  return snapshot;
-}
-
-export async function aggregateRates(
-  context: EZContext,
-  model: Queue | HostManager,
-  jobName: string,
-  range: string,
-  granularity: StatsGranularity,
-  type: StatsRateType,
-): Promise<MeterSummary> {
-  const client = getClient(context, model);
-
-  const unit = normalizeGranularity(granularity);
-  const { startTime, endTime } = parseRange(range);
-
-  if (model instanceof HostManager) {
-    return client.getHostAggregateRates(
-      jobName,
-      unit,
-      type,
-      startTime,
-      endTime,
-    );
-  } else {
-    return client.getAggregateRates(jobName, unit, type, startTime, endTime);
-  }
+  const manager = getMetricManager(context, model);
+  return manager.getStats(metric, unit, start, end);
 }

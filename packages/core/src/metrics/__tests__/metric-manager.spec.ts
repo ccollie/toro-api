@@ -45,9 +45,11 @@ describe('MetricManager', () => {
 
   describe('constructor', () => {
     it('should construct an object', () => {
-      const sut = new MetricManager(queueManager.queue, {
+      const sut = new MetricManager({
+        queue: queueManager.queue,
         host: 'host',
         bus: queueManager.bus,
+        client: client
       });
       expect(sut).toBeDefined();
     });
@@ -66,9 +68,11 @@ describe('MetricManager', () => {
     });
 
     it('creates a metric from JSON', async () => {
-      const sut = new MetricManager(queueManager.queue, {
+      const sut = new MetricManager({
+        queue: queueManager.queue,
         host: 'host',
         bus: queueManager.bus,
+        client
       });
       const metric = await sut.createMetric('jobs_waiting');
 
@@ -88,9 +92,11 @@ describe('MetricManager', () => {
       queueManager.bus.on(MetricsEventsEnum.METRIC_ADDED, (data) => {
         eventData = data;
       });
-      const sut = new MetricManager(queueManager.queue, {
+      const sut = new MetricManager({
+        queue: queueManager.queue,
         host: 'host',
         bus: queueManager.bus,
+        client
       });
 
       const metric = await sut.createMetric('jobs_waiting');
@@ -108,9 +114,11 @@ describe('MetricManager', () => {
   }
 
   function createManager(): MetricManager {
-    return new MetricManager(queueManager.queue, {
+    return new MetricManager({
+      queue: queueManager.queue,
       host: 'host',
       bus: queueManager.bus,
+      client
     });
   }
 

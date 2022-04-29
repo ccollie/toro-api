@@ -2,7 +2,6 @@ import { badRequest, notFound } from '@hapi/boom';
 import PQueue from 'p-queue';
 import ms from 'ms';
 import { Job, type JobState, Queue } from 'bullmq';
-import { StatsClient } from '../stats/stats-client';
 import { Rule, RuleManager } from '../rules';
 import { RuleAlert, RuleConfigOptions } from '../types';
 import { EventBus, LockManager } from '../redis';
@@ -49,7 +48,6 @@ function getRetention(): number {
 /**
  * Maintain all data related to a queue
  * @property {RuleManager} ruleManager
- * @property {StatsClient} statsClient
  * @property {EventBus} bus
  * @property {QueueListener} queueListener
  * @property {Rule[]} rules
@@ -60,9 +58,8 @@ export class QueueManager {
   public readonly hostManager: HostManager;
   public readonly config: QueueConfig;
   readonly queueListener: QueueListener;
-  readonly statsClient: StatsClient;
   readonly ruleManager: RuleManager;
-  readonly metricManager: MetricManager;
+  readonly metricsManager: MetricManager;
   readonly bus: EventBus;
   readonly clock: Clock;
   private _isReadOnly = false;
@@ -79,12 +76,8 @@ export class QueueManager {
     this.clock = this.queueListener.clock;
     this.bus = new EventBus(host.streamAggregator, getQueueBusKey(queue));
 
-    this.statsClient = new StatsClient({
-      queueId: this.id,
-      queue,
-      host: host.name,
-    });
-    this.metricManager = new MetricManager(this.queue, {
+    this.metricsManager = new MetricManager({
+      queue: this.queue,
       host: this.host,
       bus: this.bus,
       client: this.hostManager.client
@@ -103,11 +96,10 @@ export class QueueManager {
 
   async destroy(): Promise<void> {
     this.lock.off(LockManager.ACQUIRED, this.handleLockEvent);
-    this.metricManager.destroy();
+    this.metricsManager.destroy();
     this.ruleManager.destroy();
     await this.queueListener.destroy();
     this.bus.destroy();
-    this.statsClient.destroy();
     await this._workQueue.onIdle(); // should we just clear ?
     await this.queue.close();
   }
@@ -178,7 +170,7 @@ export class QueueManager {
   }
 
   get metrics(): Metric[] {
-    return this.metricManager.metrics;
+    return this.metricsManager.metrics;
   }
 
   private createQueueListener(): QueueListener {
@@ -190,7 +182,7 @@ export class QueueManager {
   }
 
   findMetric(id: string): Metric {
-    return this.metricManager.findMetricById(id);
+    return this.metricsManager.findMetricById(id);
   }
 
   addWork(fn: () => void | Promise<void>): void {
@@ -290,9 +282,9 @@ export class QueueManager {
     await Promise.all([
       this.queueListener.startListening(),
     ]);
-    this.metricManager.onMetricsUpdated(this.dispatchMetrics);
+    this.metricsManager.onMetricsUpdated(this.dispatchMetrics);
     await this.loadRules();
-    await this.metricManager.start();
+    await this.metricsManager.start();
   }
 
   async isPaused(): Promise<boolean> {
@@ -301,12 +293,12 @@ export class QueueManager {
 
   async pause(): Promise<void> {
     await this.queue.pause();
-    this.metricManager.stop();
+    this.metricsManager.stop();
   }
 
   async resume(): Promise<void> {
     await this.queue.resume();
-    await this.metricManager.start();
+    await this.metricsManager.start();
   }
 
   /****
@@ -429,7 +421,7 @@ export class QueueManager {
     if (this.hasLock) {
       this._workQueue
         .addAll([
-          () => this.metricManager.pruneData(),
+          () => this.metricsManager.pruneData(),
           () => this.ruleManager.pruneAlerts(this.dataRetention),
           () => this.bus.cleanup(),
         ])

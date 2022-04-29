@@ -2,13 +2,17 @@ import { ChunkedAssociativeArray, systemClock } from '../lib';
 import { Metric } from '../metrics';
 import Joi, { ObjectSchema } from 'joi';
 import { DurationSchema } from '../validation';
-import { calculateInterval, quantile } from '../stats';
+import {
+  AggregateFunction,
+  AggregationType,
+  getAggregateFunction,
+} from '../metrics';
+import { calculateInterval } from '../metrics/utils';
 import {
   ThresholdConditionEvaluator,
   ThresholdRuleEvaluationState,
 } from './condition-evaluator';
 import {
-  ChangeAggregationType,
   ChangeConditionOptions,
   ChangeTypeEnum,
   ErrorStatus,
@@ -16,13 +20,12 @@ import {
   RuleEvaluationState,
 } from '../types';
 
-
 export interface ChangeRuleEvaluationState
   extends ThresholdRuleEvaluationState {
   windowSize: number;
   timeShift: number;
   changeType: ChangeTypeEnum;
-  aggregation: ChangeAggregationType;
+  aggregation: AggregationType;
 }
 
 export function isChangeRuleEvaluationState(
@@ -40,14 +43,6 @@ export function isChangeRuleEvaluationState(
 
 const TRIM_THRESHOLD = 15;
 
-export type AggregateFunction = (data: number[]) => number;
-
-function percentileFactory(percentile: number): AggregateFunction {
-  return (data: number[]): number => {
-    return quantile(data, percentile);
-  };
-}
-
 const optionsSchema = Joi.object().keys({
   windowSize: DurationSchema,
   timeShift: DurationSchema.optional(),
@@ -57,15 +52,15 @@ const optionsSchema = Joi.object().keys({
     .default(ChangeTypeEnum.CHANGE),
   aggregationType: Joi.string()
     .valid(
-      ChangeAggregationType.AVG,
-      ChangeAggregationType.MIN,
-      ChangeAggregationType.MAX,
-      ChangeAggregationType.P90,
-      ChangeAggregationType.P95,
-      ChangeAggregationType.P99,
-      ChangeAggregationType.SUM,
+      AggregationType.AVG,
+      AggregationType.MIN,
+      AggregationType.MAX,
+      AggregationType.P90,
+      AggregationType.P95,
+      AggregationType.P99,
+      AggregationType.SUM,
     )
-    .default(ChangeAggregationType.AVG),
+    .default(AggregationType.AVG),
 });
 
 export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
@@ -74,7 +69,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
   private _count = 0;
   private _lastTick = 0;
   private readonly measurements: ChunkedAssociativeArray<number, number>;
-  private readonly aggregationType: ChangeAggregationType;
+  private readonly aggregationType: AggregationType;
   private readonly calculationMethod: AggregateFunction;
 
   public readonly windowSize: number;
@@ -94,7 +89,7 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     this.measurements = new ChunkedAssociativeArray<number, number>();
 
     this.fullWindow = 2 * windowSize + timeShift;
-    this.calculationMethod = getAggregationFunction(options.aggregationType);
+    this.calculationMethod = getAggregateFunction(options.aggregationType);
     this.aggregationType = options.aggregationType;
     this.usePercentage = options.changeType === ChangeTypeEnum.CHANGE;
   }
@@ -249,29 +244,5 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
 
   static get schema(): ObjectSchema {
     return optionsSchema;
-  }
-}
-
-export function getAggregationFunction(
-  aggregationType: ChangeAggregationType,
-): AggregateFunction {
-  switch (aggregationType) {
-    case ChangeAggregationType.AVG:
-      return (data: number[]): number => {
-        const total = data.reduce((res, value) => res + value, 0);
-        return data.length ? total / data.length : 0;
-      };
-    case ChangeAggregationType.MAX:
-      return (data: number[]) => Math.max(...data);
-    case ChangeAggregationType.MIN:
-      return (data: number[]) => Math.min(...data);
-    case ChangeAggregationType.SUM:
-      return (data: number[]) => data.reduce((res, value) => res + value, 0);
-    case ChangeAggregationType.P90:
-      return percentileFactory(0.9);
-    case ChangeAggregationType.P95:
-      return percentileFactory(0.95);
-    case ChangeAggregationType.P99:
-      return percentileFactory(0.99);
   }
 }

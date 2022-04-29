@@ -1,4 +1,5 @@
-import { MetricName, MetricType } from '../metric-name';
+import { MetricType } from '../types';
+import { MetricName } from '../metric-name';
 import { Transform } from '../events';
 import { Snapshot } from '../snapshot';
 

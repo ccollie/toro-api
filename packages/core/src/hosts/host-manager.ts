@@ -51,6 +51,7 @@ import { Channel, NotificationManager } from '../notifications';
 import { NotificationContext } from '../types';
 import { getHostUri } from '../lib';
 import { QueueWorker } from '../queues';
+import { MetricManager } from '../metrics';
 
 const queueConfigKey = (prefix: string, name: string): string => {
   return `${prefix}:${name}`;
@@ -68,6 +69,7 @@ export class HostManager {
   public readonly bus: EventBus;
   public readonly lock: LockManager;
   public readonly writer: WriteCache;
+  public readonly metricsManager: MetricManager;
 
   private readonly connectionOpts: ConnectionOptions;
   private readonly defaultRedisClient: RedisClient;
@@ -99,6 +101,11 @@ export class HostManager {
     this.writer = new WriteCache(client, this.lock);
 
     new Emittery().bindMethods(this as Record<string, any>);
+    this.metricsManager = new MetricManager({
+      client,
+      host: this.name,
+      bus: this.bus
+    });
 
     this._initialized = this.init();
   }
@@ -156,6 +163,7 @@ export class HostManager {
   async destroy(): Promise<void> {
     this.writer.destroy();
     this.bus.destroy();
+    this.metricsManager.stop();
     const dtors = this.queueManagers.map((manager) => () => manager.destroy());
     dtors.push(() => this.lock.destroy());
     dtors.push(() => this.streamAggregator.destroy());
@@ -294,7 +302,9 @@ export class HostManager {
     return values;
   }
 
-  async getJobCounts(states?: Omit<JobStatus, 'unknown'>[]): Promise<JobCounts> {
+  async getJobCounts(
+    states?: Omit<JobStatus, 'unknown'>[],
+  ): Promise<JobCounts> {
     states = states?.length === 0 ? JOB_STATES : states;
     const counts: JobCounts = Object.create(null);
     states.forEach((state) => {
@@ -304,7 +314,11 @@ export class HostManager {
     const queues = this.getQueues();
     queues.forEach((queue) => {
       // todo: use loader
-      getPipelinedCounts(pipeline, queue, states.map(x => '' + x));
+      getPipelinedCounts(
+        pipeline,
+        queue,
+        states.map((x) => '' + x),
+      );
     });
     const responses = await pipeline.exec().then(checkMultiErrors);
     let stateIndex = 0;
@@ -455,6 +469,8 @@ export class HostManager {
     }
     // make this pSettle ?
     await pAll(calls);
+
+    this.metricsManager.start();
   }
 
   private initFlowProducer(): FlowProducer {

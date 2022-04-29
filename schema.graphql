@@ -1,7 +1,4 @@
 type Query {
-  """Get the list of aggregate types available for metrics"""
-  aggregates: [AggregateInfo]!
-
   """Get general app info"""
   appInfo: AppInfo!
 
@@ -68,7 +65,6 @@ type Mutation {
 
   """Create a queue metric"""
   createMetric(input: CreateMetricInput!): Metric!
-  refreshMetricData(input: RefreshMetricDataInput!): [RefreshMetricDataResult]!
 
   """Update a job metric"""
   updateMetric(input: MetricInput!): Metric!
@@ -208,9 +204,6 @@ type Subscription {
     """The host to monitor"""
     hostId: String!
   ): OnNotificationChannelDeletedPayload!
-
-  """Subscribe for updates in host statistical snapshots"""
-  onHostStatsUpdated(input: StatsUpdatedSubscriptionFilter!): StatsSnapshot!
   onJobAdded(queueId: ID!): OnJobAddedPayload!
   onJobUpdated(queueId: String!, jobId: String!): OnJobUpdatedPayload!
   onJobProgress(queueId: String!, jobId: String!): OnJobProgressPayload!
@@ -236,9 +229,6 @@ type Subscription {
   onQueueStateChanged(queueId: String!): OnQueueStateChangedPayload!
   onQueueJobCountsChanged(queueId: String!): OnQueueJobCountsChangedPayload!
   onQueueJobUpdates(input: QueueJobUpdatesFilterInput!): OnQueueJobUpdatesPayload!
-
-  """Subscribe for updates in queue statistical snapshots"""
-  onQueueStatsUpdated(input: StatsUpdatedSubscriptionFilter!): StatsSnapshot!
   onQueueRegistered(
     """The host to monitor"""
     hostId: String!
@@ -250,7 +240,6 @@ type Subscription {
 
   """Returns an updated count of workers assigned to a queue"""
   onQueueWorkersCountChanged(queueId: String!): OnQueueWorkersCountPayload!
-  onQueueMetricValueUpdated(queueId: String!, metricId: String!): OnQueueMetricValueUpdated!
   onRuleAlert(queueId: ID!, ruleIds: [String!]): OnRuleAlertPayload!
 }
 
@@ -313,6 +302,13 @@ The `JSONSchema` scalar type represents JSONSchema values as specified by https:
 scalar JSONSchema
 
 """
+A metric name has a string name like "clientCount", and an optional list
+  of tags, each of which has a string name and value (for example key "host", value "production").
+  Tags allow the same metric to be measured along several different dimensions and collated later.
+"""
+scalar MetricName
+
+"""
 The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
 """
 scalar String
@@ -327,29 +323,13 @@ A field whose value conforms to the standard URL format as specified in RFC3986:
 """
 scalar URL
 
-enum AggregateTypeEnum {
-  None
-  Identity
-  Ewma
-  Latest
-  Min
-  Max
-  Mean
-  Sum
-  StdDev
-  Quantile
-  P75
-  P90
-  P95
-  P99
-  P995
-}
-
-enum ChangeAggregation {
+enum AggregationType {
+  LATEST
   MAX
   MIN
   AVG
   SUM
+  COUNT
   P90
   P95
   P99
@@ -378,24 +358,6 @@ enum ErrorLevel {
 enum FinishedStatus {
   completed
   failed
-}
-
-"""
-The method used to calculate the optimal bin width (and consequently number of bins) for a histogram
-"""
-enum HistogramBinningMethod {
-  """
-  Maximum of the ‘Sturges’ and ‘Freedman’ estimators. Provides good all around performance.
-  """
-  Auto
-
-  """Calculate the number of bins based on the Sturges method"""
-  Sturges
-
-  """
-  Calculate the number of histogram bins based on Freedman-Diaconis method
-  """
-  Freedman
 }
 
 enum HttpMethodEnum {
@@ -440,37 +402,44 @@ enum MetricCategory {
   Redis
 }
 
+enum MetricGranularity {
+  Minute
+  Hour
+  Day
+  Week
+  Month
+}
+
 enum MetricStatusType {
   failed
   completed
 }
 
+"""Available metric names"""
 enum MetricType {
-  None
-  Apdex
-  ActiveJobs
-  ConnectedClients
-  ConsecutiveFailures
-  Completed
-  CompletedRate
-  CurrentCompletedCount
-  CurrentFailedCount
-  DelayedJobs
-  ErrorRate
-  ErrorPercentage
-  Failures
-  Finished
-  FragmentationRatio
-  InstantaneousOps
-  JobRate
-  Latency
-  PeakMemory
-  PendingCount
-  ResponseTime
-  UsedMemory
-  Waiting
-  WaitingChildren
-  WaitTime
+  job_attempts
+  job_avg_attempts
+  jobs_active
+  jobs_completed
+  jobs_failed
+  jobs_finished
+  jobs_pending
+  jobs_delayed
+  jobs_waiting
+  jobs_waiting_children
+  jobs_runtime_ms
+  jobs_wait_time_ms
+  jobs_process_time_ms
+  completed_percentage
+  failed_percentage
+  redis_connected_clients
+  redis_instantaneous_ops_per_sec
+  redis_mem_fragmentation_ratio
+  redis_used_memory
+  redis_used_memory_peak
+  queues
+  paused_queues
+  workers
 }
 
 enum MetricValueType {
@@ -546,37 +515,6 @@ enum SortOrderEnum {
   DESC
 }
 
-enum StatsGranularity {
-  Minute
-  Hour
-  Day
-  Week
-  Month
-}
-
-enum StatsMetricType {
-  Latency
-  Wait
-}
-
-"""Base implementation for job stats information."""
-interface JobStatsInterface {
-  """The sample size"""
-  count: Int!
-
-  """The number of failed jobs in the sample interval"""
-  failed: Int!
-
-  """The number of completed jobs in the sample interval"""
-  completed: Int!
-
-  """The start of the interval"""
-  startTime: Date!
-
-  """The end of the interval"""
-  endTime: Date!
-}
-
 """
 NotificationChannels provide a consistent ways for users to be notified about incidents.
 """
@@ -648,18 +586,6 @@ type ActivateRuleResult {
 type AddJobLogResult {
   """The number of log entries after adding"""
   count: Int!
-}
-
-type AggregateInfo {
-  type: AggregateTypeEnum!
-  description: String!
-  isWindowed: Boolean!
-}
-
-type Aggregator {
-  type: AggregateTypeEnum!
-  options: JSONObject
-  description: String!
 }
 
 type AppInfo {
@@ -815,32 +741,6 @@ type FindJobsResult {
 
   """Total current index of the end of the last set of jobs returned"""
   current: Int!
-}
-
-type HistogramBin {
-  count: Int!
-
-  """Lower bound of the bin"""
-  x0: Float!
-
-  """Upper bound of the bin"""
-  x1: Float!
-}
-
-"""Records histogram binning data"""
-type HistogramPayload {
-  """The total number of values."""
-  total: Int!
-
-  """The minimum value in the data range."""
-  min: Float!
-
-  """The maximum value in the data range."""
-  max: Float!
-
-  """The width of the bins"""
-  width: Float!
-  bins: [HistogramBin]!
 }
 
 type Job {
@@ -1150,48 +1050,47 @@ type Metric {
   id: ID!
   type: MetricType!
 
-  """The id of the queue to which the metric belongs"""
-  queueId: ID!
-
-  """The name of the metric"""
-  name: String!
-
-  """Returns the description of the metric"""
-  description: String!
-
-  """The metric sampling interval."""
-  sampleInterval: Int
-
-  """Is the metric active (i.e. is data being collected)."""
-  isActive: Boolean!
-
-  """The metric options"""
-  options: JSONObject!
-  category: MetricCategory!
+  """The unit of the metric"""
   unit: String!
 
-  """The current value of the metric"""
-  currentValue: Float
+  """A short description of the metric"""
+  description: String!
+
+  """The list of allowed aggregations for this metric."""
+  aggregationTypes: [AggregationType]!
+
+  """The default aggregation for this metric."""
+  defaultAggregation: AggregationType!
 
   """Timestamp of when this metric was created"""
   createdAt: Date!
 
   """Timestamp of when this metric was created"""
   updatedAt: Date!
-  aggregator: Aggregator!
+
+  """The canonical name of the metric"""
+  canonicalName: String!
+
+  """The tags of the metric"""
+  tags: [String!]!
+
+  """Aggregates metrics within a range"""
+  aggregate(input: MetricsQueryInput!): Int!
+
+  """Gets rate data for a metric within a range"""
+  rate(input: MetricsQueryInput!): Meter!
   data(input: MetricDataInput!): [TimeseriesDataPoint]!
 
   """
   Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data
   """
   outliers(input: MetricDataOutliersInput!): [TimeseriesDataPoint]!
-  histogram(input: MetricsHistogramInput!): HistogramPayload!
 
   """Compute a percentile distribution."""
   percentileDistribution(input: MetricPercentileDistributionInput!): PercentileDistribution!
 
-  """Returns simple descriptive statistics from a range of metric data"""
-  summaryStats(input: MetricDataInput!): SummaryStatistics!
+  """Calculates summary stats over metric data in a given range"""
+  stats(input: MetricDataInput!): StatsSnapshot!
 
   """
   Returns the timestamps of the first and last data items recorded for the metric
@@ -1206,7 +1105,6 @@ type MetricInfo {
   type: MetricType!
   valueType: MetricValueType!
   unit: String
-  isPolling: Boolean!
 }
 
 type MetricsTimeseries {
@@ -1329,15 +1227,6 @@ type OnQueueJobUpdatesPayload {
   changes: [JobUpdateDelta!]!
 }
 
-"""Returns a stream of metric data updates"""
-type OnQueueMetricValueUpdated {
-  queueId: String!
-  value: Float!
-
-  """The timestamp of the time the value was recorded"""
-  ts: Date!
-}
-
 type OnQueuePausedPayload {
   queueId: String!
 }
@@ -1421,9 +1310,6 @@ type Queue {
   """Returns the current default job options of the specified queue."""
   defaultJobOptions: JobOptions
   name: String!
-
-  """Compute the histogram of job data."""
-  histogram(input: HistogramInput!): HistogramPayload!
   host: String!
   hostId: ID!
 
@@ -1466,15 +1352,14 @@ type Queue {
   """Gets the last recorded queue stats snapshot for a metric"""
   lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
   limiter: QueueLimiter
+
+  """The metrics associated with the queue"""
   metrics: [Metric!]!
   metricCount: Int!
   metricsData(input: MetricsDataInput): MetricsTimeseries
 
   """Returns the number of jobs waiting to be processed."""
   pendingJobCount: Int!
-
-  """Compute a percentile distribution."""
-  percentileDistribution(input: PercentileDistributionInput!): PercentileDistribution!
 
   """Get repeatable meta jobs."""
   repeatableJobs(input: RepeatableJobsInput): [RepeatableJob!]!
@@ -1493,29 +1378,11 @@ type Queue {
   schedulers(limit: Int): [QueueScheduler!]!
   schedulerCount: Int!
 
-  """Queries for queue stats snapshots within a range"""
+  """Queries for metric snapshots within a range"""
   stats(input: StatsQueryInput!): [StatsSnapshot!]!
-
-  """Aggregates queue statistics within a range"""
-  statsAggregate(input: StatsQueryInput!): StatsSnapshot
 
   """Gets the time range of recorded stats for a queue/host"""
   statsDateRange(input: StatsSpanInput!): TimeSpan
-
-  """
-  Gets the current job Throughput rates based on an exponential moving average
-  """
-  throughput(input: StatsRateQueryInput): Meter!
-
-  """
-  Gets the current job Errors rates based on an exponential moving average
-  """
-  errorRate(input: StatsRateQueryInput): Meter!
-
-  """
-  Gets the current job ErrorPercentage rates based on an exponential moving average
-  """
-  errorPercentageRate(input: StatsRateQueryInput): Meter!
 
   """Returns the number of jobs waiting to be processed."""
   waitingCount: Int!
@@ -1589,30 +1456,17 @@ type QueueHost {
     unregisteredOnly: Boolean = true
   ): [DiscoverQueuesPayload!]!
 
-  """
-  Gets the current job ErrorPercentage rates for a host based on an exponential moving average
-  """
-  errorPercentageRate(input: StatsRateQueryInput): Meter!
-
-  """
-  Gets the current job Errors rates for a host based on an exponential moving average
-  """
-  errorRate(input: StatsRateQueryInput): Meter!
-
-  """Compute the histogram of job data."""
-  histogram(input: HistogramInput!): HistogramPayload!
-
   """Get job counts for a host"""
   jobCounts: JobCounts!
 
   """Gets the last recorded queue stats snapshot for a metric"""
   lastStatsSnapshot(input: StatsLatestInput): StatsSnapshot
 
+  """The metrics associated with the host"""
+  metrics: [Metric!]!
+
   """The name of the host"""
   name: String!
-
-  """Compute a percentile distribution."""
-  percentileDistribution(input: PercentileDistributionInput!): PercentileDistribution!
   ping: PingPayload!
 
   """The queues registered for this host"""
@@ -1622,19 +1476,11 @@ type QueueHost {
   queueCount: Int!
   redis: RedisInfo!
 
-  """Queries for queue stats snapshots within a range"""
+  """Queries for metric snapshots within a range"""
   stats(input: StatsQueryInput!): [StatsSnapshot!]!
-
-  """Aggregates queue statistics within a range"""
-  statsAggregate(input: StatsQueryInput!): StatsSnapshot
 
   """Gets the time range of recorded stats for a queue/host"""
   statsDateRange(input: StatsSpanInput!): TimeSpan
-
-  """
-  Gets the current job Throughput rates for a host based on an exponential moving average
-  """
-  throughput(input: StatsRateQueryInput): Meter!
   uri: String!
 
   """
@@ -1747,13 +1593,6 @@ type RedisInfo {
   mem_fragmentation_ratio: Float
   role: String!
   os: String!
-}
-
-type RefreshMetricDataResult {
-  metricId: String!
-  metric: Metric!
-  start: Date
-  end: Date
 }
 
 type RepeatableJob {
@@ -1972,22 +1811,10 @@ type SlackNotificationChannel implements NotificationChannel {
   token: String
 }
 
-"""Queue job stats snapshot."""
-type StatsSnapshot implements JobStatsInterface {
-  """The sample size"""
+"""Stats snapshot."""
+type StatsSnapshot {
+  """The number of samples"""
   count: Int!
-
-  """The number of failed jobs in the sample interval"""
-  failed: Int!
-
-  """The number of completed jobs in the sample interval"""
-  completed: Int!
-
-  """The start of the interval"""
-  startTime: Date!
-
-  """The end of the interval"""
-  endTime: Date!
 
   """The average of values during the period"""
   mean: Float!
@@ -2015,57 +1842,6 @@ type StatsSnapshot implements JobStatsInterface {
 
   """The 99.5th percentile"""
   p995: Float!
-
-  """
-  The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled,divided by the number of seconds the process has been running), it doesn’t offer a sense of recency.
-  """
-  meanRate: Float!
-
-  """One minute exponentially weighted moving average"""
-  m1Rate: Float!
-
-  """Five minute exponentially weighted moving average"""
-  m5Rate: Float!
-
-  """Fifteen minute exponentially weighted moving average"""
-  m15Rate: Float!
-}
-
-"""Basic descriptive statistics"""
-type SummaryStatistics {
-  """The number of input values included in calculations"""
-  count: Int!
-
-  """The minimum value."""
-  min: Float
-
-  """The maximum value."""
-  max: Float
-
-  """The average value - the sum of all values over the number of values."""
-  mean: Float!
-
-  """
-  The median is the middle number of a list. This is often a good indicator of "the middle" when there are outliers that skew the mean value.
-  """
-  median: Float
-
-  """The variance is the sum of squared deviations from the mean."""
-  variance: Float!
-
-  """
-  The sample variance is the sum of squared deviations from the mean.
-  The sample variance is distinguished from the variance by dividing the sum of squared deviations by (n - 1) instead of n. This corrects the bias in estimating a value from a sample set rather than the full population.
-  """
-  sampleVariance: Float!
-
-  """
-  The standard deviation is the square root of the variance. This is also known as the population standard deviation. It is useful for measuring the amount of variation or dispersion in a set of values.
-  """
-  standardDeviation: Float!
-
-  """The standard deviation is the square root of the sample variance."""
-  sampleStandardDeviation: Float!
 }
 
 type TimeseriesDataPoint implements TimeseriesDataPointInterface {
@@ -2177,11 +1953,6 @@ input AddJobLogInput {
   message: String!
 }
 
-input AggregatorInput {
-  type: AggregateTypeEnum!
-  options: JSONObject
-}
-
 input BulkJobActionInput {
   queueId: ID!
   jobIds: [ID!]!
@@ -2207,11 +1978,11 @@ input ChangeConditionInput {
   windowSize: Duration!
 
   """
-  Lookback period (ms). How far back are we going to compare eg 1 hour means we're comparing now vs 1 hour ago
+  Lookback period (ms). How far back are we going to compare eg 1 hour means we are comparing now vs 1 hour ago
   """
   timeShift: Duration!
   changeType: ConditionChangeType!
-  aggregationType: ChangeAggregation!
+  aggregationType: AggregationType!
 }
 
 input ChangeJobDelayInput {
@@ -2255,26 +2026,12 @@ input CreateMailNotificationChannelInput {
 
 """Input fields for creating a metric"""
 input CreateMetricInput {
-  type: MetricType!
-
   """The id of the queue to which the metric belongs"""
   queueId: ID!
+  type: MetricType!
 
   """The name of the metric"""
   name: String!
-
-  """A description of the metric being measured."""
-  description: String
-
-  """The metric sampling interval."""
-  sampleInterval: Int
-
-  """Is the metric active (i.e. is data being collected)."""
-  isActive: Boolean!
-
-  """The metric options"""
-  options: JSONObject!
-  aggregator: AggregatorInput
 }
 
 input CreateRepeatableJobByCronInput {
@@ -2382,14 +2139,9 @@ input DeleteQueueStatsInput {
   queueId: ID!
 
   """
-  Optional job name to delete stats for. If omitted, all queue stats are erased
-  """
-  jobName: String
-
-  """
   Optional stats granularity. If omitted, the entire range of data is deleted
   """
-  granularity: StatsGranularity
+  granularity: MetricGranularity
 }
 
 input DeleteRepeatableJobByKeyInput {
@@ -2545,43 +2297,6 @@ input GetJobsInput {
   limit: Int = 10
   status: JobState = completed
   sortOrder: SortOrderEnum = ASC
-}
-
-"""Options for generating histogram bins"""
-input HistogramBinOptionsInput {
-  """Generate a "nice" bin count"""
-  pretty: Boolean = true
-
-  """Optional number of bins to select."""
-  binCount: Int
-
-  """Method used to compute histogram bin count"""
-  binMethod: HistogramBinningMethod = Auto
-
-  """Optional minimum value to include in counts"""
-  minValue: Float
-
-  """Optional maximum value to include in counts"""
-  maxValue: Float
-}
-
-"""Records histogram binning data"""
-input HistogramInput {
-  """An optional job name to filter on"""
-  jobName: String
-
-  """The metric requested"""
-  metric: StatsMetricType = Latency
-
-  """Stats snapshot granularity"""
-  granularity: StatsGranularity!
-
-  """The minimum date to consider"""
-  from: Date!
-
-  """The maximum date to consider"""
-  to: Date!
-  options: HistogramBinOptionsInput
 }
 
 input HostQueuesFilter {
@@ -2800,26 +2515,13 @@ input MetricDataOutliersInput {
 input MetricInput {
   """the id of the metric"""
   id: ID!
-  type: MetricType!
 
   """The id of the queue to which the metric belongs"""
   queueId: ID!
+  type: MetricType!
 
   """The name of the metric"""
   name: String
-
-  """A description of the metric being measured."""
-  description: String
-
-  """The metric sampling interval."""
-  sampleInterval: Int
-
-  """Is the metric active (i.e. is data being collected)."""
-  isActive: Boolean!
-
-  """The metric options"""
-  options: JSONObject
-  aggregator: AggregatorInput
 }
 
 input MetricPercentileDistributionInput {
@@ -2842,15 +2544,20 @@ input MetricsDataInput {
   end: DateTime
 }
 
-"""Compute a frequency distribution of a range of metric data."""
-input MetricsHistogramInput {
-  """The minimum date to consider"""
-  from: Date!
+"""Metrics filter."""
+input MetricsQueryInput {
+  """The metric requested"""
+  metric: MetricType!
 
-  """The maximum date to consider"""
-  to: Date!
-  options: HistogramBinOptionsInput
-  outlierFilter: OutlierFilterInput
+  """Stats snapshot granularity"""
+  granularity: MetricGranularity = Minute
+
+  """Range start"""
+  start: Date!
+
+  """Range end"""
+  end: Date!
+  aggregator: AggregationType!
 }
 
 input MoveJobToDelayedInput {
@@ -2897,24 +2604,6 @@ input PeakConditionInput {
   The lag of the moving window (in milliseconds).  For example, a lag of 5000 will use the last 5 seconds of observationsto smooth the data.
   """
   lag: Duration
-}
-
-"""Records histogram binning data"""
-input PercentileDistributionInput {
-  """An optional job name to filter on"""
-  jobName: String
-
-  """The metric requested"""
-  metric: StatsMetricType = Latency
-
-  """Stats snapshot granularity"""
-  granularity: StatsGranularity!
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String!
-
-  """The percentiles to get frequencies for"""
-  percentiles: [Float!] = [0.5, 0.75, 0.9, 0.95, 0.99, 0.995]
 }
 
 input QueueCleanInput {
@@ -2988,15 +2677,6 @@ input QueueRuleAlertsInput {
 
   """The maximum number of alerts to return"""
   limit: Int!
-}
-
-input RefreshMetricDataInput {
-  metricId: String!
-  start: Date
-  end: Date
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String
 }
 
 input RegisterQueueInput {
@@ -3151,38 +2831,22 @@ input SlackNotificationChannelUpdate {
 
 """Queue stats filter to getting latest snapshot."""
 input StatsLatestInput {
-  """An optional job name to filter on"""
-  jobName: String
-
   """The metric requested"""
-  metric: StatsMetricType = Latency
+  metric: MetricName
 
   """Stats snapshot granularity"""
-  granularity: StatsGranularity = Minute
+  granularity: MetricGranularity = Minute
 }
 
-"""Queue stats filter."""
+"""Queue metrics filter."""
 input StatsQueryInput {
-  """An optional job name to filter on"""
-  jobName: String
-
   """The metric requested"""
-  metric: StatsMetricType = Latency
+  metric: MetricType!
 
-  """Stats snapshot granularity"""
-  granularity: StatsGranularity!
-
-  """An expression specifying the range to query e.g. yesterday, last_7days"""
-  range: String!
-}
-
-"""Queue stats rates filter."""
-input StatsRateQueryInput {
-  """An optional job name to filter on"""
-  jobName: String
-
-  """Stats snapshot granularity"""
-  granularity: StatsGranularity!
+  """Snapshot granularity"""
+  granularity: MetricGranularity
+  start: Date!
+  end: Date!
 
   """An expression specifying the range to query e.g. yesterday, last_7days"""
   range: String!
@@ -3192,22 +2856,8 @@ input StatsSpanInput {
   """The host/queue to query"""
   id: ID!
   jobName: String
-  granularity: StatsGranularity
-}
-
-"""Filtering options for stats subscriptions."""
-input StatsUpdatedSubscriptionFilter {
-  """The id of the queue or host to subscribe to"""
-  id: ID!
-
-  """An optional job name for filtering"""
-  jobName: String
-
-  """The metric requested"""
-  metric: StatsMetricType
-
-  """Data granularity"""
-  granularity: StatsGranularity
+  metric: MetricType!
+  granularity: MetricGranularity
 }
 
 input ThresholdConditionInput {

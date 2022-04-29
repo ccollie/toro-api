@@ -7,6 +7,6 @@ export const metricCount: FieldConfig = {
   args: {},
   async resolve(queue: Queue, _, { accessors }: EZContext): Promise<number> {
     const manager = accessors.getQueueManager(queue);
-    return manager.metricManager.metrics.length;
+    return manager.metricsManager.metrics.length;
   },
 };

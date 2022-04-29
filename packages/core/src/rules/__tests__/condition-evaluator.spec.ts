@@ -9,8 +9,7 @@ import {
 } from '../../types';
 
 import { ManualClock } from '../../lib';
-import { Metric } from '../../metrics';
-import { Gauge as GaugeName, NoTags } from '../../metrics/metric-name';
+import { Gauge as GaugeName, NoTags, Metric } from '../../metrics';
 
 describe('Condition Evaluation', () => {
   function createMetric(): Metric {

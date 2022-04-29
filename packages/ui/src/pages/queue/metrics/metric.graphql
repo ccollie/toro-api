@@ -1,18 +1,13 @@
 fragment Metric on Metric {
     id
     type
-    queueId
-    name
+    canonicalName
     description
-    isActive
-    options
     createdAt
     updatedAt
-    sampleInterval
-    aggregator {
-        type
-        options
-    }
+    aggregationTypes
+    defaultAggregation
+    unit
     dateRange {
         startTime
         endTime
@@ -26,15 +21,6 @@ query GetAvailableMetrics {
         description
         unit
         category
-        isPolling
-    }
-}
-
-query GetAvailableAggregates {
-    aggregates {
-        type
-        isWindowed
-        description
     }
 }
 

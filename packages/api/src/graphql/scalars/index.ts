@@ -6,7 +6,6 @@ export * from './duration';
 export * from './jobProgress';
 export * from './jobRemoveOption';
 export * from './jsonSchema';
-export * from './StatsMetricsTypeEnum';
 export * from './JobFilterQuery';
 export * from './QueueEventsEnum';
 export * from './timespan';
@@ -15,6 +14,7 @@ export * from './MetricCategory';
 export * from './MetricValueType';
 export * from './types';
 export * from './extended-metric';
+export * from './metric-name';
 
 export {
   GraphQLEmailAddress,

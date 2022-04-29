@@ -1,17 +1,6 @@
-fragment Meter on Meter {
-  count
-  meanRate
-  m1Rate
-  m5Rate
-  m15Rate
-}
 
 fragment StatsSnapshot on StatsSnapshot {
   count
-  failed
-  completed
-  startTime
-  endTime
   stddev
   mean
   min
@@ -21,10 +10,6 @@ fragment StatsSnapshot on StatsSnapshot {
   p95
   p99
   p995
-  meanRate
-  m1Rate
-  m5Rate
-  m15Rate
 }
 
 query GetStatsSpan($id: ID!, $input: StatsSpanInput!) {
@@ -57,17 +42,5 @@ query GetHostStatsLatest($id: ID!, $input: StatsLatestInput!) {
     lastStatsSnapshot(input: $input) {
       ...StatsSnapshot
     }
-  }
-}
-
-subscription QueueStatsUpdated($input: StatsUpdatedSubscriptionFilter!) {
-  onQueueStatsUpdated(input: $input) {
-    ...StatsSnapshot
-  }
-}
-
-subscription HostStatsUpdated($input: StatsUpdatedSubscriptionFilter!) {
-  onHostStatsUpdated(input: $input) {
-    ...StatsSnapshot
   }
 }

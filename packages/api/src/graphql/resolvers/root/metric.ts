@@ -12,7 +12,7 @@ export const metric: FieldConfig = {
   },
   async resolve(_, { queueId, metricId }, { accessors }: EZContext) {
     const manager = accessors.getQueueManager(queueId);
-    const metric = await manager.metricManager.getMetric(metricId);
+    const metric = await manager.metricsManager.getMetric(metricId);
     if (!metric) {
       throw boom.notFound(`Cannot find a metric with the id "${metric.id}"`);
     }

@@ -1,5 +1,6 @@
-import { MetricName, MetricType } from '../metric-name';
+import { MetricName } from '../metric-name';
 import { Snapshot } from '../snapshot';
+import { MetricType } from '../types';
 
 function prometheusTypeName(name: MetricName): string {
   // distributions are reported as derived gauges

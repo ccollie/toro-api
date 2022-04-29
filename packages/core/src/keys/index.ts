@@ -1,8 +1,8 @@
 import { getValue as getConfig } from '../config/index';
 import { firstChar } from '@alpen/shared';
 import { Queue } from 'bullmq';
-import { StatsGranularity, StatsMetricType } from '../stats/types';
 import { MetricLike, getCanonicalName } from '../metrics/utils';
+import { MetricGranularity } from '../metrics';
 
 const statsPrefix = getConfig('statsPrefix', 'alpen');
 
@@ -17,10 +17,10 @@ export function getLockKey(host: string): string {
 }
 
 export function getGranularitySuffix(
-  granularity?: StatsGranularity,
+  granularity?: MetricGranularity,
 ): string | null {
   if (!granularity) return null;
-  if (granularity === StatsGranularity.Month) {
+  if (granularity === MetricGranularity.Month) {
     return 'mt';
   }
   return firstChar(granularity).toLowerCase();
@@ -41,41 +41,10 @@ export function getKey(
   }
 }
 
-export function getStatsKey(
-  queue: Queue,
-  jobName?: string,
-  metric?: StatsMetricType,
-  granularity?: StatsGranularity,
-): string {
-  const parts = ['stats', metric];
-  if (jobName) parts.push(jobName);
-  const suffix = getGranularitySuffix(granularity);
-  if (suffix) {
-    parts.push(`1${suffix}`);
-  }
-  const fragment = parts.join(':');
-  return queue.toKey(fragment);
-}
-
-export function getHostStatsKey(
-  host: string,
-  jobName: string,
-  metric: StatsMetricType,
-  unit: StatsGranularity,
-): string {
-  const parts = ['stats', metric];
-  if (jobName) parts.push(jobName);
-  const suffix = getGranularitySuffix(unit);
-  if (suffix) {
-    parts.push(`1${suffix}`);
-  }
-  return getHostKey(host, ...parts);
-}
-
 export function getHostMetricsKey(
   host: string,
   metric?: MetricLike,
-  unit?: StatsGranularity,
+  unit?: MetricGranularity,
 ): string {
   const parts = ['metrics'];
   if (metric) {
@@ -92,7 +61,7 @@ export function getHostMetricsKey(
 export function getQueueMetricDataKey(
   queue: Queue,
   metric: MetricLike,
-  granularity?: StatsGranularity,
+  granularity?: MetricGranularity,
 ): string {
   const parts = ['metrics', getCanonicalName(metric)];
   const suffix = getGranularitySuffix(granularity);
@@ -105,10 +74,9 @@ export function getQueueMetricDataKey(
 
 export function getQueueStatsPattern(
   queue: Queue,
-  jobName?: string,
-  granularity?: StatsGranularity,
+  granularity?: MetricGranularity,
 ): string {
-  const pattern = getStatsKey(queue, jobName, 'wait', granularity);
+  const pattern = getMetricsDataKey('', queue, '');
   const parts = pattern.split(':');
   const pos = parts.length - (!!granularity ? 2 : 1);
   parts[pos] = '*';
@@ -134,13 +102,13 @@ export function getQueueAlertsIndex(queue: Queue): string {
   return getKey(null, queue, null, 'alerts-index');
 }
 
-export function getMetricsKey(queue: Queue, id?: string): string {
+export function getMetricsKey(host: string, queue: Queue, id?: string): string {
   const tag = 'metrics' + (id ? `:${id}` : '');
-  return getKey(null, queue, null, tag);
+  return getKey(host, queue, null, tag);
 }
 
-export function getMetricsDataKey(queue: Queue, id: string): string {
-  const base = getMetricsKey(queue, id);
+export function getMetricsDataKey(host: string, queue: Queue, id: string): string {
+  const base = getMetricsKey(host, queue, id);
   return `${base}:data`;
 }
 

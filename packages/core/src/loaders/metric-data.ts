@@ -1,11 +1,13 @@
 import pMap from 'p-map';
 import DataLoader from 'dataloader';
 import { DateLike } from '@alpen/shared';
-import {Metric, MetricManager, QueueIdTagKey} from '../metrics';
 import {
-  filterOutlierObjects,
-  OutlierMethod,
-} from '../stats/outliers';
+  Metric,
+  MetricManager,
+  QueueIdTagKey,
+  MetricGranularity,
+} from '../metrics';
+import { filterOutlierObjects, OutlierMethod } from '../metrics/outliers';
 import { TimeseriesDataPoint } from '../stats/types';
 import { logger } from '../logger';
 import { getQueueById, getQueueHostClient, getQueueManager } from './accessors';
@@ -15,26 +17,26 @@ export interface MetricDataLoaderKey {
   metric: Metric;
   start?: DateLike;
   end?: DateLike;
-  limit?: number;
+  granularity?: MetricGranularity;
 }
 
 function getCacheKey(key: MetricDataLoaderKey): string {
-  const { metric, start = 0, end = 0, limit = 0 } = key;
-  return `${metric.id}-${start}-${end}-${limit}`;
+  const { metric, start = 0, end = 0, granularity } = key;
+  return `${metric.id}-${start}-${end}-${granularity}`;
 }
 
 function getMetricManager(metric: Metric): MetricManager {
   const qid = metric.getTagValue(QueueIdTagKey);
   const queue = getQueueManager(qid);
-  return queue.metricManager;
+  return queue.metricsManager;
 }
 
 async function getSingle(
   key: MetricDataLoaderKey,
 ): Promise<TimeseriesDataPoint[]> {
-  const { metric, start, end, limit } = key;
+  const { metric, start, end, granularity = MetricGranularity.Minute } = key;
   const metrics = getMetricManager(metric);
-  return metrics.getMetricData(metric, start, end, limit);
+  return metrics.getMetricDataRange(metric, granularity, start, end);
 }
 
 type QueryMeta = {
@@ -87,9 +89,9 @@ async function getDataBatch(
 
     metas.forEach((meta) => {
       const { args } = meta;
-      const { metric, start, end, limit } = args;
+      const { metric, start, end, granularity } = args;
       const manager = getMetricManager(metric);
-      manager.pipelineGetMetricData(pipeline, metric, start, end, limit);
+      manager.pipelineGetMetricData(pipeline, metric, granularity, start, end);
     });
 
     const response = await pipeline.exec();
@@ -109,13 +111,13 @@ export function getMetricData(
   metric: Metric,
   start?: DateLike,
   end?: DateLike,
-  limit?: number,
+  granularity?: MetricGranularity,
 ): Promise<TimeseriesDataPoint[]> {
   const key: MetricDataLoaderKey = {
     metric,
     start,
     end,
-    limit,
+    granularity,
   };
   return metricData.load(key);
 }
@@ -127,8 +129,8 @@ export async function getFilteredMetricData(
     threshold?: number;
   },
 ): Promise<TimeseriesDataPoint[]> {
-  const { metric, start, end, limit } = options;
-  const data = await getMetricData(metric, start, end, limit);
+  const { metric, start, end, granularity } = options;
+  const data = await getMetricData(metric, start, end, granularity);
   if (outlierFilter) {
     const { method, threshold } = outlierFilter;
     return filterOutlierObjects(method, data, (x) => x.value, { threshold });

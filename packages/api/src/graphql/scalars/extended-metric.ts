@@ -6,7 +6,7 @@ import { isValidMetric } from '@alpen/core';
 export const ExtendedMetricScalarType = new GraphQLScalarType({
   name: 'ExtendedMetricType',
   description:
-    'Metric type - allows parsing of regular metric as well as distribution aggregates',
+    'Metric type - allows parsing of regular metric with optional aggregate',
   parseValue(value): ExtendedMetricTypeName {
     const res = {
       metric: 'completed_percentage', // dummy

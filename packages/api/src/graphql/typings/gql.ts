@@ -34,6 +34,12 @@ export type Scalars = {
   JobProgress: string | number | Record<string, unknown>;
   /** Specifies the number of jobs to keep after an operation (e.g. complete or fail).A bool(true) causes a job to be removed after the action */
   JobRemoveOption: boolean | number;
+  /**
+   * A metric name has a string name like "clientCount", and an optional list
+   *   of tags, each of which has a string name and value (for example key "host", value "production").
+   *   Tags allow the same metric to be measured along several different dimensions and collated later.
+   */
+  MetricName: any;
   /** The javascript `Date` as integer. Type represents date and time as number of milliseconds from start of UNIX epoch. */
   Timestamp: number;
   /** A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt. */
@@ -50,48 +56,31 @@ export type ActivateRuleResult = {
   rule: Rule;
 };
 
+export type AddJobLogInput = {
+  /** The id of the job */
+  id: Scalars['ID'];
+  /** The message to log */
+  message: Scalars['String'];
+  /** The id of the queue the job belongs to */
+  queueId: Scalars['ID'];
+};
+
 export type AddJobLogResult = {
   /** The number of log entries after adding */
   count: Scalars['Int'];
-  /** The job id */
-  id: Scalars['String'];
-  state?: Maybe<JobType>;
 };
 
-export type AggregateInfo = {
-  description: Scalars['String'];
-  isWindowed: Scalars['Boolean'];
-  type: AggregateTypeEnum;
-};
-
-export enum AggregateTypeEnum {
-  Ewma = 'Ewma',
-  Identity = 'Identity',
-  Latest = 'Latest',
-  Max = 'Max',
-  Mean = 'Mean',
-  Min = 'Min',
-  None = 'None',
-  P75 = 'P75',
+export enum AggregationType {
+  Avg = 'AVG',
+  Count = 'COUNT',
+  Latest = 'LATEST',
+  Max = 'MAX',
+  Min = 'MIN',
   P90 = 'P90',
   P95 = 'P95',
   P99 = 'P99',
-  P995 = 'P995',
-  Quantile = 'Quantile',
-  StdDev = 'StdDev',
-  Sum = 'Sum',
+  Sum = 'SUM',
 }
-
-export type Aggregator = {
-  description: Scalars['String'];
-  options?: Maybe<Scalars['JSONObject']>;
-  type: AggregateTypeEnum;
-};
-
-export type AggregatorInput = {
-  options?: InputMaybe<Scalars['JSONObject']>;
-  type: AggregateTypeEnum;
-};
 
 export type AppInfo = {
   author?: Maybe<Scalars['String']>;
@@ -126,24 +115,14 @@ export type BulkStatusItem = {
   success: Scalars['Boolean'];
 };
 
-export enum ChangeAggregation {
-  Avg = 'AVG',
-  Max = 'MAX',
-  Min = 'MIN',
-  P90 = 'P90',
-  P95 = 'P95',
-  P99 = 'P99',
-  Sum = 'SUM',
-}
-
 export type ChangeConditionInput = {
-  aggregationType: ChangeAggregation;
+  aggregationType: AggregationType;
   changeType: ConditionChangeType;
   /** The value needed to trigger an error notification */
   errorThreshold: Scalars['Float'];
   /** The comparison operator */
   operator: RuleOperator;
-  /** Lookback period (ms). How far back are we going to compare eg 1 hour means we're comparing now vs 1 hour ago */
+  /** Lookback period (ms). How far back are we going to compare eg 1 hour means we are comparing now vs 1 hour ago */
   timeShift: Scalars['Duration'];
   /** The value needed to trigger an warning notification */
   warningThreshold?: InputMaybe<Scalars['Float']>;
@@ -215,19 +194,10 @@ export type CreateMailNotificationChannelInput = {
 
 /** Input fields for creating a metric */
 export type CreateMetricInput = {
-  aggregator?: InputMaybe<AggregatorInput>;
-  /** A description of the metric being measured. */
-  description?: InputMaybe<Scalars['String']>;
-  /** Is the metric active (i.e. is data being collected). */
-  isActive: Scalars['Boolean'];
   /** The name of the metric */
   name: Scalars['String'];
-  /** The metric options */
-  options: Scalars['JSONObject'];
   /** The id of the queue to which the metric belongs */
   queueId: Scalars['ID'];
-  /** The metric sampling interval. */
-  sampleInterval?: InputMaybe<Scalars['Int']>;
   type: MetricType;
 };
 
@@ -366,9 +336,7 @@ export type DeleteQueueOptions = {
 
 export type DeleteQueueStatsInput = {
   /** Optional stats granularity. If omitted, the entire range of data is deleted */
-  granularity?: InputMaybe<StatsGranularity>;
-  /** Optional job name to delete stats for. If omitted, all queue stats are erased */
-  jobName?: InputMaybe<Scalars['String']>;
+  granularity?: InputMaybe<MetricGranularity>;
   queueId: Scalars['ID'];
 };
 
@@ -455,7 +423,7 @@ export type FindJobsInput = {
   /** The cursor to start from */
   cursor?: InputMaybe<Scalars['String']>;
   /** A JS compatible Search expression, e.g (name === "transcode") && (responseTime > 10000) */
-  expression: Scalars['String'];
+  expression?: InputMaybe<Scalars['String']>;
   /** Optionally filter jobs by id pattern e.g. foo?-* */
   pattern?: InputMaybe<Scalars['String']>;
   /** The id of the desired queue */
@@ -554,66 +522,6 @@ export type GetJobsInput = {
   status?: InputMaybe<JobState>;
 };
 
-export type HistogramBin = {
-  count: Scalars['Int'];
-  /** Lower bound of the bin */
-  x0: Scalars['Float'];
-  /** Upper bound of the bin */
-  x1: Scalars['Float'];
-};
-
-/** Options for generating histogram bins */
-export type HistogramBinOptionsInput = {
-  /** Optional number of bins to select. */
-  binCount?: InputMaybe<Scalars['Int']>;
-  /** Method used to compute histogram bin count */
-  binMethod?: InputMaybe<HistogramBinningMethod>;
-  /** Optional maximum value to include in counts */
-  maxValue?: InputMaybe<Scalars['Float']>;
-  /** Optional minimum value to include in counts */
-  minValue?: InputMaybe<Scalars['Float']>;
-  /** Generate a "nice" bin count */
-  pretty?: InputMaybe<Scalars['Boolean']>;
-};
-
-/** The method used to calculate the optimal bin width (and consequently number of bins) for a histogram */
-export enum HistogramBinningMethod {
-  /** Maximum of the ‘Sturges’ and ‘Freedman’ estimators. Provides good all around performance. */
-  Auto = 'Auto',
-  /** Calculate the number of histogram bins based on Freedman-Diaconis method */
-  Freedman = 'Freedman',
-  /** Calculate the number of bins based on the Sturges method */
-  Sturges = 'Sturges',
-}
-
-/** Records histogram binning data */
-export type HistogramInput = {
-  /** The minimum date to consider */
-  from: Scalars['Date'];
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
-  options?: InputMaybe<HistogramBinOptionsInput>;
-  /** The maximum date to consider */
-  to: Scalars['Date'];
-};
-
-/** Records histogram binning data */
-export type HistogramPayload = {
-  bins: Array<Maybe<HistogramBin>>;
-  /** The maximum value in the data range. */
-  max: Scalars['Float'];
-  /** The minimum value in the data range. */
-  min: Scalars['Float'];
-  /** The total number of values. */
-  total: Scalars['Int'];
-  /** The width of the bins */
-  width: Scalars['Float'];
-};
-
 export type HostQueuesFilter = {
   /** Ids of queues to exclude */
   exclude?: InputMaybe<Array<Scalars['String']>>;
@@ -638,6 +546,7 @@ export type InferJobSchemaInput = {
 };
 
 export type Job = {
+  /** Number of attempts after the job has failed. */
   attemptsMade: Scalars['Int'];
   /** Get this jobs children result values as an object indexed by job key, if any. */
   childrenValues: Scalars['JSONObject'];
@@ -647,7 +556,9 @@ export type Job = {
   dependencies: JobDependenciesPayload;
   /** Get children job counts if this job is a parent and has children. */
   dependenciesCount: JobDependenciesCountPayload;
+  /** The reason why the job failed. */
   failedReason?: Maybe<Scalars['JSON']>;
+  /** Timestamp when the job was finished (completed or failed). */
   finishedOn?: Maybe<Scalars['Date']>;
   /** Returns the fully qualified id of a job, including the queue prefix and queue name */
   fullId: Scalars['String'];
@@ -663,15 +574,23 @@ export type Job = {
   opts: JobOptions;
   /** Returns the parent of a job that is part of a flow */
   parent?: Maybe<Job>;
+  /** Fully qualified key (including the queue prefix) pointing to the parent of this job. */
   parentKey?: Maybe<Scalars['String']>;
   /** Returns the parent queue of a job that is part of a flow */
   parentQueue?: Maybe<Queue>;
+  /** Timestamp when the job was processed. */
   processedOn?: Maybe<Scalars['Date']>;
+  /** The progress a job has performed so far. */
   progress?: Maybe<Scalars['JobProgress']>;
   queueId: Scalars['String'];
+  /** The name of the queue this job belongs to */
+  queueName: Scalars['String'];
+  /** The value returned by the processor when processing this job. */
   returnvalue?: Maybe<Scalars['JSON']>;
+  /** Stacktrace for the error (for failed jobs). */
   stacktrace: Array<Scalars['String']>;
   state?: Maybe<JobState>;
+  /** Timestamp when the job was added to the queue (unless overridden with job options). */
   timestamp: Scalars['Date'];
 };
 
@@ -758,7 +677,7 @@ export type JobLocatorInput = {
 
 export type JobLogs = {
   count: Scalars['Int'];
-  items: Array<Scalars['String']>;
+  messages: Array<Scalars['String']>;
 };
 
 export type JobMemoryUsagePayload = {
@@ -914,20 +833,6 @@ export enum JobState {
   WaitingChildren = 'waiting_children',
 }
 
-/** Base implementation for job stats information. */
-export type JobStatsInterface = {
-  /** The number of completed jobs in the sample interval */
-  completed: Scalars['Int'];
-  /** The sample size */
-  count: Scalars['Int'];
-  /** The end of the interval */
-  endTime: Scalars['Date'];
-  /** The number of failed jobs in the sample interval */
-  failed: Scalars['Int'];
-  /** The start of the interval */
-  startTime: Scalars['Date'];
-};
-
 export enum JobType {
   Active = 'active',
   Completed = 'completed',
@@ -1019,66 +924,48 @@ export type MarkRuleAlertAsReadResult = {
   alert: RuleAlert;
 };
 
-/** Records the rate of events over an interval using an exponentially moving average */
-export type Meter = {
-  /** The number of samples. */
-  count: Scalars['Int'];
-  /** The 1 minute average */
-  m1Rate: Scalars['Float'];
-  /** The 5 minute average */
-  m5Rate: Scalars['Float'];
-  /** The 15 minute average */
-  m15Rate: Scalars['Float'];
-  /** The average rate since the meter was started. */
-  meanRate: Scalars['Float'];
-};
-
 /** Metrics are numeric samples of data collected over time */
 export type Metric = {
-  aggregator: Aggregator;
-  category: MetricCategory;
+  /** Aggregates metrics within a range */
+  aggregate: Scalars['Int'];
+  /** The list of allowed aggregations for this metric. */
+  aggregationTypes: Array<Scalars['String']>;
+  /** The canonical name of the metric */
+  canonicalName: Scalars['String'];
   /** Timestamp of when this metric was created */
   createdAt: Scalars['Date'];
-  /** The current value of the metric */
-  currentValue?: Maybe<Scalars['Float']>;
   data: Array<Maybe<TimeseriesDataPoint>>;
   /** Returns the timestamps of the first and last data items recorded for the metric */
   dateRange?: Maybe<TimeSpan>;
-  /** Returns the description of the metric */
+  /** A short description of the metric */
   description: Scalars['String'];
-  histogram: HistogramPayload;
   /** the id of the metric */
   id: Scalars['ID'];
-  /** Is the metric active (i.e. is data being collected). */
-  isActive: Scalars['Boolean'];
   /** The name of the metric */
   name: Scalars['String'];
-  /** The metric options */
-  options: Scalars['JSONObject'];
   /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
   outliers: Array<Maybe<TimeseriesDataPoint>>;
   /** Compute a percentile distribution. */
   percentileDistribution: PercentileDistribution;
-  /** The id of the queue to which the metric belongs */
-  queueId: Scalars['ID'];
-  /** The metric sampling interval. */
-  sampleInterval?: Maybe<Scalars['Int']>;
   /** Returns simple descriptive statistics from a range of metric data */
   summaryStats: SummaryStatistics;
+  /** The tags of the metric */
+  tags: Array<Scalars['String']>;
   type: MetricType;
+  /** The unit of the metric */
   unit: Scalars['String'];
   /** Timestamp of when this metric was created */
   updatedAt: Scalars['Date'];
 };
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricDataArgs = {
-  input: MetricDataInput;
+export type MetricAggregateArgs = {
+  input: MetricsQueryInput;
 };
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricHistogramArgs = {
-  input: MetricsHistogramInput;
+export type MetricDataArgs = {
+  input: MetricDataInput;
 };
 
 /** Metrics are numeric samples of data collected over time */
@@ -1116,10 +1003,17 @@ export type MetricDataOutliersInput = {
   threshold?: InputMaybe<Scalars['Float']>;
 };
 
+export enum MetricGranularity {
+  Day = 'Day',
+  Hour = 'Hour',
+  Minute = 'Minute',
+  Month = 'Month',
+  Week = 'Week',
+}
+
 export type MetricInfo = {
   category: MetricCategory;
   description?: Maybe<Scalars['String']>;
-  isPolling: Scalars['Boolean'];
   key: Scalars['String'];
   type: MetricType;
   unit?: Maybe<Scalars['String']>;
@@ -1128,21 +1022,12 @@ export type MetricInfo = {
 
 /** Input fields for updating a metric */
 export type MetricInput = {
-  aggregator?: InputMaybe<AggregatorInput>;
-  /** A description of the metric being measured. */
-  description?: InputMaybe<Scalars['String']>;
   /** the id of the metric */
   id: Scalars['ID'];
-  /** Is the metric active (i.e. is data being collected). */
-  isActive: Scalars['Boolean'];
   /** The name of the metric */
   name?: InputMaybe<Scalars['String']>;
-  /** The metric options */
-  options?: InputMaybe<Scalars['JSONObject']>;
   /** The id of the queue to which the metric belongs */
   queueId: Scalars['ID'];
-  /** The metric sampling interval. */
-  sampleInterval?: InputMaybe<Scalars['Int']>;
   type: MetricType;
 };
 
@@ -1159,32 +1044,31 @@ export enum MetricStatusType {
   Failed = 'failed',
 }
 
+/** Available metric names */
 export enum MetricType {
-  ActiveJobs = 'ActiveJobs',
-  Apdex = 'Apdex',
-  Completed = 'Completed',
-  CompletedRate = 'CompletedRate',
-  ConnectedClients = 'ConnectedClients',
-  ConsecutiveFailures = 'ConsecutiveFailures',
-  CurrentCompletedCount = 'CurrentCompletedCount',
-  CurrentFailedCount = 'CurrentFailedCount',
-  DelayedJobs = 'DelayedJobs',
-  ErrorPercentage = 'ErrorPercentage',
-  ErrorRate = 'ErrorRate',
-  Failures = 'Failures',
-  Finished = 'Finished',
-  FragmentationRatio = 'FragmentationRatio',
-  InstantaneousOps = 'InstantaneousOps',
-  JobRate = 'JobRate',
-  Latency = 'Latency',
-  None = 'None',
-  PeakMemory = 'PeakMemory',
-  PendingCount = 'PendingCount',
-  ResponseTime = 'ResponseTime',
-  UsedMemory = 'UsedMemory',
-  WaitTime = 'WaitTime',
-  Waiting = 'Waiting',
-  WaitingChildren = 'WaitingChildren',
+  CompletedPercentage = 'completed_percentage',
+  FailedPercentage = 'failed_percentage',
+  JobAttempts = 'job_attempts',
+  JobAvgAttempts = 'job_avg_attempts',
+  JobsActive = 'jobs_active',
+  JobsCompleted = 'jobs_completed',
+  JobsDelayed = 'jobs_delayed',
+  JobsFailed = 'jobs_failed',
+  JobsFinished = 'jobs_finished',
+  JobsPending = 'jobs_pending',
+  JobsProcessTimeMs = 'jobs_process_time_ms',
+  JobsRuntimeMs = 'jobs_runtime_ms',
+  JobsWaitTimeMs = 'jobs_wait_time_ms',
+  JobsWaiting = 'jobs_waiting',
+  JobsWaitingChildren = 'jobs_waiting_children',
+  PausedQueues = 'paused_queues',
+  Queues = 'queues',
+  RedisConnectedClients = 'redis_connected_clients',
+  RedisInstantaneousOpsPerSec = 'redis_instantaneous_ops_per_sec',
+  RedisMemFragmentationRatio = 'redis_mem_fragmentation_ratio',
+  RedisUsedMemory = 'redis_used_memory',
+  RedisUsedMemoryPeak = 'redis_used_memory_peak',
+  Workers = 'workers',
 }
 
 export enum MetricValueType {
@@ -1202,14 +1086,17 @@ export type MetricsDataInput = {
   type: MetricStatusType;
 };
 
-/** Compute a frequency distribution of a range of metric data. */
-export type MetricsHistogramInput = {
-  /** The minimum date to consider */
-  from: Scalars['Date'];
-  options?: InputMaybe<HistogramBinOptionsInput>;
-  outlierFilter?: InputMaybe<OutlierFilterInput>;
-  /** The maximum date to consider */
-  to: Scalars['Date'];
+/** Metrics filter. */
+export type MetricsQueryInput = {
+  aggregator: AggregationType;
+  /** Range end */
+  end: Scalars['Date'];
+  /** Stats snapshot granularity */
+  granularity?: InputMaybe<MetricGranularity>;
+  /** The metric requested */
+  metric: MetricType;
+  /** Range start */
+  start: Scalars['Date'];
 };
 
 export type MetricsTimeseries = {
@@ -1322,7 +1209,6 @@ export type Mutation = {
    */
   pauseQueue: Queue;
   promoteJob: PromoteJobResult;
-  refreshMetricData: Array<Maybe<RefreshMetricDataResult>>;
   /** Start tracking a queue */
   registerQueue: Queue;
   /** Resume a queue after being PAUSED. */
@@ -1335,7 +1221,8 @@ export type Mutation = {
   trimQueueEvents: Queue;
   /** Stop tracking a queue */
   unregisterQueue: UnregisterQueueResult;
-  updateJob: UpdateJobResult;
+  /** Update job data */
+  updateJob: Job;
   /** Update a job filter */
   updateJobFilter: UpdateJobFilterResult;
   updateMailNotificationChannel: MailNotificationChannel;
@@ -1356,9 +1243,7 @@ export type MutationActivateRuleArgs = {
 };
 
 export type MutationAddJobLogArgs = {
-  id: Scalars['String'];
-  queueId: Scalars['String'];
-  row: Scalars['String'];
+  input: AddJobLogInput;
 };
 
 export type MutationBulkCreateJobsArgs = {
@@ -1529,10 +1414,6 @@ export type MutationPromoteJobArgs = {
   input: JobLocatorInput;
 };
 
-export type MutationRefreshMetricDataArgs = {
-  input: RefreshMetricDataInput;
-};
-
 export type MutationRegisterQueueArgs = {
   input?: InputMaybe<RegisterQueueInput>;
 };
@@ -1563,7 +1444,7 @@ export type MutationUnregisterQueueArgs = {
 };
 
 export type MutationUpdateJobArgs = {
-  input: UpdateJobInput;
+  input: UpdateJobDataInput;
 };
 
 export type MutationUpdateJobFilterArgs = {
@@ -1692,14 +1573,6 @@ export type OnQueueJobUpdatesPayload = {
   queueId: Scalars['String'];
 };
 
-/** Returns a stream of metric data updates */
-export type OnQueueMetricValueUpdated = {
-  queueId: Scalars['String'];
-  /** The timestamp of the time the value was recorded */
-  ts: Scalars['Date'];
-  value: Scalars['Float'];
-};
-
 export type OnQueuePausedPayload = {
   queueId: Scalars['String'];
 };
@@ -1799,20 +1672,6 @@ export type PercentileDistribution = {
   totalCount: Scalars['Int'];
 };
 
-/** Records histogram binning data */
-export type PercentileDistributionInput = {
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
-  /** The percentiles to get frequencies for */
-  percentiles?: InputMaybe<Array<Scalars['Float']>>;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range: Scalars['String'];
-};
-
 export type PingPayload = {
   latency: Scalars['Int'];
 };
@@ -1823,8 +1682,6 @@ export type PromoteJobResult = {
 };
 
 export type Query = {
-  /** Get the list of aggregate types available for metrics */
-  aggregates: Array<Maybe<AggregateInfo>>;
   /** Get general app info */
   appInfo: AppInfo;
   /** Get the list of available metric types */
@@ -1837,6 +1694,7 @@ export type Query = {
   /** Load a flow */
   flow?: Maybe<JobNode>;
   getJobs: Array<Job>;
+  /** Get a list of jobs by id */
   getJobsById: Array<Job>;
   /** Get a Host by id */
   host?: Maybe<QueueHost>;
@@ -1951,16 +1809,12 @@ export type Queue = {
   config?: Maybe<QueueConfig>;
   /** Returns the current default job options of the specified queue. */
   defaultJobOptions?: Maybe<JobOptions>;
-  /** Gets the current job ErrorPercentage rates based on an exponential moving average */
-  errorPercentageRate: Meter;
-  /** Gets the current job Errors rates based on an exponential moving average */
-  errorRate: Meter;
-  /** Compute the histogram of job data. */
-  histogram: HistogramPayload;
   host: Scalars['String'];
   hostId: Scalars['ID'];
   id: Scalars['String'];
+  /** Returns true if the queue is currently paused. */
   isPaused: Scalars['Boolean'];
+  /** Returns true if the queue is readonly */
   isReadonly: Scalars['Boolean'];
   jobCounts: JobCounts;
   /** Get the average runtime duration of completed jobs in the queue */
@@ -1970,6 +1824,7 @@ export type Queue = {
   jobMemoryAvg: Scalars['Float'];
   /** Get the average memory used by jobs in the queue */
   jobMemoryUsage: JobMemoryUsagePayload;
+  /** Returns a list of all job names in the queue, including those that are have schemas. */
   jobNames: Array<Scalars['String']>;
   /** Get JSONSchema documents and job defaults previously set for a job names on a queue */
   jobSchemas: Array<JobSchema>;
@@ -1986,11 +1841,10 @@ export type Queue = {
   name: Scalars['String'];
   /** Returns the number of jobs waiting to be processed. */
   pendingJobCount: Scalars['Int'];
-  /** Compute a percentile distribution. */
-  percentileDistribution: PercentileDistribution;
   prefix: Scalars['String'];
   /** Returns the number of repeatable jobs */
   repeatableJobCount: Scalars['Int'];
+  /** Get repeatable meta jobs. */
   repeatableJobs: Array<RepeatableJob>;
   /** Returns the count of rule alerts associated with a Queue */
   ruleAlertCount: Scalars['Int'];
@@ -1999,14 +1853,12 @@ export type Queue = {
   rules: Array<Rule>;
   schedulerCount: Scalars['Int'];
   schedulers: Array<QueueScheduler>;
-  /** Queries for queue stats snapshots within a range */
+  /** Queries for metric snapshots within a range */
   stats: Array<StatsSnapshot>;
-  /** Aggregates queue statistics within a range */
+  /** Aggregates queue metrics within a range */
   statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
   statsDateRange?: Maybe<TimeSpan>;
-  /** Gets the current job Throughput rates based on an exponential moving average */
-  throughput: Meter;
   /** Get the average time a job spends in the queue before being processed */
   waitTimeAvg: Scalars['Int'];
   /** Returns the number of child jobs waiting to be processed. */
@@ -2015,18 +1867,6 @@ export type Queue = {
   waitingCount: Scalars['Int'];
   workerCount: Scalars['Int'];
   workers: Array<QueueWorker>;
-};
-
-export type QueueErrorPercentageRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueErrorRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueHistogramArgs = {
-  input: HistogramInput;
 };
 
 export type QueueJobDurationAvgArgs = {
@@ -2070,10 +1910,6 @@ export type QueueMetricsDataArgs = {
   input?: InputMaybe<MetricsDataInput>;
 };
 
-export type QueuePercentileDistributionArgs = {
-  input: PercentileDistributionInput;
-};
-
 export type QueueRepeatableJobsArgs = {
   input?: InputMaybe<RepeatableJobsInput>;
 };
@@ -2096,10 +1932,6 @@ export type QueueStatsAggregateArgs = {
 
 export type QueueStatsDateRangeArgs = {
   input: StatsSpanInput;
-};
-
-export type QueueThroughputArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
 };
 
 export type QueueWaitTimeAvgArgs = {
@@ -2160,12 +1992,6 @@ export type QueueHost = {
   description?: Maybe<Scalars['String']>;
   /** Discover Bull queues on the given host */
   discoverQueues: Array<DiscoverQueuesPayload>;
-  /** Gets the current job ErrorPercentage rates for a host based on an exponential moving average */
-  errorPercentageRate: Meter;
-  /** Gets the current job Errors rates for a host based on an exponential moving average */
-  errorRate: Meter;
-  /** Compute the histogram of job data. */
-  histogram: HistogramPayload;
   id: Scalars['ID'];
   /** Get job counts for a host */
   jobCounts: JobCounts;
@@ -2173,22 +1999,18 @@ export type QueueHost = {
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
   /** The name of the host */
   name: Scalars['String'];
-  /** Compute a percentile distribution. */
-  percentileDistribution: PercentileDistribution;
   ping: PingPayload;
   /** The count of queues registered for this host */
   queueCount: Scalars['Int'];
   /** The queues registered for this host */
   queues: Array<Queue>;
   redis: RedisInfo;
-  /** Queries for queue stats snapshots within a range */
+  /** Queries for metric snapshots within a range */
   stats: Array<StatsSnapshot>;
-  /** Aggregates queue statistics within a range */
+  /** Aggregates queue metrics within a range */
   statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
   statsDateRange?: Maybe<TimeSpan>;
-  /** Gets the current job Throughput rates for a host based on an exponential moving average */
-  throughput: Meter;
   uri: Scalars['String'];
   /** Returns the number of workers associated with managed queues on this host */
   workerCount: Scalars['Int'];
@@ -2200,24 +2022,8 @@ export type QueueHostDiscoverQueuesArgs = {
   unregisteredOnly?: InputMaybe<Scalars['Boolean']>;
 };
 
-export type QueueHostErrorPercentageRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueHostErrorRateArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
-};
-
-export type QueueHostHistogramArgs = {
-  input: HistogramInput;
-};
-
 export type QueueHostLastStatsSnapshotArgs = {
   input?: InputMaybe<StatsLatestInput>;
-};
-
-export type QueueHostPercentileDistributionArgs = {
-  input: PercentileDistributionInput;
 };
 
 export type QueueHostQueuesArgs = {
@@ -2234,10 +2040,6 @@ export type QueueHostStatsAggregateArgs = {
 
 export type QueueHostStatsDateRangeArgs = {
   input: StatsSpanInput;
-};
-
-export type QueueHostThroughputArgs = {
-  input?: InputMaybe<StatsRateQueryInput>;
 };
 
 export type QueueHostWorkersArgs = {
@@ -2278,7 +2080,7 @@ export type QueueJobsInput = {
   limit?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   sortOrder?: InputMaybe<SortOrderEnum>;
-  status?: InputMaybe<JobState>;
+  status?: InputMaybe<JobSearchStatus>;
 };
 
 export type QueueLimiter = {
@@ -2383,21 +2185,6 @@ export type RedisInfo = {
   used_memory_peak_human: Scalars['String'];
 };
 
-export type RefreshMetricDataInput = {
-  end?: InputMaybe<Scalars['Date']>;
-  metricId: Scalars['String'];
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range?: InputMaybe<Scalars['String']>;
-  start?: InputMaybe<Scalars['Date']>;
-};
-
-export type RefreshMetricDataResult = {
-  end?: Maybe<Scalars['Date']>;
-  metric: Metric;
-  metricId: Scalars['String'];
-  start?: Maybe<Scalars['Date']>;
-};
-
 export type RegisterQueueInput = {
   checkExists?: InputMaybe<Scalars['Boolean']>;
   hostId: Scalars['ID'];
@@ -2422,8 +2209,11 @@ export type RepeatableJob = {
 };
 
 export type RepeatableJobsInput = {
+  /** Maximum number of jobs to return. */
   limit?: InputMaybe<Scalars['Int']>;
+  /** Offset of first job to return. */
   offset?: InputMaybe<Scalars['Int']>;
+  /** Determine the order in which jobs are returned based on their next execution time. */
   order?: InputMaybe<SortOrderEnum>;
 };
 
@@ -2727,73 +2517,34 @@ export enum SortOrderEnum {
   Desc = 'DESC',
 }
 
-export enum StatsGranularity {
-  Day = 'Day',
-  Hour = 'Hour',
-  Minute = 'Minute',
-  Month = 'Month',
-  Week = 'Week',
-}
-
 /** Queue stats filter to getting latest snapshot. */
 export type StatsLatestInput = {
   /** Stats snapshot granularity */
-  granularity?: InputMaybe<StatsGranularity>;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
+  granularity?: InputMaybe<MetricGranularity>;
   /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
+  metric?: InputMaybe<Scalars['MetricName']>;
 };
 
-export enum StatsMetricType {
-  Latency = 'Latency',
-  Wait = 'Wait',
-}
-
-/** Queue stats filter. */
+/** Queue metrics filter. */
 export type StatsQueryInput = {
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
+  end: Scalars['Date'];
+  /** Snapshot granularity */
+  granularity?: InputMaybe<MetricGranularity>;
   /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
+  metric: MetricType;
   /** An expression specifying the range to query e.g. yesterday, last_7days */
   range: Scalars['String'];
+  start: Scalars['Date'];
 };
 
-/** Queue stats rates filter. */
-export type StatsRateQueryInput = {
-  /** Stats snapshot granularity */
-  granularity: StatsGranularity;
-  /** An optional job name to filter on */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** An expression specifying the range to query e.g. yesterday, last_7days */
-  range: Scalars['String'];
-};
-
-/** Queue job stats snapshot. */
-export type StatsSnapshot = JobStatsInterface & {
-  /** The number of completed jobs in the sample interval */
-  completed: Scalars['Int'];
-  /** The sample size */
+/** Stats snapshot. */
+export type StatsSnapshot = {
+  /** The number of samples */
   count: Scalars['Int'];
-  /** The end of the interval */
-  endTime: Scalars['Date'];
-  /** The number of failed jobs in the sample interval */
-  failed: Scalars['Int'];
-  /** One minute exponentially weighted moving average */
-  m1Rate: Scalars['Float'];
-  /** Five minute exponentially weighted moving average */
-  m5Rate: Scalars['Float'];
-  /** Fifteen minute exponentially weighted moving average */
-  m15Rate: Scalars['Float'];
   /** The maximum value in the data set */
   max: Scalars['Float'];
   /** The average of values during the period */
   mean: Scalars['Float'];
-  /** The average rate of events over the entire lifetime of measurement (e.g., the total number of requests handled,divided by the number of seconds the process has been running), it doesn’t offer a sense of recency. */
-  meanRate: Scalars['Float'];
   /** The median value of the data set */
   median: Scalars['Float'];
   /** The minimum value in the data set */
@@ -2806,29 +2557,16 @@ export type StatsSnapshot = JobStatsInterface & {
   p99: Scalars['Float'];
   /** The 99.5th percentile */
   p995: Scalars['Float'];
-  /** The start of the interval */
-  startTime: Scalars['Date'];
   /** The standard deviation of the dataset over the sample period */
   stddev: Scalars['Float'];
 };
 
 export type StatsSpanInput = {
-  granularity?: InputMaybe<StatsGranularity>;
+  granularity?: InputMaybe<MetricGranularity>;
   /** The host/queue to query */
   id: Scalars['ID'];
   jobName?: InputMaybe<Scalars['String']>;
-};
-
-/** Filtering options for stats subscriptions. */
-export type StatsUpdatedSubscriptionFilter = {
-  /** Data granularity */
-  granularity?: InputMaybe<StatsGranularity>;
-  /** The id of the queue or host to subscribe to */
-  id: Scalars['ID'];
-  /** An optional job name for filtering */
-  jobName?: InputMaybe<Scalars['String']>;
-  /** The metric requested */
-  metric?: InputMaybe<StatsMetricType>;
+  metric: MetricType;
 };
 
 export type Subscription = {
@@ -2838,8 +2576,6 @@ export type Subscription = {
   obJobCompleted?: Maybe<OnJobStateChangePayload>;
   /** Returns job failed events */
   obJobFailed?: Maybe<OnJobStateChangePayload>;
-  /** Subscribe for updates in host statistical snapshots */
-  onHostStatsUpdated: StatsSnapshot;
   onJobAdded: OnJobAddedPayload;
   onJobDelayed: OnJobDelayedPayload;
   onJobLogAdded: OnJobLogAddedPayload;
@@ -2851,13 +2587,10 @@ export type Subscription = {
   onQueueDeleted: OnQueueDeletedPayload;
   onQueueJobCountsChanged: OnQueueJobCountsChangedPayload;
   onQueueJobUpdates: OnQueueJobUpdatesPayload;
-  onQueueMetricValueUpdated: OnQueueMetricValueUpdated;
   onQueuePaused: OnQueuePausedPayload;
   onQueueRegistered: OnQueueRegisteredPayload;
   onQueueResumed: OnQueueResumedPayload;
   onQueueStateChanged: OnQueueStateChangedPayload;
-  /** Subscribe for updates in queue statistical snapshots */
-  onQueueStatsUpdated: StatsSnapshot;
   onQueueUnregistered: OnQueueUnregisteredPayload;
   onQueueWorkersChanged: OnQueueWorkersChangedPayload;
   /** Returns an updated count of workers assigned to a queue */
@@ -2878,10 +2611,6 @@ export type SubscriptionObJobCompletedArgs = {
 export type SubscriptionObJobFailedArgs = {
   jobId: Scalars['String'];
   queueId: Scalars['String'];
-};
-
-export type SubscriptionOnHostStatsUpdatedArgs = {
-  input: StatsUpdatedSubscriptionFilter;
 };
 
 export type SubscriptionOnJobAddedArgs = {
@@ -2933,11 +2662,6 @@ export type SubscriptionOnQueueJobUpdatesArgs = {
   input: QueueJobUpdatesFilterInput;
 };
 
-export type SubscriptionOnQueueMetricValueUpdatedArgs = {
-  metricId: Scalars['String'];
-  queueId: Scalars['String'];
-};
-
 export type SubscriptionOnQueuePausedArgs = {
   queueId: Scalars['String'];
 };
@@ -2952,10 +2676,6 @@ export type SubscriptionOnQueueResumedArgs = {
 
 export type SubscriptionOnQueueStateChangedArgs = {
   queueId: Scalars['String'];
-};
-
-export type SubscriptionOnQueueStatsUpdatedArgs = {
-  input: StatsUpdatedSubscriptionFilter;
 };
 
 export type SubscriptionOnQueueUnregisteredArgs = {
@@ -3044,6 +2764,13 @@ export type UnregisterQueueResult = {
   queue: Queue;
 };
 
+export type UpdateJobDataInput = {
+  /** the data that will replace the current jobs data. */
+  data: Scalars['JSONObject'];
+  jobId: Scalars['ID'];
+  queueId: Scalars['ID'];
+};
+
 export type UpdateJobFilterInput = {
   expression: Scalars['String'];
   filterId: Scalars['ID'];
@@ -3055,16 +2782,6 @@ export type UpdateJobFilterInput = {
 export type UpdateJobFilterResult = {
   filter?: Maybe<JobFilter>;
   isUpdated: Scalars['Boolean'];
-};
-
-export type UpdateJobInput = {
-  data: Scalars['JSONObject'];
-  jobId: Scalars['String'];
-  queueId: Scalars['String'];
-};
-
-export type UpdateJobResult = {
-  job: Job;
 };
 
 export type UpdateMailNotificationChannelInput = {

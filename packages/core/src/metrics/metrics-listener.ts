@@ -7,17 +7,17 @@ import {
   systemClock,
 } from '../lib';
 import {
+  Events,
   JobEventData,
   JobFinishedEventData,
   QueueListener,
 } from '../queues/queue-listener';
-import { Events } from './types';
 import { roundDown, roundUp } from '@alpen/shared';
 import { isAfter } from 'date-fns';
 import { logger } from '../logger';
 
 const DEFAULT_CONCURRENCY = 16;
-const UPDATE_EVENT_NAME = 'metrics.updated';
+export const METRICS_UPDATED = 'metrics.updated';
 
 export interface MetricsUpdatedPayload {
   metrics: Metric[];
@@ -75,7 +75,7 @@ export class MetricsListener {
   onMetricsUpdated(
     handler: (eventData?: MetricsUpdatedPayload) => void,
   ): UnsubscribeFn {
-    return this.emitter.on(UPDATE_EVENT_NAME, handler);
+    return this.emitter.on(METRICS_UPDATED, handler);
   }
 
   off(event: string, handler: (eventDate?: any) => void): void {

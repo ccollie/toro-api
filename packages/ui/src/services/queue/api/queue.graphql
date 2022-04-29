@@ -142,7 +142,7 @@ query GetQueueJobsNames($id: ID!) {
   }
 }
 
-query GetPageQueueStats($id: ID!, $range: String!, $granularity: StatsGranularity! ) {
+query GetPageQueueStats($id: ID!, $range: String!, $granularity: MetricGranularity! ) {
   queue(id: $id) {
     id
     name
@@ -151,21 +151,5 @@ query GetPageQueueStats($id: ID!, $range: String!, $granularity: StatsGranularit
     isPaused
     jobNames
     workerCount
-    throughput {
-      m1Rate
-      m5Rate
-      m15Rate
-    }
-    errorRate {
-      m1Rate
-      m5Rate
-      m15Rate
-    }
-    stats(input: { range: $range, granularity: $granularity }) {
-      ...StatsSnapshot
-    }
-    statsAggregate(input: { range: $range, granularity: $granularity }) {
-      ...StatsSnapshot
-    }
   }
 }

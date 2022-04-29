@@ -1,9 +1,7 @@
 'use strict';
-import { randomString } from '@alpen/shared';
-import { random } from '@alpen/shared';
+import { random, randomString } from '@alpen/shared';
 import { Rule } from '../';
 import {
-  ChangeAggregationType,
   ChangeTypeEnum,
   RuleCondition,
   RuleConfigOptions,
@@ -11,6 +9,7 @@ import {
   RuleType,
 } from '../../types';
 import { getUniqueId } from '../../ids';
+import { AggregationType } from '../../metrics';
 
 describe('Rule', () => {
   function createRule(options: Partial<RuleConfigOptions> = {}): Rule {
@@ -52,7 +51,7 @@ describe('Rule', () => {
       type: RuleType.CHANGE,
       changeType: ChangeTypeEnum.CHANGE,
       windowSize: 0,
-      aggregationType: ChangeAggregationType.AVG,
+      aggregationType: AggregationType.AVG,
       operator: RuleOperator.EQ,
       errorThreshold: 10,
     };

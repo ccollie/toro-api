@@ -1,5 +1,5 @@
 import {
-  ChangeAggregationEnum,
+  AggregationTypeEnum,
   CleanQueueJobType,
   Duration,
   ErrorLevelEnum,
@@ -34,9 +34,10 @@ import rule from './resolvers/rule';
 import metric from './resolvers/metric';
 import { GraphQLSchema } from 'graphql';
 import { logger } from '@alpen/core';
+import { MeterTC } from './resolvers/metric/scalars';
 
 // Scalars
-schemaComposer.add(ChangeAggregationEnum);
+schemaComposer.add(AggregationTypeEnum);
 schemaComposer.add(CleanQueueJobType);
 schemaComposer.add(Duration);
 schemaComposer.add(ErrorLevelEnum);
@@ -53,6 +54,7 @@ schemaComposer.add(JobRemoveOption);
 schemaComposer.add(JobState);
 schemaComposer.add(JobType);
 schemaComposer.add(JobSearchStatus);
+schemaComposer.add(MeterTC);
 schemaComposer.add(OrderEnumType);
 schemaComposer.add(PeakSignalDirectionEnum);
 schemaComposer.add(RuleOperatorEnum);

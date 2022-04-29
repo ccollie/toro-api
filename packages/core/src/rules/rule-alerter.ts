@@ -19,7 +19,6 @@ import type { NotificationContext } from '../types';
 import { NotificationManager } from '../notifications';
 import { QueueManager } from '../queues';
 import {
-  ChangeAggregationType,
   ChangeTypeEnum,
   ErrorStatus,
   EvaluationResult,
@@ -37,6 +36,7 @@ import {
 import { isPeakRuleEvaluationState } from './condition-evaluator';
 import { Rule } from './rule';
 import { createRuleTemplateHelpers } from './rule-template-helpers';
+import { AggregationType } from '../metrics';
 
 function isCircuitTripped(state: CircuitState): boolean {
   return state === CircuitState.HALF_OPEN || state === CircuitState.OPEN;
@@ -470,21 +470,25 @@ function formatValue(value: number, unit = '', places = 3): string {
   return result;
 }
 
-function getChangeAggregationString(agg: ChangeAggregationType): string {
+function getChangeAggregationString(agg: AggregationType): string {
   switch (agg) {
-    case ChangeAggregationType.AVG:
+    case AggregationType.COUNT:
+      return 'count';
+    case AggregationType.AVG:
       return 'average';
-    case ChangeAggregationType.MAX:
+    case AggregationType.MAX:
       return 'maximum';
-    case ChangeAggregationType.MIN:
+    case AggregationType.MIN:
       return 'minimum';
-    case ChangeAggregationType.P90:
+    case AggregationType.P90:
       return '90th percentile';
-    case ChangeAggregationType.P95:
+    case AggregationType.P95:
       return '95th percentile';
-    case ChangeAggregationType.P99:
+    case AggregationType.P99:
       return '99th percentile';
-    case ChangeAggregationType.SUM:
+    case AggregationType.SUM:
       return 'total';
+    case AggregationType.LATEST:
+      return 'latest';
   }
 }

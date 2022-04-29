@@ -1,4 +1,4 @@
-query HostsPageData($range: String!, $granularity: StatsGranularity! = Minute) {
+query HostsPageData($range: String!, $granularity: MetricGranularity! = Minute) {
   hosts {
     id
     name
@@ -13,28 +13,7 @@ query HostsPageData($range: String!, $granularity: StatsGranularity! = Minute) {
       delayed
       waiting
     }
-    throughput(input: { range: $range, granularity: $granularity }) {
-      count
-      m1Rate
-      m5Rate
-      m15Rate
-    }
     queueCount
     workerCount
-    errorRate(input: { range: $range, granularity: $granularity }) {
-      count
-      m1Rate
-      m5Rate
-      m15Rate
-    }
-    stats(input: { range: $range, granularity: $granularity }) {
-      ...StatsSnapshot
-    }
-    statsAggregate(input: { range: $range, granularity: $granularity }) {
-      ...StatsSnapshot
-    }
-    lastStatsSnapshot(input: { granularity: $granularity }) {
-      ...StatsSnapshot
-    }
   }
 }

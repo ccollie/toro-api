@@ -2,10 +2,10 @@ import { Transform } from '../events';
 import {
   Distribution,
   MetricName,
-  MetricType,
   Tags,
   tagsToMap,
 } from '../metric-name';
+import { MetricType } from '../types';
 import { Metrics } from '../metrics';
 import { Snapshot } from '../snapshot';
 

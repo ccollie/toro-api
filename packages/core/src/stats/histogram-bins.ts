@@ -1,8 +1,5 @@
 // modified from https://github.com/eoinmurray/histogram/blob/master/histogram.js
 // todo: rewrite using d3 : see https://observablehq.com/@d3/d3-bin
-import { decodeFromCompressedBase64, JsHistogram } from 'hdr-histogram-js';
-import RecordedValuesIterator from 'hdr-histogram-js/dist/RecordedValuesIterator';
-import { StatisticalSnapshot } from './timer';
 
 export enum HistogramBinningMethod {
   Auto = 'Auto',
@@ -210,30 +207,4 @@ export function computeBins<T = any>(
     total,
     bins,
   };
-}
-
-export function computeHistogramBins(
-  snapshot: StatisticalSnapshot,
-  opts: HistogramOptions = DefaultHistogramOptions,
-): BinnedHistogramValues {
-  const histogram = decodeFromCompressedBase64(snapshot.data, 32, false);
-
-  if (histogram.totalCount === 0) {
-    return {
-      min: histogram.minNonZeroValue,
-      max: histogram.maxValue,
-      total: 0,
-      width: 0,
-      bins: [],
-    };
-  }
-
-  const iterator = new RecordedValuesIterator(histogram as JsHistogram);
-  const it = iterator[Symbol.iterator]();
-  return computeBins(
-    it,
-    (x) => x.valueIteratedTo,
-    (x) => x.countAtValueIteratedTo,
-    opts,
-  );
 }

@@ -1,9 +1,8 @@
-import { HostManager, StatsGranularity } from '@alpen/core';
+import { MetricGranularity } from '@alpen/core';
 import { schemaComposer } from 'graphql-compose';
-import { StatsGranularityEnum, TimeSpanTC } from '../../scalars';
+import { MetricGranularityEnum, TimeSpanTC } from '../../scalars';
 import { FieldConfig } from '../index';
-import { normalizeGranularity } from '../stats/utils';
-import { getClient } from './utils';
+import { getMetricManager, normalizeGranularity } from '../stats/utils';
 import { MetricTypeTC } from '../metric/scalars';
 
 const StatsSpanInput = schemaComposer.createInputTC({
@@ -15,7 +14,7 @@ const StatsSpanInput = schemaComposer.createInputTC({
     },
     jobName: 'String',
     metric: MetricTypeTC.NonNull,
-    granularity: StatsGranularityEnum,
+    granularity: MetricGranularityEnum,
   },
 });
 
@@ -26,13 +25,10 @@ export const statsDateRange: FieldConfig = {
     input: StatsSpanInput.NonNull,
   },
   async resolve(_, { input }, context) {
-    const { jobName, granularity = StatsGranularity.Minute } = input;
-
-    const client = getClient(context, _);
+    const { granularity = MetricGranularity.Minute } = input;
     const _granularity = normalizeGranularity(granularity);
-    if (_ instanceof HostManager) {
-      return client.getHostSpan(jobName, 'latency', _granularity);
-    }
-    return client.getSpan(jobName, 'latency', _granularity);
+    const manager = getMetricManager(context, _);
+    const v = await manager.getMetricDateRange(_, _granularity);
+    return v;
   },
 };

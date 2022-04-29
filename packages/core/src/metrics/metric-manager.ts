@@ -8,10 +8,10 @@ import { MetricMetadata, MetricsEventsEnum, MetricTypeName } from './types';
 import { Clock, systemClock } from '../lib';
 import { PossibleTimestamp, TimeSeries, TimeseriesValue } from '../commands';
 import { Metric } from './metric';
-import { MetricsUpdatedPayload } from './metrics-listener';
-import { UnsubscribeFn } from 'emittery';
+import { METRICS_UPDATED, MetricsUpdatedPayload } from './metrics-listener';
+import Emittery, { UnsubscribeFn } from 'emittery';
 import { Pipeline } from 'ioredis';
-import { StatsGranularity, TimeseriesDataPoint } from '../stats';
+import { StatsSnapshot, TimeseriesDataPoint } from '../stats';
 import { Metrics } from './metrics';
 import {
   Counter as CounterName,
@@ -20,9 +20,9 @@ import {
   HostTagKey,
   JobNameTagKey,
   MetricName,
-  MetricType,
   QueueTagKey,
 } from './metric-name';
+import { MetricType, MetricGranularity } from './types';
 import { RegistryOptions } from './registry';
 import { isHostMetric, MetricLike, getCanonicalName } from './utils';
 import { metricsInfo } from './metrics-info';
@@ -31,6 +31,9 @@ import { MetricDataClient } from './metric-data-client';
 import { logger } from '../logger';
 import { BiasedQuantileDistribution } from './bqdist';
 import { DDSketch } from '@datadog/sketches-js';
+import { AggregationType } from './aggregators/aggregation';
+import { MeterSummary } from './meter';
+import { Snapshot } from './snapshot';
 
 /* eslint @typescript-eslint/no-use-before-define: 0 */
 
@@ -38,6 +41,7 @@ import { DDSketch } from '@datadog/sketches-js';
 
 type MetricManagerOptions = {
   host: string;
+  queue?: Queue;
   bus: EventBus;
   client: RedisClient;
   registryOptions?: RegistryOptions;
@@ -47,6 +51,7 @@ type MetricManagerOptions = {
  * Manages the storage of Metric instances related to a queue
  */
 export class MetricManager {
+  private readonly events: Emittery = new Emittery();
   private readonly client: RedisClient;
   private readonly queue: Queue;
   private readonly bus: EventBus;
@@ -60,11 +65,10 @@ export class MetricManager {
 
   /**
    * Construct a {@link MetricManager}
-   * @param queue
    * @param options
    */
-  constructor(queue: Queue, options: MetricManagerOptions) {
-    const { bus, host, client } = options;
+  constructor(options: MetricManagerOptions) {
+    const { queue, bus, host, client } = options;
     this.queue = queue;
     this.bus = bus;
     this.clock = systemClock;
@@ -75,6 +79,20 @@ export class MetricManager {
       host,
       client,
     });
+
+    this._metrics.onSnapshot((snapshot) => this.onSnapshot(snapshot));
+  }
+
+  protected async onSnapshot(snapshot: Snapshot): Promise<void> {
+    const itemCount = snapshot.map.size;
+    if (itemCount === 0) return;
+    await this.dataClient.storeSnapshot(snapshot);
+    const payload: MetricsUpdatedPayload = {
+      metrics: [],
+      ts: snapshot.timestamp,
+      state: snapshot,
+    };
+    await this.events.emit(METRICS_UPDATED, payload);
   }
 
   destroy(): void {
@@ -103,11 +121,11 @@ export class MetricManager {
   }
 
   get indexKey(): string {
-    return getMetricsKey(this.queue, null);
+    return getMetricsKey(this.host, this.queue, null);
   }
 
   private getDataKey(metric: MetricLike): string {
-    return getMetricsDataKey(this.queue, getCanonicalName(metric));
+    return getMetricsDataKey(this.host, this.queue, getCanonicalName(metric));
   }
 
   findMetricById(id: string): Metric {
@@ -115,7 +133,7 @@ export class MetricManager {
   }
 
   getMetricKey(metric: MetricLike): string {
-    return getMetricsKey(this.queue, getCanonicalName(metric));
+    return getMetricsKey(this.host, this.queue, getCanonicalName(metric));
   }
 
   private getClient(): Promise<RedisClient> {
@@ -280,9 +298,9 @@ export class MetricManager {
    */
   async setMetricMeta(
     metric: MetricLike,
-    meta: MetricMetadata,
+    meta: Partial<MetricMetadata>,
     action: 'replace' | 'merge' = 'merge',
-  ): Promise<MetricMetadata> {
+  ): Promise<Partial<MetricMetadata>> {
     const canonical = getCanonicalName(metric);
     const client = await this.getClient();
 
@@ -296,7 +314,10 @@ export class MetricManager {
     let updated: MetricMetadata;
     if (action === 'replace') {
       const str = JSON.stringify(meta);
-      updated = meta;
+      updated = {
+        createdAt: this.clock.getTime(),
+        ...meta,
+      };
       await client.hset(key, canonical, str);
     } else {
       const saved = await client.hget(key, canonical);
@@ -311,7 +332,10 @@ export class MetricManager {
           await client.hset(key, canonical, JSON.stringify(updated));
         }
       } else {
-        updated = meta;
+        updated = {
+          createdAt: this.clock.getTime(),
+          ...meta,
+        };
       }
     }
 
@@ -378,26 +402,33 @@ export class MetricManager {
 
   async addMetricData(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     timestamp: number,
     value: number,
   ): Promise<void> {
     await this.dataClient.add(metric, unit, timestamp, value);
+    await this.setMetricMeta(metric, { lastUpdated: timestamp }, 'merge');
   }
 
   async addDistributionData(
     metric: MetricLike,
-    unit: StatsGranularity,
-    timestamp: DateLike,
+    unit: MetricGranularity,
+    timestamp: number,
     value: BiasedQuantileDistribution,
   ): Promise<void> {
-    await this.dataClient.addDistribution(metric, unit, timestamp, value);
+    await this.dataClient.writeDistribution(
+      metric,
+      value.sketch,
+      unit,
+      timestamp,
+    );
+    await this.setMetricMeta(metric, { lastUpdated: timestamp }, 'merge');
   }
 
   pipelineGetMetricData(
     pipeline: Pipeline,
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: PossibleTimestamp = '-',
     end: PossibleTimestamp = '+',
   ): Pipeline {
@@ -409,9 +440,9 @@ export class MetricManager {
     return pipeline;
   }
 
-  async getMetricData(
+  async getMetricDataRange(
     metric: Metric | string,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesDataPoint[]> {
@@ -430,7 +461,7 @@ export class MetricManager {
 
   async getDistributionRange(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesValue<DDSketch>[]> {
@@ -439,7 +470,7 @@ export class MetricManager {
 
   async getMetricDateRange(
     metric: MetricLike,
-    unit = StatsGranularity.Minute,
+    unit = MetricGranularity.Minute,
   ): Promise<Timespan> {
     const meta = await this.dataClient.getMetadata(metric, unit);
     if (!meta) return null;
@@ -447,6 +478,37 @@ export class MetricManager {
       startTime: meta.firstTS,
       endTime: meta.lastTS,
     };
+  }
+
+  async aggregate(
+    metric: MetricLike,
+    unit: MetricGranularity,
+    start: DateLike,
+    end: DateLike,
+    aggregator: AggregationType,
+    // aggregateValue?: number // for specific percentile or rate interval
+  ): Promise<number> {
+    return this.dataClient.aggregate(metric, unit, start, end, aggregator);
+  }
+
+  async getRate(
+    metric: MetricLike,
+    unit: MetricGranularity,
+    start: DateLike,
+    end: DateLike,
+    aggregation?: AggregationType,
+  ): Promise<MeterSummary> {
+    return this.dataClient.getRate(metric, unit, start, end, aggregation);
+  }
+
+  async getStats(
+    metric: MetricLike,
+    unit: MetricGranularity,
+    start: DateLike,
+    end: DateLike,
+    aggregation?: AggregationType,
+  ): Promise<StatsSnapshot> {
+    return this.dataClient.getStats(metric, unit, start, end, aggregation);
   }
 
   async getMetricDataCount(metric: MetricLike): Promise<number> {
@@ -487,6 +549,12 @@ export class MetricManager {
   onMetricsUpdated(
     handler: (eventData?: MetricsUpdatedPayload) => void,
   ): UnsubscribeFn {
-    throw boom.notImplemented('onMetricsUpdated');
+    return this.events.on(METRICS_UPDATED, handler);
+  }
+
+  offMetricsUpdated(
+    handler: (eventData?: MetricsUpdatedPayload) => void,
+  ): void {
+    return this.events.off(METRICS_UPDATED, handler);
   }
 }

@@ -1,6 +1,5 @@
 import * as Joi from 'joi';
 import {
-  ChangeAggregationType,
   PeakSignalDirection,
   RuleAlertOptions,
   RuleCondition,
@@ -9,6 +8,7 @@ import {
   RuleType,
   Severity
 } from '../types';
+import { AggregationType } from '../metrics';
 import { DurationSchema } from '../validation';
 
 
@@ -66,15 +66,15 @@ export const changeConditionSchema = thresholdConditionSchema.keys({
   timeShift: DurationSchema,
   aggregationType: Joi.string()
     .valid(
-      ChangeAggregationType.AVG,
-      ChangeAggregationType.MIN,
-      ChangeAggregationType.MAX,
-      ChangeAggregationType.P90,
-      ChangeAggregationType.P95,
-      ChangeAggregationType.P99,
-      ChangeAggregationType.SUM,
+      AggregationType.AVG,
+      AggregationType.MIN,
+      AggregationType.MAX,
+      AggregationType.P90,
+      AggregationType.P95,
+      AggregationType.P99,
+      AggregationType.SUM,
     )
-    .default(ChangeAggregationType.AVG),
+    .default(AggregationType.AVG),
 });
 
 export const serializedAggregatorSchema = Joi.object().keys({

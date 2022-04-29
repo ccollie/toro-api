@@ -1,15 +1,82 @@
-import type {
-  DistributionAggregate,
-  ExtendedMetricTypeName,
-  MetricTypeName,
-} from './types';
+import type { ExtendedMetricTypeName, MetricTypeName } from './types';
+import { MetricGranularity } from './types';
 import type { Predicate } from '../types';
-import { HostTagKey, MetricName, MetricType, QueueTagKey } from './metric-name';
+import { HostTagKey, MetricName, QueueTagKey } from './metric-name';
 import { Metric } from './metric';
-import { metricsInfo } from './metrics-info';
+import { MetricAggregateByType, metricsInfo } from './metrics-info';
 import boom from '@hapi/boom';
+import ms from 'ms';
+import * as units from './units';
+import { DDSketch } from '@datadog/sketches-js';
 
 export type MetricLike = Metric | MetricName | string;
+
+export const CONFIG = {
+  units: [
+    MetricGranularity.Minute,
+    MetricGranularity.Hour,
+    MetricGranularity.Day,
+    MetricGranularity.Week,
+  ],
+  prevUnit: {
+    [MetricGranularity.Hour]: MetricGranularity.Minute,
+    [MetricGranularity.Day]: MetricGranularity.Hour,
+    [MetricGranularity.Week]: MetricGranularity.Day,
+    [MetricGranularity.Month]: MetricGranularity.Week,
+  },
+  cronExpressions: ['* * * * *', '0 * * * *', '0 0 * * *', '0 0 * * 0'],
+  retention: {
+    [MetricGranularity.Minute]: 60 * 6,
+    [MetricGranularity.Hour]: 24 * 7,
+    [MetricGranularity.Day]: 7,
+    [MetricGranularity.Week]: 4,
+    [MetricGranularity.Month]: 1,
+  },
+  defaultRange: {
+    [MetricGranularity.Minute]: 60,
+    [MetricGranularity.Hour]: 24,
+    [MetricGranularity.Day]: 7,
+    [MetricGranularity.Week]: 4,
+    [MetricGranularity.Month]: 6,
+  },
+  interval: {
+    [MetricGranularity.Minute]: ms('1 min'),
+    [MetricGranularity.Hour]: ms('1 hr'),
+    [MetricGranularity.Day]: ms('1 day'),
+    [MetricGranularity.Week]: ms('1 week'),
+    [MetricGranularity.Month]: ms('1 month'),
+  },
+  snapshotInterval: ms(`1 ${MetricGranularity.Minute}`),
+};
+
+export function getSnapshotInterval(): number {
+  return CONFIG.snapshotInterval;
+}
+
+export function getRetention(unit: MetricGranularity): number {
+  return ms(`${CONFIG.retention[unit]} ${unit}`);
+}
+
+export const DefaultPercentiles = [0.5, 0.9, 0.95, 0.99];
+
+export function createSketch(): DDSketch {
+  return new DDSketch();
+}
+
+export function mergeSketches(
+  dst: DDSketch | null | undefined,
+  sketches: DDSketch[],
+): DDSketch {
+  if (!dst) {
+    dst = createSketch();
+  }
+  sketches.forEach((sketch) => {
+    dst.merge(sketch);
+    // https://github.com/DataDog/sketches-js/pull/18
+    dst.zeroCount += sketch.zeroCount;
+  });
+  return dst;
+}
 
 export function createJobNameFilter(
   jobNames?: string | string[],
@@ -52,18 +119,6 @@ export function getMetricName(metric: MetricLike): MetricName {
   return metric;
 }
 
-const AggTypes: DistributionAggregate[] = [
-  'sum',
-  'count',
-  'min',
-  'max',
-  'avg',
-  'p50',
-  'p75',
-  'p90',
-  'p99',
-];
-
 export function isValidMetric(
   name: string,
   res: ExtendedMetricTypeName,
@@ -72,20 +127,44 @@ export function isValidMetric(
   const info = metricsInfo.find((x) => '' + x.type === metric);
   if (info) {
     res.metric = info.type;
-    if (info.metricType === MetricType.Distribution) {
-      if (agg) {
-        if (AggTypes.find((x) => x == agg)) {
-          res.aggregate = agg as DistributionAggregate;
-        } else {
-          throw boom.badData(`Invalid distribution aggregate "${agg}"`);
-        }
+    if (agg) {
+      // todo: special case percentiles
+      const validAggregates = MetricAggregateByType[info.metricType];
+      if (!validAggregates.find((x) => '' + x === agg)) {
+        throw boom.badData(
+          `Invalid aggregate "${agg}" for metric type ${info.metricType}`,
+        );
       }
-    } else if (agg) {
-      throw boom.badData(
-        `Unexpected aggregate. ${metric} is not a distribution`,
-      );
     }
     return true;
   }
   return false;
+}
+
+export function calculateInterval(duration: number): number {
+  const asString = ms(duration, { long: true });
+  const [, unit] = asString.split(' ');
+
+  switch (unit) {
+    case 'millisecond':
+    case 'milliseconds':
+      return units.MILLISECONDS;
+    case 'second':
+    case 'seconds':
+      return 200 * units.MILLISECONDS;
+    case 'minute':
+    case 'minutes':
+      return 15 * units.SECONDS;
+    case 'hour':
+    case 'hours':
+      return 30 * units.SECONDS;
+    case 'day':
+    case 'days':
+      return 15 * units.MINUTES;
+    case 'month':
+    case 'months':
+      return units.HOURS;
+  }
+
+  return units.SECONDS;
 }

@@ -5,21 +5,25 @@ import {
   getMetricsKey,
   getQueueMetricDataKey,
 } from '../keys';
-import { StatsGranularity } from '../stats/types';
+import { StatsSnapshot } from '../stats/types';
 import { Pipeline } from 'ioredis';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
 import { logger } from '../logger';
 import toDate from 'date-fns/toDate';
-import { getMetricName, MetricLike } from './utils';
 import {
   CONFIG,
+  getMetricName,
   getRetention,
   mergeSketches,
-  Meter,
-  MeterSummary,
-} from '../stats';
-import { MetricType } from '../metrics';
+  MetricLike,
+} from './utils';
+import { OnlineNormalEstimator } from '../stats';
+import { getSketchAggregateValue } from './aggregators';
+import { Meter, MeterSummary } from './meter';
+import { MetricAggregateByType } from '../metrics';
+import { MetricName } from './metric-name';
+import { MetricGranularity, MetricType } from './types';
 import ms from 'ms';
 import {
   TimeSeriesList,
@@ -33,11 +37,18 @@ import {
   serializeSketch,
 } from './bqdist';
 import { ManualClock } from '../lib';
-import { checkMultiErrors } from '~/core';
+import { checkMultiErrors } from '../redis';
+import {
+  AggregationType,
+  getAggregateFunction,
+} from './aggregators/aggregation';
+import boom from '@hapi/boom';
+import { Snapshot } from './snapshot';
+import { round } from 'lodash';
 
 export interface RangeOpts {
   key: string;
-  unit: StatsGranularity;
+  unit: MetricGranularity;
   start: DateLike;
   end: DateLike;
 }
@@ -49,21 +60,21 @@ export interface MetricsClientArgs {
 }
 
 const Granularities = [
-  StatsGranularity.Hour,
-  StatsGranularity.Minute,
-  StatsGranularity.Week,
-  StatsGranularity.Month,
+  MetricGranularity.Hour,
+  MetricGranularity.Minute,
+  MetricGranularity.Week,
+  MetricGranularity.Month,
 ];
 
 interface RollupMeta {
   start: Date;
   end: Date;
-  unit: StatsGranularity;
+  unit: MetricGranularity;
   sketch?: DDSketch;
   value?: number;
 }
 
-function getPeriod(unit: StatsGranularity): number {
+function getPeriod(unit: MetricGranularity): number {
   return ms(`1 ${unit}`);
 }
 
@@ -74,7 +85,7 @@ interface ParsedAddParams {
 
 function parseAddParams(
   metric: MetricLike,
-  unit: StatsGranularity,
+  unit: MetricGranularity,
   expectedTypes: MetricType[] = [MetricType.Gauge, MetricType.Counter],
 ): ParsedAddParams {
   const key = this.getKey(metric, unit);
@@ -113,6 +124,7 @@ export class MetricDataClient extends Emittery {
       max: 100,
       ttl: 10000,
     });
+    this.storeSnapshot = this.storeSnapshot.bind(this);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -126,17 +138,17 @@ export class MetricDataClient extends Emittery {
     if (!this.queue) {
       return getHostMetricsKey(this.host);
     } else {
-      return getMetricsKey(this.queue, null);
+      return getMetricsKey(this.host, this.queue, null);
     }
   }
 
-  private getDataKey(metric: MetricLike, unit: StatsGranularity): string {
+  private getDataKey(metric: MetricLike, unit: MetricGranularity): string {
     return this.getKey(metric, unit);
   }
 
   private async getRange<T = any>(
     key: string,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesValue<T>[]> {
@@ -146,7 +158,7 @@ export class MetricDataClient extends Emittery {
 
   private async getRangeBuffer(
     key: string,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesValue<Buffer>[]> {
@@ -156,7 +168,7 @@ export class MetricDataClient extends Emittery {
 
   pipelineGetBuffer(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     ts: DateLike,
   ): Pipeline {
     const period = getPeriod(unit);
@@ -166,7 +178,7 @@ export class MetricDataClient extends Emittery {
 
   pipelineGetRangeBuffer(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Pipeline {
@@ -189,7 +201,7 @@ export class MetricDataClient extends Emittery {
 
   async getMetadata(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
   ): Promise<TimeseriesListMetadata | null> {
     const key = this.getKey(metric, unit);
     return TimeSeriesList.metadata(this.client, key);
@@ -197,7 +209,7 @@ export class MetricDataClient extends Emittery {
 
   async getLast(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
   ): Promise<number | null> {
     const key = this.getKey(metric, unit);
     const period = getPeriod(unit);
@@ -218,7 +230,7 @@ export class MetricDataClient extends Emittery {
 
   private async cachedRange<T>(
     key: string,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesValue<T>[]> {
@@ -244,7 +256,7 @@ export class MetricDataClient extends Emittery {
 
   async add(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     ts: DateLike,
     value: number,
   ): Promise<void> {
@@ -252,19 +264,19 @@ export class MetricDataClient extends Emittery {
     await TimeSeriesList.add(this.client, key, period, ts, value);
   }
 
-  async pipelineAdd(
+  pipelineAdd(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     ts: DateLike,
     value: number,
-  ): Promise<void> {
+  ): void {
     const { key, period } = parseAddParams(metric, unit);
-    await TimeSeriesList.multi.add(this.pipeline, key, period, ts, value);
+    TimeSeriesList.multi.add(this.pipeline, key, period, ts, value);
   }
 
   pipelineAddDistribution(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     ts: DateLike,
     value: BiasedQuantileDistribution | DDSketch,
   ): Pipeline {
@@ -284,7 +296,7 @@ export class MetricDataClient extends Emittery {
 
   async addDistribution(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     ts: DateLike,
     value: BiasedQuantileDistribution,
   ): Promise<void> {
@@ -299,14 +311,14 @@ export class MetricDataClient extends Emittery {
   async writeDistribution(
     metric: MetricLike,
     sketch: DDSketch,
-    unit = StatsGranularity.Minute,
+    unit = MetricGranularity.Minute,
     ts = Date.now(),
   ): Promise<void> {
     const getRollupValues = async (ts: number): Promise<RollupMeta[]> => {
       const rollupMeta: RollupMeta[] = [];
       CONFIG.units.forEach((unit) => {
         // skip the src
-        if (unit === StatsGranularity.Minute) return;
+        if (unit === MetricGranularity.Minute) return;
 
         const start = startOf(ts, unit);
         const end = endOf(ts, unit);
@@ -359,7 +371,7 @@ export class MetricDataClient extends Emittery {
     };
 
     this.pipelineAddDistribution(metric, unit, ts, sketch);
-    if (unit === StatsGranularity.Minute) {
+    if (unit === MetricGranularity.Minute) {
       // only rollup events at lowest granularity
       await rollup(sketch, ts);
     }
@@ -367,9 +379,25 @@ export class MetricDataClient extends Emittery {
     await this.flush();
   }
 
+  async storeSnapshot(snapshot: Snapshot): Promise<void> {
+    const ts = snapshot.timestamp;
+    const unit = MetricGranularity.Minute;
+
+    const numerics = new Map<MetricName, number>(snapshot.map);
+    for (const [name, sketch] of snapshot.distributions) {
+      numerics.delete(name);
+      await this.writeDistribution(name, sketch, unit, ts);
+    }
+    for (const [name, value] of numerics) {
+      this.pipelineAdd(name, unit, ts, value);
+    }
+
+    await this.flush();
+  }
+
   async getNumericRange(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesValue<number>[]> {
@@ -383,7 +411,7 @@ export class MetricDataClient extends Emittery {
 
   async getDistributionRange(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<TimeseriesValue<DDSketch>[]> {
@@ -403,7 +431,7 @@ export class MetricDataClient extends Emittery {
 
   async aggregateDistribution(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<DDSketch> {
@@ -419,7 +447,7 @@ export class MetricDataClient extends Emittery {
 
   async aggregateToDistribution(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
   ): Promise<DDSketch> {
@@ -433,7 +461,7 @@ export class MetricDataClient extends Emittery {
 
   async aggregateNumeric<T = number>(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
     fn: (items: TimeseriesValue<number>[]) => T,
@@ -442,14 +470,82 @@ export class MetricDataClient extends Emittery {
     return fn(items);
   }
 
-  async getAggregateRates(
+  async getMetricValuesInternal(
     metric: MetricLike,
-    unit: StatsGranularity,
+    unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
+    aggregation?: AggregationType
+    // aggregateValue?: number // for specific percentile or rate interval
+  ): Promise<TimeseriesValue<number>[]> {
+    const mn = getMetricName(metric);
+    if (mn.type === MetricType.Distribution) {
+      const aggregator = aggregation ?? mn.defaultAggregation;
+      const series = await this.getDistributionRange(metric, unit, start, end);
+      const values = series.map((dataPoint) => {
+        return {
+          timestamp: dataPoint.timestamp,
+          value: getSketchAggregateValue(dataPoint.value, aggregator),
+        };
+      });
+      return values;
+    } else {
+      return this.getNumericRange(metric, unit, start, end);
+    }
+    // todo: cache if end < Date.now()
+  }
+
+  async aggregate(
+    metric: MetricLike,
+    unit: MetricGranularity,
+    start: DateLike,
+    end: DateLike,
+    aggregator: AggregationType,
+    // aggregateValue?: number // for specific percentile or rate interval
+  ): Promise<number> {
+    const mn = getMetricName(metric);
+    const validAggregates = MetricAggregateByType[mn.type];
+    if (!validAggregates.includes(aggregator)) {
+      throw boom.badRequest(
+        `Invalid aggregator ${aggregator} for metric ${mn.type}`,
+      );
+    }
+    if (mn.type === MetricType.Distribution) {
+      const sketch = await this.aggregateDistribution(metric, unit, start, end);
+      return getSketchAggregateValue(sketch, aggregator);
+    } else {
+      const fn = getAggregateFunction(aggregator);
+      return this.aggregateNumeric(metric, unit, start, end, (items) => {
+        const values = items.map((x) => x.value);
+        return fn(values);
+      });
+    }
+    // todo: cache if end < Date.now()
+  }
+
+  async getStats(
+    metric: MetricLike,
+    unit: MetricGranularity,
+    start: DateLike,
+    end: DateLike,
+    aggregation?: AggregationType
+  ): Promise<StatsSnapshot> {
+    // todo: cache if endDate < Date.now()
+    const values = await this.getMetricValuesInternal(metric, unit, start, end, aggregation);
+    const data = values.map((x) => x.value);
+    return aggregateSnapshot(data);
+  }
+
+  async getRate(
+    metric: MetricLike,
+    unit: MetricGranularity,
+    start: DateLike,
+    end: DateLike,
+    aggregation?: AggregationType
   ): Promise<MeterSummary> {
     // todo: cache if endDate < Date.now()
-    return this.aggregateNumeric(metric, unit, start, end, aggregateMeter);
+    const values = await this.getMetricValuesInternal(metric, unit, start, end, aggregation);
+    return aggregateMeter(values);
   }
 
   /**
@@ -477,14 +573,14 @@ export class MetricDataClient extends Emittery {
     return this.client.del(keys);
   }
 
-  getKey(metric: MetricLike, unit?: StatsGranularity): string {
+  getKey(metric: MetricLike, unit?: MetricGranularity): string {
     if (!this.queue) {
       return getHostMetricsKey(this.host, metric, unit);
     }
     return getQueueMetricDataKey(this.queue, metric, unit);
   }
 
-  getHostKey(metric: MetricLike, unit: StatsGranularity): string {
+  getHostKey(metric: MetricLike, unit: MetricGranularity): string {
     return getHostMetricsKey(this.host, metric, unit);
   }
 
@@ -512,7 +608,7 @@ export class MetricDataClient extends Emittery {
 export function getRangeCacheKey(opts: RangeOpts): string {
   const start = toDate(opts.start).getTime();
   const end = toDate(opts.end).getTime();
-  return `${opts.key}:${start}-${end}`;
+  return `${opts.key}:${start}-${end}:${opts.unit}`;
 }
 
 export function aggregateMeter(recs: TimeseriesValue<number>[]): MeterSummary {
@@ -526,75 +622,33 @@ export function aggregateMeter(recs: TimeseriesValue<number>[]): MeterSummary {
   return meter.getSummary();
 }
 
-/* Write and rollup distribution to higher granularities */
-async function writeDistribution(
-  dataClient: MetricDataClient,
-  metric: MetricLike,
-  sketch: DDSketch,
-  unit = StatsGranularity.Minute,
-  ts = Date.now(),
-): Promise<void> {
-  async function getRollupValues(ts: number): Promise<RollupMeta[]> {
-    const rollupMeta: RollupMeta[] = [];
-    CONFIG.units.forEach((unit) => {
-      // skip the src
-      if (unit === StatsGranularity.Minute) return;
+export function aggregateSnapshot(data: number[]): StatsSnapshot {
+  const sketch = new DDSketch();
 
-      const start = startOf(ts, unit);
-      const end = endOf(ts, unit);
+  const estimator = new OnlineNormalEstimator();
 
-      rollupMeta.push({
-        start,
-        end,
-        unit,
-      });
-    });
+  data.forEach((x) => {
+    sketch.accept(x);
+    estimator.add(x);
+  });
 
-    // get destination data
-    rollupMeta.forEach((meta) => {
-      const { start, unit } = meta;
-      dataClient.pipelineGetBuffer(metric, unit, start);
-    });
+  const { min, max, count, sum } = sketch;
+  const mean = round(count === 0 ? 0 : sum / count, 2);
+  const median = Math.ceil(sketch.getValueAtQuantile(0.5) * 100) / 100;
 
-    const items = await dataClient.flush();
-    items.forEach((item, index) => {
-      if (!item) return;
-      const meta = rollupMeta[index];
-      const mn = getMetricName(metric);
+  const result: StatsSnapshot = {
+    count,
+    mean,
+    sum,
+    median,
+    stddev: estimator.standardDeviation,
+    min,
+    max,
+    p90: sketch.getValueAtQuantile(0.9),
+    p95: sketch.getValueAtQuantile(0.95),
+    p99: sketch.getValueAtQuantile(0.99),
+    p995: sketch.getValueAtQuantile(0.995),
+  };
 
-      const buf = item as Buffer;
-      if (mn.type === MetricType.Distribution) {
-        try {
-          meta.sketch = deserializeSketch(buf);
-        } catch (e) {
-          logger.warn(e);
-        }
-      } else {
-        meta.value = parseInt(buf.toString());
-      }
-    });
-
-    return rollupMeta;
-  }
-
-  async function rollup(source: DDSketch, ts: number): Promise<void> {
-    const rollupMeta = await getRollupValues(ts);
-
-    rollupMeta.forEach((meta) => {
-      const { start, unit, sketch } = meta;
-
-      if (sketch) {
-        const merged = mergeSketches(null, [sketch, source]);
-        dataClient.pipelineAddDistribution(metric, unit, start, merged);
-      }
-    });
-  }
-
-  dataClient.pipelineAddDistribution(metric, unit, ts, sketch);
-  if (unit === StatsGranularity.Minute) {
-    // only rollup events at lowest granularity
-    await rollup(sketch, ts);
-  }
-
-  await dataClient.flush();
+  return result;
 }

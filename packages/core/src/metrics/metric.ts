@@ -1,15 +1,11 @@
 import Emittery from 'emittery';
-import { MetricFamily } from './types';
+import { MetricFamily, MetricType } from './types';
 import { systemClock } from '../lib';
-import {
-  Distribution,
-  JobNameTagKey,
-  MetricName,
-  MetricType,
-} from './metric-name';
+import { Distribution, JobNameTagKey, MetricName } from './metric-name';
 import { BiasedQuantileDistribution } from './bqdist';
-import { metricsInfo } from './metrics-info';
+import { metricsInfo, MetricAggregateByType } from './metrics-info';
 import { metricGetters, MetricValueFn } from './metric-getters';
+import { AggregationType } from './aggregators/aggregation';
 
 type Value = number | (() => number) | BiasedQuantileDistribution;
 
@@ -34,6 +30,7 @@ export class Metric {
   public id: string;
   public readonly collect: MetricValueFn;
   public createdAt: number;
+  public lastWritten: number;
   public lastChangedAt: number;
 
   constructor(public readonly name: MetricName) {
@@ -55,6 +52,14 @@ export class Metric {
       throw new Error(`metric "${name.name}" is not recognized`);
     }
     this.collect = metricGetters[this.info.type];
+  }
+
+  aggregationTypes(): AggregationType[] {
+    return MetricAggregateByType[this.type];
+  }
+
+  get defaultAggregation(): AggregationType {
+    return this.name.defaultAggregation;
   }
 
   touch(time: number) {

@@ -4,7 +4,6 @@ import {
   Distribution,
   Gauge,
   MetricName,
-  MetricType,
   NoTags,
   Tags,
   tagsToMap,
@@ -12,16 +11,9 @@ import {
 import { Registry, RegistryOptions } from './registry';
 import { Snapshot } from './snapshot';
 import { performance } from 'perf_hooks';
-import {DistributionMetricTypeNames, MetricAggregate, MetricTypeName} from './types';
+import { DistributionMetricTypeNames, MetricTypeName, MetricType } from './types';
 import { Metric } from './metric';
-
-export const AggregateByType: Record<MetricType, MetricAggregate[]> = {
-  [MetricType.Counter]: ['sum'],
-  [MetricType.Gauge]: [ 'latest', 'min', 'max', 'sum', 'count', 'average' ],
-  [MetricType.Distribution]: [
-    'min', 'max', 'sum', 'count', 'average' // todo: percentiles
-  ]
-};
+import { UnsubscribeFn } from 'emittery';
 
 /*
  * Primary entry point for metrics: Create counters, gauges, and distributions,
@@ -172,6 +164,14 @@ export class Metrics {
     const rv = f();
     this.addDistribution(name, Date.now() - startTime);
     return rv;
+  }
+
+  onSnapshot(fn: (snapshot: Snapshot) => void | Promise<void>): UnsubscribeFn {
+    return this.registry.onSnapshot(fn);
+  }
+
+  offSnapshot(fn: (snapshot: Snapshot) => void | Promise<void>): void {
+    return this.registry.offSnapshot(fn);
   }
 
   /*

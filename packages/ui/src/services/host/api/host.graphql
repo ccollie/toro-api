@@ -110,28 +110,7 @@ query HostQueues($id: ID!, $range: String!, $filter: HostQueuesFilter) {
       isReadonly
       ...JobCounts
       workerCount
-      throughput {
-        count
-        m1Rate
-        m5Rate
-        m15Rate
-      }
-      errorRate {
-        count
-        m1Rate
-        m5Rate
-        m15Rate
-      }
       workerCount
-      stats(input: { range: $range, granularity: Minute }) {
-        ...StatsSnapshot
-      }
-      statsAggregate(input: { range: $range, granularity: Minute }) {
-        ...StatsSnapshot
-      }
-      lastStatsSnapshot(input: { granularity: Minute }) {
-        ...StatsSnapshot
-      }
     }
   }
 }

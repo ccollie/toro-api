@@ -1,5 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { queues } from './queues';
+import { metrics } from './metrics';
 import { workerCount } from './worker-count';
 import { workers as workers } from './workers';
 import { jobCounts } from './job-counts';
@@ -12,20 +13,10 @@ import { ping } from './ping';
 import { uri } from './uri';
 
 import {
-  histogram,
-  percentileDistribution,
   stats,
   statsLatest as lastStatsSnapshot,
   statsDateRange,
-  statsAggregate,
-  getHostRatesResolver,
 } from '../../stats';
-
-import { StatsRateType } from '@alpen/core';
-
-const throughput = getHostRatesResolver(StatsRateType.Throughput);
-const errorRate = getHostRatesResolver(StatsRateType.Errors);
-const errorPercentageRate = getHostRatesResolver(StatsRateType.ErrorPercentage);
 
 export const HostTC = schemaComposer.createObjectTC({
   name: 'QueueHost',
@@ -38,24 +29,19 @@ export const HostTC = schemaComposer.createObjectTC({
       description: 'An optional description of the host',
     },
     discoverQueues,
-    errorPercentageRate,
-    errorRate,
-    histogram,
     jobCounts,
     lastStatsSnapshot,
+    metrics,
     name: {
       type: 'String!',
       description: 'The name of the host',
     },
-    percentileDistribution,
     ping,
     queues,
     queueCount,
     redis,
     stats,
-    statsAggregate,
     statsDateRange,
-    throughput,
     uri,
     workerCount,
     workers,

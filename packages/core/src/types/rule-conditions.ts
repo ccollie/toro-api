@@ -1,4 +1,5 @@
 import { ErrorStatus } from './rules';
+import { AggregationType } from '../metrics/aggregators';
 
 export enum RuleType {
   THRESHOLD = 'THRESHOLD',
@@ -63,15 +64,6 @@ export interface PeakCondition extends NotificationThresholds {
   direction?: PeakSignalDirection;
 }
 
-export enum ChangeAggregationType {
-  MAX = 'MAX',
-  MIN = 'MIN',
-  AVG = 'AVG',
-  SUM = 'SUM',
-  P90 = 'P90',
-  P95 = 'P95',
-  P99 = 'P99',
-}
 
 export enum ChangeTypeEnum {
   CHANGE = 'CHANGE',
@@ -89,7 +81,7 @@ export interface ChangeConditionOptions extends RuleConditionThresholds {
    * eg 1 hour means we're comparing now vs 1 hour ago
    */
   timeShift?: number;
-  aggregationType: ChangeAggregationType;
+  aggregationType: AggregationType;
   sampleInterval?: number;
 }
 

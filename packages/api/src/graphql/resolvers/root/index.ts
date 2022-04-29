@@ -1,4 +1,3 @@
-export { aggregates } from './aggregates';
 export { appInfo } from './appInfo';
 export { queue } from './queue';
 export { job } from './job';

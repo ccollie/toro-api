@@ -1,6 +1,5 @@
 import * as boom from '@hapi/boom';
 import { Job, Queue } from 'bullmq';
-import { StatsClient } from '../stats';
 import { QueueManager, QueueListener } from '../queues';
 import { Supervisor } from './supervisor';
 import { HostManager } from '../hosts/host-manager';
@@ -54,7 +53,7 @@ export function getMetricById(id: string): Metric {
     const managers = hosts[i].queueManagers;
     for (let j = 0; j < managers.length; j++) {
       const manager = managers[j];
-      const metric = manager.metricManager.findMetricById(id);
+      const metric = manager.metricsManager.findMetricById(id);
       if (metric) return metric;
     }
   }
@@ -158,9 +157,4 @@ export function getAsyncIterator(queueId: string, eventName: string) {
   return createAsyncIterator(queueEvents, {
     eventNames: [eventName],
   });
-}
-
-export function getStatsClient(queue: string | Queue): StatsClient {
-  const manager = getQueueManager(queue);
-  return manager && manager.statsClient;
 }

@@ -1,24 +1,10 @@
 // different metric types have different implementations:
 import boom from '@hapi/boom';
+import { MetricType } from './types';
 import { parseMetricName } from './metric-name-parser';
 import { DEFAULT_ERROR, DEFAULT_PERCENTILES } from './registry';
-
-export enum MetricType {
-  Counter,
-  Gauge,
-  Distribution,
-}
-
-import { MetricAggregate } from './types';
-
-
-export const MetricAggregateByType: Record<MetricType, MetricAggregate[]> = {
-  [MetricType.Counter]: ['sum'],
-  [MetricType.Gauge]: [ 'latest', 'min', 'max', 'sum', 'count', 'average' ],
-  [MetricType.Distribution]: [
-    'min', 'max', 'sum', 'count', 'average' // todo: percentiles
-  ]
-};
+import { AggregationType } from '../metrics';
+import { DefaultAggregationType } from './metrics-info';
 
 export const QueueTagKey = 'queue';
 export const HostTagKey = 'host';
@@ -38,7 +24,7 @@ export interface SerializedGaugeName {
   fieldName?: string;
 }
 
-export interface SerializedCounterName  {
+export interface SerializedCounterName {
   type: MetricType.Counter;
   canonical: string;
   fieldName?: string;
@@ -188,6 +174,10 @@ export abstract class MetricName {
     }
   }
 
+  get defaultAggregation(): AggregationType {
+    return DefaultAggregationType[this.type];
+  }
+
   getTagValue(name: string): string {
     return this.tags.get(name);
   }
@@ -302,7 +292,10 @@ function distributionTags(
   error: number,
 ): Map<string, string> {
   const map = tagsToMap(baseTags, tags);
-  const percentilesValue = percentiles.sort().map((p) => p.toString()).join(',');
+  const percentilesValue = percentiles
+    .sort()
+    .map((p) => p.toString())
+    .join(',');
   map.set(PercentilesTagKey, percentilesValue);
   map.set(ErrorTagKey, error.toString());
   return map;

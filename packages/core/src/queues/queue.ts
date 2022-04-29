@@ -10,12 +10,16 @@ import {
   validateBySchema,
   validateJobData,
 } from './job-schemas';
-import { JobCreationOptions, JobSearchStatus, JobStatus } from '../types/queues';
+import {
+  JobCreationOptions,
+  JobSearchStatus,
+  JobStatus,
+} from '../types/queues';
 import { Pipeline } from 'ioredis';
 import { logger } from '../logger';
 import { Scripts } from '../commands';
-import { StatsGranularity } from '../stats';
 import { JobMemoryLoaderKey, JobMemoryLoaderResult, loaders } from '../loaders';
+import { MetricGranularity } from '../metrics';
 
 export const JOB_STATES: JobType[] = [
   'completed',
@@ -141,11 +145,7 @@ export async function updateJobData(
   data: Record<string, any>,
 ): Promise<void> {
   const { name } = job;
-  const { data: validated } = await validateJobData(
-    queue,
-    name,
-    data,
-  );
+  const { data: validated } = await validateJobData(queue, name, data);
 
   return job.update(validated);
 }
@@ -187,11 +187,10 @@ export async function createBulkJobs(
 
 export async function deleteQueueStats(
   queue: Queue,
-  jobName: string = null,
-  granularity?: StatsGranularity,
+  granularity?: MetricGranularity,
 ): Promise<number> {
   const client = await queue.client;
-  const pattern = getQueueStatsPattern(queue, jobName, granularity);
+  const pattern = getQueueStatsPattern(queue, granularity);
   return deleteByPattern(client, pattern);
 }
 

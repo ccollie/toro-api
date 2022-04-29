@@ -24,8 +24,8 @@ import {
   add as _add,
   unitsDesc,
   unitsAsc,
-} from '../../dist';
-import { parseDateMath } from '../../dist';
+} from '../dates';
+import { parseDateMath } from '../dates';
 
 function startOf(date: Date, unit: string): Date {
   unit = unit === 'M' ? 'month' : unit;

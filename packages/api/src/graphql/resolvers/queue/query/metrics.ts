@@ -6,13 +6,10 @@ import { Metric } from '@alpen/core';
 
 export const metrics: FieldConfig = {
   type: MetricTC.NonNull.List.NonNull,
+  description: 'The metrics associated with the queue',
   args: {},
-  async resolve(
-    queue: Queue,
-    _,
-    { accessors }: EZContext,
-  ): Promise<Metric[]> {
+  async resolve(queue: Queue, _, { accessors }: EZContext): Promise<Metric[]> {
     const manager = accessors.getQueueManager(queue);
-    return manager.metricManager.metrics;
+    return manager.metricsManager.metrics;
   },
 };

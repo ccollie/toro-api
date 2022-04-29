@@ -1,4 +1,3 @@
-import { createAggregator  } from '@alpen/core';
 import boom from '@hapi/boom';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
@@ -14,16 +13,17 @@ export const updateMetric: FieldConfig = {
   resolve: async (_, { input }, { accessors }: EZContext) => {
     const { queueId, id, name, description, aggregator } =
       input;
-    const manager = accessors.getQueueManager(queueId, true);
-    const metric = await manager.metricManager.getMetric(id);
+    const queueManager = accessors.getQueueManager(queueId, true);
+    const manager = queueManager.metricsManager;
+    const metric = await manager.getMetric(id);
 
     if (!metric) {
       throw boom.notFound(
-        `No metric with id#${id} found for queue "${manager.name}"`,
+        `No metric with id#${id} found for queue "${queueManager.name}"`,
       );
     }
 
-    await manager.metricManager.saveMetric(metric);
+    await manager.saveMetric(metric);
     return metric;
   },
 };

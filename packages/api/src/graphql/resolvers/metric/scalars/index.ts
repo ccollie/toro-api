@@ -1,6 +1,5 @@
 import { EnumTypeComposer, schemaComposer } from 'graphql-compose';
 import { metricsInfo } from '@alpen/core';
-import { AggregatorInputTC } from '../../aggregator/query';
 
 function createMetricTypesTS(): EnumTypeComposer<any> {
   const values: Record<string, any> = Object.create(null);
@@ -20,31 +19,18 @@ export const MetricTypeTC = createMetricTypesTS();
 
 export const BaseFields = {
   type: MetricTypeTC.NonNull,
-  queueId: {
-    type: 'ID!',
-    description: 'The id of the queue to which the metric belongs',
-  },
   name: {
     type: 'String!',
     description: 'The name of the metric',
   },
-  canonicalName: {
-    type: 'String!',
-    description: 'The canonical name of the metric',
-  },
-  description: {
-    type: 'String',
-    description: 'A description of the metric being measured.',
-  },
-  unit: {
-    type: 'String',
-    description: 'The metric unit.',
-  },
 };
 
 const InputFields = {
+  queueId: {
+    type: 'ID!',
+    description: 'The id of the queue to which the metric belongs',
+  },
   ...BaseFields,
-  aggregator: AggregatorInputTC,
 };
 
 export const MetricInputTC = schemaComposer
@@ -61,7 +47,7 @@ export const MetricInputTC = schemaComposer
   })
   .makeFieldNullable(['name', 'options', 'aggregator']);
 
-export const CreateMetricTC = schemaComposer
+export const CreateMetricInputTC = schemaComposer
   .createInputTC({
     name: 'CreateMetricInput',
     description: 'Input fields for creating a metric',
@@ -70,3 +56,6 @@ export const CreateMetricTC = schemaComposer
     },
   })
   .makeRequired(['name', 'queueId']);
+
+export * from './Meter';
+export * from './MetricsQueryInput';

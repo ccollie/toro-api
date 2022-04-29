@@ -6,13 +6,13 @@ import {
   ThresholdConditionEvaluator,
 } from '../';
 import {
-  ChangeAggregationType,
   ChangeTypeEnum,
   RuleConfigOptions,
   RuleOperator,
   RuleType,
 } from '../../types';
-import { Metric } from '../../metrics';
+import { Gauge as GaugeName } from '../../metrics/metric-name';
+import { Metric, AggregationType, NoTags } from '../../metrics';
 import { QueueListener } from '../../queues';
 import {
   clearDb,
@@ -22,7 +22,6 @@ import {
   QueueListenerHelper,
 } from '../../__tests__/factories';
 import { delay } from '../../lib';
-import { Gauge as GaugeName, NoTags } from '../../metrics/metric-name';
 
 class ExtRuleEvaluator extends RuleEvaluator {
   getEvaluator(): ConditionEvaluator {
@@ -91,7 +90,7 @@ describe('RuleEvaluator', () => {
           changeType: ChangeTypeEnum.CHANGE,
           timeShift: 1000,
           windowSize: 10000,
-          aggregationType: ChangeAggregationType.AVG,
+          aggregationType: AggregationType.AVG,
           errorThreshold: 20,
           operator: RuleOperator.GT,
         },
@@ -104,7 +103,7 @@ describe('RuleEvaluator', () => {
           changeType: ChangeTypeEnum.CHANGE,
           timeShift: 1000,
           windowSize: 10000,
-          aggregationType: ChangeAggregationType.AVG,
+          aggregationType: AggregationType.AVG,
           errorThreshold: 20,
           operator: RuleOperator.GT,
         },

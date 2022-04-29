@@ -1,6 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import {
-  ChangeAggregationEnum,
+  AggregationTypeEnum,
   ConditionChangeEnum,
   Duration,
   PeakSignalDirectionEnum,
@@ -56,13 +56,13 @@ export const ChangeConditionTC = ThresholdConditionTC.clone('ChangeCondition')
       type: Duration,
       description:
         'Lookback period (ms). How far back are we going to compare ' +
-        "eg 1 hour means we're comparing now vs 1 hour ago",
+        'eg 1 hour means we are comparing now vs 1 hour ago',
     },
     changeType: {
       type: ConditionChangeEnum,
     },
     aggregationType: {
-      type: ChangeAggregationEnum,
+      type: AggregationTypeEnum,
     },
   })
   .makeFieldNonNull([

@@ -1,5 +1,6 @@
 import { MetricName } from './metric-name';
 import { Registry } from './registry';
+import { DDSketch } from '@datadog/sketches-js';
 
 /*
  * Snapshot of the values of every metric in the system at a given time.
@@ -7,6 +8,11 @@ import { Registry } from './registry';
  * numeric values.
  */
 export class Snapshot {
+  public distributions: Map<MetricName, DDSketch> = new Map<
+    MetricName,
+    DDSketch
+  >();
+
   constructor(
     public readonly registry: Registry,
     public readonly timestamp: number,
