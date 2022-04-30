@@ -16,6 +16,7 @@ import { MetricManager, Metric } from '../metrics';
 import { getConfigDuration } from '../lib/config-utils';
 import { logger } from '../logger';
 import { convertWorker, QueueWorker } from './queue-worker';
+import { Snapshot } from '../metrics/snapshot';
 
 const ALL_STATUSES: JobState[] = ['completed', 'waiting', 'active', 'failed'];
 
@@ -80,7 +81,7 @@ export class QueueManager {
       queue: this.queue,
       host: this.host,
       bus: this.bus,
-      client: this.hostManager.client
+      client: this.hostManager.client,
     });
     this._isReadOnly = !!config.isReadonly;
     this.ruleManager = new RuleManager(this);
@@ -191,13 +192,10 @@ export class QueueManager {
     });
   }
 
-  private handleLockEvent(): void {
-  }
+  private handleLockEvent(): void {}
 
-  protected dispatchMetrics({ metrics = [], ts }): void {
-    metrics.forEach((metric) =>
-      this.ruleManager.handleMetricUpdate(metric, ts),
-    );
+  protected dispatchMetrics(snapshot: Snapshot): void {
+    this.ruleManager.onSnapshot(this.metricsManager, snapshot);
   }
 
   /**
@@ -279,11 +277,11 @@ export class QueueManager {
   }
 
   async listen(): Promise<void> {
-    await Promise.all([
-      this.queueListener.startListening(),
-    ]);
     this.metricsManager.onMetricsUpdated(this.dispatchMetrics);
-    await this.loadRules();
+    await Promise.all([
+        this.queueListener.startListening(),
+        this.loadRules()
+    ]);
     await this.metricsManager.start();
   }
 
@@ -302,7 +300,7 @@ export class QueueManager {
   }
 
   /****
-   * A more performant way to fetch multiple getJobs from a queue.
+   * A more performant way to fetch multiple Jobs from a queue.
    * The standard method in Bull makes a round trip per job. This
    * method uses pipelining to get all getJobs in a single round-trip
    * @param  ids job ids

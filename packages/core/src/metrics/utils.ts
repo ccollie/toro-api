@@ -1,13 +1,13 @@
-import type { ExtendedMetricTypeName, MetricTypeName } from './types';
-import { MetricGranularity } from './types';
-import type { Predicate } from '../types';
-import { HostTagKey, MetricName, QueueTagKey } from './metric-name';
-import { Metric } from './metric';
-import { MetricAggregateByType, metricsInfo } from './metrics-info';
+import type {ExtendedMetricTypeName, MetricTypeName} from './types';
+import {MetricGranularity} from './types';
+import type {Predicate} from '../types';
+import {HostTagKey, MetricName, QueueTagKey} from './metric-name';
+import {Metric} from './metric';
+import {MetricAggregateByType, metricsInfo} from './metrics-info';
 import boom from '@hapi/boom';
 import ms from 'ms';
 import * as units from './units';
-import { DDSketch } from '@datadog/sketches-js';
+import {DDSketch} from '@datadog/sketches-js';
 
 export type MetricLike = Metric | MetricName | string;
 
@@ -57,7 +57,7 @@ export function getRetention(unit: MetricGranularity): number {
   return ms(`${CONFIG.retention[unit]} ${unit}`);
 }
 
-export const DefaultPercentiles = [0.5, 0.9, 0.95, 0.99];
+export const DefaultPercentiles = [0.9, 0.95, 0.99];
 
 export function createSketch(): DDSketch {
   return new DDSketch();
@@ -167,4 +167,39 @@ export function calculateInterval(duration: number): number {
   }
 
   return units.SECONDS;
+}
+
+export function getUnitFromDuration(duration: number): MetricGranularity {
+  const asString = ms(duration, { long: true });
+  const [quantity, unit] = asString.split(' ');
+
+  switch (unit) {
+    case 'millisecond':
+    case 'milliseconds':
+    case 'second':
+    case 'seconds':
+    case 'minute':
+    case 'minutes':
+      return MetricGranularity.Minute;
+    case 'hour':
+    case 'hours':
+      return MetricGranularity.Hour;
+    case 'day':
+    case 'days': {
+      const q = parseInt(quantity);
+      if (q >= 7) {
+        return MetricGranularity.Week;
+      }
+      return MetricGranularity.Day;
+    }
+    case 'month':
+    case 'months':
+      return MetricGranularity.Month;
+  }
+
+  return MetricGranularity.Minute;
+}
+
+export function getPeriod(unit: MetricGranularity): number {
+  return CONFIG.interval[unit];
 }

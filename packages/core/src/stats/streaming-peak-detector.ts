@@ -31,17 +31,27 @@ export class StreamingPeakDetector {
     this.lag = lag;
     this.threshold = threshold;
     this.influence = influence;
-    this.filteredY = undefined;
-    if (this.lag <= 0) {
-      this.lagEnd = 0;
-      this.inLag = false;
-      this.pastLag = true;
-    }
     this.stats = new OnlineNormalEstimator();
+    this.reset();
   }
 
   get isInLagPeriod(): boolean {
     return !this.pastLag;
+  }
+
+  reset() {
+    this.stats.reset();
+    this.filteredY = undefined;
+    this.lastTick = undefined;
+    if (this.lag <= 0) {
+      this.lagEnd = 0;
+      this.inLag = false;
+      this.pastLag = true;
+    } else {
+      this.lagEnd = undefined;
+      this.pastLag = false;
+    }
+    this.signal = 0;
   }
 
   update(value: number, ts?: number): number {
@@ -68,7 +78,7 @@ export class StreamingPeakDetector {
 
     const oldValue = this.filteredY;
 
-    // todo: skip signaling if we (lastSave - now) > this.lag since the last update
+    // todo: skip signaling if (lastSave - now) > this.lag since the last update
 
     if (stats.count && Math.abs(value - mean) > threshold * std) {
       this.signal = value > mean ? 1 : -1;

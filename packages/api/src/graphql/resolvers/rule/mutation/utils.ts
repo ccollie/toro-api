@@ -50,6 +50,7 @@ export function convertCondition(input: RuleConditionInput): RuleCondition {
           type: RuleType.PEAK,
           ...rest,
           lag: parseDuration(lag),
+          deviations: 10,
           direction: translateDirection(direction)
         };
       }

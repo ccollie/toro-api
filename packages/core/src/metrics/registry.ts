@@ -156,15 +156,18 @@ export class Registry {
     const snapshot = await this.snapshot(timestamp);
     this.lastPublish = snapshot.timestamp;
 
-    logger.trace(
-      `Publishing ${this.registry.size} metrics to ${this.emitter.listenerCount} observers.`,
-    );
+    const listenerCount = this.emitter.listenerCount(SNAPSHOT_EVENT);
+    if (this.registry.size > 0) {
+      logger.trace(
+          `Publishing ${this.registry.size} metrics to ${listenerCount} observers.`,
+      );
 
-    this.events.post(snapshot);
+      this.events.post(snapshot);
 
-    this.emitter.emit(SNAPSHOT_EVENT, snapshot).catch((e) => {
-      logger.error(snapshot, e.message);
-    });
+      this.emitter.emit(SNAPSHOT_EVENT, snapshot).catch((e) => {
+        logger.error(snapshot, e.message);
+      });
+    }
 
     this.schedulePublish();
   }

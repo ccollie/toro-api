@@ -107,7 +107,7 @@ export class QueueListener extends Emittery {
   }
 
   destroy(): Promise<void> {
-    this.cache.reset();
+    this.cache.clear();
     return this.unlisten();
   }
 

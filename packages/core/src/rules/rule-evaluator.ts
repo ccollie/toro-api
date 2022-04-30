@@ -1,4 +1,4 @@
-import { Metric } from '../metrics';
+import { Metric, MetricManager } from '../metrics';
 import { Rule } from './rule';
 import { parseRuleCondition } from './schemas';
 import {
@@ -15,6 +15,7 @@ import {
   RuleType,
   ThresholdCondition,
 } from '../types';
+import { DDSketch } from '@datadog/sketches-js';
 
 export class RuleEvaluator {
   protected evaluator: ConditionEvaluator;
@@ -53,8 +54,12 @@ export class RuleEvaluator {
     }
   }
 
-  evaluate(value: number, ts?: number): EvaluationResult {
-    return this.evaluator.evaluate(value, ts);
+  async evaluate(
+    manager: MetricManager,
+    ts: number,
+    value: number | DDSketch,
+  ): Promise<EvaluationResult> {
+    return this.evaluator.evaluate(manager, ts, value);
   }
 
   private onError(err: Error): void {

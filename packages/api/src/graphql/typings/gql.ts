@@ -924,12 +924,26 @@ export type MarkRuleAlertAsReadResult = {
   alert: RuleAlert;
 };
 
+/** Records the rate of events over an interval using an exponentially moving average */
+export type Meter = {
+  /** The number of samples. */
+  count: Scalars['Int'];
+  /** The 1 minute average */
+  m1Rate: Scalars['Float'];
+  /** The 5 minute average */
+  m5Rate: Scalars['Float'];
+  /** The 15 minute average */
+  m15Rate: Scalars['Float'];
+  /** The average rate since the meter was started. */
+  meanRate: Scalars['Float'];
+};
+
 /** Metrics are numeric samples of data collected over time */
 export type Metric = {
   /** Aggregates metrics within a range */
   aggregate: Scalars['Int'];
   /** The list of allowed aggregations for this metric. */
-  aggregationTypes: Array<Scalars['String']>;
+  aggregationTypes: Array<Maybe<AggregationType>>;
   /** The canonical name of the metric */
   canonicalName: Scalars['String'];
   /** Timestamp of when this metric was created */
@@ -937,18 +951,20 @@ export type Metric = {
   data: Array<Maybe<TimeseriesDataPoint>>;
   /** Returns the timestamps of the first and last data items recorded for the metric */
   dateRange?: Maybe<TimeSpan>;
+  /** The default aggregation for this metric. */
+  defaultAggregation: AggregationType;
   /** A short description of the metric */
   description: Scalars['String'];
   /** the id of the metric */
   id: Scalars['ID'];
-  /** The name of the metric */
-  name: Scalars['String'];
   /** Uses a rolling mean and a rolling deviation (separate) to identify peaks in metric data */
   outliers: Array<Maybe<TimeseriesDataPoint>>;
   /** Compute a percentile distribution. */
   percentileDistribution: PercentileDistribution;
-  /** Returns simple descriptive statistics from a range of metric data */
-  summaryStats: SummaryStatistics;
+  /** Gets rate data for a metric within a range */
+  rate: Meter;
+  /** Calculates summary stats over metric data in a given range */
+  stats: StatsSnapshot;
   /** The tags of the metric */
   tags: Array<Scalars['String']>;
   type: MetricType;
@@ -979,7 +995,12 @@ export type MetricPercentileDistributionArgs = {
 };
 
 /** Metrics are numeric samples of data collected over time */
-export type MetricSummaryStatsArgs = {
+export type MetricRateArgs = {
+  input: MetricsQueryInput;
+};
+
+/** Metrics are numeric samples of data collected over time */
+export type MetricStatsArgs = {
   input: MetricDataInput;
 };
 
@@ -1836,6 +1857,7 @@ export type Queue = {
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
   limiter?: Maybe<QueueLimiter>;
   metricCount: Scalars['Int'];
+  /** The metrics associated with the queue */
   metrics: Array<Metric>;
   metricsData?: Maybe<MetricsTimeseries>;
   name: Scalars['String'];
@@ -1855,8 +1877,6 @@ export type Queue = {
   schedulers: Array<QueueScheduler>;
   /** Queries for metric snapshots within a range */
   stats: Array<StatsSnapshot>;
-  /** Aggregates queue metrics within a range */
-  statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
   statsDateRange?: Maybe<TimeSpan>;
   /** Get the average time a job spends in the queue before being processed */
@@ -1923,10 +1943,6 @@ export type QueueSchedulersArgs = {
 };
 
 export type QueueStatsArgs = {
-  input: StatsQueryInput;
-};
-
-export type QueueStatsAggregateArgs = {
   input: StatsQueryInput;
 };
 
@@ -1997,6 +2013,8 @@ export type QueueHost = {
   jobCounts: JobCounts;
   /** Gets the last recorded queue stats snapshot for a metric */
   lastStatsSnapshot?: Maybe<StatsSnapshot>;
+  /** The metrics associated with the host */
+  metrics: Array<Metric>;
   /** The name of the host */
   name: Scalars['String'];
   ping: PingPayload;
@@ -2007,8 +2025,6 @@ export type QueueHost = {
   redis: RedisInfo;
   /** Queries for metric snapshots within a range */
   stats: Array<StatsSnapshot>;
-  /** Aggregates queue metrics within a range */
-  statsAggregate?: Maybe<StatsSnapshot>;
   /** Gets the time range of recorded stats for a queue/host */
   statsDateRange?: Maybe<TimeSpan>;
   uri: Scalars['String'];
@@ -2031,10 +2047,6 @@ export type QueueHostQueuesArgs = {
 };
 
 export type QueueHostStatsArgs = {
-  input: StatsQueryInput;
-};
-
-export type QueueHostStatsAggregateArgs = {
   input: StatsQueryInput;
 };
 
@@ -2693,31 +2705,6 @@ export type SubscriptionOnQueueWorkersCountChangedArgs = {
 export type SubscriptionOnRuleAlertArgs = {
   queueId: Scalars['ID'];
   ruleIds?: InputMaybe<Array<Scalars['String']>>;
-};
-
-/** Basic descriptive statistics */
-export type SummaryStatistics = {
-  /** The number of input values included in calculations */
-  count: Scalars['Int'];
-  /** The maximum value. */
-  max?: Maybe<Scalars['Float']>;
-  /** The average value - the sum of all values over the number of values. */
-  mean: Scalars['Float'];
-  /** The median is the middle number of a list. This is often a good indicator of "the middle" when there are outliers that skew the mean value. */
-  median?: Maybe<Scalars['Float']>;
-  /** The minimum value. */
-  min?: Maybe<Scalars['Float']>;
-  /** The standard deviation is the square root of the sample variance. */
-  sampleStandardDeviation: Scalars['Float'];
-  /**
-   * The sample variance is the sum of squared deviations from the mean.
-   * The sample variance is distinguished from the variance by dividing the sum of squared deviations by (n - 1) instead of n. This corrects the bias in estimating a value from a sample set rather than the full population.
-   */
-  sampleVariance: Scalars['Float'];
-  /** The standard deviation is the square root of the variance. This is also known as the population standard deviation. It is useful for measuring the amount of variation or dispersion in a set of values. */
-  standardDeviation: Scalars['Float'];
-  /** The variance is the sum of squared deviations from the mean. */
-  variance: Scalars['Float'];
 };
 
 export type ThresholdConditionInput = {

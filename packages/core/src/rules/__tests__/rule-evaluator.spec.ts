@@ -113,6 +113,7 @@ describe('RuleEvaluator', () => {
       sut = createEvaluator({
         condition: {
           type: RuleType.PEAK,
+          deviations: 3.5,
           errorThreshold: 3.5,
         },
       });

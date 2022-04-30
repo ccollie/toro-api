@@ -24,7 +24,6 @@ export type MetricUpdateEventHandler = (eventData?: MetricUpdateEvent) => void;
 export class Metric {
   private readonly info: MetricFamily;
   private readonly emitter: Emittery = new Emittery();
-  private _prev: number | BiasedQuantileDistribution;
   protected _value: Value;
 
   public id: string;
@@ -37,7 +36,6 @@ export class Metric {
     if (!name) {
       throw new Error('Missing name in metric');
     }
-    this._prev = null;
     this.createdAt = systemClock.getTime();
     if (name instanceof Distribution) {
       this._value = new BiasedQuantileDistribution(
@@ -139,28 +137,6 @@ export class Metric {
 
   onUpdate(listener: MetricUpdateEventHandler): Emittery.UnsubscribeFn {
     return this.emitter.on('update', listener);
-  }
-
-  // To override in descendents
-  protected transformValue(value: number, ts?: number): number {
-    return value;
-  }
-
-  // Public core used elsewhere
-  update(value: number, ts?: number): number {
-    ts = ts ?? systemClock.getTime();
-    this._value = this.transformValue(value, ts);
-    if (this._value !== this._prev) {
-      this._prev = this._value;
-      this.lastChangedAt = ts;
-      const event: MetricUpdateEvent = {
-        ts,
-        value: this._value,
-        metric: this,
-      };
-      this.emitter.emit('update', event).catch((err) => console.log(err));
-    }
-    return this._value;
   }
 
   /*

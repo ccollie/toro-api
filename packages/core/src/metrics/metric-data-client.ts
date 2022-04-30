@@ -1,50 +1,32 @@
-import { Queue, RedisClient } from 'bullmq';
-import { DateLike, endOf, startOf } from '@alpen/shared';
-import {
-  getHostMetricsKey,
-  getMetricsKey,
-  getQueueMetricDataKey,
-} from '../keys';
-import { StatsSnapshot } from '../stats/types';
-import { Pipeline } from 'ioredis';
+import {Queue, RedisClient} from 'bullmq';
+import {DateLike, endOf, startOf} from '@alpen/shared';
+import {getHostMetricsKey, getMetricsKey, getQueueMetricDataKey,} from '../keys';
+import {StatsSnapshot} from '../stats/types';
+import {Pipeline} from 'ioredis';
 import Emittery from 'emittery';
 import LRUCache from 'lru-cache';
-import { logger } from '../logger';
+import {logger} from '../logger';
 import toDate from 'date-fns/toDate';
-import {
-  CONFIG,
-  getMetricName,
-  getRetention,
-  mergeSketches,
-  MetricLike,
-} from './utils';
-import { OnlineNormalEstimator } from '../stats';
-import { getSketchAggregateValue } from './aggregators';
-import { Meter, MeterSummary } from './meter';
-import { MetricAggregateByType } from '../metrics';
-import { MetricName } from './metric-name';
-import { MetricGranularity, MetricType } from './types';
-import ms from 'ms';
+import {CONFIG, getMetricName, getPeriod, getRetention, mergeSketches, MetricLike,} from './utils';
+import {OnlineNormalEstimator} from '../stats';
+import {getSketchAggregateValue} from './aggregators';
+import {Meter, MeterSummary} from './meter';
+import {MetricAggregateByType} from '../metrics';
+import {MetricName} from './metric-name';
+import {MetricGranularity, MetricType} from './types';
 import {
   TimeSeriesList,
   TimeseriesListMetadata,
   TimeseriesValue,
 } from '../commands/timeseries-list';
-import { DDSketch } from '@datadog/sketches-js';
-import {
-  BiasedQuantileDistribution,
-  deserializeSketch,
-  serializeSketch,
-} from './bqdist';
-import { ManualClock } from '../lib';
-import { checkMultiErrors } from '../redis';
-import {
-  AggregationType,
-  getAggregateFunction,
-} from './aggregators/aggregation';
+import {DDSketch} from '@datadog/sketches-js';
+import {BiasedQuantileDistribution, deserializeSketch, serializeSketch,} from './bqdist';
+import {ManualClock} from '../lib';
+import {checkMultiErrors} from '../redis';
+import {AggregationType, getAggregateFunction,} from './aggregators/aggregation';
 import boom from '@hapi/boom';
-import { Snapshot } from './snapshot';
-import { round } from 'lodash';
+import {Snapshot} from './snapshot';
+import {round} from 'lodash';
 
 export interface RangeOpts {
   key: string;
@@ -72,10 +54,6 @@ interface RollupMeta {
   unit: MetricGranularity;
   sketch?: DDSketch;
   value?: number;
-}
-
-function getPeriod(unit: MetricGranularity): number {
-  return ms(`1 ${unit}`);
 }
 
 interface ParsedAddParams {
@@ -470,25 +448,24 @@ export class MetricDataClient extends Emittery {
     return fn(items);
   }
 
-  async getMetricValuesInternal(
+  async getMetricScalarValues(
     metric: MetricLike,
     unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
-    aggregation?: AggregationType
+    aggregation?: AggregationType,
     // aggregateValue?: number // for specific percentile or rate interval
   ): Promise<TimeseriesValue<number>[]> {
     const mn = getMetricName(metric);
     if (mn.type === MetricType.Distribution) {
       const aggregator = aggregation ?? mn.defaultAggregation;
       const series = await this.getDistributionRange(metric, unit, start, end);
-      const values = series.map((dataPoint) => {
+      return series.map((dataPoint) => {
         return {
           timestamp: dataPoint.timestamp,
           value: getSketchAggregateValue(dataPoint.value, aggregator),
         };
       });
-      return values;
     } else {
       return this.getNumericRange(metric, unit, start, end);
     }
@@ -528,10 +505,16 @@ export class MetricDataClient extends Emittery {
     unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
-    aggregation?: AggregationType
+    aggregation?: AggregationType,
   ): Promise<StatsSnapshot> {
     // todo: cache if endDate < Date.now()
-    const values = await this.getMetricValuesInternal(metric, unit, start, end, aggregation);
+    const values = await this.getMetricScalarValues(
+      metric,
+      unit,
+      start,
+      end,
+      aggregation,
+    );
     const data = values.map((x) => x.value);
     return aggregateSnapshot(data);
   }
@@ -541,10 +524,16 @@ export class MetricDataClient extends Emittery {
     unit: MetricGranularity,
     start: DateLike,
     end: DateLike,
-    aggregation?: AggregationType
+    aggregation?: AggregationType,
   ): Promise<MeterSummary> {
     // todo: cache if endDate < Date.now()
-    const values = await this.getMetricValuesInternal(metric, unit, start, end, aggregation);
+    const values = await this.getMetricScalarValues(
+      metric,
+      unit,
+      start,
+      end,
+      aggregation,
+    );
     return aggregateMeter(values);
   }
 
@@ -605,9 +594,9 @@ export class MetricDataClient extends Emittery {
   }
 }
 
-export function getRangeCacheKey(opts: RangeOpts): string {
-  const start = toDate(opts.start).getTime();
-  const end = toDate(opts.end).getTime();
+function getRangeCacheKey(opts: RangeOpts): string {
+  const start = startOf(opts.start, opts.unit).getTime();
+  const end = endOf(opts.end, opts.unit).getTime();
   return `${opts.key}:${start}-${end}:${opts.unit}`;
 }
 
@@ -636,7 +625,7 @@ export function aggregateSnapshot(data: number[]): StatsSnapshot {
   const mean = round(count === 0 ? 0 : sum / count, 2);
   const median = Math.ceil(sketch.getValueAtQuantile(0.5) * 100) / 100;
 
-  const result: StatsSnapshot = {
+  return {
     count,
     mean,
     sum,
@@ -649,6 +638,4 @@ export function aggregateSnapshot(data: number[]): StatsSnapshot {
     p99: sketch.getValueAtQuantile(0.99),
     p995: sketch.getValueAtQuantile(0.995),
   };
-
-  return result;
 }

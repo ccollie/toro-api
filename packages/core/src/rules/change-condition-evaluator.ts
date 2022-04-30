@@ -1,13 +1,13 @@
-import { ChunkedAssociativeArray, systemClock } from '../lib';
-import { Metric } from '../metrics';
-import Joi, { ObjectSchema } from 'joi';
-import { DurationSchema } from '../validation';
 import {
   AggregateFunction,
   AggregationType,
   getAggregateFunction,
+  Metric,
+  MetricManager,
 } from '../metrics';
-import { calculateInterval } from '../metrics/utils';
+import Joi, { ObjectSchema } from 'joi';
+import { DurationSchema } from '../validation';
+import { calculateInterval, getUnitFromDuration } from '../metrics/utils';
 import {
   ThresholdConditionEvaluator,
   ThresholdRuleEvaluationState,
@@ -16,9 +16,11 @@ import {
   ChangeConditionOptions,
   ChangeTypeEnum,
   ErrorStatus,
-  RuleType,
   RuleEvaluationState,
+  RuleType,
 } from '../types';
+import ms from 'ms';
+import { DDSketch } from '@datadog/sketches-js';
 
 export interface ChangeRuleEvaluationState
   extends ThresholdRuleEvaluationState {
@@ -40,8 +42,6 @@ export function isChangeRuleEvaluationState(
     )
   );
 }
-
-const TRIM_THRESHOLD = 15;
 
 const optionsSchema = Joi.object().keys({
   windowSize: DurationSchema,
@@ -65,10 +65,6 @@ const optionsSchema = Joi.object().keys({
 
 export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
   private _isFullWindow = false;
-  private _value: number = undefined;
-  private _count = 0;
-  private _lastTick = 0;
-  private readonly measurements: ChunkedAssociativeArray<number, number>;
   private readonly aggregationType: AggregationType;
   private readonly calculationMethod: AggregateFunction;
 
@@ -86,12 +82,15 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     // TODO: validate sampleInterval
     this.sampleInterval = sampleInterval ?? calculateInterval(windowSize);
     this.timeShift = timeShift ?? windowSize;
-    this.measurements = new ChunkedAssociativeArray<number, number>();
-
     this.fullWindow = 2 * windowSize + timeShift;
     this.calculationMethod = getAggregateFunction(options.aggregationType);
     this.aggregationType = options.aggregationType;
     this.usePercentage = options.changeType === ChangeTypeEnum.CHANGE;
+    if (windowSize < 60000) {
+      throw new RangeError(
+        'Windowsize cannot be less than 1m. Got ' + ms(windowSize),
+      );
+    }
   }
 
   protected getState(level: ErrorStatus, value: number): RuleEvaluationState {
@@ -108,29 +107,18 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     } as ChangeRuleEvaluationState;
   }
 
-  protected handleEval(value: number): ErrorStatus {
-    const change = this.update(value);
-    return super.handleEval(change);
-  }
-
-  get lastTimestamp(): number {
-    return this.measurements.lastKey ?? 0;
-  }
-
-  public get isFullWindow(): boolean {
+  public isFullWindow(ts: number): boolean {
     if (this._isFullWindow) return true;
-    if (this._lastTick === undefined) return false;
-    const firstTs = this.measurements.firstKey ?? 0;
-    this._isFullWindow = this.lastTimestamp - firstTs >= this.fullWindow;
-    return this._isFullWindow;
+    // TODO !!!
+    return false;
   }
 
-  get currentWindowStart(): number {
-    return this.align(this.lastTimestamp - this.windowSize);
+  private calcCurrentWindowStart(ts: number): number {
+    return this.align(ts - this.windowSize);
   }
 
-  get previousWindowStart(): number {
-    const start = this.currentWindowStart - this.timeShift - this.windowSize;
+  private calcPreviousWindowStart(ts: number): number {
+    const start = ts - this.timeShift - this.windowSize;
     return this.align(start);
   }
 
@@ -138,44 +126,46 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
     return ts - (ts % this.sampleInterval);
   }
 
-  private trim() {
-    if (this.isFullWindow) {
-      const fudge = Math.floor(this.windowSize / this.sampleInterval) * 2;
-      const start = this.align(this.previousWindowStart - fudge);
-      this.measurements.trim(start);
-    }
-  }
-
-  getNormalizedRange(start: number): number[] {
+  async loadNormalizedRange(
+    manager: MetricManager,
+    start: number,
+  ): Promise<number[]> {
+    const { metric, windowSize, aggregationType } = this;
+    const unit = getUnitFromDuration(windowSize);
     const result = [];
     start = this.align(start);
     const end = start + this.windowSize - 1;
-    const interval = this.sampleInterval;
+    const interval = this.sampleInterval; // interval from unit
+
+    const range = await manager.getMetricScalarValues(
+      metric,
+      unit,
+      start,
+      end,
+      aggregationType,
+    );
+
     // It _is_ expected that we can generate sparse arrays here
-    for (const [ts, value] of this.measurements.range(start, end)) {
-      const normalizedTs = (ts - start) / interval;
+    range.forEach(({ timestamp, value }) => {
+      const normalizedTs = (timestamp - start) / interval;
       result[normalizedTs] = value;
-    }
+    });
     return result;
   }
 
-  getCurrentWindow(): number[] {
-    return this.getNormalizedRange(this.currentWindowStart);
-  }
+  async loadDiffs(manager: MetricManager, ts: number): Promise<number[]> {
+    const { usePercentage } = this;
+    const prevStart = this.calcPreviousWindowStart(ts);
+    const currStart = this.calcCurrentWindowStart(ts);
 
-  getPreviousWindow(): number[] {
-    return this.getNormalizedRange(this.previousWindowStart);
-  }
-
-  getDiffs(): number[] {
-    const usePercentage = this.usePercentage;
-
-    const previous = this.getPreviousWindow();
-    const current = this.getCurrentWindow();
+    const [previous, current] = await Promise.all([
+      this.loadNormalizedRange(manager, prevStart),
+      this.loadNormalizedRange(manager, currStart),
+    ]);
 
     // TODO: have param for default value
+    const result: number[] = [];
 
-    const diffs: number[] = [];
     current.forEach((curValue, index) => {
       const prevValue = previous[index];
       if (prevValue !== undefined) {
@@ -183,63 +173,22 @@ export class ChangeConditionEvaluator extends ThresholdConditionEvaluator {
         if (usePercentage) {
           delta = prevValue === 0 ? 0 : delta / prevValue;
         }
-        diffs.push(delta);
+        result.push(delta);
       }
     });
 
-    return diffs;
+    return result;
   }
 
-  getChange(): number {
-    if (!this.isFullWindow) {
-      return 0;
-    }
-
-    const now = this.lastTimestamp;
-    if (now - (this._lastTick ?? now) < this.sampleInterval) {
-      return this._value;
-    }
-
-    const diffs = this.getDiffs();
-
-    return !diffs.length ? 0 : this.calculationMethod(diffs);
-  }
-
-  update(value: number, ts?: number): number {
-    // for comparison, align timestamps. Of course the assumption is that
-    // we are updating at intervals of this.sampleInterval
-    ts = this.align(ts ?? systemClock.getTime());
-    this.measurements.put(ts, value);
-    if (++this._count % TRIM_THRESHOLD == 0) {
-      if (ts - this.measurements.firstKey > this.fullWindow) {
-        this.trim();
-        this._count = this.measurements.size();
-      }
-    }
-    this._value = this.getChange();
-    this._lastTick = ts;
-    return this._value;
-  }
-
-  get value(): number {
-    return this._value;
-  }
-
-  // Testing Only
-  getValues(start?: number, end?: number): number[] {
-    return this.measurements.getValues(start, end);
-  }
-
-  get minTimestamp(): number {
-    return this.measurements.firstKey;
-  }
-
-  get maxTimestamp(): number {
-    return this.measurements.lastKey;
-  }
-
-  get count(): number {
-    return this._count;
+  async onMetricUpdate(
+    manager: MetricManager,
+    ts: number,
+    value: number | DDSketch,
+  ): Promise<ErrorStatus> {
+    // todo: check for full window
+    const diffs = await this.loadDiffs(manager, ts);
+    const change = !diffs.length ? 0 : this.calculationMethod(diffs);
+    return this.evaluateThreshold(change);
   }
 
   static get schema(): ObjectSchema {

@@ -6,7 +6,7 @@ import pMap from 'p-map';
 import { RuleAlertState, RuleScripts } from '../commands';
 import { Clock, IteratorOptions } from '../lib';
 import { logger } from '../logger';
-import { Metric } from '../metrics';
+import { Metric, MetricManager } from '../metrics';
 import { QueueListener, QueueManager } from '../queues';
 import { BusEventHandler, EventBus, UnsubscribeFn } from '../redis';
 import { RuleAlert, RuleConfigOptions, RuleEventsEnum } from '../types';
@@ -20,6 +20,8 @@ import {
   RuleEventData,
   RuleStorage,
 } from './rule-storage';
+import { Snapshot } from '../metrics/snapshot';
+import { DDSketch } from '@datadog/sketches-js';
 
 type RuleLike = Rule | RuleConfigOptions | string;
 
@@ -83,14 +85,6 @@ export class RuleManager {
     this.removeMetricRule(rule.metricId, meta);
   }
 
-  startListening(start?: string): Promise<void> {
-    return this.queueListener.startListening(start);
-  }
-
-  stopListening(): Promise<void> {
-    return this.queueListener.unlisten();
-  }
-
   get queueListener(): QueueListener {
     return this.queueManager.queueListener;
   }
@@ -125,24 +119,22 @@ export class RuleManager {
   }
 
   private dispatchRule(
+    manager: MetricManager,
     metric: Metric,
     meta: RuleMeta,
     ts: number,
-    hasLock: boolean,
+    value: number | DDSketch,
   ) {
     const { alerter, rule } = meta;
-    if (rule && rule.isActive) {
-      let evaluator = meta.evaluator;
-      if (!evaluator) {
-        evaluator = new RuleEvaluator(rule, metric);
-        meta.evaluator = evaluator;
-      }
-      // TODO: !!!!!!!!!!!!!!!
-      const result = evaluator.evaluate( /* metric.value */ 0, ts);
-      // put this check AFTER the above since evaluators may be stateful, and we
-      // need to maintain state in case we acquire the lock
-      if (!hasLock) return;
-      // todo: addWork()
+    if (!rule?.isActive) return;
+    let evaluator = meta.evaluator;
+    if (!evaluator) {
+      evaluator = new RuleEvaluator(rule, metric);
+      meta.evaluator = evaluator;
+    }
+
+    this.queueManager.addWork(async () => {
+      const result = await evaluator.evaluate(manager, ts, value);
       alerter.handleResult(result).catch((err) => {
         // handle delete
         if (boom.isBoom(err, 404)) {
@@ -151,17 +143,26 @@ export class RuleManager {
         }
         this.onError(err);
       });
-    }
+    });
   }
 
-  handleMetricUpdate(metric: Metric, ts: number): void {
-    const metas = this.metricRuleMap.get(metric.id);
-    if (metas) {
-      const hasLock = this.hasLock;
-      metas.forEach((meta) => {
-        this.dispatchRule(metric, meta, ts, hasLock);
-      });
-    }
+  onSnapshot(manager: MetricManager, snapshot: Snapshot) {
+    if (!this.hasLock) return;
+    const ts = snapshot.timestamp;
+    const metrics = snapshot.registry.getMetrics();
+    metrics.forEach((metric) => {
+      const metas = this.metricRuleMap.get(metric.id);
+      if (metas) {
+        let value: number | DDSketch = undefined;
+        value = snapshot.map.get(metric.name);
+        if (value === undefined) {
+          value = snapshot.distributions.get(metric.name);
+        }
+        metas.forEach((meta) => {
+          this.dispatchRule(manager, metric, meta, ts, value);
+        });
+      }
+    });
   }
 
   private _registerRule(rule: Rule): void {

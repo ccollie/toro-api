@@ -196,7 +196,7 @@ export function getResolver(): GraphQLFieldResolver<any, any> {
   }
 
   function onUnsubscribe(): void {
-    cache.reset();
+    cache.clear();
   }
 
   return createSharedSubscriptionResolver({

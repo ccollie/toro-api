@@ -47,6 +47,11 @@ export enum PeakSignalDirection {
 export interface PeakCondition extends NotificationThresholds {
   readonly type: RuleType.PEAK;
   /**
+   * The z-score at which the algorithm signals (i.e. how many standard deviations
+   * away from the moving mean a peak (or signal) is)
+   */
+  deviations: number;
+  /**
    * the influence (between 0 and 1) of new signals on the mean and standard deviation
    * where 1 is normal influence, 0.5 is half
    */
@@ -57,6 +62,15 @@ export interface PeakCondition extends NotificationThresholds {
    * to smooth the data.
    */
   lag?: number;
+  /**
+   * The size of the moving window (in milliseconds)
+   */
+  windowSize?: number;
+  /**
+   * How much time is required for the metric to be anomalous before the alert triggers.
+   * Note: If the alert window is too short, you might get false alarms due to spurious noise.
+   */
+  triggerWindow?: number;
   /**
    * Trigger if value is above, below, or either above/below the given
    * deviation threshold
@@ -99,7 +113,7 @@ export type RuleCondition =
   | ChangeCondition;
 
 export interface EvaluationResult {
-  value: number;
+  value?: number;
   triggered: boolean;
   errorLevel: ErrorStatus;
   state: RuleEvaluationState;
@@ -108,7 +122,7 @@ export interface EvaluationResult {
 export interface RuleEvaluationState {
   ruleType: RuleType;
   errorLevel: ErrorStatus;
-  value: number;
+  value?: number;
   comparator: RuleOperator;
   errorThreshold: number;
   warningThreshold?: number;
