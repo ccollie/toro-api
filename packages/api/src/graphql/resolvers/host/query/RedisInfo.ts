@@ -11,7 +11,7 @@ export const RedisInfoTC = schemaComposer.createObjectTC({
     uptime_in_days: 'Int!',
     connected_clients: 'Int!',
     blocked_clients: 'Int!',
-    total_system_memory: 'Int!',
+    total_system_memory: 'Float!',
     total_system_memory_human: 'String!',
     used_memory: 'Int!',
     used_memory_peak: 'Int!',

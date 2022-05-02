@@ -2,8 +2,8 @@ import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { StatsSnapshotTC } from '../../stats/types';
 import { Metric, StatsSnapshot } from '@alpen/core';
-import { MetricDataInputTC } from '../../metric/query/data';
-import { getMetricManagerFromMetric, normalizeGranularity } from '../../stats';
+import { MetricDataInputTC } from './data';
+import { getMetricManagerFromMetric, normalizeGranularity } from '../utils';
 
 export const stats: FieldConfig = {
   type: StatsSnapshotTC.NonNull,

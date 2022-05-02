@@ -45,7 +45,7 @@ export function convertCondition(input: RuleConditionInput): RuleCondition {
       break;
     case GQLRuleType.Peak:
       if (input.changeCondition) {
-        const { operator, direction, lag, ...rest } = input.peakCondition;
+        const { operator, direction, lag,  ...rest } = input.peakCondition;
         return {
           type: RuleType.PEAK,
           ...rest,

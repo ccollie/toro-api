@@ -124,15 +124,15 @@ export function isValidMetric(
   res: ExtendedMetricTypeName,
 ): boolean {
   const [metric, agg] = (name ?? '').split('.');
-  const info = metricsInfo.find((x) => '' + x.type === metric);
+  const info = metricsInfo.find((x) => '' + x.name === metric);
   if (info) {
-    res.metric = info.type;
+    res.metric = info.name;
     if (agg) {
       // todo: special case percentiles
-      const validAggregates = MetricAggregateByType[info.metricType];
+      const validAggregates = MetricAggregateByType[info.type];
       if (!validAggregates.find((x) => '' + x === agg)) {
         throw boom.badData(
-          `Invalid aggregate "${agg}" for metric type ${info.metricType}`,
+          `Invalid aggregate "${agg}" for metric type ${info.type}`,
         );
       }
     }

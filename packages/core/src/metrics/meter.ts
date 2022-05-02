@@ -275,34 +275,6 @@ export class Meter extends BaseMeter {
   }
 }
 
-/**
- * Serializable version of a {@link Meter}.
- *
- * @export
- * @interface MeterSnapshot
- */
-export interface MeterSnapshot {
-  /**
-   * Total count of events reported.
-   *
-   * @type {number}
-   */
-  count: number;
-  /**
-   * mean rate - the meaning of the mean-rate depends on the actual implementation.
-   *
-   * @type {number}
-   */
-  meanRate: number;
-  /**
-   * Mapping of time-frame to rate values - time-unit and meaning depend on the
-   * actual implementation.
-   *
-   * @type {MeteredRates}
-   */
-  rates: MeteredRates;
-}
-
 export function convertRate(
   ma: IMovingAverage,
   timespan: number,

@@ -1,7 +1,7 @@
 import { ObjectTypeComposerFieldConfigDefinition } from 'graphql-compose';
 import { MeterTC, MetricsQueryInputTC } from '../scalars';
 import { EZContext } from 'graphql-ez';
-import { getMetricManagerFromMetric } from '../../stats';
+import { getMetricManagerFromMetric } from '../utils';
 
 export const rate: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   type: MeterTC.NonNull,

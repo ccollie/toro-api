@@ -4,7 +4,7 @@ import {
 import { MetricsQueryInputTC } from '../scalars';
 import { EZContext } from 'graphql-ez';
 import boom from '@hapi/boom';
-import { getMetricManagerFromMetric } from '../../stats';
+import { getMetricManagerFromMetric } from '../utils';
 
 export const aggregate: ObjectTypeComposerFieldConfigDefinition<any, any> = {
   type: 'Int!',

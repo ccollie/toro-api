@@ -1,7 +1,7 @@
 import { schemaComposer } from 'graphql-compose';
-import { MetricGranularityEnum, PeakSignalDirectionEnum } from '../../scalars';
+import { PeakSignalDirectionEnum } from '../../scalars';
 import { OutlierMethod } from '@alpen/core';
-import { MetricTypeTC } from '../metric/scalars';
+import { MetricGranularityEnum, MetricTypeTC } from '../metric/scalars';
 
 /* eslint max-len: 0 */
 

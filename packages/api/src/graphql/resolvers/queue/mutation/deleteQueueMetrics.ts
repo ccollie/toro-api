@@ -1,15 +1,14 @@
-import { deleteQueueStats as deleteStats } from '@alpen/core';
 import { EZContext } from 'graphql-ez';
 import { FieldConfig } from '../../utils';
 import { QueueTC } from '../../index';
 import { schemaComposer } from 'graphql-compose';
-import { MetricGranularityEnum } from '../../../scalars';
+import { MetricGranularityEnum } from '../../metric/scalars';
 import boom from '@hapi/boom';
 
-export const deleteQueueStats: FieldConfig = {
+export const deleteQueueMetrics: FieldConfig = {
   description: 'Delete all stats associated with a queue',
   type: schemaComposer.createObjectTC({
-    name: 'DeleteQueueStatsResult',
+    name: 'DeleteQueueMetricsResult',
     fields: {
       isDeleted: 'Boolean!',
       queue: QueueTC.NonNull,
@@ -17,13 +16,11 @@ export const deleteQueueStats: FieldConfig = {
   }).NonNull,
   args: {
     input: schemaComposer.createInputTC({
-      name: 'DeleteQueueStatsInput',
+      name: 'DeleteQueueMetricsInput',
       fields: {
-        queueId: 'ID!',
-        granularity: {
-          type: MetricGranularityEnum,
-          description:
-            'Optional stats granularity. If omitted, the entire range of data is deleted',
+        queueId: {
+          type: 'ID!',
+          description: "The queue to delete metrics from"
         },
       },
     }).NonNull,
@@ -38,6 +35,6 @@ export const deleteQueueStats: FieldConfig = {
     // exposing key count makes no sense to an end user and leaks implementation
     // details
     // const isDeleted = count > 0;
-    throw boom.notImplemented('deleteQueueStats');
+    throw boom.notImplemented('deleteQueueMetrics');
   },
 };

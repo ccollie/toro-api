@@ -97,7 +97,7 @@ query GetHostQueues($id: ID!) {
   }
 }
 
-query HostQueues($id: ID!, $range: String!, $filter: HostQueuesFilter) {
+query HostQueues($id: ID!, $filter: HostQueuesFilter) {
   host(id: $id) {
     id
     name

@@ -108,7 +108,8 @@ export class Supervisor {
   }
 
   getHost(hostName: string): HostManager {
-    return hostName && hosts.get(hostName);
+    const host = hosts.get(hostName);
+    return host ?? this.getHostById(hostName);
   }
 
   getHostById(id: string): HostManager {

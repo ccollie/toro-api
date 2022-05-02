@@ -1,4 +1,4 @@
-query HostsPageData($range: String!, $granularity: MetricGranularity! = Minute) {
+query HostsPageData {
   hosts {
     id
     name

@@ -77,7 +77,7 @@ const StatisticGroup: React.FC<StatisticGroupProps> = (props) => {
 
   if (!isEmpty(children)) {
     return (
-      <Box component={as} {...rest} className={classes}>
+      <Box  component={as} {...rest} className={classes}>
         {children}
       </Box>
     );

@@ -1,24 +1,8 @@
-import { EnumTypeComposer, schemaComposer } from 'graphql-compose';
-import { metricsInfo } from '@alpen/core';
-
-function createMetricTypesTS(): EnumTypeComposer<any> {
-  const values: Record<string, any> = Object.create(null);
-  const metricTypes = new Set(metricsInfo.map((x) => x.type));
-
-  metricTypes.forEach((k, info) => {
-    values[k] = { value: k };
-  });
-  return schemaComposer.createEnumTC({
-    name: 'MetricType',
-    values,
-    description: 'Available metric names',
-  });
-}
-
-export const MetricTypeTC = createMetricTypesTS();
+import { schemaComposer } from 'graphql-compose';
+import { SupportedMetric } from './enums';
 
 export const BaseFields = {
-  type: MetricTypeTC.NonNull,
+  type: SupportedMetric.NonNull,
   name: {
     type: 'String!',
     description: 'The name of the metric',
@@ -45,17 +29,12 @@ export const MetricInputTC = schemaComposer
       ...InputFields,
     },
   })
-  .makeFieldNullable(['name', 'options', 'aggregator']);
+  .makeFieldNullable(['name']);
 
-export const CreateMetricInputTC = schemaComposer
-  .createInputTC({
-    name: 'CreateMetricInput',
-    description: 'Input fields for creating a metric',
-    fields: {
-      ...InputFields,
-    },
-  })
-  .makeRequired(['name', 'queueId']);
-
+export * from './enums';
+export * from './extended-metric';
 export * from './Meter';
 export * from './MetricsQueryInput';
+export * from './metric-name';
+export * from './MetricType';
+export * from './MetricCategory';

@@ -67,24 +67,17 @@ export enum MetricGranularity {
   Month = 'month',
 }
 
-export enum MetricValueType {
-  Count,
-  Gauge,
-  Rate,
-}
-
 export interface MetricInfo {
-  key: string;
   type: MetricTypeName;
-  valueType: MetricValueType;
+  valueType: MetricType;
   description: string;
   unit: string;
   category: MetricCategory;
 }
 
 export interface MetricFamily {
-  type: MetricTypeName;
-  metricType: MetricType;
+  name: MetricTypeName;
+  type: MetricType;
   unit?: string;
   help?: string;
   description?: string;

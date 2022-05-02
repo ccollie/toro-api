@@ -46,6 +46,7 @@ export const obliterateQueue: FieldConfig = {
       throw boom.badRequest('count must be a positive integer. Got: ' + count);
     }
     const counts = await getJobCounts(queue, loaders, info);
+    // TODO: delete all metric and rule data as well
     await queue.obliterate({ force, count });
 
     return counts;

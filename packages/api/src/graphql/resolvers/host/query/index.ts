@@ -2,7 +2,7 @@ import { schemaComposer } from 'graphql-compose';
 import { queues } from './queues';
 import { metrics } from './metrics';
 import { workerCount } from './worker-count';
-import { workers as workers } from './workers';
+import { workers } from './workers';
 import { jobCounts } from './job-counts';
 import { queueCount } from './queueCount';
 import { hostRedisFC as redis } from './redis';
@@ -11,12 +11,6 @@ import { discoverQueues } from './discoverQueues';
 import { alertCount } from './alert-count';
 import { ping } from './ping';
 import { uri } from './uri';
-
-import {
-  stats,
-  statsLatest as lastStatsSnapshot,
-  statsDateRange,
-} from '../../stats';
 
 export const HostTC = schemaComposer.createObjectTC({
   name: 'QueueHost',
@@ -30,7 +24,6 @@ export const HostTC = schemaComposer.createObjectTC({
     },
     discoverQueues,
     jobCounts,
-    lastStatsSnapshot,
     metrics,
     name: {
       type: 'String!',
@@ -40,8 +33,6 @@ export const HostTC = schemaComposer.createObjectTC({
     queues,
     queueCount,
     redis,
-    stats,
-    statsDateRange,
     uri,
     workerCount,
     workers,

@@ -90,7 +90,7 @@ export abstract class MetricName {
     if (!metric) {
       throw boom.badData(`Unknown metric: "${name}"`);
     }
-    const type = metric.metricType;
+    const type = metric.type;
     switch (type) {
       case MetricType.Gauge:
         return new Gauge(name, baseTags, tags, fieldName);

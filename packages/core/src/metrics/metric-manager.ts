@@ -212,7 +212,7 @@ export class MetricManager {
       const queueName = queue.name; // todo: use prefix ?
       tags.set(QueueTagKey, queueName);
     }
-    const info = metricsInfo.find((m) => m.type === type);
+    const info = metricsInfo.find((m) => m.name === type);
     const {
       tags: baseTags,
       percentiles,
@@ -220,9 +220,9 @@ export class MetricManager {
     } = this._metrics.registry.options;
 
     let mn: MetricName;
-    if (info.metricType === MetricType.Counter) {
+    if (info.type === MetricType.Counter) {
       mn = new CounterName(type, baseTags, tags);
-    } else if (info.metricType === MetricType.Gauge) {
+    } else if (info.type === MetricType.Gauge) {
       mn = new GaugeName(type, baseTags, tags);
     } else {
       mn = new DistributionName(type, baseTags, tags, percentiles, error);

@@ -6,14 +6,10 @@ import HostCard from './HostCard';
 import Header from './Header';
 
 const HostsPage: React.FC = () => {
-  const range = 'last_hour';
   const pollInterval = useNetworkSettingsStore(state => state.pollingInterval);
   const [hosts, setHosts] = useState<QueueHost[]>([]);
 
   const { loading, called } = useHostsPageDataQuery({
-    variables: {
-      range,
-    },
     pollInterval,
     onCompleted: (data) => {
       setHosts(data.hosts as QueueHost[]);

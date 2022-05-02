@@ -2,15 +2,14 @@ import { schemaComposer } from 'graphql-compose';
 import { metricDataFC } from './data';
 import { metricDataOutliersFC as outliers } from './outliers';
 import { metricDateRangeFC as dateRange } from './date-range';
-import { MetricTypeTC } from '../scalars';
 import { stats } from './stats';
 import { aggregate } from './aggregate';
 import { rate } from './rate';
 // eslint-disable-next-line max-len
 import { metricPercentileDistributionFC as percentileDistribution } from './percentile-distribution';
 import { Metric } from '@alpen/core';
-import { getStaticProp } from '@alpen/shared';
-import { AggregationTypeEnum } from '../../../scalars';
+import { AggregationTypeEnum, MetricTypeTC } from '../scalars';
+import { SupportedMetric } from '../scalars';
 
 // todo: https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/get-all-metrics#definition--MetricDescriptor
 
@@ -22,10 +21,11 @@ export const MetricTC = schemaComposer.createObjectTC({
       type: 'ID!',
       description: 'the id of the metric',
     },
+    name: SupportedMetric.NonNull,
     type: {
       type: MetricTypeTC.NonNull,
       resolve: (metric: Metric) => {
-        return getStaticProp(metric, 'type');
+        return metric.type;
       },
     },
     unit: {

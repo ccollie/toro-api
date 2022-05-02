@@ -1,12 +1,10 @@
 import {
-  StatsSnapshot,
   HostManager,
   Metric,
   MetricManager,
   MetricName,
   MetricGranularity
 } from '@alpen/core';
-import { DateLike } from '@alpen/shared';
 import { Queue } from 'bullmq';
 import { EZContext } from 'graphql-ez';
 
@@ -53,17 +51,4 @@ export function getMetricManager(
     const qm = context.accessors.getQueueManager(model);
     return qm.metricsManager;
   }
-}
-
-export async function getStats(
-  context: EZContext,
-  model: Queue | HostManager,
-  metric: MetricLike,
-  granularity: MetricGranularity,
-  start: DateLike,
-  end: DateLike,
-): Promise<StatsSnapshot> {
-  const unit = normalizeGranularity(granularity);
-  const manager = getMetricManager(context, model);
-  return manager.getStats(metric, unit, start, end);
 }

@@ -1,10 +1,9 @@
 import {
-  AggregationTypeEnum,
   CleanQueueJobType,
   Duration,
   ErrorLevelEnum,
-  ExtendedMetricScalarType,
   FinishedStatus,
+  GraphQLBigInt,
   GraphQLDateTime,
   GraphQLEmailAddress,
   GraphQLJSONSchema,
@@ -16,7 +15,6 @@ import {
   JobState,
   JobType,
   JobSearchStatus,
-  MetricCategory,
   OrderEnumType,
   PeakSignalDirectionEnum,
   RuleOperatorEnum,
@@ -34,7 +32,12 @@ import rule from './resolvers/rule';
 import metric from './resolvers/metric';
 import { GraphQLSchema } from 'graphql';
 import { logger } from '@alpen/core';
-import { MeterTC } from './resolvers/metric/scalars';
+import {
+  AggregationTypeEnum,
+  ExtendedMetricScalarType,
+  MeterTC,
+  MetricCategory
+} from './resolvers/metric/scalars';
 
 // Scalars
 schemaComposer.add(AggregationTypeEnum);
@@ -43,6 +46,7 @@ schemaComposer.add(Duration);
 schemaComposer.add(ErrorLevelEnum);
 schemaComposer.add(ExtendedMetricScalarType);
 schemaComposer.add(FinishedStatus);
+schemaComposer.add(GraphQLBigInt);
 schemaComposer.add(GraphQLDateTime);
 schemaComposer.add(GraphQLEmailAddress);
 schemaComposer.add(GraphQLJSONSchema);
@@ -83,7 +87,6 @@ schemaComposer.Subscription.addFields({
   ...rule.Subscription,
   ...metric.Subscription,
 });
-
 
 let schema: GraphQLSchema;
 

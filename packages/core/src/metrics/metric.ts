@@ -45,11 +45,11 @@ export class Metric {
     } else {
       this._value = 0;
     }
-    this.info = metricsInfo.find((x) => '' + x.type === name.name);
+    this.info = metricsInfo.find((x) => '' + x.name === name.name);
     if (!this.info) {
       throw new Error(`metric "${name.name}" is not recognized`);
     }
-    this.collect = metricGetters[this.info.type];
+    this.collect = metricGetters[this.info.name];
   }
 
   aggregationTypes(): AggregationType[] {

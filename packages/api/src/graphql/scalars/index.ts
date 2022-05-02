@@ -10,13 +10,10 @@ export * from './JobFilterQuery';
 export * from './QueueEventsEnum';
 export * from './timespan';
 export * from './DateTime';
-export * from './MetricCategory';
-export * from './MetricValueType';
 export * from './types';
-export * from './extended-metric';
-export * from './metric-name';
 
 export {
+  GraphQLBigInt,
   GraphQLEmailAddress,
   GraphQLURL,
   GraphQLTimestamp,

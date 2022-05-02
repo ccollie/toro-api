@@ -3,49 +3,38 @@
   "baseBranch": "origin/master",
   "pipeline": {
     "gen-schema": {
-      "outputs": [
-        "./schema.graphql"
-      ],
-      "dependsOn": [
-        "build", "^gen-schema"
-      ]
+      "outputs": ["./schema.graphql"],
+      "dependsOn": ["build", "^gen-schema"]
     },
     "gql-gen": {
-      "dependsOn": [
-        "gql-gen:client", "gql-gen:server"
-      ]
+      "dependsOn": ["gql-gen:client", "gql-gen:server"]
     },
     "gql-gen:client": {
-      "outputs": [
-        "./packages/ui/src/types/generated.ts"
-      ],
-      "dependsOn": [
-        "gen-schema", "^gql-gen:client"
-      ]
+      "outputs": ["./packages/ui/src/types/generated.ts"],
+      "dependsOn": ["gen-schema", "^gql-gen:client"]
     },
     "gql-gen:server": {
-      "outputs": [
-        "./packages/api/src/graphql/typings/gql.ts"
-      ],
-      "dependsOn": [
-        "gen-schema", "^gql-gen:server"
-      ]
+      "outputs": ["./packages/api/src/graphql/typings/gql.ts"],
+      "dependsOn": ["gen-schema", "^gql-gen:server"]
     },
     "build": {
-      "outputs": [
-        "dist/**"
-      ],
-      "dependsOn": [
-        "^build", "types"
+      "outputs": ["dist/**"],
+      "dependsOn": ["^build", "types"],
+      "inputs": [
+        "src/**/*.tsx",
+        "src/**/*.ts",
+        "__test__/**/*.ts",
+        "src/**/*.lua",
+        "src/**/*.mjml"
       ]
     },
     "types": {
-      "outputs": [
-        "dist/**"
-      ],
-      "dependsOn": [
-        "^types"
-      ]
+      "outputs": ["dist/**"],
+      "dependsOn": ["^types"]
+    },
+    "core-assets": {
+      "dependsOn": ["build"],
+      "inputs": ["src/**/*.lua", "src/**/*.mjml"]
     },
     "test": {
       "dependsOn": ["build"],
@@ -53,9 +42,7 @@
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "__test__/**/*.ts"]
     },
     "lint": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "outputs": []
     },
     "deploy": {
@@ -65,13 +52,8 @@
       "dependsOn": ["build", "gen-client"]
     },
     "example": {
-      "dependsOn": [
-        "^build",
-        "^copy-assets"
-      ],
-      "outputs": [
-        "example/**"
-      ]
+      "dependsOn": ["^build", "^copy-assets"],
+      "outputs": ["example/**"]
     },
     "dev": {
       "cache": false

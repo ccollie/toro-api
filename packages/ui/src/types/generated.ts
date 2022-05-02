@@ -3014,10 +3014,7 @@ export type GetAppInfoQuery = {
   };
 };
 
-export type HostsPageDataQueryVariables = Exact<{
-  range: Scalars['String'];
-  granularity?: MetricGranularity;
-}>;
+export type HostsPageDataQueryVariables = Exact<{ [key: string]: never }>;
 
 export type HostsPageDataQuery = {
   __typename?: 'Query';
@@ -4830,37 +4827,6 @@ export const HostsPageDataDocument = {
       kind: 'OperationDefinition',
       operation: 'query',
       name: { kind: 'Name', value: 'HostsPageData' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: {
-            kind: 'Variable',
-            name: { kind: 'Name', value: 'range' },
-          },
-          type: {
-            kind: 'NonNullType',
-            type: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'String' },
-            },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: {
-            kind: 'Variable',
-            name: { kind: 'Name', value: 'granularity' },
-          },
-          type: {
-            kind: 'NonNullType',
-            type: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'MetricGranularity' },
-            },
-          },
-          defaultValue: { kind: 'EnumValue', value: 'Minute' },
-        },
-      ],
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
@@ -4993,13 +4959,11 @@ export const HostsPageDataDocument = {
  * @example
  * const { data, loading, error } = useHostsPageDataQuery({
  *   variables: {
- *      range: // value for 'range'
- *      granularity: // value for 'granularity'
  *   },
  * });
  */
 export function useHostsPageDataQuery(
-  baseOptions: Apollo.QueryHookOptions<
+  baseOptions?: Apollo.QueryHookOptions<
     HostsPageDataQuery,
     HostsPageDataQueryVariables
   >,
@@ -5033,7 +4997,7 @@ export type HostsPageDataQueryResult = Apollo.QueryResult<
   HostsPageDataQueryVariables
 >;
 export function refetchHostsPageDataQuery(
-  variables: HostsPageDataQueryVariables,
+  variables?: HostsPageDataQueryVariables,
 ) {
   return { query: HostsPageDataDocument, variables: variables };
 }

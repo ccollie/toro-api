@@ -1,6 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
 import {
-  AggregationTypeEnum,
   ConditionChangeEnum,
   ErrorLevelEnum,
   PeakSignalDirectionEnum,
@@ -9,6 +8,7 @@ import {
   SeverityType,
 } from '../../../scalars';
 import { RuleType } from '@alpen/core';
+import { AggregationTypeEnum } from '../../metric/scalars';
 
 const BaseStateFields = {
   ruleType: {
@@ -25,7 +25,7 @@ const BaseStateFields = {
     description: 'The warning threshold of the rule',
   },
   value: {
-    type: 'Float!',
+    type: 'Float',
     description: 'The value which triggered the alert',
   },
   comparator: {

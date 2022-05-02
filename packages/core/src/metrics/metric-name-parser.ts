@@ -45,7 +45,7 @@ export function parseMetricName(canonical: string): {
   Object.values(labels).forEach(k => {
     tags.set(k, labels[k]);
   });
-  const metric = metricsInfo.find(x => ('' + x.type) === name);
+  const metric = metricsInfo.find(x => ('' + x.name) === name);
   return {
     name,
     fieldName,

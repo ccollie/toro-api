@@ -1,10 +1,5 @@
 import { Queue } from 'bullmq';
 import { schemaComposer } from 'graphql-compose';
-import {
-  stats,
-  statsDateRange,
-  statsLatest as lastStatsSnapshot,
-} from '../../stats';
 import { config } from './config';
 import { defaultJobOptions } from './defaultJobOptions';
 import { queueHostName as host } from './host';
@@ -63,7 +58,6 @@ export const QueueTC = schemaComposer.createObjectTC({
     jobDurationAvg,
     jobMemoryAvg,
     jobMemoryUsage,
-    lastStatsSnapshot,
     limiter,
     metrics,
     metricCount,
@@ -78,8 +72,6 @@ export const QueueTC = schemaComposer.createObjectTC({
     rules,
     schedulers,
     schedulerCount,
-    stats,
-    statsDateRange,
     waitingCount,
     waitingChildrenCount,
     waitTimeAvg,

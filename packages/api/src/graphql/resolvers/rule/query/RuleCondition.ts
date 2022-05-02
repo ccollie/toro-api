@@ -1,12 +1,12 @@
 import { schemaComposer } from 'graphql-compose';
 import {
-  AggregationTypeEnum,
   ConditionChangeEnum,
   Duration,
   PeakSignalDirectionEnum,
   RuleOperatorEnum,
   RuleTypeEnum,
 } from '../../../scalars';
+import { AggregationTypeEnum } from '../../metric/scalars';
 import { has } from '@alpen/shared';
 
 const BaseFields = {
@@ -94,6 +94,11 @@ export const PeakConditionTC = ThresholdConditionTC.clone('PeakCondition')
       type: PeakSignalDirectionEnum,
       description:
         'Signal if peak is above the threshold, below the threshold or either',
+    },
+    deviations: {
+      type: 'Float!',
+      defaultValue: 3.5,
+      description: 'Standard deviations at which to trigger a notification.',
     },
     influence: {
       type: 'Float',

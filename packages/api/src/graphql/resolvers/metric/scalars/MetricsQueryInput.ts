@@ -1,6 +1,9 @@
 import { schemaComposer } from 'graphql-compose';
-import { MetricTypeTC } from './index';
-import { AggregationTypeEnum, MetricGranularityEnum } from '../../../scalars';
+import {
+  AggregationTypeEnum,
+  MetricGranularityEnum,
+  SupportedMetric,
+} from './enums';
 import { MetricGranularity } from '@alpen/core';
 
 export const MetricsQueryInputTC = schemaComposer.createInputTC({
@@ -8,7 +11,7 @@ export const MetricsQueryInputTC = schemaComposer.createInputTC({
   description: 'Metrics filter.',
   fields: {
     metric: {
-      type: MetricTypeTC.NonNull,
+      type: SupportedMetric.NonNull,
       makeRequired: true,
       description: 'The metric requested',
     },

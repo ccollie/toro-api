@@ -1,5 +1,5 @@
 {
-  "name": "alpen",
+  "name": "@alpen/core",
   "private": true,
   "npmClient": "yarn",
   "useWorkspaces": true,

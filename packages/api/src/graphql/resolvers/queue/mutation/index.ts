@@ -10,7 +10,7 @@ export { setJobSchema } from './setJobSchema';
 export { deleteJobSchema } from './deleteJobSchema';
 export { deleteJobFilter } from './deleteJobFilter';
 export { updateJobFilter } from './updateJobFilter';
-export { deleteQueueStats } from './deleteQueueStats';
+export { deleteQueueMetrics } from './deleteQueueMetrics';
 export { deleteJobsByFilter } from './deleteJobsByFilter';
 export { retryJobs } from './retryJobs';
 export { obliterateQueue } from './obliterateQueue';
