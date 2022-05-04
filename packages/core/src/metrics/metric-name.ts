@@ -1,7 +1,7 @@
 // different metric types have different implementations:
 import boom from '@hapi/boom';
 import { MetricType } from './types';
-import { parseMetricName } from './metric-name-parser';
+import { parseMetricName } from './parser/metric-name-parser';
 import { DEFAULT_ERROR, DEFAULT_PERCENTILES } from './registry';
 import { AggregationType } from '../metrics';
 import { DefaultAggregationType } from './metrics-info';
@@ -82,6 +82,10 @@ export abstract class MetricName {
       canonical,
       fieldName,
     };
+  }
+
+  removeTag(name: string) {
+    this.tags.delete(name);
   }
 
   static fromCanonicalName(canonical: string, baseTags?: Tags): MetricName {

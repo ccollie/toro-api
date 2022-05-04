@@ -3300,7 +3300,6 @@ export type GetHostQueuesQuery = {
 
 export type HostQueuesQueryVariables = Exact<{
   id: Scalars['ID'];
-  range: Scalars['String'];
   filter?: InputMaybe<HostQueuesFilter>;
 }>;
 
@@ -7407,20 +7406,6 @@ export const HostQueuesDocument = {
           kind: 'VariableDefinition',
           variable: {
             kind: 'Variable',
-            name: { kind: 'Name', value: 'range' },
-          },
-          type: {
-            kind: 'NonNullType',
-            type: {
-              kind: 'NamedType',
-              name: { kind: 'Name', value: 'String' },
-            },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: {
-            kind: 'Variable',
             name: { kind: 'Name', value: 'filter' },
           },
           type: {
@@ -7546,7 +7531,6 @@ export const HostQueuesDocument = {
  * const { data, loading, error } = useHostQueuesQuery({
  *   variables: {
  *      id: // value for 'id'
- *      range: // value for 'range'
  *      filter: // value for 'filter'
  *   },
  * });

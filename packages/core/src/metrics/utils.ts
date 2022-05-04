@@ -1,13 +1,14 @@
-import type {ExtendedMetricTypeName, MetricTypeName} from './types';
-import {MetricGranularity} from './types';
-import type {Predicate} from '../types';
-import {HostTagKey, MetricName, QueueTagKey} from './metric-name';
-import {Metric} from './metric';
-import {MetricAggregateByType, metricsInfo} from './metrics-info';
+import type { ExtendedMetricTypeName, MetricTypeName } from './types';
+import { MetricGranularity } from './types';
+import type { Predicate } from '../types';
+import { HostTagKey, MetricName, QueueTagKey } from './metric-name';
+import { Metric } from './metric';
+import { MetricAggregateByType, metricsInfo } from './metrics-info';
 import boom from '@hapi/boom';
 import ms from 'ms';
 import * as units from './units';
-import {DDSketch} from '@datadog/sketches-js';
+import { DDSketch } from '@datadog/sketches-js';
+import { strCmp } from '../lib';
 
 export type MetricLike = Metric | MetricName | string;
 
@@ -202,4 +203,32 @@ export function getUnitFromDuration(duration: number): MetricGranularity {
 
 export function getPeriod(unit: MetricGranularity): number {
   return CONFIG.interval[unit];
+}
+
+function metricNameComp(a: MetricName, b: MetricName): number {
+  if (a.name !== b.name) {
+    return strCmp(a.name, b.name);
+  }
+  // Metric names for a and b match. Compare tags.
+  // Tags must be already sorted by the caller, so just compare them.
+  const ats = Array.from(a.tags.keys()).sort();
+  const bts = Array.from(b.tags.keys()).sort();
+  for (let i = 0; i < ats.length; i++) {
+    if (i >= bts.length) {
+      // a contains more tags than b and all the previous tags were identical,
+      // so "a" is considered bigger than b.
+      return 1;
+    }
+    const aKey = ats[i];
+    const bKey = bts[i];
+    if (aKey != bKey) {
+      return strCmp(aKey, bKey);
+    }
+    const aValue = a.tags[aKey];
+    const bValue = b.tags[bKey];
+    if (aValue !== bValue) {
+      return strCmp(aValue, bValue);
+    }
+  }
+  return ats.length - bts.length;
 }

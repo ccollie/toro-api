@@ -2,7 +2,6 @@ import { Queue } from 'bullmq';
 import { random } from '@alpen/shared';
 import { nanoid } from 'nanoid';
 import {
-  clearDb,
   createQueue,
   createQueueManager,
   createRule,

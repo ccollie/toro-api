@@ -1,6 +1,6 @@
 // https://github.com/yunyu/parse-prometheus-text-format
-import { metricsInfo  } from './metrics-info';
-import { MetricFamily } from './types';
+import { metricsInfo  } from '../metrics-info';
+import { MetricFamily } from '../types';
 
 class InvalidLineError extends Error {
   constructor(message) {
@@ -58,8 +58,8 @@ export const LabelNameRegex = /[a-zA-Z_][\w]*/;
 
 export default function parseSampleLine(line: string): ParseResult {
   let name = '';
-  let labelname = '';
-  let labelvalue = '';
+  let labelName = '';
+  let labelValue = '';
   let value = '';
   let timestamp = '';
   let fieldName = '';
@@ -77,7 +77,7 @@ export default function parseSampleLine(line: string): ParseResult {
         name += char;
       }
     } else if (state === STATE_ENDOFNAME) {
-      if (char === ' ' || char === '\t') {
+      if (char === ' ' || char === '\t' || char === '\n') {
         // do nothing
       } else if (char === '{') {
         state = STATE_STARTOFLABELNAME;
@@ -91,7 +91,7 @@ export default function parseSampleLine(line: string): ParseResult {
       } else if (char === '}') {
         state = STATE_ENDOFLABELS;
       } else {
-        labelname += char;
+        labelName += char;
         state = STATE_LABELNAME;
       }
     } else if (state === STATE_LABELNAME) {
@@ -102,7 +102,7 @@ export default function parseSampleLine(line: string): ParseResult {
       } else if (char === ' ' || char === '\t') {
         state = STATE_LABELVALUEEQUALS;
       } else {
-        labelname += char;
+        labelName += char;
       }
     } else if (state === STATE_LABELVALUEEQUALS) {
       if (char === '=') {
@@ -127,23 +127,23 @@ export default function parseSampleLine(line: string): ParseResult {
         if (!labels) {
           labels = {};
         }
-        labels[labelname] = labelvalue;
-        labelname = '';
-        labelvalue = '';
+        labels[labelName] = labelValue;
+        labelName = '';
+        labelValue = '';
         state = STATE_NEXTLABEL;
       } else {
-        labelvalue += char;
+        labelValue += char;
       }
     } else if (state === STATE_LABELVALUESLASH) {
       state = STATE_LABELVALUE;
       if (char === '\\') {
-        labelvalue += '\\';
+        labelValue += '\\';
       } else if (char === 'n') {
-        labelvalue += '\n';
+        labelValue += '\n';
       } else if (char === '"') {
-        labelvalue += '"';
+        labelValue += '"';
       } else {
-        labelvalue += `\\${char}`;
+        labelValue += `\\${char}`;
       }
     } else if (state === STATE_NEXTLABEL) {
       if (char === ',') {
