@@ -146,7 +146,7 @@
     "query-string": "^7.0.1",
     "redlock": "^4.2.0",
     "remark": "^13.0.0",
-    "remark-html": "^13.0.1",
+    "remark-html": "^13.0.2",
     "serve-static": "^1.16.2",
     "slackify-markdown": "^4.3.0",
     "to-json-schema": "^0.2.5",
